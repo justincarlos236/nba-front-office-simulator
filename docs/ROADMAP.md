@@ -45,12 +45,19 @@ each phase reaches a genuinely polished, tested state before moving on.
 - [ ] Free agency signing tools (MLE variants, Bird rights, minimums)
 - [ ] Wire the engine into real Prisma-backed data once M1 seeding lands
 
-## M3 — Core UI
+## M3 — Core UI (started early)
 
-- [ ] Team dashboard (record, cap sheet summary, roster)
+- [x] League browser (`/teams`) - all 30 real teams, grouped by conference/
+      division, linking into real rosters
+- [x] Team roster page (`/teams/[abbreviation]`) - real 2023-24 statlines,
+      sorted by scoring, with a live-computed 0-100 rating per player
+- [x] Player detail page (`/players/[id]`) - bio + statline + live
+      valuation-model output (performance score, estimated market value)
+- [x] Playwright e2e test covering the full browse -> roster -> player flow
+- [ ] Team dashboard for an actual league save (cap sheet, record) - needs M5
 - [ ] Interactive trade builder with live legality feedback
 - [ ] Free agency board
-- [ ] Player scouting/comparison views with data visualization
+- [ ] Data visualization (charts, not just tables)
 
 ## M4 — AI GM assistant
 

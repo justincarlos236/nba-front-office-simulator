@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function Hero() {
   return (
     <section className="relative overflow-hidden border-b border-border">
@@ -29,17 +31,17 @@ export function Hero() {
         </p>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <a
-            href="#engineering"
+          <Link
+            href="/teams"
             className="rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-black transition hover:opacity-90"
           >
-            Explore the engineering
-          </a>
+            Browse the league (real data)
+          </Link>
           <a
-            href="#roadmap"
+            href="#engineering"
             className="rounded-lg border border-border px-6 py-3 text-sm font-semibold text-foreground transition hover:bg-surface"
           >
-            See what&apos;s built so far
+            Explore the engineering
           </a>
         </div>
       </div>
