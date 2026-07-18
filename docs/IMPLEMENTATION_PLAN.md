@@ -40,16 +40,16 @@ remaining work into ordered, self-contained development phases.
 | 5   | AI GM Assistant                       | ⬜     | P1       | paused | —            | Started, then user explicitly said skip for now — **do not resume unprompted**                 |
 | 6   | Player Valuation Model                | ✅     | P0       | done   | —            | `src/lib/valuation/*`, rating + age curve + market value + surplus                             |
 | 7   | AI Trade Evaluation                   | ⬜     | P1       | 6      | 21, 22       | Any legal trade currently auto-succeeds regardless of counterparty benefit                     |
-| 8   | Franchise / GM Mode                   | 🟡     | P0       | 1,2    | —            | Pick a team + manage cap/roster works; no season progression yet                               |
+| 8   | Franchise / GM Mode                   | 🟡     | P0       | 1,2    | —            | Cap/roster/standings all work now; still no multi-season progression (Phase 3)                 |
 | 9   | Team Dashboard                        | 🟡     | P0       | done*  | —            | Cap sheet + roster shown; no transactions/draft picks on it yet                                |
 | 10  | Save and Load Franchises              | ✅     | P0       | done   | —            | Continuous DB persistence; "load" = sign back in                                               |
 | 11  | Free Agency                           | ✅     | P0       | done   | —            | `/leagues/[id]/free-agents`, real signing-mechanism validation                                 |
 | 12  | Contract Negotiations                 | 🟡     | P2       | —      | 31           | User sets terms + system validates; no back-and-forth or player preference                     |
 | 13  | NBA Draft                             | ⬜     | P1       | 4      | 66,67        | —                                                                                              |
 | 14  | Draft Pick Trading                    | ⬜     | P2       | 4      | 62           | Stepien-lite check exists in `validateTrade` unused - no pick inventory                        |
-| 15  | Season Simulation                     | ⬜     | P0       | **1**  | —            | **Building now**                                                                               |
-| 16  | Game Simulation Engine                | ⬜     | P0       | **1**  | —            | **Building now** — simplified strength-based model, not possession-level                       |
-| 17  | League Standings                      | ⬜     | P0       | **1**  | —            | **Building now**                                                                               |
+| 15  | Season Simulation                     | ✅     | P0       | 1      | —            | Batch-simulate 1/10/50 games from `/leagues/[id]/standings`                                    |
+| 16  | Game Simulation Engine                | ✅     | P0       | 1      | —            | `src/lib/simulation/simulateGame.ts` — strength-based, not possession-level (documented)       |
+| 17  | League Standings                      | ✅     | P0       | 1      | —            | `/leagues/[id]/standings`, conference-sorted, live games-back                                  |
 | 18  | NBA Playoffs                          | ⬜     | P1       | 2      | 15,16,17     | —                                                                                              |
 | 19  | Player Development                    | ⬜     | P1       | 3      | 15           | Ratings are static post-bootstrap today                                                        |
 | 20  | Dynamic Player Ratings                | ⬜     | P1       | 3      | 19           | Same root cause as #19                                                                         |
@@ -144,23 +144,27 @@ transaction feed in Phase 5).
 Phases are ordered by dependency and leverage (how many other features
 they unlock), not roadmap numbering, per the plan's guidance.
 
-### Phase 1 — Season Simulation & Standings (IN PROGRESS)
+### Phase 1 — Season Simulation & Standings ✅ DONE (2026-07-18)
 
 The single highest-leverage phase: `LeagueTeam.wins`/`losses` have existed
 in the schema, unused, since M0. Building this unlocks playoffs, awards,
 player development triggers, team/performance trends, and power rankings
 in later phases.
 
-- [ ] `Game` model (season, week, home/away `LeagueTeam`, scores, played flag)
-- [ ] Team strength function (derived from roster ratings) — pure, unit tested
-- [ ] Game simulation function (strength + home court → win probability →
+- [x] `Game` model (season, gameNumber, home/away `LeagueTeam`, scores, `playedAt`)
+- [x] Team strength function (derived from roster ratings) — pure, unit tested
+- [x] Game simulation function (strength + home court → win probability →
       simulated result) — pure, unit tested, documented as a simplified,
       strength-based model rather than possession-by-possession simulation
-- [ ] Simplified schedule generator (documented simplification vs. the
-      real 82-game/back-to-back NBA schedule)
-- [ ] "Simulate" server actions (next game / next N games / rest of season)
-- [ ] Standings page (`/leagues/[id]/standings`), conference-sorted
-- [ ] Dashboard shows real W-L record
+- [x] Simplified schedule generator (documented simplification vs. the
+      real 82-game/back-to-back NBA schedule) — 58 games/team round robin
+- [x] "Simulate" server action, batch-limited (1/10/50 games per call, not
+      "whole season" in one request — avoids a serverless timeout risk)
+- [x] Standings page (`/leagues/[id]/standings`), conference-sorted, with
+      games-back and live simulate controls
+- [x] Dashboard shows real W-L record
+- [x] 17 new unit tests + 1 new e2e test (season-simulation.spec.ts),
+      verified against a production build (screenshots)
 
 ### Phase 2 — Playoffs & League-Wide Dashboard
 
@@ -259,3 +263,13 @@ already exists. Good candidate to interleave between bigger phases.
 - **2026-07-18**: Initial audit completed against the live codebase.
   Phase 1 (Season Simulation & Standings) selected as the next
   implementation target and started.
+- **2026-07-18**: Phase 1 completed. Added a `Game` model + migration,
+  three new pure/unit-tested modules (`teamStrength.ts`, `simulateGame.ts`,
+  `generateSchedule.ts`), a batch-limited `simulateGamesAction`, and the
+  `/leagues/[id]/standings` page with live simulate controls. League
+  bootstrap now generates a full 58-game round-robin schedule per league.
+  119 unit tests (+17), 6 e2e tests (+1), all passing against a real
+  production build (verified with screenshots and manual flow testing).
+  Items #15, #16, #17 moved to ✅ Fully Implemented; #8 upgraded to
+  reflect standings now working. Next recommended phase: **Phase 2
+  (Playoffs & League-Wide Dashboard)**, per the plan above.

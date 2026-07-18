@@ -105,7 +105,7 @@ each phase reaches a genuinely polished, tested state before moving on.
       [nba-front-office-simulator-8s2o.vercel.app](https://nba-front-office-simulator-8s2o.vercel.app),
       connected to GitHub for auto-deploy on every push to `main`. Hit and
       fixed two real deploy-only issues: a missing `postinstall: prisma
-  generate` script (the gitignored generated client doesn't exist on a
+generate` script (the gitignored generated client doesn't exist on a
       fresh checkout) and a missing `AUTH_SECRET` env var (Auth.js's
       generic "server configuration" error in production).
 - [ ] Accessibility pass, responsive design pass

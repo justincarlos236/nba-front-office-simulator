@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { planLeaguePlayer } from "@/lib/league/planLeaguePlayer";
+import { generateRoundRobinSchedule } from "@/lib/simulation/generateSchedule";
 
 const SEASON = 2023;
 const FREE_AGENT_RATING_CUTOFF = 25;
@@ -65,6 +66,20 @@ export async function createLeagueAction(formData: FormData) {
   await prisma.league.update({
     where: { id: league.id },
     data: { userControlledTeamId: teamIdToLeagueTeamId.get(teamId) },
+  });
+
+  const schedule = generateRoundRobinSchedule(
+    leagueTeams.map((lt) => lt.id),
+    league.id,
+  );
+  await prisma.game.createMany({
+    data: schedule.map((game) => ({
+      leagueId: league.id,
+      season: SEASON,
+      gameNumber: game.gameNumber,
+      homeLeagueTeamId: game.homeLeagueTeamId,
+      awayLeagueTeamId: game.awayLeagueTeamId,
+    })),
   });
 
   const plans = players.map((player) => {

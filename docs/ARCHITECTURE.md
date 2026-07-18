@@ -101,6 +101,45 @@ across multiple signings the way the real MLE (one bucket to split across
 any number of players in a season) works - a full offseason-length
 simulation is future work.
 
+## Season simulation & standings
+
+`src/lib/simulation/` is the same "plain, dependency-free, unit-tested
+functions" pattern as the cap/trade/valuation engines: a team-strength
+calculator, a game simulator, and a schedule generator, none of which
+touch Prisma - the imperative shell (`src/lib/actions/simulation.ts`,
+league bootstrap) is what wires them to the database.
+
+- **Team strength** (`teamStrength.ts`): a weighted average of a roster's
+  top ~9 rotation players' ratings (starters weighted more than bench),
+  not a straight average - so a top-heavy star roster isn't penalized for
+  a weak bench the way a naive average would.
+- **Game simulation** (`simulateGame.ts`): two teams' strength (plus a
+  flat home-court bonus) go into a logistic win-probability curve; the
+  winner is drawn from that probability, then a plausible final score is
+  generated around a realistic NBA scoring baseline. **This is
+  deliberately not a possession-by-possession simulation** - no shot
+  clock, no individual box scores, no play-by-play. That's a large scope
+  increase for a mechanic whose actual product value here is "produce a
+  believable season length and standings," which a strength-based model
+  delivers at a fraction of the complexity.
+- **Schedule** (`generateSchedule.ts`): every team plays every other team
+  twice (once home, once away) - 58 games/team, not the real NBA's 82,
+  which weights division rivals (4x) and conference opponents (3-4x)
+  unevenly by a rotating formula. Replicating that exact weighting was
+  judged not worth the complexity for what it would add; the flat
+  round-robin is simple to generate, easy to verify (unit tests assert
+  the exact 58/29-home/29-away split), and still produces meaningful
+  standings.
+- **Simulating games** (`simulateGamesAction`) is deliberately batch-
+  limited (1/10/50 games per call, never "the whole season" in one
+  request) - simulating all ~870 league-wide games in a single serverless
+  invocation risks a function timeout. A user advances a full season by
+  clicking "simulate 50" a couple of times instead.
+- Standings' games-back is clamped at 0 for display - the raw formula can
+  go slightly negative when teams have played an uneven number of games
+  (expected here, since games are simulated in random schedule order, not
+  strict rounds), which real standings never show.
+
 ## AI GM assistant
 
 The assistant is not a chat window that free-associates about basketball.

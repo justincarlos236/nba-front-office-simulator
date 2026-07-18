@@ -185,6 +185,7 @@ model League {
   trades           Trade[]
   tradeExceptions  TradeException[]
   assistantThreads AssistantThread[]
+  games            Game[]
 
   @@index([ownerId])
   @@map("leagues")
@@ -208,10 +209,35 @@ model LeagueTeam {
   tradeExceptions TradeException[]
   tradeAssetsFrom TradeAsset[]     @relation("AssetFromTeam")
   tradeAssetsTo   TradeAsset[]     @relation("AssetToTeam")
+  homeGames       Game[]           @relation("HomeGames")
+  awayGames       Game[]           @relation("AwayGames")
 
   @@unique([leagueId, teamId])
   @@index([leagueId])
   @@map("league_teams")
+}
+
+// A simplified, strength-based regular-season schedule entry (see
+// docs/ARCHITECTURE.md for how this differs from the real NBA schedule
+// algorithm). `homeScore`/`awayScore` are null until simulated.
+model Game {
+  id               String    @id @default(cuid())
+  leagueId         String
+  season           Int
+  gameNumber       Int // this team's/league's sequence position, not a calendar date
+  homeLeagueTeamId String
+  awayLeagueTeamId String
+  homeScore        Int?
+  awayScore        Int?
+  playedAt         DateTime?
+
+  league   League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  homeTeam LeagueTeam @relation("HomeGames", fields: [homeLeagueTeamId], references: [id])
+  awayTeam LeagueTeam @relation("AwayGames", fields: [awayLeagueTeamId], references: [id])
+
+  @@index([leagueId, season])
+  @@index([leagueId, playedAt])
+  @@map("games")
 }
 
 enum InjuryStatus {

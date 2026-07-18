@@ -54,13 +54,20 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
       >
         <div>
           <p className="text-sm text-muted">
-            {league.currentSeason}-{(league.currentSeason + 1).toString().slice(-2)} season
+            {league.currentSeason}-{(league.currentSeason + 1).toString().slice(-2)} season &middot;{" "}
+            {userLeagueTeam.wins}-{userLeagueTeam.losses}
           </p>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
             {userLeagueTeam.team.city} {userLeagueTeam.team.name}
           </h1>
         </div>
         <div className="flex gap-3">
+          <Link
+            href={`/leagues/${league.id}/standings`}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
+          >
+            Standings
+          </Link>
           <Link
             href={`/leagues/${league.id}/free-agents`}
             className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
