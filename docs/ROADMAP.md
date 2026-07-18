@@ -14,15 +14,22 @@ each phase reaches a genuinely polished, tested state before moving on.
 - [x] Neon Postgres provisioned, first migration applied
 - [x] Initial commit pushed to git
 
-## M1 — Data pipeline (in progress)
+## M1 — Data pipeline ✅ (reference data complete; League bootstrap is M5)
 
 - [x] Static team fixture seeded into the database (30 real NBA teams)
-- [ ] Real players/season stats pulled from a stats API (needs an API key)
-- [ ] Algorithmically-generated contracts anchored to the valuation model
-      (see docs/ARCHITECTURE.md — chosen over hand-curating real salary
-      figures, which isn't verifiable at this scale)
+- [x] Real 2023-24 season stats: `scripts/import-season-stats.ts` aggregates
+      ~26k real per-game box scores (MIT-licensed source) into per-player
+      season averages
+- [x] Real player bios: `scripts/import-players.ts` pulls from balldontlie
+      (rate-limited, resumable) and joins to the stats fixture by name -
+      497/497 matched (5 required a hand-resolved nickname/legal-name alias)
+- [x] All 497 real players + season stats seeded into Postgres
+- [x] Algorithmically-generated contract logic ready (`generateContract`,
+      `planLeaguePlayer`), anchored to the valuation model instead of
+      hand-curated real salary figures (see docs/ARCHITECTURE.md)
 - [ ] "New league" flow: clone the snapshot into a fresh `League`, let the
-      user pick which team to run
+      user pick which team to run - deferred to M5, since a League needs a
+      real signed-in owner
 
 ## M2 — Salary cap & trade engine (started early — pure logic, no DB needed)
 

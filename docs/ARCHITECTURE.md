@@ -20,6 +20,11 @@ Two layers, on purpose:
 **Reference data** (`Team`, `Player`, `PlayerSeasonStat`) — a single
 real-world snapshot, imported once by the seed pipeline. Never mutated by
 gameplay. This is what a scouting page's career stats table reads from.
+Note `Player.currentTeamId` reflects each player's actual real-world team
+as of the seed run, while `PlayerSeasonStat` is season-scoped historical
+data - the two can legitimately disagree (e.g. Luka Doncic's bio points to
+the Lakers post-trade, while his 2023-24 stat line is correctly still
+attributed to Dallas).
 
 **Per-save state** (`League`, `LeagueTeam`, `LeaguePlayer`, `Contract`,
 `ContractYear`, `DraftPick`, `Trade`, `TradeAsset`, `TradeException`) — one

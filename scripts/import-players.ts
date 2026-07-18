@@ -90,6 +90,17 @@ async function main() {
     console.log(`Done fetching. ${checkpoint.players.length} total players from balldontlie.`);
   }
 
+  // The box-score dataset logs a handful of players under a common
+  // nickname rather than their balldontlie legal name - resolved by hand
+  // after the initial join left exactly these 5 out of 497 unmatched.
+  const NAME_ALIASES: Record<string, string> = {
+    [normalizePlayerName("Nicolas Claxton")]: normalizePlayerName("Nic Claxton"),
+    [normalizePlayerName("Nah'Shon Hyland")]: normalizePlayerName("Bones Hyland"),
+    [normalizePlayerName("Cameron Reddish")]: normalizePlayerName("Cam Reddish"),
+    [normalizePlayerName("Aleksandar Vezenkov")]: normalizePlayerName("Sasha Vezenkov"),
+    [normalizePlayerName("Kenyon Martin Jr.")]: normalizePlayerName("KJ Martin"),
+  };
+
   const statsFile = JSON.parse(await readFile(STATS_PATH, "utf-8"));
   const statsByName = new Map<string, (typeof statsFile.players)[number]>();
   for (const player of statsFile.players) {
@@ -101,9 +112,10 @@ async function main() {
   for (const bio of checkpoint.players) {
     const fullName = `${bio.first_name} ${bio.last_name}`;
     const key = normalizePlayerName(fullName);
-    const stats = statsByName.get(key);
-    if (!stats || seenNames.has(key)) continue;
-    seenNames.add(key);
+    const stats = statsByName.get(key) ?? statsByName.get(NAME_ALIASES[key]);
+    const matchKey = statsByName.has(key) ? key : NAME_ALIASES[key];
+    if (!stats || seenNames.has(matchKey)) continue;
+    seenNames.add(matchKey);
 
     matched.push({
       externalId: String(bio.id),
