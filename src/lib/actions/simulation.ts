@@ -72,8 +72,15 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
     lossIncrements.set(loserId, (lossIncrements.get(loserId) ?? 0) + 1);
   }
 
+  // Each game/team update is independent of the others (this batch doesn't
+  // need all-or-nothing atomicity the way a trade or signing does), so
+  // these run concurrently via the connection pool rather than as one
+  // strictly sequential Postgres transaction - a batch of 50 sequential
+  // round trips to a remote DB risked a serverless timeout in production
+  // even though it looked fine when tested locally on a lower-latency
+  // connection. See docs/ARCHITECTURE.md.
   const playedAt = new Date();
-  await prisma.$transaction([
+  await Promise.all([
     ...gameUpdates.map((update) =>
       prisma.game.update({
         where: { id: update.id },

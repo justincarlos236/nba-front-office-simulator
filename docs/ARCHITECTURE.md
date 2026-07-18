@@ -135,6 +135,18 @@ league bootstrap) is what wires them to the database.
   request) - simulating all ~870 league-wide games in a single serverless
   invocation risks a function timeout. A user advances a full season by
   clicking "simulate 50" a couple of times instead.
+- The batch's game/team updates run concurrently (`Promise.all`) rather
+  than as one strictly sequential Postgres transaction, since they don't
+  need cross-game atomicity. This was a real production-only bug fix, not
+  a preemptive optimization: a 10-game batch worked fine locally but
+  returned a 500 on Vercel, because the app's Neon database is in
+  `ap-southeast-1` while Vercel's default function region is much
+  farther away - ~20-30 sequential round trips at that added latency
+  risked the serverless timeout even though the exact same code was fast
+  against a lower-latency local connection. Also added `vercel.json` with
+  `regions: ["sin1"]` to run the functions themselves closer to the
+  database. Another example (like the `trustHost`/`AUTH_SECRET` issues)
+  of a class of bug only a real deployed environment surfaces.
 - Standings' games-back is clamped at 0 for display - the raw formula can
   go slightly negative when teams have played an uneven number of games
   (expected here, since games are simulated in random schedule order, not
