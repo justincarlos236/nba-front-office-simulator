@@ -78,13 +78,22 @@ age-curve adjusted) that both feeds the assistant and powers standalone UI
 
 ## Data sourcing
 
-- **Players, teams, career/season stats**: pulled once from a stats API and
-  used to seed reference data. Free public APIs cover box-score stats well;
-  they do not cover contract/salary data.
-- **Contracts**: no clean, ToS-safe free API exists for real salary data, so
-  the seed dataset's salary figures are hand-curated/approximate and
-  explicitly labeled as such — accurate enough for realistic cap-math
-  demonstrations, not a claim of exact real-world payroll figures.
+- **Teams**: hardcoded as a static fixture (`prisma/data/teams.ts`) rather
+  than pulled from an API — conference/division/colors are effectively
+  fixed, so hitting an external service for this data would just be an
+  unnecessary dependency.
+- **Players, career/season stats**: pulled once from a stats API and used
+  to seed reference data. Free public APIs cover box-score stats well.
+- **Contracts**: no clean, ToS-safe free API exists for real salary data,
+  and hand-typing hundreds of dollar figures from memory would mean
+  presenting guesses as fact at a scale nobody could realistically verify.
+  Instead, contracts are generated algorithmically: each player's salary is
+  derived from the same valuation model that grades trades (`estimated
+market value` plus deterministic negotiation noise, seeded by player ID
+  for reproducibility), with a rookie-scale discount for young/inexperienced
+  players. This is explicitly a simulated economy, not a claim about real
+  payrolls — and it scales to every player automatically instead of only
+  covering whichever stars got hand-entered.
 - Once seeded, all of this becomes simulation input; nothing in the running
   app depends on a live third-party API, which keeps the deployed product
   from being fragile to rate limits or upstream schema changes.

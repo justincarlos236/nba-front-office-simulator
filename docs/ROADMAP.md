@@ -3,7 +3,7 @@
 Built in milestones across multiple sessions rather than all at once, so
 each phase reaches a genuinely polished, tested state before moving on.
 
-## M0 — Foundations ✅ (current)
+## M0 — Foundations ✅
 
 - [x] Next.js 16 + TypeScript + Tailwind scaffold
 - [x] Prisma schema: auth models, reference data (`Team`/`Player`/
@@ -11,14 +11,16 @@ each phase reaches a genuinely polished, tested state before moving on.
       `LeaguePlayer`/`Contract`/`ContractYear`/`DraftPick`/`Trade`/
       `TradeAsset`/`TradeException`), AI assistant thread/message models
 - [x] Tooling: ESLint + Prettier, Vitest, Playwright, GitHub Actions CI
-- [ ] Neon Postgres provisioned, first migration applied
-- [ ] Initial commit pushed to GitHub
+- [x] Neon Postgres provisioned, first migration applied
+- [x] Initial commit pushed to git
 
-## M1 — Data pipeline
+## M1 — Data pipeline (in progress)
 
-- [ ] Seed script pulling real teams/players/season stats from a stats API
-- [ ] Curated contract/salary dataset (approximate, clearly labeled) for a
-      current-season snapshot
+- [x] Static team fixture seeded into the database (30 real NBA teams)
+- [ ] Real players/season stats pulled from a stats API (needs an API key)
+- [ ] Algorithmically-generated contracts anchored to the valuation model
+      (see docs/ARCHITECTURE.md — chosen over hand-curating real salary
+      figures, which isn't verifiable at this scale)
 - [ ] "New league" flow: clone the snapshot into a fresh `League`, let the
       user pick which team to run
 
