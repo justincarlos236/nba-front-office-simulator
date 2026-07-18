@@ -82,8 +82,17 @@ age-curve adjusted) that both feeds the assistant and powers standalone UI
   than pulled from an API — conference/division/colors are effectively
   fixed, so hitting an external service for this data would just be an
   unnecessary dependency.
-- **Players, career/season stats**: pulled once from a stats API and used
-  to seed reference data. Free public APIs cover box-score stats well.
+- **Players**: bios (name, position, height/weight, draft info, current
+  team) come from the balldontlie API.
+- **Season stats**: real per-player 2023-24 season averages, but not from a
+  live API — that season's per-game box scores are bundled from
+  [NocturneBear/NBA-Data-2010-2024](https://github.com/NocturneBear/NBA-Data-2010-2024)
+  (MIT licensed) and aggregated by `scripts/import-season-stats.ts` into
+  `prisma/data/playerSeasonStats.json`. That source has raw box scores but
+  no pre-computed advanced metrics (BPM/Win Shares/VORP — these depend on
+  team pace/rating context, not just box-score totals), so the valuation
+  model (see below) is deliberately built on real per-game box-score stats
+  and a computed true-shooting percentage instead of requiring those.
 - **Contracts**: no clean, ToS-safe free API exists for real salary data,
   and hand-typing hundreds of dollar figures from memory would mean
   presenting guesses as fact at a scale nobody could realistically verify.

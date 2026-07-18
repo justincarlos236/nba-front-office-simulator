@@ -4,13 +4,31 @@ import { deriveOverallRating, derivePotentialRating } from "./ratingFromStats";
 describe("deriveOverallRating", () => {
   it("rates a league-average statline near 50", () => {
     expect(
-      deriveOverallRating({ winSharesPer48: 0.1, boxPlusMinus: 0, valueOverReplacement: 0 }),
+      deriveOverallRating({
+        pointsPerGame: 15,
+        reboundsPerGame: 5,
+        assistsPerGame: 3,
+        stealsPerGame: 1,
+        blocksPerGame: 0.5,
+        turnoversPerGame: 1.5,
+        minutesPerGame: 24,
+        trueShootingPct: 0.56,
+      }),
     ).toBeCloseTo(50, 0);
   });
 
   it("rates an elite statline highly", () => {
     expect(
-      deriveOverallRating({ winSharesPer48: 0.25, boxPlusMinus: 9, valueOverReplacement: 8 }),
+      deriveOverallRating({
+        pointsPerGame: 30,
+        reboundsPerGame: 11,
+        assistsPerGame: 8,
+        stealsPerGame: 1.5,
+        blocksPerGame: 1,
+        turnoversPerGame: 3,
+        minutesPerGame: 35,
+        trueShootingPct: 0.63,
+      }),
     ).toBeGreaterThan(85);
   });
 });

@@ -1,31 +1,61 @@
 import { describe, expect, it } from "vitest";
 import { computePerformanceScore, evaluatePlayer } from "./playerValue";
 
+const AVERAGE_STATLINE = {
+  pointsPerGame: 15,
+  reboundsPerGame: 5,
+  assistsPerGame: 3,
+  stealsPerGame: 1,
+  blocksPerGame: 0.5,
+  turnoversPerGame: 1.5,
+  minutesPerGame: 24,
+  trueShootingPct: 0.56,
+};
+
+const ELITE_STATLINE = {
+  pointsPerGame: 30,
+  reboundsPerGame: 11,
+  assistsPerGame: 8,
+  stealsPerGame: 1.5,
+  blocksPerGame: 1,
+  turnoversPerGame: 3,
+  minutesPerGame: 35,
+  trueShootingPct: 0.63,
+};
+
 describe("computePerformanceScore", () => {
   it("scores a league-average statline near 50", () => {
-    const score = computePerformanceScore({
-      winSharesPer48: 0.1,
-      boxPlusMinus: 0,
-      valueOverReplacement: 0,
-    });
-    expect(score).toBeCloseTo(50, 0);
+    expect(computePerformanceScore(AVERAGE_STATLINE)).toBeCloseTo(50, 0);
   });
 
   it("scores an elite statline well above average", () => {
-    const score = computePerformanceScore({
-      winSharesPer48: 0.25,
-      boxPlusMinus: 9,
-      valueOverReplacement: 8,
-    });
-    expect(score).toBeGreaterThan(80);
+    expect(computePerformanceScore(ELITE_STATLINE)).toBeGreaterThan(80);
   });
 
   it("clamps to the 0-100 range for extreme inputs", () => {
     expect(
-      computePerformanceScore({ winSharesPer48: -1, boxPlusMinus: -30, valueOverReplacement: -10 }),
+      computePerformanceScore({
+        pointsPerGame: 0,
+        reboundsPerGame: 0,
+        assistsPerGame: 0,
+        stealsPerGame: 0,
+        blocksPerGame: 0,
+        turnoversPerGame: 10,
+        minutesPerGame: 0,
+        trueShootingPct: 0,
+      }),
     ).toBe(0);
     expect(
-      computePerformanceScore({ winSharesPer48: 1, boxPlusMinus: 30, valueOverReplacement: 20 }),
+      computePerformanceScore({
+        pointsPerGame: 60,
+        reboundsPerGame: 25,
+        assistsPerGame: 20,
+        stealsPerGame: 5,
+        blocksPerGame: 5,
+        turnoversPerGame: 0,
+        minutesPerGame: 48,
+        trueShootingPct: 0.75,
+      }),
     ).toBe(100);
   });
 });
@@ -35,7 +65,7 @@ describe("evaluatePlayer", () => {
     const result = evaluatePlayer({
       season: 2025,
       age: 24,
-      stats: { winSharesPer48: 0.22, boxPlusMinus: 7, valueOverReplacement: 6 },
+      stats: ELITE_STATLINE,
       actualSalaryCents: 12_000_000_00n,
     });
 
@@ -47,7 +77,16 @@ describe("evaluatePlayer", () => {
     const result = evaluatePlayer({
       season: 2025,
       age: 37,
-      stats: { winSharesPer48: 0.05, boxPlusMinus: -2, valueOverReplacement: 0.5 },
+      stats: {
+        pointsPerGame: 10,
+        reboundsPerGame: 3,
+        assistsPerGame: 2,
+        stealsPerGame: 0.5,
+        blocksPerGame: 0.2,
+        turnoversPerGame: 1.5,
+        minutesPerGame: 18,
+        trueShootingPct: 0.52,
+      },
       actualSalaryCents: 40_000_000_00n,
     });
 
@@ -55,17 +94,16 @@ describe("evaluatePlayer", () => {
   });
 
   it("values the same production lower for an older player than a younger one", () => {
-    const stats = { winSharesPer48: 0.15, boxPlusMinus: 4, valueOverReplacement: 3 };
     const young = evaluatePlayer({
       season: 2025,
       age: 23,
-      stats,
+      stats: AVERAGE_STATLINE,
       actualSalaryCents: 10_000_000_00n,
     });
     const old = evaluatePlayer({
       season: 2025,
       age: 35,
-      stats,
+      stats: AVERAGE_STATLINE,
       actualSalaryCents: 10_000_000_00n,
     });
 
@@ -76,12 +114,19 @@ describe("evaluatePlayer", () => {
     const result = evaluatePlayer({
       season: 2025,
       age: 27,
-      stats: { winSharesPer48: 0.3, boxPlusMinus: 12, valueOverReplacement: 10 },
+      stats: {
+        pointsPerGame: 60,
+        reboundsPerGame: 25,
+        assistsPerGame: 20,
+        stealsPerGame: 5,
+        blocksPerGame: 5,
+        turnoversPerGame: 0,
+        minutesPerGame: 48,
+        trueShootingPct: 0.75,
+      },
       actualSalaryCents: 0n,
     });
-    const rules = { salaryCapCents: 154_647_000_00n };
-    expect(Number(result.estimatedMarketValueCents)).toBeLessThan(
-      Number(rules.salaryCapCents) * 0.36,
-    );
+    const salaryCapCents = 154_647_000_00n;
+    expect(Number(result.estimatedMarketValueCents)).toBeLessThan(Number(salaryCapCents) * 0.36);
   });
 });

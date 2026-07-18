@@ -16,7 +16,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "import:season-stats": "tsx scripts/import-season-stats.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.112.3",

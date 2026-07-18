@@ -2,9 +2,14 @@ import { getSeasonCapRules } from "../cap/constants";
 import { ageValueMultiplier } from "./ageCurve";
 
 export interface PlayerValuationStats {
-  winSharesPer48: number; // league average is roughly 0.100
-  boxPlusMinus: number; // league average is roughly 0, elite is +6 to +10
-  valueOverReplacement: number; // roughly 0-10 for a full season, elite 6+
+  pointsPerGame: number;
+  reboundsPerGame: number;
+  assistsPerGame: number;
+  stealsPerGame: number;
+  blocksPerGame: number;
+  turnoversPerGame: number;
+  minutesPerGame: number;
+  trueShootingPct: number; // league average is roughly 0.56-0.58
 }
 
 export interface PlayerValuationInput {
@@ -28,17 +33,25 @@ export interface PlayerValuationResult {
 }
 
 /**
- * Combines advanced box-score stats into a single 0-100 production score.
- * Weights are a hand-tuned heuristic (not a fitted regression) intended to
- * produce sensible relative orderings, not to be read as a precise
- * real-world valuation. See docs/ARCHITECTURE.md.
+ * Combines real per-game box-score stats into a single 0-100 production
+ * score, anchored around roughly average-starter baselines (~15 ppg,
+ * 5 reb, 3 ast, 24 minutes, ~56% true shooting). Weights are a hand-tuned
+ * heuristic (not a fitted regression) intended to produce sensible
+ * relative orderings, not to be read as a precise real-world valuation.
+ * See docs/ARCHITECTURE.md for why this runs on raw box-score stats
+ * rather than advanced metrics like BPM/Win Shares/VORP.
  */
 export function computePerformanceScore(stats: PlayerValuationStats): number {
   const raw =
     50 +
-    stats.boxPlusMinus * 4 +
-    (stats.winSharesPer48 - 0.1) * 100 +
-    stats.valueOverReplacement * 1.5;
+    (stats.pointsPerGame - 15) * 0.7 +
+    (stats.reboundsPerGame - 5) * 1.0 +
+    (stats.assistsPerGame - 3) * 1.3 +
+    (stats.stealsPerGame - 1) * 4 +
+    (stats.blocksPerGame - 0.5) * 4 +
+    (stats.turnoversPerGame - 1.5) * -2 +
+    (stats.trueShootingPct - 0.56) * 120 +
+    (stats.minutesPerGame - 24) * 0.4;
   return Math.min(100, Math.max(0, raw));
 }
 
