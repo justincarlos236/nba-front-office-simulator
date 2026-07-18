@@ -114,8 +114,25 @@ market value` plus deterministic negotiation noise, seeded by player ID
 
 ## Auth & multi-tenancy
 
-Auth.js (NextAuth v5) with the Prisma adapter. Every `League` has an
-`ownerId`; all reads/writes to league-scoped data are authorized against
-`session.user.id === league.ownerId` at the data-access layer (not just
-hidden in the UI), so the authorization boundary is enforced regardless of
-which route or server action a request comes through.
+Auth.js v5 with the Prisma adapter, Credentials provider (email/password
+via bcrypt), and JWT sessions. Every `League` has an `ownerId`; every read
+of league-scoped data checks `session.user.id === league.ownerId` at the
+data-access layer (not just hidden in the UI) and returns a 404 - not a
+403 - for a non-owner, so the route doesn't even confirm the league
+exists. One league per user for now (`createLeagueAction` is idempotent:
+revisiting `/leagues/new` after starting one redirects straight back to
+it instead of creating a second); multiple saves per user is future work.
+
+`trustHost: true` is required in the Auth.js config for this to work
+outside Vercel (which sets it automatically) - without it, Auth.js
+rejects every request in a real production build with an `UntrustedHost`
+error. Next.js dev mode implicitly trusts `localhost`, so this only
+surfaced when the Playwright e2e suite ran against `next build && next
+start` instead of `next dev` - a concrete example of why testing the
+actual production build matters, not just the dev server.
+
+One deliberate cost: adding a session-aware `NavBar` to the root layout
+means every page now calls `auth()` (which reads cookies), which makes
+the entire app dynamically rendered - including pages like `/teams/*`
+that used to be statically generated at build time. Documented as a
+known tradeoff in docs/ROADMAP.md (M6) rather than solved now.

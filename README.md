@@ -35,13 +35,23 @@ and [docs/ROADMAP.md](docs/ROADMAP.md) for what's built vs. planned.
 
 ```bash
 npm install
-cp .env.example .env   # fill in DATABASE_URL, AUTH_SECRET, ANTHROPIC_API_KEY
-npm run db:migrate     # applies the Prisma schema to your database
-npm run db:seed        # seeds real NBA reference data + a starter league
+cp .env.example .env       # fill in DATABASE_URL and AUTH_SECRET (npx auth secret can generate one)
+npm run db:migrate         # applies the Prisma schema to your database
+npm run db:seed            # seeds the 30 real teams + 497 real players/stats (bundled fixtures, no API key needed)
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000), then **Start a
+franchise** to sign up and bootstrap your own save.
+
+Regenerating the bundled fixtures from scratch (not required to just run
+the app) needs a free [balldontlie](https://balldontlie.io) API key in
+`.env`:
+
+```bash
+npm run import:season-stats   # aggregates real 2023-24 box scores into prisma/data/playerSeasonStats.json
+npm run import:players        # fetches real bios and joins them to the stats fixture into prisma/data/players.json
+```
 
 ### Useful scripts
 
@@ -50,14 +60,17 @@ npm run lint          # ESLint
 npm run typecheck     # tsc --noEmit
 npm run format        # Prettier write
 npm run test          # Vitest unit tests
-npm run test:e2e      # Playwright end-to-end tests
+npm run test:e2e      # Playwright end-to-end tests (builds + runs a production server)
 npm run db:studio     # Prisma Studio (browse the database)
 ```
 
 ## Project status
 
-Early foundation stage — see [docs/ROADMAP.md](docs/ROADMAP.md) for the
-milestone-by-milestone plan and current progress.
+Foundations, the real data pipeline, the salary cap/trade/valuation engine,
+auth, and a first playable slice (sign up → pick a team → see your real,
+generated cap sheet) are all working end to end. See
+[docs/ROADMAP.md](docs/ROADMAP.md) for the full milestone-by-milestone plan
+and what's next (trade builder, free agency, the AI assistant).
 
 ## License
 

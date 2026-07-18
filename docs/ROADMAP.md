@@ -27,9 +27,8 @@ each phase reaches a genuinely polished, tested state before moving on.
 - [x] Algorithmically-generated contract logic ready (`generateContract`,
       `planLeaguePlayer`), anchored to the valuation model instead of
       hand-curated real salary figures (see docs/ARCHITECTURE.md)
-- [ ] "New league" flow: clone the snapshot into a fresh `League`, let the
-      user pick which team to run - deferred to M5, since a League needs a
-      real signed-in owner
+- [x] "New league" flow: clones the snapshot into a fresh `League` (30
+      `LeagueTeam`s, 497 `LeaguePlayer`s + generated `Contract`s) - see M5
 
 ## M2 — Salary cap & trade engine (started early — pure logic, no DB needed)
 
@@ -54,10 +53,13 @@ each phase reaches a genuinely polished, tested state before moving on.
 - [x] Player detail page (`/players/[id]`) - bio + statline + live
       valuation-model output (performance score, estimated market value)
 - [x] Playwright e2e test covering the full browse -> roster -> player flow
-- [ ] Team dashboard for an actual league save (cap sheet, record) - needs M5
+- [x] Data visualization: minutes-vs-rating scatter chart (recharts) on
+      every team roster page
+- [x] League dashboard (`/leagues/[id]`) - the signed-in user's own team's
+      live cap sheet (committed salary, cap space, apron status) and full
+      roster with real generated contracts
 - [ ] Interactive trade builder with live legality feedback
 - [ ] Free agency board
-- [ ] Data visualization (charts, not just tables)
 
 ## M4 — AI GM assistant
 
@@ -66,17 +68,28 @@ each phase reaches a genuinely polished, tested state before moving on.
 - [ ] Claude-powered assistant with tool-use into cap/trade/valuation logic
 - [ ] Chat UI, persisted per league
 
-## M5 — Auth & multi-tenancy
+## M5 — Auth & multi-tenancy ✅ (single save per user; multiple saves is next)
 
-- [ ] Auth.js wired up (GitHub OAuth + credentials)
-- [ ] Per-user league ownership enforced at the data-access layer
+- [x] Auth.js v5 wired up (Credentials provider + Prisma adapter, JWT
+      sessions; `trustHost: true` needed for production - dev mode masks
+      this, only caught by testing the real production build)
+- [x] Sign-up/sign-in pages (React 19 `useActionState` + server actions)
+- [x] Per-user league ownership enforced at the data-access layer (404s,
+      not 403s, for a non-owner - doesn't reveal a league even exists)
+- [x] Idempotent "start a franchise" flow: revisiting after one exists
+      redirects straight to it instead of creating a second one
 - [ ] Multiple saves per user
+- [ ] GitHub OAuth (credentials-only for now - no external app setup needed)
 
 ## M6 — Polish & production
 
 - [ ] Accessibility pass, responsive design pass
 - [ ] Error boundaries / thoughtful empty & error states
 - [ ] Performance pass (caching, pagination, optimistic UI)
+- [ ] Restore static generation for public pages (`/`, `/teams/*`) - adding
+      a session-aware `NavBar` to the root layout made every page dynamic,
+      since `auth()` reads cookies. Fixable with a Suspense-boundary split
+      or Next.js PPR once it's stable; not worth the complexity yet.
 - [ ] Deployed to Vercel with a public demo
 - [ ] Observability (error tracking)
 

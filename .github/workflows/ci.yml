@@ -7,6 +7,7 @@ on:
 
 env:
   DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nba_front_office_test
+  AUTH_SECRET: ci-only-secret-not-used-in-production
 
 jobs:
   build-and-test:
@@ -43,6 +44,9 @@ jobs:
 
       - name: Apply migrations
         run: npx prisma migrate deploy
+
+      - name: Seed reference data (teams/players/stats from bundled fixtures, no live API calls)
+        run: npm run db:seed
 
       - name: Lint
         run: npm run lint
