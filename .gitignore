@@ -15,6 +15,9 @@
 /playwright-report
 /test-results
 
+# scratch state for resumable data-import scripts
+/.data-import
+
 # next.js
 /.next/
 /out/

@@ -61,7 +61,7 @@ export function computePerformanceScore(stats: PlayerValuationStats): number {
  * up through the realistic max-contract ceiling rather than a hard
  * piecewise cutoff.
  */
-function scoreToCapFraction(score: number): number {
+export function scoreToCapFraction(score: number): number {
   const MAX_CAP_FRACTION = 0.35; // roughly a supermax-caliber player
   const MIDPOINT = 55; // score at which a player earns half of MAX_CAP_FRACTION
   const STEEPNESS = 0.08;
