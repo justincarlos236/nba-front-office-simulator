@@ -99,8 +99,15 @@ each phase reaches a genuinely polished, tested state before moving on.
 - [ ] Multiple saves per user
 - [ ] GitHub OAuth (credentials-only for now - no external app setup needed)
 
-## M6 — Polish & production
+## M6 — Polish & production (started early)
 
+- [x] Deployed to Vercel with a public demo:
+      [nba-front-office-simulator-8s2o.vercel.app](https://nba-front-office-simulator-8s2o.vercel.app),
+      connected to GitHub for auto-deploy on every push to `main`. Hit and
+      fixed two real deploy-only issues: a missing `postinstall: prisma
+  generate` script (the gitignored generated client doesn't exist on a
+      fresh checkout) and a missing `AUTH_SECRET` env var (Auth.js's
+      generic "server configuration" error in production).
 - [ ] Accessibility pass, responsive design pass
 - [ ] Error boundaries / thoughtful empty & error states
 - [ ] Performance pass (caching, pagination, optimistic UI)
@@ -108,7 +115,6 @@ each phase reaches a genuinely polished, tested state before moving on.
       a session-aware `NavBar` to the root layout made every page dynamic,
       since `auth()` reads cookies. Fixable with a Suspense-boundary split
       or Next.js PPR once it's stable; not worth the complexity yet.
-- [ ] Deployed to Vercel with a public demo
 - [ ] Observability (error tracking)
 
 ## Stretch goals

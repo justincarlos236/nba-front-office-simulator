@@ -1,5 +1,7 @@
 # NBA Front Office Simulator
 
+**Live demo: [nba-front-office-simulator-8s2o.vercel.app](https://nba-front-office-simulator-8s2o.vercel.app)**
+
 Run an NBA franchise like a real GM: manage rosters, negotiate trades against
 the actual 2023 CBA salary-cap rules, sign free agents, and lean on an
 AI assistant that grounds its advice in a real quantitative player-valuation
@@ -67,10 +69,11 @@ npm run db:studio     # Prisma Studio (browse the database)
 ## Project status
 
 Foundations, the real data pipeline, the salary cap/trade/valuation engine,
-auth, and a first playable slice (sign up → pick a team → see your real,
-generated cap sheet) are all working end to end. See
+auth, and the core gameplay loop (sign up → pick a team → make trades → sign
+free agents, all against a real generated cap sheet) are all live and
+working end to end at the demo link above. See
 [docs/ROADMAP.md](docs/ROADMAP.md) for the full milestone-by-milestone plan
-and what's next (trade builder, free agency, the AI assistant).
+and what's next (the AI GM assistant, draft picks, more polish).
 
 ## License
 
