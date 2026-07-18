@@ -1,0 +1,426 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Auth (Auth.js)
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  createdAt     DateTime  @default(now())
+
+  accounts Account[]
+  sessions Session[]
+  leagues  League[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Reference data: a real-world NBA snapshot, seeded once and shared by every
+// league. Leagues never mutate these rows directly - a new League clones the
+// snapshot into its own LeagueTeam / LeaguePlayer / Contract rows so each save
+// can diverge independently (trades, extensions, retirements, etc.) without
+// touching any other save or the canonical reference data.
+// ---------------------------------------------------------------------------
+
+enum Conference {
+  EAST
+  WEST
+}
+
+model Team {
+  id             String     @id @default(cuid())
+  externalId     String?    @unique
+  abbreviation   String     @unique
+  name           String
+  city           String
+  conference     Conference
+  division       String
+  primaryColor   String
+  secondaryColor String
+  logoUrl        String?
+
+  players     Player[]
+  leagueTeams LeagueTeam[]
+
+  @@map("teams")
+}
+
+enum Position {
+  PG
+  SG
+  SF
+  PF
+  C
+}
+
+model Player {
+  id            String    @id @default(cuid())
+  externalId    String?   @unique
+  fullName      String
+  position      Position
+  birthDate     DateTime?
+  heightInches  Int?
+  weightLbs     Int?
+  draftYear     Int?
+  draftRound    Int?
+  draftPick     Int?
+  photoUrl      String?
+  currentTeamId String?
+
+  currentTeam   Team?              @relation(fields: [currentTeamId], references: [id])
+  seasonStats   PlayerSeasonStat[]
+  leaguePlayers LeaguePlayer[]
+
+  @@index([currentTeamId])
+  @@map("players")
+}
+
+// Real historical per-season stat lines, imported once. Used both to display
+// scouting/comparison data and as feature input to the player valuation model.
+model PlayerSeasonStat {
+  id       String @id @default(cuid())
+  playerId String
+  season   Int // e.g. 2025 for the 2025-26 season
+  team     String // abbreviation at time of season (a player can be traded mid-season)
+
+  gamesPlayed          Int
+  minutesPerGame       Float
+  pointsPerGame        Float
+  reboundsPerGame      Float
+  assistsPerGame       Float
+  stealsPerGame        Float
+  blocksPerGame        Float
+  turnoversPerGame     Float
+  fgPct                Float?
+  fg3Pct               Float?
+  ftPct                Float?
+  trueShootingPct      Float?
+  usagePct             Float?
+  winSharesPer48       Float?
+  boxPlusMinus         Float?
+  valueOverReplacement Float?
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, season, team])
+  @@index([playerId])
+  @@map("player_season_stats")
+}
+
+// ---------------------------------------------------------------------------
+// Per-save simulation state
+// ---------------------------------------------------------------------------
+
+model League {
+  id                   String    @id @default(cuid())
+  name                 String
+  ownerId              String
+  userControlledTeamId String? // set once the user picks which franchise to run
+  currentSeason        Int // e.g. 2025 for 2025-26
+  seasonStartedAt      DateTime  @default(now())
+  salaryCapOverrideCents BigInt? // null = use the league-wide default for currentSeason
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  owner            User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  teams            LeagueTeam[]
+  players          LeaguePlayer[]
+  draftPicks       DraftPick[]
+  trades           Trade[]
+  tradeExceptions  TradeException[]
+  assistantThreads AssistantThread[]
+
+  @@index([ownerId])
+  @@map("leagues")
+}
+
+model LeagueTeam {
+  id       String @id @default(cuid())
+  leagueId String
+  teamId   String
+
+  wins   Int @default(0)
+  losses Int @default(0)
+
+  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  players         LeaguePlayer[]
+  contracts       Contract[]
+  ownedPicks      DraftPick[]      @relation("CurrentOwner")
+  originalPicks   DraftPick[]      @relation("OriginalTeam")
+  tradeExceptions TradeException[]
+  tradeAssetsFrom TradeAsset[]     @relation("AssetFromTeam")
+  tradeAssetsTo   TradeAsset[]     @relation("AssetToTeam")
+
+  @@unique([leagueId, teamId])
+  @@index([leagueId])
+  @@map("league_teams")
+}
+
+enum InjuryStatus {
+  HEALTHY
+  DAY_TO_DAY
+  OUT
+  SEASON_ENDING
+}
+
+// The mutable, per-save copy of a player: this is what trades, aging, and
+// development actually operate on. `overallRating` drifts over time (an age
+// curve applied per season) independently in every league.
+model LeaguePlayer {
+  id              String       @id @default(cuid())
+  leagueId        String
+  playerId        String
+  leagueTeamId    String? // null = unsigned free agent within this league
+  overallRating   Int // 0-100 composite used by the valuation model & AI GMs
+  potentialRating Int
+  injuryStatus    InjuryStatus @default(HEALTHY)
+  isActive        Boolean      @default(true) // false once retired within this league
+
+  league      League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  player      Player       @relation(fields: [playerId], references: [id])
+  leagueTeam  LeagueTeam?  @relation(fields: [leagueTeamId], references: [id])
+  contract    Contract?
+  tradeAssets TradeAsset[]
+
+  @@unique([leagueId, playerId])
+  @@index([leagueId, leagueTeamId])
+  @@map("league_players")
+}
+
+enum ContractOptionType {
+  NONE
+  PLAYER_OPTION
+  TEAM_OPTION
+}
+
+enum ExceptionUsed {
+  NONE
+  MAX
+  MID_LEVEL_TAXPAYER
+  MID_LEVEL_ROOM
+  MID_LEVEL_NON_TAXPAYER
+  BI_ANNUAL
+  ROOKIE_SCALE
+  VETERAN_MINIMUM
+  BIRD_RIGHTS
+  EARLY_BIRD_RIGHTS
+  NON_BIRD_RIGHTS
+}
+
+model Contract {
+  id             String        @id @default(cuid())
+  leaguePlayerId String        @unique
+  leagueTeamId   String
+  signedSeason   Int
+  startSeason    Int
+  endSeason      Int
+  noTradeClause  Boolean       @default(false)
+  signedUsing    ExceptionUsed @default(NONE)
+
+  leaguePlayer LeaguePlayer   @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
+  leagueTeam   LeagueTeam     @relation(fields: [leagueTeamId], references: [id])
+  years        ContractYear[]
+
+  @@index([leagueTeamId])
+  @@map("contracts")
+}
+
+// One row per season of a contract, so cap hits (which can balloon/decline,
+// include partial guarantees, and carry options) are modeled precisely
+// instead of assuming flat annual salaries.
+model ContractYear {
+  id              String             @id @default(cuid())
+  contractId      String
+  season          Int
+  salaryCents     BigInt
+  guaranteedCents BigInt
+  optionType      ContractOptionType @default(NONE)
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@unique([contractId, season])
+  @@map("contract_years")
+}
+
+model DraftPick {
+  id             String  @id @default(cuid())
+  leagueId       String
+  season         Int
+  round          Int // 1 or 2
+  originalTeamId String
+  currentOwnerId String
+  protectionNote String? // free text, e.g. "Top-4 protected, converts to 2027 2nd if not conveyed"
+
+  league       League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  originalTeam LeagueTeam   @relation("OriginalTeam", fields: [originalTeamId], references: [id])
+  currentOwner LeagueTeam   @relation("CurrentOwner", fields: [currentOwnerId], references: [id])
+  tradeAssets  TradeAsset[]
+
+  @@index([leagueId])
+  @@map("draft_picks")
+}
+
+enum TradeStatus {
+  PROPOSED
+  ACCEPTED
+  REJECTED
+  EXECUTED
+  CANCELLED
+}
+
+model Trade {
+  id               String      @id @default(cuid())
+  leagueId         String
+  proposedById     String // LeagueTeam id
+  status           TradeStatus @default(PROPOSED)
+  validationResult Json? // snapshot of the validator's rule-by-rule pass/fail output
+  createdAt        DateTime    @default(now())
+  resolvedAt       DateTime?
+
+  league League      @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  assets TradeAsset[]
+
+  @@index([leagueId])
+  @@map("trades")
+}
+
+enum TradeAssetType {
+  PLAYER
+  DRAFT_PICK
+  CASH
+  TRADE_EXCEPTION
+}
+
+model TradeAsset {
+  id               String         @id @default(cuid())
+  tradeId          String
+  type             TradeAssetType
+  fromLeagueTeamId String
+  toLeagueTeamId   String
+  leaguePlayerId   String?
+  draftPickId      String?
+  cashCents        BigInt?
+
+  trade        Trade        @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  fromTeam     LeagueTeam   @relation("AssetFromTeam", fields: [fromLeagueTeamId], references: [id])
+  toTeam       LeagueTeam   @relation("AssetToTeam", fields: [toLeagueTeamId], references: [id])
+  leaguePlayer LeaguePlayer? @relation(fields: [leaguePlayerId], references: [id])
+  draftPick    DraftPick?    @relation(fields: [draftPickId], references: [id])
+
+  @@index([tradeId])
+  @@map("trade_assets")
+}
+
+// Created when a team trades away a player for less than they take back
+// (or via a sign-and-trade); bankable for one year to absorb salary later.
+model TradeException {
+  id           String    @id @default(cuid())
+  leagueId     String
+  leagueTeamId String
+  amountCents  BigInt
+  createdAt    DateTime  @default(now())
+  expiresAt    DateTime
+  usedAt       DateTime?
+
+  league     League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueTeam LeagueTeam @relation(fields: [leagueTeamId], references: [id])
+
+  @@index([leagueId, leagueTeamId])
+  @@map("trade_exceptions")
+}
+
+// ---------------------------------------------------------------------------
+// AI GM Assistant
+// ---------------------------------------------------------------------------
+
+enum AssistantRole {
+  USER
+  ASSISTANT
+  TOOL
+}
+
+model AssistantThread {
+  id        String   @id @default(cuid())
+  leagueId  String
+  title     String
+  createdAt DateTime @default(now())
+
+  league   League             @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  messages AssistantMessage[]
+
+  @@index([leagueId])
+  @@map("assistant_threads")
+}
+
+model AssistantMessage {
+  id             String        @id @default(cuid())
+  threadId       String
+  role           AssistantRole
+  content        String        @db.Text
+  toolName       String? // set when role = TOOL: which grounding tool produced this content
+  toolResultJson Json?
+  createdAt      DateTime      @default(now())
+
+  thread AssistantThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId])
+  @@map("assistant_messages")
+}
