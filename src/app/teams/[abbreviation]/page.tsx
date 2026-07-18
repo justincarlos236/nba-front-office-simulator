@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { deriveOverallRating } from "@/lib/league/ratingFromStats";
+import { RosterScatterChart } from "@/components/teams/RosterScatterChart";
 
 interface PageProps {
   params: Promise<{ abbreviation: string }>;
@@ -57,6 +58,28 @@ export default async function TeamDetailPage({ params }: PageProps) {
           </h1>
         </div>
       </div>
+
+      {roster.some((r) => r.stat) && (
+        <div className="mt-10 rounded-xl border border-border bg-surface p-6">
+          <h2 className="font-semibold text-foreground">Minutes vs. rating</h2>
+          <p className="mt-1 text-sm text-muted">
+            Bubble size is scoring volume. Top-left = efficient players not getting many minutes;
+            bottom-right = heavy minutes without the rating to match.
+          </p>
+          <div className="mt-4">
+            <RosterScatterChart
+              points={roster
+                .filter((r) => r.stat && r.rating !== null)
+                .map((r) => ({
+                  name: r.player.fullName,
+                  minutesPerGame: r.stat!.minutesPerGame,
+                  rating: r.rating!,
+                  pointsPerGame: r.stat!.pointsPerGame,
+                }))}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="mt-10 overflow-x-auto rounded-xl border border-border">
         <table className="w-full text-left text-sm">
