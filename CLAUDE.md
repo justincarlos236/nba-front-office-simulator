@@ -21,3 +21,10 @@ free agents, and (eventually) get advice from an AI assistant. See
   implement anything from it just because it's listed there — prioritize
   based on dependencies, project stability, technical feasibility, and the
   user's explicit instructions at the time.
+- `docs/IMPLEMENTATION_PLAN.md` — the living tracker mapping every one of
+  the 100 `FEATURE_ROADMAP.md` items to its actual, verified status
+  (fully/partially/not implemented/blocked), priority, dependencies, and
+  planned development phase. **This is where active roadmap execution is
+  tracked** — check it before starting new roadmap-driven work, and update
+  it as features move between statuses. Note: the AI GM assistant (#5/#49)
+  is explicitly paused at the user's request; don't resume it unprompted.
