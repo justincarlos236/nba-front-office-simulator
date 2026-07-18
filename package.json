@@ -19,6 +19,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "import:season-stats": "tsx scripts/import-season-stats.ts",
     "import:players": "tsx scripts/import-players.ts",
+    "postinstall": "prisma generate",
     "prepare": "husky"
   },
   "dependencies": {
