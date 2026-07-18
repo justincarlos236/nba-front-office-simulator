@@ -22,14 +22,19 @@ each phase reaches a genuinely polished, tested state before moving on.
 - [ ] "New league" flow: clone the snapshot into a fresh `League`, let the
       user pick which team to run
 
-## M2 — Salary cap & trade engine
+## M2 — Salary cap & trade engine (started early — pure logic, no DB needed)
 
-- [ ] Cap sheet calculator: committed salary, cap holds, dead money, tax/
-      apron status per team per season
+- [x] Season-by-season CBA constants (cap/tax/apron thresholds, MLE variants)
+- [x] Apron classification + mid-level exception eligibility
+- [x] Cap sheet calculator: committed salary, empty-roster charges, dead
+      money, apron status, cap space per team per season
+- [x] Trade legality validator: cap-space vs. over-the-cap salary matching,
+      second-apron no-aggregation rule, no-trade clauses, Stepien-lite
+      draft pick rule, multi-team trades
+- [x] Unit test suite (39 tests) covering the above as the primary
+      correctness story
 - [ ] Free agency signing tools (MLE variants, Bird rights, minimums)
-- [ ] Trade legality validator (salary matching bands, aggregation limits,
-      apron restrictions, trade exceptions, draft pick rules)
-- [ ] Unit test suite covering the above as the primary correctness story
+- [ ] Wire the engine into real Prisma-backed data once M1 seeding lands
 
 ## M3 — Core UI
 

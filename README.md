@@ -21,15 +21,15 @@ and [docs/ROADMAP.md](docs/ROADMAP.md) for what's built vs. planned.
 
 ## Tech stack
 
-| Layer      | Choice                                                        |
-| ---------- | -------------------------------------------------------------- |
-| Frontend   | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS   |
-| Database   | PostgreSQL, Prisma 7 ORM                                       |
-| Auth       | Auth.js (NextAuth v5), multi-tenant per-user franchise saves   |
+| Layer      | Choice                                                                  |
+| ---------- | ----------------------------------------------------------------------- |
+| Frontend   | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS             |
+| Database   | PostgreSQL, Prisma 7 ORM                                                |
+| Auth       | Auth.js (NextAuth v5), multi-tenant per-user franchise saves            |
 | AI         | Claude API (`@anthropic-ai/sdk`), tool-use grounded in live league data |
-| Testing    | Vitest (unit) + Playwright (e2e)                               |
-| CI/CD      | GitHub Actions                                                 |
-| Deployment | Vercel + Neon Postgres                                         |
+| Testing    | Vitest (unit) + Playwright (e2e)                                        |
+| CI/CD      | GitHub Actions                                                          |
+| Deployment | Vercel + Neon Postgres                                                  |
 
 ## Getting started
 
