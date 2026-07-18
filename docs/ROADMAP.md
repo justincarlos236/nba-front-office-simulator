@@ -45,7 +45,8 @@ each phase reaches a genuinely polished, tested state before moving on.
 
 ## M4 — AI GM assistant
 
-- [ ] Player valuation model (surplus value, age curve)
+- [x] Player valuation model (performance composite, age curve, surplus
+      value vs. actual salary) — pure logic, unit tested
 - [ ] Claude-powered assistant with tool-use into cap/trade/valuation logic
 - [ ] Chat UI, persisted per league
 
