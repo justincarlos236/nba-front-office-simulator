@@ -41,8 +41,9 @@ each phase reaches a genuinely polished, tested state before moving on.
       draft pick rule, multi-team trades
 - [x] Unit test suite (39 tests) covering the above as the primary
       correctness story
+- [x] Wired into real Prisma-backed data via the trade builder (M3) - the
+      validator runs unmodified against live league cap sheets
 - [ ] Free agency signing tools (MLE variants, Bird rights, minimums)
-- [ ] Wire the engine into real Prisma-backed data once M1 seeding lands
 
 ## M3 — Core UI (started early)
 
@@ -58,7 +59,13 @@ each phase reaches a genuinely polished, tested state before moving on.
 - [x] League dashboard (`/leagues/[id]`) - the signed-in user's own team's
       live cap sheet (committed salary, cap space, apron status) and full
       roster with real generated contracts
-- [ ] Interactive trade builder with live legality feedback
+- [x] Interactive trade builder (`/leagues/[id]/trades/new`) - pick an
+      opposing team, select players on each side, get instant legality
+      feedback from the same `validateTrade` engine, execute the trade
+      (re-validated server-side, never trusting the client) in a DB
+      transaction that actually reassigns players/contracts between teams.
+      Player-only for now - draft pick trading needs a pick inventory that
+      isn't generated during league bootstrap yet.
 - [ ] Free agency board
 
 ## M4 — AI GM assistant

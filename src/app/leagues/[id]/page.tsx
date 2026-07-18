@@ -49,7 +49,7 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
   return (
     <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
       <div
-        className="flex items-center gap-4 border-l-4 pl-4"
+        className="flex items-center justify-between gap-4 border-l-4 pl-4"
         style={{ borderLeftColor: userLeagueTeam.team.primaryColor }}
       >
         <div>
@@ -60,6 +60,12 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
             {userLeagueTeam.team.city} {userLeagueTeam.team.name}
           </h1>
         </div>
+        <Link
+          href={`/leagues/${league.id}/trades/new`}
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90"
+        >
+          Propose a trade
+        </Link>
       </div>
 
       <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">

@@ -1,0 +1,37 @@
+import { test, expect } from "@playwright/test";
+
+// Bootstrapping a league is slow (~500 rows) - see league-creation.spec.ts.
+test.setTimeout(60_000);
+
+test("propose and execute a legal trade, and the rosters actually swap", async ({ page }) => {
+  const email = `trade-e2e-${Date.now()}@example.com`;
+
+  await page.goto("/sign-up");
+  await page.fill('input[name="name"]', "Trade E2E");
+  await page.fill('input[name="email"]', email);
+  await page.fill('input[name="password"]', "correct-horse-battery-staple");
+  await page.click('button[type="submit"]');
+  await expect(page.getByRole("heading", { name: "Pick your team" })).toBeVisible({
+    timeout: 20_000,
+  });
+
+  await page.getByText("Boston Celtics").click();
+  await expect(page.getByText("Committed salary")).toBeVisible({ timeout: 30_000 });
+
+  await page.getByText("Propose a trade").click();
+  await expect(page.getByRole("heading", { name: "Propose a trade with..." })).toBeVisible();
+  await page.locator("a[href*='trades/new?with=']").first().click();
+  await expect(page.getByText("Select players on each side")).toBeVisible();
+
+  // Click the player name labels directly, as a real user would - clicking
+  // a container div near (but not on) the checkbox doesn't toggle it.
+  await page.getByText("Jayson Tatum", { exact: true }).click();
+  await page.getByText("Julius Randle", { exact: true }).click();
+  await expect(page.getByText("Trade is legal under current cap rules.")).toBeVisible();
+
+  await page.getByText("Execute trade").click();
+  await expect(page.getByText("Committed salary")).toBeVisible({ timeout: 15_000 });
+
+  await expect(page.getByText("Julius Randle")).toBeVisible();
+  await expect(page.getByText("Jayson Tatum")).not.toBeVisible();
+});
