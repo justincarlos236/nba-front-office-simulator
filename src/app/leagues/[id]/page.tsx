@@ -60,12 +60,20 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
             {userLeagueTeam.team.city} {userLeagueTeam.team.name}
           </h1>
         </div>
-        <Link
-          href={`/leagues/${league.id}/trades/new`}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90"
-        >
-          Propose a trade
-        </Link>
+        <div className="flex gap-3">
+          <Link
+            href={`/leagues/${league.id}/free-agents`}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
+          >
+            Free agents
+          </Link>
+          <Link
+            href={`/leagues/${league.id}/trades/new`}
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90"
+          >
+            Propose a trade
+          </Link>
+        </div>
       </div>
 
       <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">

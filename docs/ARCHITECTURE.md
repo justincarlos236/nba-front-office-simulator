@@ -68,13 +68,38 @@ Shipped:
 
 Not yet built:
 
-- Free agency signing tools (full/room/taxpayer mid-level exception,
-  bi-annual exception, Bird rights, veteran minimums).
+- The bi-annual exception and Bird/Early-Bird/Non-Bird re-signing rights.
 - Trading draft picks - the Stepien-lite check exists in `validateTrade`,
   but no `DraftPick` inventory is generated during league bootstrap yet, so
   the trade builder is player-only for now.
 - Trade exceptions (created when a team takes back less than it sends out)
   aren't banked/spendable yet, even though the `TradeException` model exists.
+
+## Free agency
+
+`validateSigning` (`src/lib/freeagency/validateSigning.ts`) checks whether
+a team can sign a free agent at a given first-year salary: cap space for
+teams under the cap, the non-taxpayer/taxpayer mid-level exception for
+teams over it (gated by apron level via the same `eligibleMidLevelException`
+the trade engine uses), or a veteran-minimum deal, which is always legal
+regardless of apron status - the one exception the CBA never restricts.
+The free agency board (`/leagues/[id]/free-agents`) and offer flow follow
+the exact same pattern as the trade builder: live client-side validation
+as the user edits the offer, then a full server-side re-validation in
+`signFreeAgentAction` before any write happens.
+
+Every real player in the snapshot currently has a real team, which would
+leave free agency permanently empty. League bootstrap works around this by
+starting fringe/replacement-level players (rating below 25, roughly the
+bottom 15% - two-way/10-day caliber in reality) as unsigned free agents
+instead of placing them on their actual current team; every other real
+player starts on their real team as usual.
+
+Known simplification: this checks each signing against the exception's
+full per-season ceiling, but doesn't track cumulative exception spend
+across multiple signings the way the real MLE (one bucket to split across
+any number of players in a season) works - a full offseason-length
+simulation is future work.
 
 ## AI GM assistant
 

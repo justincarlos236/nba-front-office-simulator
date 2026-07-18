@@ -43,7 +43,13 @@ each phase reaches a genuinely polished, tested state before moving on.
       correctness story
 - [x] Wired into real Prisma-backed data via the trade builder (M3) - the
       validator runs unmodified against live league cap sheets
-- [ ] Free agency signing tools (MLE variants, Bird rights, minimums)
+- [x] Free agency signing validator (`validateSigning`): cap space, non-
+      taxpayer/taxpayer mid-level exception (gated by apron), and a
+      veteran-minimum deal that's always legal regardless of apron status.
+      Simplification: checks each signing against the exception's full
+      per-season ceiling, doesn't track cumulative spend across multiple
+      signings the way the real MLE (one bucket to split) works
+- [ ] Bird rights / Early-Bird / Non-Bird re-signing rules
 
 ## M3 — Core UI (started early)
 
@@ -66,7 +72,12 @@ each phase reaches a genuinely polished, tested state before moving on.
       transaction that actually reassigns players/contracts between teams.
       Player-only for now - draft pick trading needs a pick inventory that
       isn't generated during league bootstrap yet.
-- [ ] Free agency board
+- [x] Free agency board (`/leagues/[id]/free-agents`) - 77 real,
+      fringe/replacement-level players (bottom ~15% by rating - two-way/
+      10-day caliber in reality) start unsigned so the board has real
+      content; every other real player starts on their actual current
+      team. Offering a contract gets the same live-validated,
+      server-re-validated pattern as the trade builder.
 
 ## M4 — AI GM assistant
 

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { planLeaguePlayer } from "@/lib/league/planLeaguePlayer";
 
 const SEASON = 2023;
+const FREE_AGENT_RATING_CUTOFF = 25;
 
 /**
  * Real birth dates aren't available from the free bio API (see
@@ -68,10 +69,10 @@ export async function createLeagueAction(formData: FormData) {
 
   const plans = players.map((player) => {
     const stat = player.seasonStats[0];
-    const leagueTeamId = player.currentTeamId
+    const realTeamLeagueTeamId = player.currentTeamId
       ? (teamIdToLeagueTeamId.get(player.currentTeamId) ?? null)
       : null;
-    if (!stat) return { player, leagueTeamId, plan: null };
+    if (!stat) return { player, leagueTeamId: realTeamLeagueTeamId, plan: null };
 
     const plan = planLeaguePlayer({
       season: SEASON,
@@ -80,6 +81,13 @@ export async function createLeagueAction(formData: FormData) {
       stats: { ...stat, trueShootingPct: stat.trueShootingPct ?? 0.56 },
       seed: player.id,
     });
+
+    // Every real player in the snapshot currently has a team, which would
+    // leave free agency permanently empty. Fringe/replacement-level
+    // players (bottom ~15% by rating - two-way/10-day caliber in reality)
+    // start as unsigned free agents instead, so the board has real content.
+    const leagueTeamId =
+      plan.overallRating < FREE_AGENT_RATING_CUTOFF ? null : realTeamLeagueTeamId;
     return { player, leagueTeamId, plan };
   });
 
