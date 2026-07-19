@@ -20,6 +20,18 @@ remaining work into ordered, self-contained development phases.
   usage, not assumptions) as of **2026-07-18**. If this file and the code
   disagree, trust the code and fix this file.
 
+**Quality bar (applies to every phase, not just the one that prompted
+this note):** passing tests/build/e2e proves a feature is _correct_, not
+that it's _impressive_. Before marking any phase done, do a deliberate
+second pass from the user's actual in-app perspective: Is the user's own
+team/data visually distinguished anywhere it appears (not just buried in
+a neutral list)? Is there data already being computed/stored that never
+actually reaches the UI? Would a reviewer clicking through this feel like
+it was designed, or just built to the minimum spec? Close gaps like these
+using data/plumbing that already exists - this is about polish, not about
+opening new scope (keep it proportionate; don't turn a phase into
+unbounded extra work over it).
+
 ## Legend
 
 - **Status**: ✅ Fully Implemented · 🟡 Partially Implemented · ⬜ Not
