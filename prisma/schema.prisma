@@ -186,6 +186,7 @@ model League {
   tradeExceptions  TradeException[]
   assistantThreads AssistantThread[]
   games            Game[]
+  playoffSeries    PlayoffSeries[]
 
   @@index([ownerId])
   @@map("leagues")
@@ -211,33 +212,77 @@ model LeagueTeam {
   tradeAssetsTo   TradeAsset[]     @relation("AssetToTeam")
   homeGames       Game[]           @relation("HomeGames")
   awayGames       Game[]           @relation("AwayGames")
+  higherSeedIn    PlayoffSeries[]  @relation("HigherSeedSeries")
+  lowerSeedIn     PlayoffSeries[]  @relation("LowerSeedSeries")
+  wonSeries       PlayoffSeries[]  @relation("WonSeries")
 
   @@unique([leagueId, teamId])
   @@index([leagueId])
   @@map("league_teams")
 }
 
-// A simplified, strength-based regular-season schedule entry (see
-// docs/ARCHITECTURE.md for how this differs from the real NBA schedule
-// algorithm). `homeScore`/`awayScore` are null until simulated.
+enum GameType {
+  REGULAR_SEASON
+  PLAY_IN
+  PLAYOFF
+}
+
+// A simplified, strength-based schedule entry covering the regular season,
+// play-in, and playoffs alike (see docs/ARCHITECTURE.md for how this
+// differs from the real NBA). `homeScore`/`awayScore` are null until
+// simulated. `seriesId` is set only for PLAYOFF games.
 model Game {
   id               String    @id @default(cuid())
   leagueId         String
   season           Int
   gameNumber       Int // this team's/league's sequence position, not a calendar date
+  type             GameType  @default(REGULAR_SEASON)
+  seriesId         String?
   homeLeagueTeamId String
   awayLeagueTeamId String
   homeScore        Int?
   awayScore        Int?
   playedAt         DateTime?
 
-  league   League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  homeTeam LeagueTeam @relation("HomeGames", fields: [homeLeagueTeamId], references: [id])
-  awayTeam LeagueTeam @relation("AwayGames", fields: [awayLeagueTeamId], references: [id])
+  league   League         @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  homeTeam LeagueTeam     @relation("HomeGames", fields: [homeLeagueTeamId], references: [id])
+  awayTeam LeagueTeam     @relation("AwayGames", fields: [awayLeagueTeamId], references: [id])
+  series   PlayoffSeries? @relation(fields: [seriesId], references: [id], onDelete: Cascade)
 
   @@index([leagueId, season])
   @@index([leagueId, playedAt])
   @@map("games")
+}
+
+// Round 0 = play-in (single elimination, winsNeeded 1); round 1 = first
+// round, 2 = conference semis, 3 = conference finals, 4 = NBA Finals
+// (conference null for round 4). Best-of-7 rounds need 4 wins.
+model PlayoffSeries {
+  id               String      @id @default(cuid())
+  leagueId         String
+  season           Int
+  round            Int
+  // Position within this round+conference group (0-based). The next round's
+  // slot N is always the winner of this round's slot 2N vs. slot 2N+1 - a
+  // fixed single-elimination bracket, not a reseeded one, matching the real
+  // NBA playoff format.
+  bracketSlot      Int         @default(0)
+  conference       Conference?
+  higherSeedTeamId String
+  lowerSeedTeamId  String
+  winsNeeded       Int         @default(4)
+  higherSeedWins   Int         @default(0)
+  lowerSeedWins    Int         @default(0)
+  winnerTeamId     String?
+
+  league         League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  higherSeedTeam LeagueTeam @relation("HigherSeedSeries", fields: [higherSeedTeamId], references: [id])
+  lowerSeedTeam  LeagueTeam @relation("LowerSeedSeries", fields: [lowerSeedTeamId], references: [id])
+  winnerTeam     LeagueTeam? @relation("WonSeries", fields: [winnerTeamId], references: [id])
+  games          Game[]
+
+  @@index([leagueId, season, round])
+  @@map("playoff_series")
 }
 
 enum InjuryStatus {

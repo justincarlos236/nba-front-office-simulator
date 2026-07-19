@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -86,9 +87,22 @@ export default async function StandingsPage({ params }: PageProps) {
   });
   if (!league || league.ownerId !== session.user.id) notFound();
 
-  const gamesRemaining = await prisma.game.count({
-    where: { leagueId: league.id, season: league.currentSeason, playedAt: null },
-  });
+  const [gamesRemaining, recentResults] = await Promise.all([
+    prisma.game.count({
+      where: {
+        leagueId: league.id,
+        season: league.currentSeason,
+        type: "REGULAR_SEASON",
+        playedAt: null,
+      },
+    }),
+    prisma.game.findMany({
+      where: { leagueId: league.id, season: league.currentSeason, playedAt: { not: null } },
+      include: { homeTeam: { include: { team: true } }, awayTeam: { include: { team: true } } },
+      orderBy: { playedAt: "desc" },
+      take: 10,
+    }),
+  ]);
 
   const eastTeams = league.teams
     .filter((lt) => lt.team.conference === "EAST")
@@ -109,9 +123,17 @@ export default async function StandingsPage({ params }: PageProps) {
 
   return (
     <main className="mx-auto max-w-4xl flex-1 px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground">
-        {league.currentSeason}-{(league.currentSeason + 1).toString().slice(-2)} Standings
-      </h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          {league.currentSeason}-{(league.currentSeason + 1).toString().slice(-2)} Standings
+        </h1>
+        <Link
+          href={`/leagues/${league.id}/playoffs`}
+          className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
+        >
+          Playoffs
+        </Link>
+      </div>
       <p className="mt-2 max-w-2xl text-muted">
         A simplified, strength-based simulation (not possession-by-possession) - each team&apos;s
         rotation ratings determine a win probability per game, with a small home-court edge. See
@@ -134,6 +156,47 @@ export default async function StandingsPage({ params }: PageProps) {
           userTeamId={league.userControlledTeamId}
         />
       </div>
+
+      {recentResults.length > 0 && (
+        <div className="mt-10">
+          <h2 className="text-lg font-semibold text-foreground">Recent Results</h2>
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {recentResults.map((g) => (
+              <div key={g.id} className="rounded-lg border border-border bg-surface p-4 text-sm">
+                <div className="flex items-center justify-between">
+                  <span
+                    className={
+                      (g.homeScore ?? 0) > (g.awayScore ?? 0)
+                        ? "font-semibold text-foreground"
+                        : "text-muted"
+                    }
+                  >
+                    {g.homeTeam.team.city} {g.homeTeam.team.name}
+                  </span>
+                  <span className="font-mono">{g.homeScore}</span>
+                </div>
+                <div className="mt-1 flex items-center justify-between">
+                  <span
+                    className={
+                      (g.awayScore ?? 0) > (g.homeScore ?? 0)
+                        ? "font-semibold text-foreground"
+                        : "text-muted"
+                    }
+                  >
+                    {g.awayTeam.team.city} {g.awayTeam.team.name}
+                  </span>
+                  <span className="font-mono">{g.awayScore}</span>
+                </div>
+                {g.type !== "REGULAR_SEASON" && (
+                  <p className="mt-1 text-xs tracking-wide text-muted uppercase">
+                    {g.type === "PLAY_IN" ? "Play-in" : "Playoffs"}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </main>
   );
 }

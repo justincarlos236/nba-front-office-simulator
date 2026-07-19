@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { computeTeamStrength } from "@/lib/simulation/teamStrength";
+import { computeLeagueTeamStrengths } from "@/lib/actions/leagueTeamStrength";
 import { simulateGame } from "@/lib/simulation/simulateGame";
 
 export type SimulateBatchSize = 1 | 10 | 50;
@@ -26,8 +26,12 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
     throw new Error("League not found");
   }
 
+  // type filter matters once play-in/playoff games exist for this season -
+  // those are always created already-played (see src/lib/actions/playoffs.ts),
+  // but this guards against ever picking one up as an "unplayed" regular
+  // season game regardless.
   const unplayedGames = await prisma.game.findMany({
-    where: { leagueId, season: league.currentSeason, playedAt: null },
+    where: { leagueId, season: league.currentSeason, type: "REGULAR_SEASON", playedAt: null },
     orderBy: { gameNumber: "asc" },
     take: batchSize,
   });
@@ -39,21 +43,7 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
     teamIds.add(game.awayLeagueTeamId);
   }
 
-  const rosterRatings = await prisma.leaguePlayer.findMany({
-    where: { leagueTeamId: { in: [...teamIds] } },
-    select: { leagueTeamId: true, overallRating: true },
-  });
-  const ratingsByTeam = new Map<string, number[]>();
-  for (const player of rosterRatings) {
-    if (!player.leagueTeamId) continue;
-    const ratings = ratingsByTeam.get(player.leagueTeamId) ?? [];
-    ratings.push(player.overallRating);
-    ratingsByTeam.set(player.leagueTeamId, ratings);
-  }
-  const strengthByTeam = new Map<string, number>();
-  for (const teamId of teamIds) {
-    strengthByTeam.set(teamId, computeTeamStrength(ratingsByTeam.get(teamId) ?? []));
-  }
+  const strengthByTeam = await computeLeagueTeamStrengths([...teamIds]);
 
   const winIncrements = new Map<string, number>();
   const lossIncrements = new Map<string, number>();
@@ -99,7 +89,7 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
   ]);
 
   const remaining = await prisma.game.count({
-    where: { leagueId, season: league.currentSeason, playedAt: null },
+    where: { leagueId, season: league.currentSeason, type: "REGULAR_SEASON", playedAt: null },
   });
 
   revalidatePath(`/leagues/${leagueId}`);

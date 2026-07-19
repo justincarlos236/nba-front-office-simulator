@@ -152,6 +152,52 @@ league bootstrap) is what wires them to the database.
   (expected here, since games are simulated in random schedule order, not
   strict rounds), which real standings never show.
 
+## Playoffs
+
+Built on top of the season-simulation engine above rather than duplicating
+it: play-in games and playoff series reuse `simulateGame` (and, for
+best-of-7 series, a home/away wrapper around it) with the same team
+strength numbers the regular season uses.
+
+- **Seeding** (`playoffSeeding.ts`): top 6 teams per conference by winning
+  percentage qualify directly; seeds 7-10 go to the play-in tournament.
+  Ties broken by total wins - a simplification of the real tiebreaker
+  rules (head-to-head, division standing, etc. aren't modeled).
+- **Play-in** (`playInTournament.ts`): the real 3-game format - 7 vs 8
+  (winner is the final 7-seed), 9 vs 10 (loser eliminated), then the
+  loser of the first game vs the winner of the second for the final
+  8-seed. Simulated all at once (not batched like the regular season)
+  since it's only 3 games per conference; the resulting `Game` rows are
+  created already-played (`type: PLAY_IN`).
+- **Series** (`simulateSeries.ts`): best-of-7 with the real 2-2-1-1-1
+  home-court pattern. `simulateSeriesToCompletion` plays out an entire
+  series in one call rather than one game at a time - unlike the regular
+  season, a full round is still only a handful of games per series, so
+  batching isn't needed to avoid a serverless timeout.
+- **Bracket structure** (`src/lib/actions/playoffs.ts`): a fixed
+  single-elimination bracket, not reseeded each round - round-1 matchups
+  are 1v8, 4v5, 2v7, 3v6 within each conference, and each round's winners
+  feed a specific next-round slot (`PlayoffSeries.bracketSlot`), exactly
+  like the real playoffs (the 1/8-or-4/5 survivor always meets the
+  2/7-or-3/6 survivor in the conference finals). Home-court advantage in
+  rounds 2+ (and the cross-conference Finals) goes to whichever advancing
+  team had the better regular-season record, per the real NBA rule
+  (`pickHigherSeed`).
+- **Two server actions**, gated and re-validated server-side (never just
+  hidden in the UI): `startPlayoffsAction` requires the regular season to
+  be fully played and refuses to run twice for the same season;
+  `simulateRoundAction` resolves every remaining series in the current
+  round to completion, then either creates the next round's series or -
+  at the NBA Finals - crowns a champion.
+- Playoff/play-in games never update `LeagueTeam.wins`/`losses` - those
+  stay a pure regular-season record, matching the real distinction between
+  regular-season and playoff records. Series records live on
+  `PlayoffSeries` itself and are what the bracket UI reads.
+- `simulateGamesAction` (regular season) now filters its "unplayed games"
+  query by `type: REGULAR_SEASON`. Play-in/playoff games are always
+  created already-played, so this never mattered in practice, but it
+  guards against ever mixing the two once both exist in the same season.
+
 ## AI GM assistant
 
 The assistant is not a chat window that free-associates about basketball.
