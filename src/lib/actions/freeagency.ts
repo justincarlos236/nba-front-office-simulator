@@ -5,6 +5,8 @@ import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
 import { prisma } from "@/lib/prisma";
 import { validateSigning } from "@/lib/freeagency/validateSigning";
+import { computeReSigningMaxOfferCents } from "@/lib/freeagency/reSigningRights";
+import { getSigningExceptionUsage } from "@/lib/actions/signingException";
 import { describeSigning } from "@/lib/transactions/describeTransaction";
 
 export interface SignFreeAgentInput {
@@ -53,12 +55,13 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
   const offerSalaryCents = BigInt(input.offerSalaryCents);
   if (offerSalaryCents <= 0n) throw new Error("Offer must be a positive amount");
 
-  const [myPlayers, myLeagueTeam] = await Promise.all([
+  const [myPlayers, myLeagueTeam, signingExceptionUsedCents] = await Promise.all([
     prisma.leaguePlayer.findMany({
       where: { leagueTeamId: myLeagueTeamId },
       include: { contract: { include: { years: { where: { season: league.currentSeason } } } } },
     }),
     prisma.leagueTeam.findUniqueOrThrow({ where: { id: myLeagueTeamId }, include: { team: true } }),
+    getSigningExceptionUsage(myLeagueTeamId, league.currentSeason),
   ]);
   const capSheet = computeCapSheet({
     season: league.currentSeason,
@@ -70,7 +73,15 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
   const validation = validateSigning({
     season: league.currentSeason,
     offerSalaryCents,
-    team: { apronLevel: capSheet.apronLevel, capSpaceCents: capSheet.capSpaceCents },
+    team: {
+      apronLevel: capSheet.apronLevel,
+      capSpaceCents: capSheet.capSpaceCents,
+      signingExceptionUsedCents,
+    },
+    reSigningRights: {
+      held: freeAgent.reSigningTeamId === myLeagueTeamId,
+      maxOfferCents: computeReSigningMaxOfferCents(freeAgent.overallRating, league.currentSeason),
+    },
   });
   if (!validation.isValid) {
     throw new Error(validation.violation ?? "This offer isn't legal under current cap rules.");
@@ -79,7 +90,7 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
   await prisma.$transaction(async (tx) => {
     await tx.leaguePlayer.update({
       where: { id: freeAgent.id },
-      data: { leagueTeamId: myLeagueTeamId },
+      data: { leagueTeamId: myLeagueTeamId, reSigningTeamId: myLeagueTeamId },
     });
 
     const contract = await tx.contract.create({
@@ -92,11 +103,13 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
         signedUsing:
           validation.mechanism === "VETERAN_MINIMUM"
             ? "VETERAN_MINIMUM"
-            : validation.mechanism === "CAP_SPACE"
-              ? "NONE"
-              : validation.mechanism === "NON_TAXPAYER_MLE"
-                ? "MID_LEVEL_NON_TAXPAYER"
-                : "MID_LEVEL_TAXPAYER",
+            : validation.mechanism === "RE_SIGNING_RIGHTS"
+              ? "BIRD_RIGHTS"
+              : validation.mechanism === "CAP_SPACE"
+                ? "NONE"
+                : validation.mechanism === "NON_TAXPAYER_MLE"
+                  ? "MID_LEVEL_NON_TAXPAYER"
+                  : "MID_LEVEL_TAXPAYER",
       },
     });
 

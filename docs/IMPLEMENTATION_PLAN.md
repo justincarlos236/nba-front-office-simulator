@@ -313,16 +313,20 @@ large for one pass. Split into sub-phases; only the first is done.
 
 - [x] **10a - Simplified financial presentation layer** ✅ DONE
       (2026-07-21): player market-value tiers, `Under the Cap`/`Over the
-    Cap`/`Luxury Tax` status replacing raw apron enums, plain-English
+  Cap`/`Luxury Tax` status replacing raw apron enums, plain-English
       trade/signing feasibility messaging - all sitting on top of the
       existing real cap engine, which is unchanged underneath. See
       `docs/ARCHITECTURE.md`'s "Simplified financial presentation layer".
-- [ ] **10b - Re-Signing Rights + tracked Signing Exception**: a real new
-      mechanic (a team's own expiring free agents currently have no
-      priority over outside teams - Bird-rights-equivalent access doesn't
-      exist yet) plus cumulative per-season exception spend tracking
-      (currently checked per-signing only, a known gap noted in the Free
-      Agency section of `docs/ARCHITECTURE.md`).
+- [x] **10b - Re-Signing Rights + tracked Signing Exception** ✅ DONE
+      (2026-07-21): `LeaguePlayer.reSigningTeamId` (new field + migration)
+      tracks which team holds a player's simplified Re-Signing Rights,
+      kept in sync on every signing/trade/draft assignment but not
+      cleared on contract expiration. A team holding rights can offer a
+      rating-based "fair market value" ceiling regardless of cap/apron
+      status. Signing Exception usage is now cumulative per season,
+      derived from existing `Contract.signedUsing` rows (no new running
+      total to keep in sync). See `docs/ARCHITECTURE.md`'s "Free agency"
+      section.
 - [ ] **10c - Multi-year cap projections + Financial Flexibility Grade**:
       a future-committed-payroll table (next several seasons) and an A-F
       grade summarizing it.
@@ -330,10 +334,44 @@ large for one pass. Split into sub-phases; only the first is done.
       big new GM-accountability meta-system - preseason expectations set
       from payroll tier + roster quality, end-of-season evaluation,
       confidence/job-security tracking, ownership directives, and a
-      firing consequence. Needs a product decision on what "fired"
-      actually does to a save (ends the franchise? lets the user pick a
-      new team in the same league?) before it can be built - not yet
-      asked, since it doesn't block 10b/10c.
+      firing _trigger_. Scoped deliberately narrow - what actually
+      happens to the save once fired is Phase 11's job.
+
+### Phase 11 — GM Career Mode
+
+Not yet started; design captured here so it isn't lost, per the user's
+own detailed brief (2026-07-21). Deliberately kept separate from 10d -
+this is a full second pillar (persistent, cross-league identity), not
+just "what happens when you're fired":
+
+- **GM Reputation (0-100)** - persistent on the _user_, not a single
+  league, since it's meant to follow a GM between jobs. Modifiers per the
+  brief: championships, exceeding preseason expectations, efficient
+  spending relative to payroll, successful trades, drafting stars,
+  developing young players, missing the playoffs, spending heavily while
+  losing, bad contracts/trades, repeatedly upsetting star players (this
+  last one needs a player-morale mechanic that doesn't exist yet either -
+  roadmap #31, unstarted).
+- **Getting fired is a dramatic event, not a quiet status change**: a
+  "YOU'VE BEEN FIRED" recap screen (final record, preseason expectation,
+  luxury-tax spend, owner confidence, a new "fan approval" concept, tenure
+  length, best playoff finish), then a choice:
+  - **Enter the GM Job Market** (the main path) - other teams make offers
+    based on current Reputation, each with its own situation/expectations/
+    cap flexibility/job security (e.g. a rebuild with high patience vs. a
+    win-now job with a short leash). A recently-fired elite GM can still
+    land a good job off reputation; a serially bad one only gets
+    rebuilding gigs.
+  - **Retire** - a full career summary (seasons, career record, playoff
+    appearances, championships, notable trades, career earnings, final
+    Reputation) plus a career grade/title (e.g. "Hall of Fame Executive").
+- **Open design questions for when this is actually scoped**: does
+  Reputation aggregate across a user's _simultaneous_ multi-franchise
+  saves (Phase 9) or only a single sequential "career," is a job offer a
+  reskinned version of the existing `/leagues/new` team-picker constrained
+  by reputation, and how much of the career-stat aggregation (best trade,
+  worst trade, career earnings) is realistic to compute after the fact
+  versus needing to be tracked incrementally as it happens.
 
 ### Not scheduled / deferred pending user
 
@@ -681,3 +719,28 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   Flexibility Grade, and the whole Owner Confidence/directives/firing
   system - all flagged to the user up front before starting, given the
   scope.
+- **2026-07-21 (later)**: Phase 10b completed. Added
+  `LeaguePlayer.reSigningTeamId` (migration, backfilled to match existing
+  rostered players' current team) - the simplified Re-Signing Rights
+  mechanic requested in 10a's brief but not actually built yet. Wired
+  into every path that changes who a player is signed to: user and CPU
+  free-agent signings, user and CPU trades (rights transfer to the
+  acquiring team, matching how real Bird rights travel), draft rookie
+  assignment, and league bootstrap - deliberately _not_ cleared on
+  contract expiration, so it still points at the player's last team while
+  they're a free agent. `validateSigning` gained a `reSigningRights`
+  input (checked before the normal cap-space/exception paths) and a
+  `signingExceptionUsedCents` input so exception offers are checked
+  against remaining room, not the full per-season ceiling - both
+  extended with new unit tests (17 across `validateSigning.test.ts` +
+  `reSigningRights.test.ts`, 246 total). `getSigningExceptionUsage`
+  derives cumulative usage from existing `Contract.signedUsing` rows
+  rather than a new tracked counter. UI: a "Re-Signing Rights" badge on
+  the free-agent list and offer page, and a Total/Used/Remaining Signing
+  Exception breakdown on the offer form. Verified visually end-to-end by
+  fast-forwarding a full season through the offseason (so a real expired
+  contract existed to test against) and confirming the badge, the
+  exception math, and the rejection of an over-the-line offer all
+  render correctly - not just that the unit tests pass. All 10 e2e tests
+  - 246 unit tests passing against a real production build. Next up:
+    **10c (multi-year cap projections + Financial Flexibility Grade)**.

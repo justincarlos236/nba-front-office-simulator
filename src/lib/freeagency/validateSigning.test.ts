@@ -65,4 +65,70 @@ describe("validateSigning", () => {
     expect(result.isValid).toBe(false);
     expect(result.violation).toMatch(/hard-capped/);
   });
+
+  it("lets a second-apron team re-sign its own player above every other limit via Re-Signing Rights", () => {
+    const result = validateSigning({
+      season: 2025,
+      offerSalaryCents: 30_000_000_00n,
+      team: { apronLevel: ApronLevel.SECOND_APRON, capSpaceCents: 0n },
+      reSigningRights: { held: true, maxOfferCents: 35_000_000_00n },
+    });
+    expect(result.isValid).toBe(true);
+    expect(result.mechanism).toBe("RE_SIGNING_RIGHTS");
+  });
+
+  it("doesn't grant Re-Signing Rights for a team that doesn't hold them, even under the ceiling", () => {
+    const result = validateSigning({
+      season: 2025,
+      offerSalaryCents: 30_000_000_00n,
+      team: { apronLevel: ApronLevel.SECOND_APRON, capSpaceCents: 0n },
+      reSigningRights: { held: false, maxOfferCents: 35_000_000_00n },
+    });
+    expect(result.isValid).toBe(false);
+  });
+
+  it("rejects a Re-Signing Rights offer above the player's ceiling, falling through to normal rules", () => {
+    const result = validateSigning({
+      season: 2025,
+      offerSalaryCents: 40_000_000_00n,
+      team: { apronLevel: ApronLevel.SECOND_APRON, capSpaceCents: 0n },
+      reSigningRights: { held: true, maxOfferCents: 35_000_000_00n },
+    });
+    expect(result.isValid).toBe(false);
+  });
+
+  it("reduces remaining Signing Exception room by what's already been used this season", () => {
+    const full = validateSigning({
+      season: 2025,
+      offerSalaryCents: rules.nonTaxpayerMLECents,
+      team: { apronLevel: ApronLevel.TAXPAYER, capSpaceCents: 0n },
+    });
+    expect(full.isValid).toBe(true);
+
+    const partiallyUsed = validateSigning({
+      season: 2025,
+      offerSalaryCents: rules.nonTaxpayerMLECents,
+      team: {
+        apronLevel: ApronLevel.TAXPAYER,
+        capSpaceCents: 0n,
+        signingExceptionUsedCents: 5_000_000_00n,
+      },
+    });
+    expect(partiallyUsed.isValid).toBe(false);
+    expect(partiallyUsed.maxAllowedCents).toBe(rules.nonTaxpayerMLECents - 5_000_000_00n);
+  });
+
+  it("fully exhausts the Signing Exception once used-up amount reaches the ceiling", () => {
+    const result = validateSigning({
+      season: 2025,
+      offerSalaryCents: rules.emptyRosterChargeCents + 1_00n,
+      team: {
+        apronLevel: ApronLevel.TAXPAYER,
+        capSpaceCents: 0n,
+        signingExceptionUsedCents: rules.nonTaxpayerMLECents,
+      },
+    });
+    expect(result.isValid).toBe(false);
+    expect(result.maxAllowedCents).toBe(0n);
+  });
 });

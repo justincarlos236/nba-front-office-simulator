@@ -39,8 +39,8 @@ export default async function FreeAgentsPage({ params }: PageProps) {
       <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground">Free agents</h1>
       <p className="mt-2 max-w-2xl text-muted">
         {freeAgents.length} unsigned players, real 2023-24 stats. Any team can always sign a player
-        to a veteran-minimum deal; bigger offers are gated by your cap space or mid-level exception,
-        checked live against the same cap engine as everything else.
+        to a Minimum Contract; bigger offers need Cap Space or a Signing Exception - unless you hold
+        that player&apos;s Re-Signing Rights, in which case you can exceed the cap to keep them.
       </p>
 
       <div className="mt-10 overflow-x-auto rounded-xl border border-border">
@@ -74,7 +74,14 @@ export default async function FreeAgentsPage({ params }: PageProps) {
                 : null;
               return (
                 <tr key={fa.id} className="border-t border-border hover:bg-surface/60">
-                  <td className="px-4 py-3 font-medium text-foreground">{fa.player.fullName}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">
+                    {fa.player.fullName}
+                    {fa.reSigningTeamId === league.userControlledTeamId && (
+                      <span className="ml-2 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-emerald-400 uppercase">
+                        Re-Signing Rights
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-muted">{fa.player.position}</td>
                   <td className="px-4 py-3 text-right font-mono text-accent">{fa.overallRating}</td>
                   <td className="px-4 py-3 text-xs text-muted">

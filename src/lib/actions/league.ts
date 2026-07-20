@@ -101,6 +101,7 @@ export async function createLeagueAction(formData: FormData) {
       leagueId: league.id,
       playerId: player.id,
       leagueTeamId,
+      reSigningTeamId: leagueTeamId,
       overallRating: plan?.overallRating ?? 50,
       potentialRating: plan?.potentialRating ?? 50,
     })),

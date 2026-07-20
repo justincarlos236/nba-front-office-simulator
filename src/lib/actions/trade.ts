@@ -148,7 +148,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
     for (const lp of myPlayers) {
       await tx.leaguePlayer.update({
         where: { id: lp.id },
-        data: { leagueTeamId: input.toTeamId },
+        data: { leagueTeamId: input.toTeamId, reSigningTeamId: input.toTeamId },
       });
       await tx.contract.update({
         where: { leaguePlayerId: lp.id },
@@ -158,7 +158,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
     for (const lp of theirPlayers) {
       await tx.leaguePlayer.update({
         where: { id: lp.id },
-        data: { leagueTeamId: input.fromTeamId },
+        data: { leagueTeamId: input.fromTeamId, reSigningTeamId: input.fromTeamId },
       });
       await tx.contract.update({
         where: { leaguePlayerId: lp.id },

@@ -5,16 +5,32 @@ import { isUnderCapSpace } from "../trade/salaryMatching";
 export interface SigningTeamCapState {
   apronLevel: ApronLevel;
   capSpaceCents: bigint;
+  /**
+   * Cumulative first-year salary this team has already committed via the
+   * (simplified, single) Signing Exception this season - see
+   * `getSigningExceptionUsage`. Checked against the *remaining* exception
+   * room, not the exception's full per-season ceiling, so a team can't
+   * re-use the same exception dollars on multiple players.
+   */
+  signingExceptionUsedCents?: bigint;
+}
+
+export interface ReSigningRights {
+  /** True when this team currently holds the player's simplified Re-Signing Rights. */
+  held: boolean;
+  /** The ceiling a team can offer via Re-Signing Rights, regardless of cap space - see computeReSigningMaxOfferCents. */
+  maxOfferCents: bigint;
 }
 
 export interface ValidateSigningInput {
   season: number;
   offerSalaryCents: bigint;
   team: SigningTeamCapState;
+  reSigningRights?: ReSigningRights;
 }
 
 export type SigningMechanism =
-  "CAP_SPACE" | "NON_TAXPAYER_MLE" | "TAXPAYER_MLE" | "VETERAN_MINIMUM";
+  "CAP_SPACE" | "NON_TAXPAYER_MLE" | "TAXPAYER_MLE" | "VETERAN_MINIMUM" | "RE_SIGNING_RIGHTS";
 
 export interface SigningValidationResult {
   isValid: boolean;
@@ -26,16 +42,13 @@ export interface SigningValidationResult {
 /**
  * Checks whether a team can sign a free agent at a given first-year salary,
  * using a simplified model of real signing mechanisms: cap space (teams
- * under the cap), the non-taxpayer/taxpayer mid-level exception (over the
- * cap, gated by apron level via `eligibleMidLevelException`), or a
- * veteran-minimum deal (always legal, regardless of apron status - the one
- * exception the CBA never restricts).
- *
- * Simplification: this checks each signing against the exception's full
- * per-season ceiling, but doesn't track cumulative exception spend across
- * multiple signings in the same offseason the way the real MLE (one bucket
- * to split across any number of players) works. Good enough to gate any
- * single signing realistically; not a full free-agency-period simulation.
+ * under the cap), Re-Signing Rights (a casual stand-in for Bird/Early-Bird
+ * rights - lets a player's own team exceed the cap up to a bounded "fair
+ * market value" ceiling, regardless of apron status), the non-taxpayer/
+ * taxpayer mid-level exception (over the cap, gated by apron level via
+ * `eligibleMidLevelException`), or a veteran-minimum deal (always legal,
+ * regardless of apron status - the one exception the CBA never
+ * restricts).
  */
 export function validateSigning(input: ValidateSigningInput): SigningValidationResult {
   const rules = getSeasonCapRules(input.season);
@@ -46,6 +59,15 @@ export function validateSigning(input: ValidateSigningInput): SigningValidationR
       isValid: true,
       mechanism: "VETERAN_MINIMUM",
       maxAllowedCents: rules.emptyRosterChargeCents,
+      violation: null,
+    };
+  }
+
+  if (input.reSigningRights?.held && offerSalaryCents <= input.reSigningRights.maxOfferCents) {
+    return {
+      isValid: true,
+      mechanism: "RE_SIGNING_RIGHTS",
+      maxAllowedCents: input.reSigningRights.maxOfferCents,
       violation: null,
     };
   }
@@ -68,18 +90,21 @@ export function validateSigning(input: ValidateSigningInput): SigningValidationR
   }
 
   const mleType = eligibleMidLevelException(team.apronLevel);
-  const mleAmount =
+  const mleTotalCents =
     mleType === "NON_TAXPAYER"
       ? rules.nonTaxpayerMLECents
       : mleType === "TAXPAYER"
         ? rules.taxpayerMLECents
         : 0n;
+  const alreadyUsedCents = input.team.signingExceptionUsedCents ?? 0n;
+  const mleRemainingCents =
+    mleTotalCents > alreadyUsedCents ? mleTotalCents - alreadyUsedCents : 0n;
 
-  if (mleAmount > 0n && offerSalaryCents <= mleAmount) {
+  if (mleRemainingCents > 0n && offerSalaryCents <= mleRemainingCents) {
     return {
       isValid: true,
       mechanism: mleType === "NON_TAXPAYER" ? "NON_TAXPAYER_MLE" : "TAXPAYER_MLE",
-      maxAllowedCents: mleAmount,
+      maxAllowedCents: mleRemainingCents,
       violation: null,
     };
   }
@@ -87,9 +112,9 @@ export function validateSigning(input: ValidateSigningInput): SigningValidationR
   return {
     isValid: false,
     mechanism: null,
-    maxAllowedCents: mleAmount,
+    maxAllowedCents: mleRemainingCents,
     violation: mleType
-      ? `Team's ${mleType.toLowerCase().replace("_", "-")} mid-level exception caps at ${mleAmount} cents.`
+      ? `Team's ${mleType.toLowerCase().replace("_", "-")} mid-level exception has ${mleRemainingCents} cents remaining this season.`
       : "Second-apron teams are hard-capped out of every mid-level exception - only a minimum-salary deal is possible.",
   };
 }

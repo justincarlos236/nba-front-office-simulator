@@ -234,7 +234,8 @@ model LeagueTeam {
   league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   team   Team   @relation(fields: [teamId], references: [id])
 
-  players         LeaguePlayer[]
+  players               LeaguePlayer[]
+  reSigningRightsHolders LeaguePlayer[] @relation("ReSigningRights")
   contracts       Contract[]
   ownedPicks      DraftPick[]      @relation("CurrentOwner")
   originalPicks   DraftPick[]      @relation("OriginalTeam")
@@ -341,13 +342,21 @@ model LeaguePlayer {
   injuryReturnsAtGamesPlayed Int?
   isActive        Boolean      @default(true) // false once retired within this league
   retiredSeason   Int? // the season this player retired after, if any
+  // The team currently holding this player's simplified "Re-Signing
+  // Rights" (a casual stand-in for real Bird/Early-Bird/Non-Bird rights -
+  // see src/lib/freeagency/reSigningRights.ts). Kept in sync with
+  // leagueTeamId on every signing/trade, but deliberately NOT cleared
+  // when a contract expires, so it still points at the player's most
+  // recent team while they're a free agent.
+  reSigningTeamId String?
 
-  league      League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  player      Player       @relation(fields: [playerId], references: [id])
-  leagueTeam  LeagueTeam?  @relation(fields: [leagueTeamId], references: [id])
-  contract    Contract?
-  tradeAssets TradeAsset[]
-  seasonAwards SeasonAward[]
+  league        League        @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  player        Player        @relation(fields: [playerId], references: [id])
+  leagueTeam    LeagueTeam?   @relation(fields: [leagueTeamId], references: [id])
+  reSigningTeam LeagueTeam?   @relation("ReSigningRights", fields: [reSigningTeamId], references: [id])
+  contract      Contract?
+  tradeAssets   TradeAsset[]
+  seasonAwards  SeasonAward[]
 
   @@unique([leagueId, playerId])
   @@index([leagueId, leagueTeamId])

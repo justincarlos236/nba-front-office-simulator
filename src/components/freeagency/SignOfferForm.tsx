@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { ApronLevel } from "@/lib/cap/apron";
+import { ApronLevel, eligibleMidLevelException } from "@/lib/cap/apron";
+import { getSeasonCapRules } from "@/lib/cap/constants";
+import { formatCentsCompact } from "@/lib/money";
 import { signFreeAgentAction } from "@/lib/actions/freeagency";
 import { validateSigning } from "@/lib/freeagency/validateSigning";
 import { describeSigningFeasibility } from "@/lib/freeagency/describeSigningFeasibility";
@@ -12,12 +14,14 @@ export function SignOfferForm({
   leaguePlayerId,
   suggestedSalaryCents,
   team,
+  reSigningRights,
 }: {
   season: number;
   leagueId: string;
   leaguePlayerId: string;
   suggestedSalaryCents: string;
-  team: { apronLevel: string; capSpaceCents: string };
+  team: { apronLevel: string; capSpaceCents: string; signingExceptionUsedCents: string };
+  reSigningRights: { held: boolean; maxOfferCents: string };
 }) {
   const [salaryDollars, setSalaryDollars] = useState(() =>
     Math.round(Number(suggestedSalaryCents) / 100),
@@ -27,6 +31,7 @@ export function SignOfferForm({
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const offerSalaryCents = BigInt(Math.round(salaryDollars * 100));
+  const signingExceptionUsedCents = BigInt(team.signingExceptionUsedCents);
 
   const result = useMemo(
     () =>
@@ -36,11 +41,32 @@ export function SignOfferForm({
         team: {
           apronLevel: team.apronLevel as ApronLevel,
           capSpaceCents: BigInt(team.capSpaceCents),
+          signingExceptionUsedCents,
+        },
+        reSigningRights: {
+          held: reSigningRights.held,
+          maxOfferCents: BigInt(reSigningRights.maxOfferCents),
         },
       }),
-    [season, offerSalaryCents, team],
+    [season, offerSalaryCents, team, signingExceptionUsedCents, reSigningRights],
   );
   const feasibility = useMemo(() => describeSigningFeasibility(result), [result]);
+
+  // Only meaningful once a team is over the cap and not hard-capped out of
+  // every exception at the second apron - shown so the user can see
+  // "Total / Used / Remaining" without needing to know CBA terminology,
+  // per the design brief.
+  const mleType = eligibleMidLevelException(team.apronLevel as ApronLevel);
+  const exceptionTotalCents =
+    mleType === "NON_TAXPAYER"
+      ? getSeasonCapRules(season).nonTaxpayerMLECents
+      : mleType === "TAXPAYER"
+        ? getSeasonCapRules(season).taxpayerMLECents
+        : 0n;
+  const exceptionRemainingCents =
+    exceptionTotalCents > signingExceptionUsedCents
+      ? exceptionTotalCents - signingExceptionUsedCents
+      : 0n;
 
   function handleSubmit() {
     setSubmitError(null);
@@ -88,6 +114,24 @@ export function SignOfferForm({
           ))}
         </select>
       </label>
+
+      {(mleType === "NON_TAXPAYER" || mleType === "TAXPAYER") && (
+        <div className="mt-4 rounded-lg border border-border bg-surface-2 p-3 text-xs">
+          <p className="tracking-wide text-muted uppercase">Signing Exception</p>
+          <div className="mt-1.5 flex justify-between text-foreground">
+            <span>Total available</span>
+            <span className="font-mono">{formatCentsCompact(exceptionTotalCents)}</span>
+          </div>
+          <div className="mt-1 flex justify-between text-muted">
+            <span>Already used this season</span>
+            <span className="font-mono">{formatCentsCompact(signingExceptionUsedCents)}</span>
+          </div>
+          <div className="mt-1 flex justify-between font-semibold text-accent">
+            <span>Remaining</span>
+            <span className="font-mono">{formatCentsCompact(exceptionRemainingCents)}</span>
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 border-t border-border pt-4">
         <p

@@ -236,7 +236,7 @@ async function maybeExecuteCpuTrade(
     });
     await tx.leaguePlayer.update({
       where: { id: result.teamA.player.leaguePlayerId },
-      data: { leagueTeamId: result.teamB.leagueTeamId },
+      data: { leagueTeamId: result.teamB.leagueTeamId, reSigningTeamId: result.teamB.leagueTeamId },
     });
     await tx.contract.update({
       where: { leaguePlayerId: result.teamA.player.leaguePlayerId },
@@ -244,7 +244,7 @@ async function maybeExecuteCpuTrade(
     });
     await tx.leaguePlayer.update({
       where: { id: result.teamB.player.leaguePlayerId },
-      data: { leagueTeamId: result.teamA.leagueTeamId },
+      data: { leagueTeamId: result.teamA.leagueTeamId, reSigningTeamId: result.teamA.leagueTeamId },
     });
     await tx.contract.update({
       where: { leaguePlayerId: result.teamB.player.leaguePlayerId },
@@ -296,7 +296,7 @@ async function maybeExecuteCpuSigning(
   await prisma.$transaction(async (tx) => {
     await tx.leaguePlayer.update({
       where: { id: freeAgent.id },
-      data: { leagueTeamId: team.id },
+      data: { leagueTeamId: team.id, reSigningTeamId: team.id },
     });
     const contract = await tx.contract.create({
       data: {

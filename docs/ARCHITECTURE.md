@@ -111,7 +111,9 @@ Shipped:
 
 Not yet built:
 
-- The bi-annual exception and Bird/Early-Bird/Non-Bird re-signing rights.
+- The bi-annual exception. A simplified Re-Signing Rights mechanic (a
+  casual stand-in for real Bird/Early-Bird/Non-Bird rights) exists now -
+  see "Free agency" below.
 - Trading draft picks - the Stepien-lite check exists in `validateTrade`,
   but no `DraftPick` inventory is generated during league bootstrap yet, so
   the trade builder is player-only for now.
@@ -187,11 +189,31 @@ bottom 15% - two-way/10-day caliber in reality) as unsigned free agents
 instead of placing them on their actual current team; every other real
 player starts on their real team as usual.
 
-Known simplification: this checks each signing against the exception's
-full per-season ceiling, but doesn't track cumulative exception spend
-across multiple signings the way the real MLE (one bucket to split across
-any number of players in a season) works - a full offseason-length
-simulation is future work.
+**Re-Signing Rights** (`src/lib/freeagency/reSigningRights.ts`) - a casual
+stand-in for real Bird/Early-Bird/Non-Bird rights, tracked via
+`LeaguePlayer.reSigningTeamId`: whichever team a player is currently (or
+was most recently) under contract with. It's kept in sync with
+`leagueTeamId` on every signing, draft assignment, and trade (transfers to
+the acquiring team, matching how real Bird rights travel with a traded
+player) - but deliberately **not** cleared when a contract expires, so it
+still points at the player's last team while they're a free agent. A team
+holding a player's Re-Signing Rights can offer them up to
+`computeReSigningMaxOfferCents` (a rating-based "fair market value"
+ceiling, the same rating-to-cap-fraction curve contract generation uses)
+regardless of cap space or apron status - real max-contract tiers and
+extension rules aren't modeled, since the brief only needs "can I afford
+to keep my own star," not precise CBA mechanics.
+
+**Signing Exception usage is now tracked cumulatively** across a season,
+closing what was previously a documented gap: `getSigningExceptionUsage`
+(`src/lib/actions/signingException.ts`) derives how much of a team's
+mid-level exception is already committed by summing `Contract` rows
+signed this season with `signedUsing` set to a mid-level value - no
+separate running-total field to keep in sync, since `Contract.signedUsing`
+is already the single source of truth for how a signing was made.
+`validateSigning` checks new offers against the _remaining_ room, not the
+full per-season ceiling, so a team can no longer sign multiple players
+each using the exception's full amount.
 
 ## Season simulation & standings
 

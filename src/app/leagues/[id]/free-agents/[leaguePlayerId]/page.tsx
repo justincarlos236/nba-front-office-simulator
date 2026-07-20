@@ -5,6 +5,8 @@ import { computeCapSheet } from "@/lib/cap/capSheet";
 import { prisma } from "@/lib/prisma";
 import { computePerformanceScore, scoreToCapFraction } from "@/lib/valuation/playerValue";
 import { getSeasonCapRules } from "@/lib/cap/constants";
+import { computeReSigningMaxOfferCents } from "@/lib/freeagency/reSigningRights";
+import { getSigningExceptionUsage } from "@/lib/actions/signingException";
 import { SignOfferForm } from "@/components/freeagency/SignOfferForm";
 
 export const dynamic = "force-dynamic";
@@ -42,16 +44,25 @@ export default async function SignFreeAgentPage({ params }: PageProps) {
     notFound();
   }
 
-  const myPlayers = await prisma.leaguePlayer.findMany({
-    where: { leagueTeamId: myLeagueTeam.id },
-    include: { contract: { include: { years: { where: { season: league.currentSeason } } } } },
-  });
+  const [myPlayers, signingExceptionUsedCents] = await Promise.all([
+    prisma.leaguePlayer.findMany({
+      where: { leagueTeamId: myLeagueTeam.id },
+      include: { contract: { include: { years: { where: { season: league.currentSeason } } } } },
+    }),
+    getSigningExceptionUsage(myLeagueTeam.id, league.currentSeason),
+  ]);
   const capSheet = computeCapSheet({
     season: league.currentSeason,
     contracts: myPlayers
       .filter((lp) => lp.contract?.years[0])
       .map((lp) => ({ playerId: lp.playerId, salaryCents: lp.contract!.years[0].salaryCents })),
   });
+
+  const hasReSigningRights = freeAgent.reSigningTeamId === myLeagueTeam.id;
+  const reSigningMaxOfferCents = computeReSigningMaxOfferCents(
+    freeAgent.overallRating,
+    league.currentSeason,
+  );
 
   const stat = freeAgent.player.seasonStats[0];
   const rules = getSeasonCapRules(league.currentSeason);
@@ -81,6 +92,11 @@ export default async function SignFreeAgentPage({ params }: PageProps) {
         {freeAgent.player.position} &middot; Rating {freeAgent.overallRating}
         {stat ? ` · ${stat.pointsPerGame.toFixed(1)} PPG in 2023-24` : ""}
       </p>
+      {hasReSigningRights && (
+        <p className="mt-3 inline-block rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-400">
+          You hold this player&apos;s Re-Signing Rights - you can exceed the cap to keep them
+        </p>
+      )}
 
       <div className="mt-8">
         <SignOfferForm
@@ -91,6 +107,11 @@ export default async function SignFreeAgentPage({ params }: PageProps) {
           team={{
             apronLevel: capSheet.apronLevel,
             capSpaceCents: capSheet.capSpaceCents.toString(),
+            signingExceptionUsedCents: signingExceptionUsedCents.toString(),
+          }}
+          reSigningRights={{
+            held: hasReSigningRights,
+            maxOfferCents: reSigningMaxOfferCents.toString(),
           }}
         />
       </div>

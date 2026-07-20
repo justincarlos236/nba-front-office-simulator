@@ -71,6 +71,7 @@ async function draftProspectsToTeams(
       leagueId,
       playerId: prospectIdToPlayerId.get(a.prospectId)!,
       leagueTeamId: a.leagueTeamId,
+      reSigningTeamId: a.leagueTeamId,
       overallRating: a.overallRating,
       potentialRating: a.potentialRating,
     })),
