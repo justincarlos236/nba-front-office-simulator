@@ -162,6 +162,12 @@ export async function advanceSeasonAction(leagueId: string) {
             isActive: u.isActive,
             leagueTeamId: u.leagueTeamId,
             retiredSeason: u.retiredSeason,
+            // A new season starts with everyone healthy - team wins/losses
+            // reset to 0 too, so an in-season injury's `returnsAt` (measured
+            // in that team's own games played) would otherwise never
+            // resolve if it crossed the season boundary unhealed.
+            injuryStatus: "HEALTHY",
+            injuryReturnsAtGamesPlayed: null,
           },
         }),
       ),

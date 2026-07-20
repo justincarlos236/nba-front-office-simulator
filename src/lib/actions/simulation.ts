@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { computeLeagueTeamStrengths } from "@/lib/actions/leagueTeamStrength";
+import { applyLeagueEvents } from "@/lib/actions/leagueEvents";
 import { simulateGame } from "@/lib/simulation/simulateGame";
 
 export type SimulateBatchSize = 1 | 10 | 50;
@@ -88,12 +89,24 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
     ),
   ]);
 
+  await applyLeagueEvents(
+    leagueId,
+    league.currentSeason,
+    league.userControlledTeamId,
+    unplayedGames.map((g) => ({
+      homeLeagueTeamId: g.homeLeagueTeamId,
+      awayLeagueTeamId: g.awayLeagueTeamId,
+    })),
+  );
+
   const remaining = await prisma.game.count({
     where: { leagueId, season: league.currentSeason, type: "REGULAR_SEASON", playedAt: null },
   });
 
   revalidatePath(`/leagues/${leagueId}`);
   revalidatePath(`/leagues/${leagueId}/standings`);
+  revalidatePath(`/leagues/${leagueId}/transactions`);
+  revalidatePath(`/leagues/${leagueId}/free-agents`);
 
   return { simulated: unplayedGames.length, remaining };
 }

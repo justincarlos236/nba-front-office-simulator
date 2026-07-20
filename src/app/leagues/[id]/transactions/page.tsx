@@ -13,12 +13,14 @@ const TYPE_LABEL: Record<string, string> = {
   TRADE: "Trade",
   SIGNING: "Signing",
   RETIREMENT: "Retirement",
+  INJURY: "Injury",
 };
 
 const TYPE_BADGE_CLASS: Record<string, string> = {
   TRADE: "bg-accent/15 text-accent",
   SIGNING: "bg-emerald-500/15 text-emerald-400",
   RETIREMENT: "bg-muted/20 text-muted",
+  INJURY: "bg-red-500/15 text-red-400",
 };
 
 export default async function TransactionsPage({ params }: PageProps) {
@@ -54,13 +56,15 @@ export default async function TransactionsPage({ params }: PageProps) {
         </Link>
       </div>
       <p className="mt-2 max-w-2xl text-muted">
-        Every trade, free-agent signing, and retirement across the league, most recent first.
+        Every trade, free-agent signing, injury, and retirement across the league - including the
+        other 29 teams&apos; own moves - most recent first.
       </p>
 
       {transactions.length === 0 ? (
         <div className="mt-10 rounded-xl border border-border bg-surface p-8 text-center">
           <p className="text-muted">
-            Nothing on the wire yet - make a trade or sign a free agent and it&apos;ll show up here.
+            Nothing on the wire yet - make a move yourself, or simulate some games and let the rest
+            of the league start making theirs.
           </p>
         </div>
       ) : (

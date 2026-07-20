@@ -152,6 +152,63 @@ league bootstrap) is what wires them to the database.
   (expected here, since games are simulated in random schedule order, not
   strict rounds), which real standings never show.
 
+## Around-the-league activity: injuries, CPU trades & CPU signings
+
+Without this, the only news in a league would ever be things the user
+personally did - the other 29 teams would sit frozen all season. `src/lib/actions/leagueEvents.ts`'s
+`applyLeagueEvents` (called by `simulateGamesAction` right after a batch's
+games/standings are persisted, and by `scripts/e2e-fast-forward-season.ts`)
+rolls three kinds of activity, all frequency-scaled by the number of games
+_just simulated_ rather than real time or click count - simulating 1 game
+produces essentially nothing, simulating 50 produces several events, the
+same way a real season's news ebbs and flows with games played:
+
+- **Injuries** (`rollForTeamInjury` in `src/lib/simulation/leagueEvents.ts`):
+  a small per-team-per-game chance (2%) of a random healthy rostered player
+  going down, with a duration (1-30 games) and flavor injury name drawn from
+  three severity tiers. This has a **real mechanical effect**, not just
+  flavor text: `computeLeagueTeamStrengths` excludes injured players
+  entirely, so an injured rotation player genuinely weakens that team's
+  simulated games until they recover - including the user's own team, the
+  same as real GM games. Recovery is tracked via
+  `LeaguePlayer.injuryReturnsAtGamesPlayed`, compared against that team's
+  own `wins + losses` (not a calendar date) each time a batch involving
+  that team's games completes. `advanceSeasonAction` unconditionally resets
+  every player to healthy at the season turnover (alongside the wins/losses
+  reset) - without that, an injury rolled late in the season with a long
+  recovery window could reference a games-played threshold past the ~58
+  games a season actually has, leaving the player stuck "out" forever.
+- **CPU-CPU trades** (`rollForCpuTrade`): picks two random _non-user_ teams
+  and one tradeable player from each (biased toward the lower-rated ~70% of
+  each roster - real trades skew heavily toward role players/depth, not
+  stars), then validates the swap through the exact same `validateTrade`
+  the user's own trades go through - CPU moves are never a cap-rules
+  shortcut. Deliberately **never involves the user's own team** - trading
+  the user's players without their consent would break the "you're the GM"
+  premise that the whole app is built around; injuries are bad luck that
+  can hit anyone, but transactions on the user's roster should only ever
+  happen when the user initiates them.
+- **CPU signings** (`rollForCpuSigning`): a random non-user team signs a
+  random available free agent to a 1-year veteran-minimum deal - the one
+  signing mechanism that's always cap-legal regardless of a team's apron
+  situation (see Free Agency above), so unlike trades this never needs a
+  legality retry loop.
+
+All three write into the same `LeagueTransaction` log the user's own
+actions do (see "Transactions, news feed & league history" below), so the
+feed reads as one continuous wire rather than two different systems for
+"things I did" vs. "things that happened." CPU draft picks are still
+deliberately excluded from this log for the same noise reason described
+there.
+
+**Known simplification**: a batch call computes team strength once, up
+front, and simulates every game in that batch against that snapshot - an
+injury rolled mid-batch doesn't affect that same batch's remaining games,
+only the next `simulateGamesAction` call. This follows directly from the
+existing "strength computed once per batch" architecture (see Season
+Simulation above) rather than recomputing strength per game, which would
+undo the reason batches exist in the first place.
+
 ## Playoffs
 
 Built on top of the season-simulation engine above rather than duplicating
@@ -341,15 +398,19 @@ through development/retirement/free agency like anyone else.
 
 ## Transactions, news feed & league history
 
-Every trade, free-agent signing, and retirement writes a `LeagueTransaction`
-row (`leagueId`, `season`, `type`, `description`, `createdAt`) inside the
-same `$transaction`/batch that performs the underlying mutation, alongside
-the existing `Trade`/`TradeAsset`/`Contract`/`SeasonAward` rows. This is
-deliberately one denormalized log rather than two separate systems for
-"transaction history" and "news feed": a chronological read of the table
-_is_ the transaction ledger, and the same `description` string doubles as
-a news headline, since there's no meaningful difference between the two
-views beyond framing.
+Every trade, free-agent signing, injury, and retirement writes a
+`LeagueTransaction` row (`leagueId`, `season`, `type`, `description`,
+`createdAt`) inside the same `$transaction`/batch that performs the
+underlying mutation, alongside the existing
+`Trade`/`TradeAsset`/`Contract`/`SeasonAward` rows. This is deliberately
+one denormalized log rather than two separate systems for "transaction
+history" and "news feed": a chronological read of the table _is_ the
+transaction ledger, and the same `description` string doubles as a news
+headline, since there's no meaningful difference between the two views
+beyond framing. This is also what makes the league feel alive rather than
+user-centric: CPU-CPU trades, CPU signings, and injuries across all 30
+teams (see "Around-the-league activity" above) write into this exact same
+log, so the feed isn't just a record of the user's own moves.
 
 - **Why pre-rendered descriptions, not reconstructed at read time**: a
   trade or signing's human-readable form (team names, player names, deal

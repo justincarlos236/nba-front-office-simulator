@@ -131,32 +131,55 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
               <th className="px-4 py-3">Pos</th>
               <th className="px-4 py-3 text-right">Rating</th>
               <th className="px-4 py-3 text-right">Potential</th>
+              <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3 text-right">Salary ({league.currentSeason})</th>
               <th className="px-4 py-3 text-right">Contract thru</th>
             </tr>
           </thead>
           <tbody>
-            {leaguePlayers.map((lp) => (
-              <tr key={lp.id} className="border-t border-border hover:bg-surface/60">
-                <td className="px-4 py-3">
-                  <Link
-                    href={`/players/${lp.playerId}`}
-                    className="font-medium text-foreground hover:text-accent"
-                  >
-                    {lp.player.fullName}
-                  </Link>
-                </td>
-                <td className="px-4 py-3 text-muted">{lp.player.position}</td>
-                <td className="px-4 py-3 text-right font-mono text-accent">{lp.overallRating}</td>
-                <td className="px-4 py-3 text-right font-mono text-muted">{lp.potentialRating}</td>
-                <td className="px-4 py-3 text-right text-foreground">
-                  {lp.contract?.years[0]
-                    ? formatCentsCompact(lp.contract.years[0].salaryCents)
-                    : "-"}
-                </td>
-                <td className="px-4 py-3 text-right text-muted">{lp.contract?.endSeason ?? "-"}</td>
-              </tr>
-            ))}
+            {leaguePlayers.map((lp) => {
+              const gamesRemaining =
+                lp.injuryStatus !== "HEALTHY" && lp.injuryReturnsAtGamesPlayed !== null
+                  ? Math.max(
+                      0,
+                      lp.injuryReturnsAtGamesPlayed - (userLeagueTeam.wins + userLeagueTeam.losses),
+                    )
+                  : 0;
+              return (
+                <tr key={lp.id} className="border-t border-border hover:bg-surface/60">
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/players/${lp.playerId}`}
+                      className="font-medium text-foreground hover:text-accent"
+                    >
+                      {lp.player.fullName}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 text-muted">{lp.player.position}</td>
+                  <td className="px-4 py-3 text-right font-mono text-accent">{lp.overallRating}</td>
+                  <td className="px-4 py-3 text-right font-mono text-muted">
+                    {lp.potentialRating}
+                  </td>
+                  <td className="px-4 py-3">
+                    {lp.injuryStatus === "HEALTHY" ? (
+                      <span className="text-xs text-muted">Healthy</span>
+                    ) : (
+                      <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-semibold text-red-400">
+                        Out{gamesRemaining > 0 ? ` · ${gamesRemaining}g` : ""}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-right text-foreground">
+                    {lp.contract?.years[0]
+                      ? formatCentsCompact(lp.contract.years[0].salaryCents)
+                      : "-"}
+                  </td>
+                  <td className="px-4 py-3 text-right text-muted">
+                    {lp.contract?.endSeason ?? "-"}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

@@ -39,6 +39,16 @@ test("start the playoffs and simulate to a champion", async ({ page }) => {
   const leagueId = new URL(page.url()).pathname.split("/")[2];
   fastForwardRegularSeason(leagueId);
 
+  // A full ~58-game/team season gives the league-events system (see
+  // src/lib/actions/leagueEvents.ts) hundreds of independent per-game rolls
+  // for injuries alone, so asserting "at least one shows up" is a safe,
+  // non-flaky check - not a claim about the exact count or mix.
+  await page.goto(`/leagues/${leagueId}/transactions`);
+  await expect(page.getByRole("heading", { name: "Transactions & News" })).toBeVisible();
+  await expect(
+    page.getByText(/suffers|has been cleared to return|signed|traded/).first(),
+  ).toBeVisible();
+
   await page.goto(`/leagues/${leagueId}/playoffs`);
   await expect(page.getByRole("heading", { name: /Playoffs/ })).toBeVisible();
 

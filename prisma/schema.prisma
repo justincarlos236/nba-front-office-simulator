@@ -199,6 +199,7 @@ enum TransactionType {
   TRADE
   SIGNING
   RETIREMENT
+  INJURY
 }
 
 // A denormalized, human-readable log entry for the transaction wire / news
@@ -333,6 +334,11 @@ model LeaguePlayer {
   overallRating   Int // 0-100 composite used by the valuation model & AI GMs
   potentialRating Int
   injuryStatus    InjuryStatus @default(HEALTHY)
+  // Set only while injuryStatus != HEALTHY: the injured team's own
+  // (wins+losses) count at which this player is cleared to return. Compared
+  // against the team's regular-season game count, not a calendar date -
+  // see src/lib/actions/leagueEvents.ts.
+  injuryReturnsAtGamesPlayed Int?
   isActive        Boolean      @default(true) // false once retired within this league
   retiredSeason   Int? // the season this player retired after, if any
 
