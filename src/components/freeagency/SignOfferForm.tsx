@@ -3,15 +3,8 @@
 import { useMemo, useState, useTransition } from "react";
 import { ApronLevel } from "@/lib/cap/apron";
 import { signFreeAgentAction } from "@/lib/actions/freeagency";
-import { formatCentsCompact } from "@/lib/money";
-import { validateSigning, type SigningMechanism } from "@/lib/freeagency/validateSigning";
-
-const MECHANISM_LABELS: Record<SigningMechanism, string> = {
-  CAP_SPACE: "cap space",
-  NON_TAXPAYER_MLE: "the non-taxpayer mid-level exception",
-  TAXPAYER_MLE: "the taxpayer mid-level exception",
-  VETERAN_MINIMUM: "a veteran-minimum contract",
-};
+import { validateSigning } from "@/lib/freeagency/validateSigning";
+import { describeSigningFeasibility } from "@/lib/freeagency/describeSigningFeasibility";
 
 export function SignOfferForm({
   season,
@@ -47,6 +40,7 @@ export function SignOfferForm({
       }),
     [season, offerSalaryCents, team],
   );
+  const feasibility = useMemo(() => describeSigningFeasibility(result), [result]);
 
   function handleSubmit() {
     setSubmitError(null);
@@ -96,14 +90,11 @@ export function SignOfferForm({
       </label>
 
       <div className="mt-6 border-t border-border pt-4">
-        {result.isValid ? (
-          <p className="text-sm font-medium text-accent">
-            Legal via {result.mechanism ? MECHANISM_LABELS[result.mechanism] : ""} (
-            {formatCentsCompact(result.maxAllowedCents)} available).
-          </p>
-        ) : (
-          <p className="text-sm font-medium text-red-400">{result.violation}</p>
-        )}
+        <p
+          className={`text-sm font-medium ${feasibility.isValid ? "text-accent" : "text-red-400"}`}
+        >
+          {feasibility.headline}
+        </p>
 
         {submitError && <p className="mt-3 text-sm text-red-400">{submitError}</p>}
 

@@ -2,8 +2,14 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
+import {
+  CAP_STATUS_LABEL,
+  CAP_STATUS_DESCRIPTION,
+  simplifyCapStatus,
+} from "@/lib/cap/capStatusLabel";
 import { formatCentsCompact } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
+import { getPlayerValueTier, PLAYER_VALUE_TIER_LABEL } from "@/lib/valuation/playerValueTier";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -283,9 +289,15 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
           value={formatCentsCompact(capSheet.committedSalaryCents)}
         />
         <CapStat label="Cap space" value={formatCentsCompact(capSheet.capSpaceCents)} />
-        <CapStat label="Apron status" value={capSheet.apronLevel.replaceAll("_", " ")} />
+        <CapStat
+          label="Financial status"
+          value={CAP_STATUS_LABEL[simplifyCapStatus(capSheet.apronLevel)]}
+        />
         <CapStat label="Roster size" value={String(leaguePlayers.length)} />
       </div>
+      <p className="mt-3 text-sm text-muted">
+        {CAP_STATUS_DESCRIPTION[simplifyCapStatus(capSheet.apronLevel)]}
+      </p>
 
       <div className="mt-10 overflow-x-auto rounded-xl border border-border">
         <table className="w-full text-left text-sm">
@@ -295,6 +307,7 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
               <th className="px-4 py-3">Pos</th>
               <th className="px-4 py-3 text-right">Rating</th>
               <th className="px-4 py-3 text-right">Potential</th>
+              <th className="px-4 py-3">Value Tier</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3 text-right">Salary ({league.currentSeason})</th>
               <th className="px-4 py-3 text-right">Contract thru</th>
@@ -323,6 +336,9 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
                   <td className="px-4 py-3 text-right font-mono text-accent">{lp.overallRating}</td>
                   <td className="px-4 py-3 text-right font-mono text-muted">
                     {lp.potentialRating}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-muted">
+                    {PLAYER_VALUE_TIER_LABEL[getPlayerValueTier(lp.overallRating)]}
                   </td>
                   <td className="px-4 py-3">
                     {lp.injuryStatus === "HEALTHY" ? (

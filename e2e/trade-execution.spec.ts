@@ -33,7 +33,8 @@ test("propose and execute a legal trade, and the rosters actually swap", async (
   // a container div near (but not on) the checkbox doesn't toggle it.
   await page.getByText("Jayson Tatum", { exact: true }).click();
   await page.getByText("Julius Randle", { exact: true }).click();
-  await expect(page.getByText("Trade is legal under current cap rules.")).toBeVisible();
+  await expect(page.getByText("Trade Financial Check: Valid")).toBeVisible();
+  await expect(page.getByText("This trade works financially.")).toBeVisible();
 
   await page.getByText("Execute trade").click();
   await expect(page.getByText("Committed salary")).toBeVisible({ timeout: 15_000 });

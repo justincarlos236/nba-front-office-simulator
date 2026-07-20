@@ -118,6 +118,55 @@ Not yet built:
 - Trade exceptions (created when a team takes back less than it sends out)
   aren't banked/spendable yet, even though the `TradeException` model exists.
 
+## Simplified financial presentation layer
+
+The real CBA engine above is the intentional "hard engineering" showpiece
+of this project - it's staying. But the user-facing brief for it is
+"realistic consequences without complicated rules": a casual fan should
+never need to know what an apron or a mid-level exception variant is to
+play well. Rather than weakening the real engine, a presentation layer
+sits on top of it that translates the same underlying numbers into
+plain language, without touching how legality is actually decided:
+
+- **`src/lib/cap/capStatusLabel.ts`** - collapses the 5 real `ApronLevel`
+  values into 3 user-facing states (`Under the Cap` / `Over the Cap` /
+  `Luxury Tax`, taxpayer/first-apron/second-apron all folding into
+  "Luxury Tax"), each with a one-line plain-English description of what
+  a team can and can't do. Replaces the team dashboard's old raw
+  `apronLevel.replaceAll("_", " ")` display (e.g. "BETWEEN CAP AND TAX").
+- **`src/lib/valuation/playerValueTier.ts`** - buckets `overallRating`
+  (the same 0-100 scale used everywhere - team strength, contract
+  generation, development) into five casual tiers (Superstar/Star/
+  Starter/Rotation Player/Minimum-Level Player), calibrated against this
+  simulator's actual rating distribution rather than a theoretical 0-100
+  spread. Shown wherever players are listed: the roster table, the
+  free-agent board, and the trade builder.
+- **`src/lib/trade/describeTradeFeasibility.ts`** - turns `validateTrade`'s
+  real violations into "Trade Financial Check: Valid/Invalid" plus a
+  plain-English detail line ("You're taking on too much additional
+  salary. [Team] needs to send out approximately $8.0M more..."). It
+  re-derives the same shortfall using the validator's own exported
+  `maxIncomingSalaryCents`/`isUnderCapSpace` helpers rather than parsing
+  the validator's raw violation text, so there's exactly one place the
+  salary-matching math lives - this only decides _how to phrase_ an
+  already-computed answer, never re-decides legality itself.
+- **`src/lib/freeagency/describeSigningFeasibility.ts`** - collapses both
+  MLE variants (`NON_TAXPAYER_MLE`/`TAXPAYER_MLE`) into one user-facing
+  "Signing Exception" concept, and `VETERAN_MINIMUM` into "Minimum
+  Contract" - a user never needs to know which flavor of exception their
+  team happens to be eligible for, only that they have one.
+
+**Still real CBA concepts, not yet simplified in the UI** (tracked as
+follow-up work, not overlooked): Bird/Early-Bird/Non-Bird re-signing
+rights don't exist as a mechanic yet at all (a team currently has no
+priority to re-sign its own expiring free agents over an outside team -
+see "Not yet built" below); the Signing Exception isn't tracked
+cumulatively across multiple signings in a season; there's no multi-year
+cap projection or Financial Flexibility Grade; and there's no Owner
+Confidence/GM Job Security/firing system. These are follow-on phases
+building on top of the tier/status concepts introduced here, not part of
+this pass.
+
 ## Free agency
 
 `validateSigning` (`src/lib/freeagency/validateSigning.ts`) checks whether

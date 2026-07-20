@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { formatCentsCompact } from "@/lib/money";
 import { scoreToCapFraction, computePerformanceScore } from "@/lib/valuation/playerValue";
+import { getPlayerValueTier, PLAYER_VALUE_TIER_LABEL } from "@/lib/valuation/playerValueTier";
 import { getSeasonCapRules } from "@/lib/cap/constants";
 
 export const dynamic = "force-dynamic";
@@ -49,6 +50,7 @@ export default async function FreeAgentsPage({ params }: PageProps) {
               <th className="px-4 py-3">Player</th>
               <th className="px-4 py-3">Pos</th>
               <th className="px-4 py-3 text-right">Rating</th>
+              <th className="px-4 py-3">Value Tier</th>
               <th className="px-4 py-3 text-right">PPG</th>
               <th className="px-4 py-3 text-right">Est. value</th>
               <th className="px-4 py-3" />
@@ -75,6 +77,9 @@ export default async function FreeAgentsPage({ params }: PageProps) {
                   <td className="px-4 py-3 font-medium text-foreground">{fa.player.fullName}</td>
                   <td className="px-4 py-3 text-muted">{fa.player.position}</td>
                   <td className="px-4 py-3 text-right font-mono text-accent">{fa.overallRating}</td>
+                  <td className="px-4 py-3 text-xs text-muted">
+                    {PLAYER_VALUE_TIER_LABEL[getPlayerValueTier(fa.overallRating)]}
+                  </td>
                   <td className="px-4 py-3 text-right text-muted">
                     {stat?.pointsPerGame.toFixed(1) ?? "-"}
                   </td>
@@ -94,7 +99,7 @@ export default async function FreeAgentsPage({ params }: PageProps) {
             })}
             {freeAgents.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted">
+                <td colSpan={7} className="px-4 py-8 text-center text-muted">
                   No free agents available.
                 </td>
               </tr>

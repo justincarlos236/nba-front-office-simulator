@@ -5,6 +5,11 @@ import { formatCentsCompact } from "@/lib/money";
 import { executeTradeAction } from "@/lib/actions/trade";
 import { ApronLevel } from "@/lib/cap/apron";
 import { validateTrade, type TradeAssetInput } from "@/lib/trade/validateTrade";
+import {
+  describeTradeFeasibility,
+  type TeamTradeFinancials,
+} from "@/lib/trade/describeTradeFeasibility";
+import { getPlayerValueTier, PLAYER_VALUE_TIER_LABEL } from "@/lib/valuation/playerValueTier";
 
 interface RosterPlayerDTO {
   leaguePlayerId: string;
@@ -85,6 +90,36 @@ export function TradeBuilder({
     });
   }, [mySelected, theirSelected, myTeam, theirTeam, season]);
 
+  const feasibility = useMemo(() => {
+    if (result === null) return null;
+
+    const mySalaryOut = myTeam.players
+      .filter((p) => mySelected.has(p.leaguePlayerId))
+      .reduce((sum, p) => sum + BigInt(p.salaryCents), 0n);
+    const theirSalaryOut = theirTeam.players
+      .filter((p) => theirSelected.has(p.leaguePlayerId))
+      .reduce((sum, p) => sum + BigInt(p.salaryCents), 0n);
+
+    const teams: TeamTradeFinancials[] = [
+      {
+        teamLabel: myTeam.name,
+        apronLevel: myTeam.apronLevel as ApronLevel,
+        capSpaceCents: BigInt(myTeam.capSpaceCents),
+        outgoingSalaryCents: mySalaryOut,
+        incomingSalaryCents: theirSalaryOut,
+      },
+      {
+        teamLabel: theirTeam.name,
+        apronLevel: theirTeam.apronLevel as ApronLevel,
+        capSpaceCents: BigInt(theirTeam.capSpaceCents),
+        outgoingSalaryCents: theirSalaryOut,
+        incomingSalaryCents: mySalaryOut,
+      },
+    ];
+
+    return describeTradeFeasibility(result, teams, season);
+  }, [result, mySelected, theirSelected, myTeam, theirTeam, season]);
+
   const canSubmit = result !== null && result.isValid && !isPending;
 
   function toggle(set: Set<string>, setSet: (s: Set<string>) => void, id: string) {
@@ -132,18 +167,16 @@ export function TradeBuilder({
       </div>
 
       <div className="mt-6 rounded-xl border border-border bg-surface p-6">
-        {result === null ? (
+        {feasibility === null ? (
           <p className="text-sm text-muted">Select at least one player on either side.</p>
-        ) : result.isValid ? (
-          <p className="text-sm font-medium text-accent">Trade is legal under current cap rules.</p>
         ) : (
           <div>
-            <p className="text-sm font-medium text-red-400">This trade isn&apos;t legal:</p>
-            <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-muted">
-              {result.violations.map((v, i) => (
-                <li key={i}>{v.message}</li>
-              ))}
-            </ul>
+            <p
+              className={`text-sm font-semibold ${feasibility.isValid ? "text-accent" : "text-red-400"}`}
+            >
+              {feasibility.headline}
+            </p>
+            {feasibility.detail && <p className="mt-1 text-sm text-muted">{feasibility.detail}</p>}
           </div>
         )}
 
@@ -192,6 +225,9 @@ function RosterColumn({
               <span className="text-foreground">{p.fullName}</span>
               <span className="text-xs text-muted">{p.position}</span>
               <span className="font-mono text-xs text-accent">{p.overallRating}</span>
+              <span className="text-xs text-muted">
+                {PLAYER_VALUE_TIER_LABEL[getPlayerValueTier(p.overallRating)]}
+              </span>
             </span>
             <span className="font-mono text-xs text-muted">
               {formatCentsCompact(BigInt(p.salaryCents))}

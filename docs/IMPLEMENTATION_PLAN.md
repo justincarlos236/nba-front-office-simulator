@@ -305,6 +305,36 @@ already exists. Good candidate to interleave between bigger phases.
 - [ ] League settings/configuration
 - [ ] GM career score, achievements
 
+### Phase 10 — Simplified Financial System & GM Accountability
+
+Not one of the original 100 roadmap items - a detailed user-authored
+design brief ("realistic consequences without complicated rules"), too
+large for one pass. Split into sub-phases; only the first is done.
+
+- [x] **10a - Simplified financial presentation layer** ✅ DONE
+      (2026-07-21): player market-value tiers, `Under the Cap`/`Over the
+    Cap`/`Luxury Tax` status replacing raw apron enums, plain-English
+      trade/signing feasibility messaging - all sitting on top of the
+      existing real cap engine, which is unchanged underneath. See
+      `docs/ARCHITECTURE.md`'s "Simplified financial presentation layer".
+- [ ] **10b - Re-Signing Rights + tracked Signing Exception**: a real new
+      mechanic (a team's own expiring free agents currently have no
+      priority over outside teams - Bird-rights-equivalent access doesn't
+      exist yet) plus cumulative per-season exception spend tracking
+      (currently checked per-signing only, a known gap noted in the Free
+      Agency section of `docs/ARCHITECTURE.md`).
+- [ ] **10c - Multi-year cap projections + Financial Flexibility Grade**:
+      a future-committed-payroll table (next several seasons) and an A-F
+      grade summarizing it.
+- [ ] **10d - Owner Confidence, expectations, directives & firing**: the
+      big new GM-accountability meta-system - preseason expectations set
+      from payroll tier + roster quality, end-of-season evaluation,
+      confidence/job-security tracking, ownership directives, and a
+      firing consequence. Needs a product decision on what "fired"
+      actually does to a save (ends the franchise? lets the user pick a
+      new team in the same league?) before it can be built - not yet
+      asked, since it doesn't block 10b/10c.
+
 ### Not scheduled / deferred pending user
 
 - **AI GM Assistant (#5, #49)** and the rest of the LLM-flavored cluster
@@ -624,3 +654,30 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   players is unavoidably going to share names with the roster table on
   the same page - not something a label rename can fix). All 10 e2e
   tests + 223 unit tests passing against a real production build.
+- **2026-07-21 (later)**: User gave a large, detailed design brief for a
+  simplified financial system ("realistic consequences without
+  complicated rules") plus an entirely new Owner Confidence/GM Job
+  Security/firing meta-system - one of the biggest single asks this
+  session. Rather than attempt it all at once, split it into sub-phases
+  (documented as Phase 10 above) and completed only 10a this pass: four
+  new pure modules (`playerValueTier.ts`, `capStatusLabel.ts`,
+  `describeTradeFeasibility.ts`, `describeSigningFeasibility.ts`, 15 new
+  unit tests) that translate the existing real CBA engine's output into
+  plain language, without changing how legality is actually decided.
+  Wired into the team dashboard (financial status + a new "Value Tier"
+  roster column), the trade builder (`describeTradeFeasibility` replaces
+  the raw violation-message list with a "Trade Financial Check:
+  Valid/Invalid" + one-line plain-English explanation, matching the
+  brief's example wording almost verbatim), the free-agency offer form
+  (both MLE variants now show as one "Signing Exception" concept), and
+  the free-agent board (a "Value Tier" column). Verified visually via
+  Playwright screenshots of the dashboard, trade builder (mid-selection,
+  showing the real "$X more needed" shortfall message), and the sign-offer
+  form. Updated `trade-execution.spec.ts` for the new valid-trade copy.
+  All 10 e2e tests + 238 unit tests passing against a real production
+  build. Explicitly did NOT build in this pass (queued as 10b/10c/10d):
+  Re-Signing Rights (doesn't exist as a mechanic at all yet), cumulative
+  Signing Exception tracking, multi-year cap projections, the Financial
+  Flexibility Grade, and the whole Owner Confidence/directives/firing
+  system - all flagged to the user up front before starting, given the
+  scope.
