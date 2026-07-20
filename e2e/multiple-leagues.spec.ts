@@ -26,7 +26,7 @@ test("run two franchises at once and switch between them from the hub", async ({
 
   // Start a second franchise with a different team.
   await page.getByText("My Leagues").click();
-  await expect(page.getByRole("heading", { name: "My Leagues" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Your franchises/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Boston Celtics" })).toBeVisible();
 
   await page.getByText("Start a new franchise").click();

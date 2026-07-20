@@ -35,7 +35,7 @@ test("simulate games and see standings update", async ({ page }) => {
   expect(gamesBefore - gamesAfter).toBe(10);
 
   await page.getByText("My Leagues").first().click();
-  await expect(page.getByRole("heading", { name: "My Leagues" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Your franchises/ })).toBeVisible();
   await page.getByRole("heading", { name: "Boston Celtics" }).click();
   await expect(page.getByText("Committed salary")).toBeVisible();
   // The user's own team's record should no longer necessarily be 0-0 - just

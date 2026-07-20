@@ -568,6 +568,21 @@ target's cache was being invalidated, not the hub's. The cap itself
 (`MAX_LEAGUES_PER_USER`) is a soft guard against unbounded DB growth (each
 franchise bootstraps ~500+ rows), not a real product limit.
 
+**The `/leagues` hub as a dashboard**: the same route that lists a user's
+franchises also doubles as the signed-in landing page (both the sign-in
+redirect and the "My Leagues" nav link point here), so it was extended
+into a proper "starting point" rather than staying a bare franchise list:
+a personalized greeting, franchise cards with color-coded status badges,
+a cross-league "Recent activity" feed, and an "Explore" section linking
+to site-wide pages (`/teams`, the engineering write-up). The activity
+feed is the one genuinely new piece of infrastructure here - every other
+transaction/news view (`/leagues/[id]/transactions`) is scoped to a
+single league, so this is the first place anything queries
+`LeagueTransaction` across _all_ of a user's leagues at once
+(`leagueId: { in: [...] }`), giving a "what changed since I was last
+here" pulse spanning every save rather than requiring the user to click
+into each franchise individually to notice new trades/injuries/signings.
+
 `trustHost: true` is required in the Auth.js config for this to work
 outside Vercel (which sets it automatically) - without it, Auth.js
 rejects every request in a real production build with an `UntrustedHost`

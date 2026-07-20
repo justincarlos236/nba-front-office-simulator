@@ -579,3 +579,26 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   page rendered without errors. All 10 e2e tests + 223 unit tests passing
   against a real production build; no changes to the underlying
   `playoffs.ts` simulation/bracket-advancement logic.
+- **2026-07-21 (later)**: User asked for "a general dashboard... a
+  homepage/starting point for the user to navigate through the different
+  parts of the simulator," leaving the design open. Rather than adding a
+  new route, extended the existing `/leagues` hub (already the sign-in
+  landing page and the "My Leagues" nav destination) into a real
+  dashboard: a personalized greeting, franchise cards with color-coded
+  status badges (blue/orange/purple/green for regular season/playoffs/
+  draft/ready-for-next-season), a new cross-league "Recent activity" feed
+  (the first place anything queries `LeagueTransaction` across _all_ of a
+  user's leagues at once, rather than one league at a time), and an
+  "Explore" section linking to `/teams` and the engineering write-up.
+  This isn't tracked against a specific numbered roadmap item - #9 (Team
+  Dashboard) and #94 (Interactive League Dashboard) are both about a
+  _single_ league's own dashboard/standings view, not this cross-account
+  landing page. Updated 3 e2e tests (`league-creation.spec.ts`,
+  `multiple-leagues.spec.ts`, `season-simulation.spec.ts`) whose
+  assertions depended on the old literal "My Leagues" page heading, which
+  the redesign replaced with a personalized greeting - a real, intentional
+  copy change, not a bug. Verified visually via a Playwright screenshot
+  with two franchises (one fast-forwarded to generate real cross-league
+  activity) to confirm the aggregated feed actually attributes each entry
+  to the right franchise. All 10 e2e tests + 223 unit tests passing
+  against a real production build.

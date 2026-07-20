@@ -38,7 +38,9 @@ test("sign up, start a franchise, and the cap sheet reflects real generated data
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', "correct-horse-battery-staple");
   await page.click('button[type="submit"]');
-  await expect(page.getByRole("heading", { name: "My Leagues" })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("heading", { name: /Your franchises/ })).toBeVisible({
+    timeout: 20_000,
+  });
   await expect(page.getByRole("heading", { name: "Boston Celtics" })).toBeVisible();
 
   await page.getByRole("heading", { name: "Boston Celtics" }).click();
