@@ -417,9 +417,26 @@ via bcrypt), and JWT sessions. Every `League` has an `ownerId`; every read
 of league-scoped data checks `session.user.id === league.ownerId` at the
 data-access layer (not just hidden in the UI) and returns a 404 - not a
 403 - for a non-owner, so the route doesn't even confirm the league
-exists. One league per user for now (`createLeagueAction` is idempotent:
-revisiting `/leagues/new` after starting one redirects straight back to
-it instead of creating a second); multiple saves per user is future work.
+exists.
+
+**Multiple franchises per user**: a user can run up to `MAX_LEAGUES_PER_USER`
+(5, `src/lib/league/constants.ts`) independent franchises at once and
+switch between them from `/leagues` (the hub). This was a small change in
+practice - every league-scoped page already authorized by `league.id` in
+the URL plus an ownership check, never by "the one league this user has,"
+so the only real work was: (1) removing `createLeagueAction`'s old
+"redirect to the existing league" behavior in favor of a soft cap check,
+(2) the `/leagues` hub page itself (lists every franchise as a card with
+a live status - "Playoffs underway," "Draft pending," etc. - computed the
+same way each individual feature page already gates its own actions),
+and (3) `createLeagueAction` now calls `revalidatePath("/leagues")`
+before its redirect - without it, a real (and initially confusing) bug
+surfaced: Next.js's client-side link-prefetch cache for the hub can serve
+a stale "you have no franchises yet" snapshot from before the league was
+created for up to its default cache window, since only the redirect
+target's cache was being invalidated, not the hub's. The cap itself
+(`MAX_LEAGUES_PER_USER`) is a soft guard against unbounded DB growth (each
+franchise bootstraps ~500+ rows), not a real product limit.
 
 `trustHost: true` is required in the Auth.js config for this to work
 outside Vercel (which sets it automatically) - without it, Auth.js

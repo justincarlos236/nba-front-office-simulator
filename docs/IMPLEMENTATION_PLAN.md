@@ -129,7 +129,7 @@ unbounded extra work over it).
 | 82  | Custom Rosters                        | ⬜     | P3       | —       | —            | —                                                                                                                                                      |
 | 83  | League Settings                       | ⬜     | P2       | 9       | —            | —                                                                                                                                                      |
 | 84  | User Authentication                   | ✅     | P0       | done    | —            | Auth.js v5, Credentials, ownership-scoped                                                                                                              |
-| 85  | Multiple Franchise Saves              | ⬜     | P0       | 9*      | —            | Currently hard-capped to one league per user - **fast-tracked next per explicit user request** (2026-07-20), out of Phase 9's original order           |
+| 85  | Multiple Franchise Saves              | ✅     | P0       | 9*      | —            | `/leagues` hub - up to `MAX_LEAGUES_PER_USER` (5) franchises, switch anytime; fast-tracked out of Phase 9's original order per explicit user request   |
 | 86  | Global Player Search                  | ⬜     | P1       | 8       | —            | —                                                                                                                                                      |
 | 87  | Global Team Search                    | ⬜     | P2       | 8       | —            | `/teams` browse exists; no search box                                                                                                                  |
 | 88  | Advanced Filters                      | ⬜     | P2       | 8       | 86           | —                                                                                                                                                      |
@@ -283,7 +283,9 @@ already exists. Good candidate to interleave between bigger phases.
 
 ### Phase 9 — Multi-Save, Settings & Meta Features
 
-- [ ] Multiple franchise saves per user
+- [x] Multiple franchise saves per user ✅ DONE (2026-07-20, fast-tracked
+      out of order per explicit user request) - `/leagues` hub, up to
+      `MAX_LEAGUES_PER_USER` (5)
 - [ ] League settings/configuration
 - [ ] GM career score, achievements
 
@@ -424,3 +426,26 @@ already exists. Good candidate to interleave between bigger phases.
     Lakers GM) to be picked up right after this draft polish - this is
     already tracked below in Phase 9 (currently unstarted); see that
     section for the row status.
+- **2026-07-20 (later)**: #85 Multiple Franchise Saves completed, fast-
+  tracked out of Phase 9's order per explicit user request. Removed
+  `createLeagueAction`'s old "redirect to the existing league" behavior
+  in favor of a soft cap (`MAX_LEAGUES_PER_USER = 5`, a DB-growth guard,
+  not a real product limit); new `/leagues` hub page lists every
+  franchise as a card with a live status (regular season/playoffs/draft
+  pending/ready for next season, computed the same way each feature page
+  already gates itself); the team picker now flags (not blocks) teams
+  the user already runs elsewhere. This turned out to need very little
+  architectural change - every league-scoped page already authorized by
+  `league.id` in the URL, never by "the one league this user has." Found
+  and fixed one real bug in the process: after creating a second league,
+  `/leagues` briefly showed a stale "no franchises yet" snapshot - Next.js's
+  client-side link-prefetch cache for the hub wasn't being invalidated,
+  since `createLeagueAction` only called `redirect()` and never
+  `revalidatePath("/leagues")`. Updated the NavBar ("My League" → "My
+  Leagues", now points at the hub) and sign-in's post-auth redirect (now
+  `/leagues`, not straight to the team picker - sign-up still goes to the
+  team picker directly, since a brand new user always has zero
+  franchises). 1 new e2e test (`multiple-leagues.spec.ts`); updated two
+  existing e2e tests (`league-creation.spec.ts`, `season-simulation.spec.ts`)
+  that had baked in the old one-league-per-user / "My League" nav
+  assumptions.

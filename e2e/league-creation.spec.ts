@@ -32,12 +32,16 @@ test("sign up, start a franchise, and the cap sheet reflects real generated data
   await page.goto(leagueUrl);
   await expect(page.getByText("Committed salary")).not.toBeVisible();
 
-  // Signing back in should land straight on the existing league, not the
-  // team picker (one league per user).
+  // Signing back in should land on the leagues hub, showing this
+  // franchise as a card (users can run multiple franchises now).
   await page.goto("/sign-in");
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', "correct-horse-battery-staple");
   await page.click('button[type="submit"]');
+  await expect(page.getByRole("heading", { name: "My Leagues" })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("heading", { name: "Boston Celtics" })).toBeVisible();
+
+  await page.getByRole("heading", { name: "Boston Celtics" }).click();
   await expect(page.getByText("Committed salary")).toBeVisible({ timeout: 20_000 });
   expect(page.url()).toBe(leagueUrl);
 });

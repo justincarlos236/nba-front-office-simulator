@@ -76,7 +76,7 @@ export async function signInAction(
     await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
-      redirectTo: "/leagues/new",
+      redirectTo: "/leagues",
     });
   } catch (error) {
     if (error instanceof AuthError) {

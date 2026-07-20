@@ -19,8 +19,8 @@ export async function NavBar() {
           </Link>
           {session?.user ? (
             <>
-              <Link href="/leagues/new" className="transition hover:text-foreground">
-                My League
+              <Link href="/leagues" className="transition hover:text-foreground">
+                My Leagues
               </Link>
               <form
                 action={async () => {

@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { createLeagueAction } from "@/lib/actions/league";
+import { MAX_LEAGUES_PER_USER } from "@/lib/league/constants";
 import { prisma } from "@/lib/prisma";
 
 // This page's correctness depends on request-time session + DB state (has
@@ -12,8 +14,32 @@ export default async function NewLeaguePage() {
   const session = await auth();
   if (!session?.user) redirect("/sign-in");
 
-  const existing = await prisma.league.findFirst({ where: { ownerId: session.user.id } });
-  if (existing) redirect(`/leagues/${existing.id}`);
+  const existingLeagues = await prisma.league.findMany({
+    where: { ownerId: session.user.id },
+    include: { teams: { include: { team: true } } },
+  });
+
+  if (existingLeagues.length >= MAX_LEAGUES_PER_USER) {
+    return (
+      <main className="mx-auto max-w-2xl flex-1 px-6 py-16">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Pick your team</h1>
+        <p className="mt-4 text-muted">
+          You&apos;ve reached the {MAX_LEAGUES_PER_USER}-franchise limit. Manage your existing
+          franchises from{" "}
+          <Link href="/leagues" className="text-accent hover:underline">
+            My Leagues
+          </Link>
+          .
+        </p>
+      </main>
+    );
+  }
+
+  const runningTeamIds = new Set(
+    existingLeagues
+      .map((l) => l.teams.find((lt) => lt.id === l.userControlledTeamId)?.teamId)
+      .filter((id): id is string => Boolean(id)),
+  );
 
   const teams = await prisma.team.findMany({
     orderBy: [{ conference: "asc" }, { city: "asc" }],
@@ -23,15 +49,27 @@ export default async function NewLeaguePage() {
 
   return (
     <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground">Pick your team</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Pick your team</h1>
+        {existingLeagues.length > 0 && (
+          <Link
+            href="/leagues"
+            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
+          >
+            My Leagues
+          </Link>
+        )}
+      </div>
       <p className="mt-2 max-w-2xl text-muted">
         This clones the real 2023-24 snapshot into your own save: all 497 real players, real
         stat-driven ratings, and contracts generated from the valuation model. The other 29 teams
-        are AI-controlled. This can&apos;t be undone once started.
+        are AI-controlled. This can&apos;t be undone once started. You can run up to{" "}
+        {MAX_LEAGUES_PER_USER} franchises at once
+        {existingLeagues.length > 0 ? " (including this one)" : ""}.
       </p>
 
-      <TeamRow title="Eastern Conference" teams={eastTeams} />
-      <TeamRow title="Western Conference" teams={westTeams} />
+      <TeamRow title="Eastern Conference" teams={eastTeams} runningTeamIds={runningTeamIds} />
+      <TeamRow title="Western Conference" teams={westTeams} runningTeamIds={runningTeamIds} />
     </main>
   );
 }
@@ -39,6 +77,7 @@ export default async function NewLeaguePage() {
 function TeamRow({
   title,
   teams,
+  runningTeamIds,
 }: {
   title: string;
   teams: {
@@ -48,6 +87,7 @@ function TeamRow({
     logoUrl: string | null;
     primaryColor: string;
   }[];
+  runningTeamIds: Set<string>;
 }) {
   return (
     <section className="mt-10">
@@ -69,9 +109,14 @@ function TeamRow({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={team.logoUrl} alt="" width={32} height={32} className="shrink-0" />
                 )}
-                <h3 className="font-semibold text-foreground">
-                  {team.city} {team.name}
-                </h3>
+                <div>
+                  <h3 className="font-semibold text-foreground">
+                    {team.city} {team.name}
+                  </h3>
+                  {runningTeamIds.has(team.id) && (
+                    <p className="text-xs text-muted">You already run this team elsewhere</p>
+                  )}
+                </div>
               </div>
             </button>
           </form>

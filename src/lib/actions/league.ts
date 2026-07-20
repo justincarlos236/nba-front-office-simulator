@@ -1,11 +1,13 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { planLeaguePlayer } from "@/lib/league/planLeaguePlayer";
 import { generateRoundRobinSchedule } from "@/lib/simulation/generateSchedule";
 import { estimateAge, estimateExperience } from "@/lib/players/age";
+import { MAX_LEAGUES_PER_USER } from "@/lib/league/constants";
 
 const SEASON = 2023;
 const FREE_AGENT_RATING_CUTOFF = 25;
@@ -14,7 +16,8 @@ const FREE_AGENT_RATING_CUTOFF = 25;
  * Bootstraps a brand-new League from the reference snapshot: clones all 30
  * teams, all 497 real players (with a rating + generated contract derived
  * from their real 2023-24 stats), and puts the user in charge of one team.
- * One league per user for now - see docs/ROADMAP.md for multi-save support.
+ * Users can run multiple independent franchises (up to `MAX_LEAGUES_PER_USER`)
+ * and switch between them from `/leagues`.
  */
 export async function createLeagueAction(formData: FormData) {
   const session = await auth();
@@ -25,8 +28,10 @@ export async function createLeagueAction(formData: FormData) {
     throw new Error("Missing teamId");
   }
 
-  const existing = await prisma.league.findFirst({ where: { ownerId: session.user.id } });
-  if (existing) redirect(`/leagues/${existing.id}`);
+  const existingCount = await prisma.league.count({ where: { ownerId: session.user.id } });
+  if (existingCount >= MAX_LEAGUES_PER_USER) {
+    throw new Error(`You've reached the ${MAX_LEAGUES_PER_USER}-franchise limit.`);
+  }
 
   const [teams, players, chosenTeam] = await Promise.all([
     prisma.team.findMany(),
@@ -126,5 +131,6 @@ export async function createLeagueAction(formData: FormData) {
   });
   await prisma.contractYear.createMany({ data: contractYearInputs });
 
+  revalidatePath("/leagues");
   redirect(`/leagues/${league.id}`);
 }
