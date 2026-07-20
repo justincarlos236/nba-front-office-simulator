@@ -255,6 +255,72 @@ they're what unlocks the next season.
   bare "advance" button - and highlights the user's own players among the
   award winners.
 
+## Draft system
+
+Runs between the just-finished season's playoffs and the next season -
+`advanceSeasonAction` now refuses to advance until the draft for the
+current season is fully resolved, so it isn't a dead end bolted onto the
+side of the sim; it feeds real rookies onto real rosters that then go
+through development/retirement/free agency like anyone else.
+
+- **Lottery** (`draftLottery.ts`): the real post-2019-reform NBA odds
+  table (top 3 records tied at 14.0%, tapering to 0.5% at seed 14) - real,
+  published data, not an approximation of the _odds themselves_. The
+  actual lottery draws picks 1-3 via weighted ping-pong-ball combinations
+  without replacement; this approximates the same probabilities with a
+  simpler weighted draw without replacement for the top 4 picks, a
+  documented simplification of the combinatoric mechanism only.
+- **Full draft order** (`draftOrder.ts`): picks 1-14 from the lottery
+  among non-playoff teams; picks 15-30 go to the 16 playoff teams in
+  reverse regular-season record (the real rule - playoff _performance_
+  doesn't affect draft position); round 2 (picks 31-60) is a straight
+  reverse-record sweep of all 30 teams with no lottery at all.
+- **Prospects** (`generateDraftClass.ts`, `prospectNames.ts`): 60
+  fictional prospects per class - no real future draft class data exists,
+  so these are explicitly not real people, same principle as contract
+  generation. Ratings trend better for earlier picks on average (~68
+  overall / ~92 potential at pick 1, tapering to ~45 / ~65 at pick 60)
+  but with real random variance layered on top, so pick order isn't a
+  perfect predictor - some late picks outperform, some high picks bust,
+  the same as a real draft. The pool of 60 is generated independently of
+  the 60 picks; which prospect actually goes to which pick is decided by
+  best-available-by-rating (CPU teams) or the user's own choice, not a
+  fixed 1:1 slot mapping - so a league's "consensus top prospect" can
+  genuinely fall further than pick 1 if a CPU team (or the user) drafts
+  someone else first.
+- **CPU picks**: best-player-available by rating. Real GM logic (team
+  needs, timeline, positional fit) is Phase 6 territory (AI-driven CPU
+  teams) - this is a documented, honest simplification until that exists.
+- **Interactive draft day** (`/leagues/[id]/draft`): the user makes their
+  own team's picks from the live board; CPU picks in between are
+  fast-forwarded in one click ("Simulate to your next pick") rather than
+  requiring 58 individual clicks - the same "advance to the next real
+  decision" pattern the playoffs page already uses.
+- **Rookie contracts**: reuse the exact same `generateContract` engine
+  every other contract in the sim uses (not a hand-typed rookie-scale
+  table) - a prospect's `overallRating` stands in for the usual
+  stats-derived `ageAdjustedScore` input, since generated prospects have
+  no real box-score history to compute one from. `yearsOfExperience: 0`
+  gets them the same rookie-scale discount real rookies get.
+- **Reference `Player` rows**: a drafted rookie still gets a real
+  `Player` row (not just a `LeaguePlayer`), with `draftYear` set to their
+  actual rookie season - this keeps them working seamlessly with the
+  existing age-estimation infrastructure (`estimateAge`/`estimateExperience`)
+  for every future season's development pass, without any special-casing.
+  One accepted quirk: because that infrastructure assumes everyone was 22
+  when drafted (see `src/lib/players/age.ts`), a rookie's _displayed_
+  generated age (19-22, shown once on the draft board) doesn't
+  necessarily match the age they're treated as in all future development
+  math - the same simplification every real player in the sim already
+  has, just newly visible at the moment they're drafted.
+- **Pick inventory**: `DraftPick` rows for a season are created lazily by
+  `startDraftAction` (60 rows: 2 rounds x 30 teams) rather than generated
+  upfront at league bootstrap for many future years - simpler, and
+  sidesteps needing to backfill existing leagues that bootstrapped before
+  this phase existed. Pick trading (extending `validateTrade`'s existing
+  but unused Stepien-lite check) is deferred - see
+  `docs/IMPLEMENTATION_PLAN.md`.
+
 ## AI GM assistant
 
 The assistant is not a chat window that free-associates about basketball.

@@ -55,6 +55,14 @@ export async function advanceSeasonAction(leagueId: string) {
     throw new Error("Crown a champion in the playoffs before advancing to the next season.");
   }
 
+  const [totalDraftPicks, pendingDraftPicks] = await Promise.all([
+    prisma.draftPick.count({ where: { leagueId, season } }),
+    prisma.draftPick.count({ where: { leagueId, season, selectedProspectId: null } }),
+  ]);
+  if (totalDraftPicks === 0 || pendingDraftPicks > 0) {
+    throw new Error("Finish the draft before advancing to the next season.");
+  }
+
   const alreadyAdvanced = await prisma.game.count({ where: { leagueId, season: newSeason } });
   if (alreadyAdvanced > 0) {
     throw new Error("This season has already been advanced.");

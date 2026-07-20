@@ -81,6 +81,12 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
             Offseason
           </Link>
           <Link
+            href={`/leagues/${league.id}/draft`}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
+          >
+            Draft
+          </Link>
+          <Link
             href={`/leagues/${league.id}/free-agents`}
             className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
           >

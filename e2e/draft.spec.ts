@@ -1,10 +1,10 @@
 import { execFileSync } from "node:child_process";
 import { test, expect } from "@playwright/test";
 
-// Needs a fully-played regular season and a crowned playoff champion before
-// the offseason can begin, so the regular season is fast-forwarded via a
-// tsx script (see playoffs.spec.ts for why) and only the playoffs +
-// offseason flow itself is driven through the browser.
+// Needs a fully-played regular season and a crowned playoff champion
+// before the draft can start, so the regular season is fast-forwarded
+// via a tsx script (see playoffs.spec.ts for why) and only the draft
+// flow itself is driven through the browser.
 test.setTimeout(3 * 60_000);
 
 const isWindows = process.platform === "win32";
@@ -16,11 +16,11 @@ function fastForwardRegularSeason(leagueId: string) {
   });
 }
 
-test("play through the playoffs, then advance to the next season", async ({ page }) => {
-  const email = `offseason-e2e-${Date.now()}@example.com`;
+test("run the lottery and draft all 60 picks, including the user's own", async ({ page }) => {
+  const email = `draft-e2e-${Date.now()}@example.com`;
 
   await page.goto("/sign-up");
-  await page.fill('input[name="name"]', "Offseason E2E");
+  await page.fill('input[name="name"]', "Draft E2E");
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', "correct-horse-battery-staple");
   await page.click('button[type="submit"]');
@@ -34,11 +34,8 @@ test("play through the playoffs, then advance to the next season", async ({ page
   const leagueId = new URL(page.url()).pathname.split("/")[2];
   fastForwardRegularSeason(leagueId);
 
-  await page.goto(`/leagues/${leagueId}/offseason`);
-  await expect(page.getByRole("heading", { name: /Offseason/ })).toBeVisible();
-  await expect(
-    page.getByText("Crown a champion in the playoffs before advancing to the next season."),
-  ).toBeVisible();
+  await page.goto(`/leagues/${leagueId}/draft`);
+  await expect(page.getByText("Crown a champion in the playoffs before the draft.")).toBeVisible();
 
   await page.goto(`/leagues/${leagueId}/playoffs`);
   await page.getByText("Start playoffs (simulate play-in)").click();
@@ -49,8 +46,9 @@ test("play through the playoffs, then advance to the next season", async ({ page
         .getByText("League Champion", { exact: true })
         .isVisible()
         .catch(() => false)
-    )
+    ) {
       break;
+    }
     await page.getByText("Simulate next round").click();
     await expect(page.getByText(/Round \d complete|championship series is decided/)).toBeVisible({
       timeout: 30_000,
@@ -58,14 +56,18 @@ test("play through the playoffs, then advance to the next season", async ({ page
   }
   await expect(page.getByText("League Champion", { exact: true })).toBeVisible();
 
-  // Advancing the season now also requires the draft to be finished (see
-  // draft.spec.ts for the full draft-flow test) - run it to completion
-  // here too, since this test needs to reach the "ready to advance" state.
   await page.goto(`/leagues/${leagueId}/draft`);
   await page.getByText("Start the draft").click();
   await expect(page.getByText("The lottery is in and the draft class is set.")).toBeVisible({
     timeout: 30_000,
   });
+
+  // Advance through CPU picks and make the user's own picks until all 60
+  // picks are resolved. Each branch waits a beat after its action - the
+  // client message updates immediately on the server action's response,
+  // but the page's server-computed phase prop lands a moment later via
+  // Next's post-action revalidation, so checking phase immediately after
+  // a click can race a stale render.
   for (let i = 0; i < 15; i++) {
     if (
       await page
@@ -93,32 +95,25 @@ test("play through the playoffs, then advance to the next season", async ({ page
         continue;
       }
       await advanceButton.click();
+      // On the batch that finishes the draft, both "Resolved N picks." (the
+      // client action message) and "The draft is complete..." (the new
+      // server-computed phase) can be on the page at once - use .first()
+      // rather than a strict-mode-sensitive combined text match.
       await expect(page.getByText(/Resolved \d+ pick|The draft is complete/).first()).toBeVisible({
         timeout: 20_000,
       });
       await page.waitForTimeout(500);
     }
   }
+
   await expect(page.getByText("The draft is complete")).toBeVisible({ timeout: 15_000 });
 
+  const boardText = await page.textContent("body");
+  const pickCount = (boardText?.match(/Pick \d+/g) ?? []).length;
+  expect(pickCount).toBe(60);
+
+  // The season shouldn't be advanceable until the draft finished - now
+  // that it has, the offseason page should offer the advance button.
   await page.goto(`/leagues/${leagueId}/offseason`);
-  await expect(page.getByRole("heading", { name: /2023-24 Offseason/ })).toBeVisible();
   await expect(page.getByText(/Advance to the .* season/)).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText(/Salary cap: \$[\d.]+M/)).toBeVisible();
-
-  const advanceButton = page.getByRole("button", { name: /Advance to the 2024-25 season/ });
-  await expect(advanceButton).toBeVisible();
-  await advanceButton.click();
-  await expect(page.getByText(/Welcome to the 2024-25 season/)).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByRole("heading", { name: /2024-25 Offseason/ })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "2023-24 Season Awards" })).toBeVisible();
-  await expect(page.getByText("Most Valuable Player")).toBeVisible();
-
-  // Standings should have reset for the new season, not carried over wins,
-  // and a fresh schedule of unplayed games should exist.
-  await page.goto(`/leagues/${leagueId}/standings`);
-  await expect(page.getByRole("heading", { name: /2024-25 Standings/ })).toBeVisible();
-  const remainingText = await page.getByText(/games remaining league-wide/).textContent();
-  const remaining = Number(remainingText?.match(/(\d+) games/)?.[1]);
-  expect(remaining).toBeGreaterThan(0);
 });

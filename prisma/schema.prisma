@@ -182,6 +182,7 @@ model League {
   teams            LeagueTeam[]
   players          LeaguePlayer[]
   draftPicks       DraftPick[]
+  draftProspects   DraftProspect[]
   trades           Trade[]
   tradeExceptions  TradeException[]
   assistantThreads AssistantThread[]
@@ -402,21 +403,49 @@ model ContractYear {
 }
 
 model DraftPick {
-  id             String  @id @default(cuid())
-  leagueId       String
-  season         Int
-  round          Int // 1 or 2
-  originalTeamId String
-  currentOwnerId String
-  protectionNote String? // free text, e.g. "Top-4 protected, converts to 2027 2nd if not conveyed"
+  id                String  @id @default(cuid())
+  leagueId          String
+  season            Int
+  round             Int // 1 or 2
+  originalTeamId    String
+  currentOwnerId    String
+  protectionNote    String? // free text, e.g. "Top-4 protected, converts to 2027 2nd if not conveyed"
+  // Set once the lottery/pick order is determined for this season (1-30 for
+  // round 1, 31-60 for round 2) - null until `startDraftAction` runs.
+  overallPickNumber Int?
+  selectedProspectId String? @unique
 
-  league       League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  originalTeam LeagueTeam   @relation("OriginalTeam", fields: [originalTeamId], references: [id])
-  currentOwner LeagueTeam   @relation("CurrentOwner", fields: [currentOwnerId], references: [id])
-  tradeAssets  TradeAsset[]
+  league           League         @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  originalTeam     LeagueTeam     @relation("OriginalTeam", fields: [originalTeamId], references: [id])
+  currentOwner     LeagueTeam     @relation("CurrentOwner", fields: [currentOwnerId], references: [id])
+  selectedProspect DraftProspect? @relation(fields: [selectedProspectId], references: [id])
+  tradeAssets      TradeAsset[]
 
   @@index([leagueId])
+  @@index([leagueId, season, overallPickNumber])
   @@map("draft_picks")
+}
+
+// A fictional prospect generated for one league's draft class - not a real
+// person, since no real future draft class data exists (see
+// docs/ARCHITECTURE.md). Ratings are generated once at `startDraftAction`
+// time and are visible to the user immediately (no scouting uncertainty
+// modeled yet).
+model DraftProspect {
+  id              String   @id @default(cuid())
+  leagueId        String
+  season           Int
+  fullName        String
+  position        Position
+  age             Int
+  overallRating   Int
+  potentialRating Int
+
+  league    League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  draftPick DraftPick?
+
+  @@index([leagueId, season])
+  @@map("draft_prospects")
 }
 
 enum TradeStatus {

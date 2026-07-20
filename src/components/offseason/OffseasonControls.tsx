@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { advanceSeasonAction } from "@/lib/actions/offseason";
 
-type Phase = "regular-season" | "playoffs-incomplete" | "ready";
+type Phase = "regular-season" | "playoffs-incomplete" | "draft-incomplete" | "ready";
 
 export function OffseasonControls({
   leagueId,
@@ -46,6 +47,15 @@ export function OffseasonControls({
       {phase === "playoffs-incomplete" && (
         <p className="text-sm text-muted">
           Crown a champion in the playoffs before advancing to the next season.
+        </p>
+      )}
+      {phase === "draft-incomplete" && (
+        <p className="text-sm text-muted">
+          Finish the{" "}
+          <Link href={`/leagues/${leagueId}/draft`} className="text-accent hover:underline">
+            draft
+          </Link>{" "}
+          before advancing to the next season.
         </p>
       )}
       {phase === "ready" && (
