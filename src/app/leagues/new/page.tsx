@@ -16,8 +16,10 @@ export default async function NewLeaguePage() {
   if (existing) redirect(`/leagues/${existing.id}`);
 
   const teams = await prisma.team.findMany({
-    orderBy: [{ conference: "asc" }, { division: "asc" }, { city: "asc" }],
+    orderBy: [{ conference: "asc" }, { city: "asc" }],
   });
+  const eastTeams = teams.filter((team) => team.conference === "EAST");
+  const westTeams = teams.filter((team) => team.conference === "WEST");
 
   return (
     <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
@@ -28,7 +30,29 @@ export default async function NewLeaguePage() {
         are AI-controlled. This can&apos;t be undone once started.
       </p>
 
-      <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <TeamRow title="Eastern Conference" teams={eastTeams} />
+      <TeamRow title="Western Conference" teams={westTeams} />
+    </main>
+  );
+}
+
+function TeamRow({
+  title,
+  teams,
+}: {
+  title: string;
+  teams: {
+    id: string;
+    city: string;
+    name: string;
+    logoUrl: string | null;
+    primaryColor: string;
+  }[];
+}) {
+  return (
+    <section className="mt-10">
+      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {teams.map((team) => (
           <form key={team.id} action={createLeagueAction}>
             <input type="hidden" name="teamId" value={team.id} />
@@ -45,17 +69,14 @@ export default async function NewLeaguePage() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={team.logoUrl} alt="" width={32} height={32} className="shrink-0" />
                 )}
-                <div>
-                  <p className="text-xs text-muted">{team.division}</p>
-                  <h3 className="font-semibold text-foreground">
-                    {team.city} {team.name}
-                  </h3>
-                </div>
+                <h3 className="font-semibold text-foreground">
+                  {team.city} {team.name}
+                </h3>
               </div>
             </button>
           </form>
         ))}
       </div>
-    </main>
+    </section>
   );
 }

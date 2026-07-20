@@ -275,10 +275,19 @@ age-curve adjusted) that both feeds the assistant and powers standalone UI
 - **Teams**: hardcoded as a static fixture (`prisma/data/teams.ts`) rather
   than pulled from an API — conference/division/colors are effectively
   fixed, so hitting an external service for this data would just be an
-  unnecessary dependency. `logoUrl` links to each team's official crest on
-  NBA.com's own CDN (`cdn.nba.com`, keyed by each team's stable numeric NBA
-  team ID) rather than a copy stored in this repo — the same way any site
-  cites an official public asset instead of redistributing it.
+  unnecessary dependency. `logoUrl` links to each team's crest on
+  Wikipedia's own image host (`upload.wikimedia.org`, resolved via
+  Wikipedia's REST summary API) rather than a copy stored in this repo —
+  the same way any site cites an official public asset instead of
+  redistributing it. NBA.com's own logo CDN (`cdn.nba.com`) was tried
+  first - the URLs are valid (confirmed via `curl`) - but every request
+  reliably failed in an actual browser, including on the deployed Vercel
+  site itself (not just local testing), most likely IP-range filtering of
+  datacenter/server traffic that a real visitor's residential browser
+  wouldn't hit. Verified all 30 Wikipedia URLs actually render in a real
+  browser (both locally and confirmed the failure/fix on the live site)
+  before switching, rather than assuming a URL that returns 200 to `curl`
+  will also render as an `<img>`.
 - **Players**: bios (name, position, height/weight, draft info, current
   team) come from the balldontlie API. Known limitation: a small number of
   common-name players can get bio data matched to the wrong real person -

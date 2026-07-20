@@ -63,7 +63,7 @@ test("start the playoffs and simulate to a champion", async ({ page }) => {
     });
   }
 
-  await expect(page.getByText("League Champion")).toBeVisible();
+  await expect(page.getByText("League Champion", { exact: true })).toBeVisible();
 
   await page.goto(`/leagues/${leagueId}/standings`);
   await expect(page.getByText("Recent Results")).toBeVisible();

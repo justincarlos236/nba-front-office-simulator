@@ -46,7 +46,7 @@ test("play through the playoffs, then advance to the next season", async ({ page
   for (let i = 0; i < 4; i++) {
     if (
       await page
-        .getByText("League Champion")
+        .getByText("League Champion", { exact: true })
         .isVisible()
         .catch(() => false)
     )
@@ -56,7 +56,7 @@ test("play through the playoffs, then advance to the next season", async ({ page
       timeout: 30_000,
     });
   }
-  await expect(page.getByText("League Champion")).toBeVisible();
+  await expect(page.getByText("League Champion", { exact: true })).toBeVisible();
 
   await page.getByText("Continue to the offseason").click();
   await expect(page.getByRole("heading", { name: /2023-24 Offseason/ })).toBeVisible();

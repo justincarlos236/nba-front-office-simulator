@@ -342,15 +342,25 @@ already exists. Good candidate to interleave between bigger phases.
   data source, see docs/ARCHITECTURE.md). #28 and #30 (depth chart,
   injuries) moved from Phase 3 to Phase 7 - roster micromanagement, not
   season progression, so they didn't need to block this phase.
-  Also this session: (1) added team `logoUrl` (NBA.com's own CDN) and
-  wired it into the team-selection page per user request; (2) found and
-  fixed a real data bug (two players' bios matched to an unrelated
+  Also this session: (1) added team `logoUrl` and wired it into the
+  team-selection page per user request - NBA.com's own logo CDN was
+  tried first (URLs valid per `curl`) but reliably failed to load in any
+  real browser, including the actual deployed Vercel site, so switched to
+  Wikipedia's image host instead, verifying all 30 URLs render in a real
+  browser before committing to it (see docs/ARCHITECTURE.md); (2) found
+  and fixed a real data bug (two players' bios matched to an unrelated
   1976-drafted namesake, surfaced as "retired at age 69" once this phase
   started displaying computed ages - fixed by nulling the incorrect
   draft fields rather than asserting a still-uncertain identity); (3)
   found and fixed a latent ordering bug where the trade-partner list had
   no explicit `orderBy` and silently depended on Postgres's incidental
   row order - added deterministic ordering and fixed the one e2e test
-  that (unknowingly) depended on the old incidental order. Next
-  recommended phase: **Phase 4 (Draft System)** - also what unblocks
-  retirement no longer being a one-way drain on the talent pool.
+  that (unknowingly) depended on the old incidental order; (4) found and
+  fixed a locator ambiguity in two e2e tests (`playoffs.spec.ts`,
+  `offseason.spec.ts`) that only surfaced when the test's own team
+  actually won the championship (adding a "Your team is the League
+  Champion!" status banner next to the existing "League Champion"
+  label), since playoff/series simulation isn't seeded and outcomes vary
+  run to run. Next recommended phase: **Phase 4 (Draft System)** - also
+  what unblocks retirement no longer being a one-way drain on the talent
+  pool.

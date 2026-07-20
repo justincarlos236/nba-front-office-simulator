@@ -7,9 +7,10 @@
  */
 export interface TeamSeed {
   abbreviation: string;
-  // NBA's own CDN, keyed by each team's stable numeric NBA team ID - not
-  // copied/hosted here, just linked, the same way any site cites an
-  // official public asset.
+  // Wikipedia's infobox logo thumbnail (upload.wikimedia.org), not
+  // copied/hosted here, just linked. NBA.com's own logo CDN
+  // (cdn.nba.com) was tried first but reliably failed to load in
+  // production - see docs/ARCHITECTURE.md.
   logoUrl: string;
   name: string;
   city: string;
@@ -23,7 +24,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   // Eastern Conference — Atlantic
   {
     abbreviation: "BOS",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612738/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/8/8f/Boston_Celtics.svg/330px-Boston_Celtics.svg.png",
     name: "Celtics",
     city: "Boston",
     conference: "EAST",
@@ -33,7 +35,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "BKN",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612751/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/4/40/Brooklyn_Nets_primary_icon_logo_2024.svg/330px-Brooklyn_Nets_primary_icon_logo_2024.svg.png",
     name: "Nets",
     city: "Brooklyn",
     conference: "EAST",
@@ -43,7 +46,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "NYK",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612752/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/2/25/New_York_Knicks_logo.svg/330px-New_York_Knicks_logo.svg.png",
     name: "Knicks",
     city: "New York",
     conference: "EAST",
@@ -53,7 +57,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "PHI",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612755/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/0/0e/Philadelphia_76ers_logo.svg/330px-Philadelphia_76ers_logo.svg.png",
     name: "76ers",
     city: "Philadelphia",
     conference: "EAST",
@@ -63,7 +68,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "TOR",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612761/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/3/36/Toronto_Raptors_logo.svg/330px-Toronto_Raptors_logo.svg.png",
     name: "Raptors",
     city: "Toronto",
     conference: "EAST",
@@ -75,7 +81,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   // Eastern Conference — Central
   {
     abbreviation: "CHI",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612741/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/6/67/Chicago_Bulls_logo.svg/330px-Chicago_Bulls_logo.svg.png",
     name: "Bulls",
     city: "Chicago",
     conference: "EAST",
@@ -85,7 +92,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "CLE",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612739/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Cleveland_Cavaliers_logo.svg/330px-Cleveland_Cavaliers_logo.svg.png",
     name: "Cavaliers",
     city: "Cleveland",
     conference: "EAST",
@@ -95,7 +103,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "DET",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612765/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Logo_of_the_Detroit_Pistons.svg/330px-Logo_of_the_Detroit_Pistons.svg.png",
     name: "Pistons",
     city: "Detroit",
     conference: "EAST",
@@ -105,7 +114,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "IND",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612754/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/1/1b/Indiana_Pacers.svg/330px-Indiana_Pacers.svg.png",
     name: "Pacers",
     city: "Indiana",
     conference: "EAST",
@@ -115,7 +125,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "MIL",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612749/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/4/4a/Milwaukee_Bucks_logo.svg/330px-Milwaukee_Bucks_logo.svg.png",
     name: "Bucks",
     city: "Milwaukee",
     conference: "EAST",
@@ -127,7 +138,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   // Eastern Conference — Southeast
   {
     abbreviation: "ATL",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612737/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/2/24/Atlanta_Hawks_logo.svg/330px-Atlanta_Hawks_logo.svg.png",
     name: "Hawks",
     city: "Atlanta",
     conference: "EAST",
@@ -137,7 +149,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "CHA",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612766/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/c/c4/Charlotte_Hornets_%282014%29.svg/330px-Charlotte_Hornets_%282014%29.svg.png",
     name: "Hornets",
     city: "Charlotte",
     conference: "EAST",
@@ -147,7 +160,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "MIA",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612748/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/f/fb/Miami_Heat_logo.svg/330px-Miami_Heat_logo.svg.png",
     name: "Heat",
     city: "Miami",
     conference: "EAST",
@@ -157,7 +171,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "ORL",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612753/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/1/10/Orlando_Magic_logo.svg/330px-Orlando_Magic_logo.svg.png",
     name: "Magic",
     city: "Orlando",
     conference: "EAST",
@@ -167,7 +182,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "WAS",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612764/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/0/02/Washington_Wizards_logo.svg/330px-Washington_Wizards_logo.svg.png",
     name: "Wizards",
     city: "Washington",
     conference: "EAST",
@@ -179,7 +195,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   // Western Conference — Northwest
   {
     abbreviation: "DEN",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612743/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/7/76/Denver_Nuggets.svg/330px-Denver_Nuggets.svg.png",
     name: "Nuggets",
     city: "Denver",
     conference: "WEST",
@@ -189,7 +206,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "MIN",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612750/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/c/c2/Minnesota_Timberwolves_logo.svg/330px-Minnesota_Timberwolves_logo.svg.png",
     name: "Timberwolves",
     city: "Minnesota",
     conference: "WEST",
@@ -199,7 +217,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "OKC",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612760/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/5/5d/Oklahoma_City_Thunder.svg/330px-Oklahoma_City_Thunder.svg.png",
     name: "Thunder",
     city: "Oklahoma City",
     conference: "WEST",
@@ -209,7 +228,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "POR",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612757/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/2/21/Portland_Trail_Blazers_logo.svg/330px-Portland_Trail_Blazers_logo.svg.png",
     name: "Trail Blazers",
     city: "Portland",
     conference: "WEST",
@@ -219,7 +239,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "UTA",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612762/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/7/77/Utah_Jazz_logo_2025.svg/330px-Utah_Jazz_logo_2025.svg.png",
     name: "Jazz",
     city: "Utah",
     conference: "WEST",
@@ -231,7 +252,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   // Western Conference — Pacific
   {
     abbreviation: "GSW",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612744/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/0/01/Golden_State_Warriors_logo.svg/330px-Golden_State_Warriors_logo.svg.png",
     name: "Warriors",
     city: "Golden State",
     conference: "WEST",
@@ -241,7 +263,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "LAC",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612746/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/e/ed/Los_Angeles_Clippers_%282024%29.svg/330px-Los_Angeles_Clippers_%282024%29.svg.png",
     name: "Clippers",
     city: "LA",
     conference: "WEST",
@@ -251,7 +274,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "LAL",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612747/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Los_Angeles_Lakers_logo.svg/330px-Los_Angeles_Lakers_logo.svg.png",
     name: "Lakers",
     city: "Los Angeles",
     conference: "WEST",
@@ -261,7 +285,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "PHX",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612756/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/d/dc/Phoenix_Suns_logo.svg/330px-Phoenix_Suns_logo.svg.png",
     name: "Suns",
     city: "Phoenix",
     conference: "WEST",
@@ -271,7 +296,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "SAC",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612758/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/c/c7/SacramentoKings.svg/330px-SacramentoKings.svg.png",
     name: "Kings",
     city: "Sacramento",
     conference: "WEST",
@@ -283,7 +309,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   // Western Conference — Southwest
   {
     abbreviation: "DAL",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612742/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/9/97/Dallas_Mavericks_logo.svg/330px-Dallas_Mavericks_logo.svg.png",
     name: "Mavericks",
     city: "Dallas",
     conference: "WEST",
@@ -293,7 +320,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "HOU",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612745/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/2/28/Houston_Rockets.svg/330px-Houston_Rockets.svg.png",
     name: "Rockets",
     city: "Houston",
     conference: "WEST",
@@ -303,7 +331,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "MEM",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612763/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/f/f1/Memphis_Grizzlies.svg/330px-Memphis_Grizzlies.svg.png",
     name: "Grizzlies",
     city: "Memphis",
     conference: "WEST",
@@ -313,7 +342,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "NOP",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612740/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/0/0d/New_Orleans_Pelicans_logo.svg/330px-New_Orleans_Pelicans_logo.svg.png",
     name: "Pelicans",
     city: "New Orleans",
     conference: "WEST",
@@ -323,7 +353,8 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   },
   {
     abbreviation: "SAS",
-    logoUrl: "https://cdn.nba.com/logos/nba/1610612759/global/L/logo.svg",
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/en/thumb/a/a2/San_Antonio_Spurs.svg/330px-San_Antonio_Spurs.svg.png",
     name: "Spurs",
     city: "San Antonio",
     conference: "WEST",
