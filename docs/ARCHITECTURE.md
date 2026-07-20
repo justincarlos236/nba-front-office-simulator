@@ -266,8 +266,27 @@ strength numbers the regular season uses.
   the moment the playoffs start, it just fills in round by round. Uses
   team abbreviations (not full names) and small fixed-width boxes
   specifically so the whole bracket fits on one screen with no horizontal
-  scrolling - an earlier version used full team names and needed a
-  scrollable container, which wasn't the intended user experience.
+  scrolling on a normal desktop viewport (`overflow-x-auto` remains as a
+  fallback for genuinely narrow ones).
+  - **A CSS Grid item spans its assigned rows by default, but doesn't
+    center its content within them** - the first version of this
+    component got the row math right but never centered each box inside
+    its spanned area, so boxes rendered flush to the _top_ of their range
+    instead of centered between the pair feeding them, and the connector
+    lines (which _were_ correctly centered) looked disconnected from the
+    boxes they were supposed to join. Fixed by wrapping every box in a
+    `flex h-full items-center` container - this is the actual fix, not a
+    cosmetic one, and is the kind of bug that's easy to miss because the
+    grid positions themselves are correct; only the rendered content
+    inside each cell was misplaced.
+  - Each round-to-round connector is a small elbow, not a single line: a
+    vertical spine runs between the two feeding boxes' own vertical
+    centers (25%/75% of the connector's height, since a parent's cell
+    always spans exactly its 2 children), with stubs into each child and
+    a third stub into the parent - so it's visually unambiguous which two
+    series feed which next matchup. The Conference Finals -> NBA Finals
+    link is simpler (a single centered line), since it's always a direct
+    1-to-1 join rather than a 2-into-1 merge.
 
 ## Player development & multi-season progression
 

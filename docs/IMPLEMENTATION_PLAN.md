@@ -559,3 +559,23 @@ roundIndex`, so connector lines and box positions stay pixel-aligned
   not just passing tests - since this was a pure layout/visual change.
   All 10 e2e tests + 223 unit tests passing against a real production
   build.
+- **2026-07-21 (later)**: User reported the bracket still didn't look
+  right (screenshot showed boxes not aligned between the pairs feeding
+  them, and connector lines looking disconnected) and asked for a proper
+  fix, not a patch - correctly diagnosed as a real bug, not a design
+  taste issue: CSS Grid items span their assigned rows by default but
+  don't center their _content_ within that span, so every box was
+  rendering flush to the top of its row range instead of centered between
+  its two feeders. Fixed by wrapping each box in `flex h-full
+items-center`. Also rebuilt the connectors as proper elbows (a vertical
+  spine between the two feeding boxes' own centers, with stubs into each
+  child and the parent) instead of the previous single-midpoint-only
+  line, and added a direct connector from each conference's Conference
+  Finals box into the centered NBA Finals box so it no longer looks like
+  an isolated floating box. Re-verified visually end-to-end by tracing an
+  entire simulated bracket in a screenshot (Round 1 winners -> Conf Semis
+  -> Conf Finals -> NBA Finals -> crowned champion) and confirming the
+  visual connections matched the actual series results, not just that the
+  page rendered without errors. All 10 e2e tests + 223 unit tests passing
+  against a real production build; no changes to the underlying
+  `playoffs.ts` simulation/bracket-advancement logic.

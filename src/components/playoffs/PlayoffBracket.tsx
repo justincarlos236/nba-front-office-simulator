@@ -36,11 +36,11 @@ interface PlayoffBracketProps {
 // ("Conference Semifinals" etc.) are still used elsewhere on the page.
 const ROUND_LABELS = ["Round 1", "Conf. Semis", "Conf. Finals"];
 
-// Round-1 slot count anchors the whole grid's row units - every later
-// round's row-start/span is derived from it (span doubles each round, so a
-// round-2 box always covers exactly the 2 round-1 rows that feed it, etc).
-// Fixed at 4 for this app's 8-team-per-conference bracket, but computed
-// rather than hardcoded so this still works if that ever changes.
+// A round-N box always covers exactly the 2 round-(N-1) boxes that feed
+// it (span doubles each round: 1, 2, 4, ...), so every later round's
+// row-start/span is derived purely from this, not tracked separately -
+// that's what keeps boxes and connector lines pixel-aligned with no
+// manual height math, regardless of which teams actually advance.
 function rowRange(roundIndex: number, slotIndex: number) {
   const span = 2 ** roundIndex;
   return { start: slotIndex * span + 1, span };
@@ -59,6 +59,9 @@ function padRound(series: BracketSeries[], slotCount: number): (BracketSeries | 
   return padded;
 }
 
+const BOX_WIDTH = "w-24";
+const CONNECTOR_WIDTH = "w-4";
+
 export function PlayoffBracket({
   eastRounds,
   westRounds,
@@ -69,38 +72,61 @@ export function PlayoffBracket({
   const round1Count = eastRounds[0].length || 4;
 
   return (
-    <div className="mt-10 flex items-stretch justify-center gap-2">
-      <ConferenceBracket
-        conference="EAST"
-        rounds={eastRounds}
-        round1Count={round1Count}
-        gamesBySeriesId={gamesBySeriesId}
-        userTeamId={userTeamId}
-        mirrored={false}
-      />
+    <div className="mt-10 overflow-x-auto pb-4">
+      <div className="flex min-w-max items-stretch justify-center gap-0">
+        <ConferenceBracket
+          conference="EAST"
+          rounds={eastRounds}
+          round1Count={round1Count}
+          gamesBySeriesId={gamesBySeriesId}
+          userTeamId={userTeamId}
+          mirrored={false}
+        />
 
-      <div className="flex flex-col items-center justify-center gap-2 px-1">
-        <p className="text-[10px] tracking-wide text-muted uppercase">Finals</p>
-        {finals.length > 0 ? (
-          <MatchupBox
-            series={finals[0]}
-            games={gamesBySeriesId.get(finals[0].id) ?? []}
-            userTeamId={userTeamId}
-            width="w-24"
-          />
-        ) : (
-          <TbdBox width="w-24" />
-        )}
+        <FinalsConnector />
+
+        <div className="flex flex-col items-center justify-center gap-2 px-1">
+          <p className="text-[10px] font-semibold tracking-wide text-muted uppercase">NBA Finals</p>
+          {finals.length > 0 ? (
+            <MatchupBox
+              series={finals[0]}
+              games={gamesBySeriesId.get(finals[0].id) ?? []}
+              userTeamId={userTeamId}
+            />
+          ) : (
+            <TbdBox />
+          )}
+        </div>
+
+        <FinalsConnector />
+
+        <ConferenceBracket
+          conference="WEST"
+          rounds={westRounds}
+          round1Count={round1Count}
+          gamesBySeriesId={gamesBySeriesId}
+          userTeamId={userTeamId}
+          mirrored
+        />
       </div>
+    </div>
+  );
+}
 
-      <ConferenceBracket
-        conference="WEST"
-        rounds={westRounds}
-        round1Count={round1Count}
-        gamesBySeriesId={gamesBySeriesId}
-        userTeamId={userTeamId}
-        mirrored
-      />
+/**
+ * A straight link from each conference's Conference Finals box into the
+ * centered NBA Finals box - unlike the per-round connectors, this is
+ * always a direct 1-to-1 join, so it doesn't need the elbow shape. Both
+ * conference grids and this connector share the same flex row with
+ * `items-stretch`, so a single line at the vertical midpoint of the full
+ * shared height lines up with the Finals box (vertically centered in its
+ * own column) and each conference's Conference Finals box (vertically
+ * centered across its whole bracket) without any extra math.
+ */
+function FinalsConnector() {
+  return (
+    <div className={`relative ${CONNECTOR_WIDTH}`}>
+      <div className="absolute top-1/2 right-0 left-0 h-px -translate-y-1/2 bg-border" />
     </div>
   );
 }
@@ -129,28 +155,30 @@ function ConferenceBracket({
   // Column order visually reverses for the West side, so both conferences
   // fan inward toward the Finals box in the center.
   const roundIndexOrder = mirrored ? [2, 1, 0] : [0, 1, 2];
+  // Which edge of each connector cell the vertical spine sits on - the
+  // side nearer the two boxes it's joining together.
   const connectorSide = mirrored ? "right" : "left";
 
   return (
     <div className="flex flex-col">
       <p
-        className={`mb-2 text-[10px] tracking-wide text-muted uppercase ${mirrored ? "text-right" : ""}`}
+        className={`mb-2 text-[10px] font-semibold tracking-wide text-muted uppercase ${mirrored ? "text-right" : ""}`}
       >
         {conference === "EAST" ? "East" : "West"}
       </p>
-      <div className="mb-1 flex gap-1">
+      <div className="mb-2 flex gap-2">
         {roundIndexOrder.map((roundIndex, col) => (
-          <div key={roundIndex} className="flex items-center gap-1">
-            <h3 className="w-20 text-center text-[9px] font-medium text-muted">
+          <div key={roundIndex} className="flex items-center gap-2">
+            <h3 className={`${BOX_WIDTH} text-center text-[9px] font-medium text-muted`}>
               {ROUND_LABELS[roundIndex]}
             </h3>
-            {col < roundIndexOrder.length - 1 && <div className="w-3" />}
+            {col < roundIndexOrder.length - 1 && <div className={CONNECTOR_WIDTH} />}
           </div>
         ))}
       </div>
       <div
-        className="grid flex-1 gap-x-1 gap-y-1"
-        style={{ gridTemplateRows: `repeat(${round1Count}, minmax(40px, auto))` }}
+        className="grid flex-1 gap-x-2 gap-y-3"
+        style={{ gridTemplateRows: `repeat(${round1Count}, minmax(60px, auto))` }}
       >
         {roundIndexOrder.map((roundIndex, col) => {
           const isLastRound = col === roundIndexOrder.length - 1;
@@ -163,6 +191,7 @@ function ConferenceBracket({
                 return (
                   <div
                     key={slotIndex}
+                    className="flex h-full items-center"
                     style={{ gridRow: `${start} / span ${span}`, gridColumn: boxColumn }}
                   >
                     {series ? (
@@ -170,10 +199,9 @@ function ConferenceBracket({
                         series={series}
                         games={gamesBySeriesId.get(series.id) ?? []}
                         userTeamId={userTeamId}
-                        width="w-20"
                       />
                     ) : (
-                      <TbdBox width="w-20" />
+                      <TbdBox />
                     )}
                   </div>
                 );
@@ -183,18 +211,13 @@ function ConferenceBracket({
                   const nextRoundIndex = roundIndexOrder[col + 1];
                   const { start, span } = rowRange(nextRoundIndex, slotIndex);
                   return (
-                    <div
+                    <RoundConnector
                       key={`connector-${slotIndex}`}
-                      className="relative w-3"
-                      style={{ gridRow: `${start} / span ${span}`, gridColumn: connectorColumn }}
-                    >
-                      <div
-                        className={`absolute inset-y-0 w-px bg-border ${
-                          connectorSide === "left" ? "left-0" : "right-0"
-                        }`}
-                      />
-                      <div className="absolute top-1/2 right-0 left-0 h-px -translate-y-1/2 bg-border" />
-                    </div>
+                      rowStart={start}
+                      rowSpan={span}
+                      gridColumn={connectorColumn}
+                      side={connectorSide}
+                    />
                   );
                 })}
             </div>
@@ -205,33 +228,85 @@ function ConferenceBracket({
   );
 }
 
+/**
+ * Joins exactly two round-N boxes into the round-(N+1) box that follows
+ * them: a vertical spine running between the two children's own vertical
+ * centers (25%/75% of this cell, since a parent's cell always spans
+ * exactly its 2 children), with three stubs - one into each child, one
+ * into the parent - so it's unambiguous which two series feed which next
+ * matchup, not just a floating line.
+ */
+function RoundConnector({
+  rowStart,
+  rowSpan,
+  gridColumn,
+  side,
+}: {
+  rowStart: number;
+  rowSpan: number;
+  gridColumn: number;
+  side: "left" | "right";
+}) {
+  return (
+    <div
+      className={`relative ${CONNECTOR_WIDTH}`}
+      style={{ gridRow: `${rowStart} / span ${rowSpan}`, gridColumn }}
+    >
+      <div
+        className={`absolute w-px bg-border ${side === "left" ? "left-0" : "right-0"}`}
+        style={{ top: "25%", bottom: "25%" }}
+      />
+      <div className="absolute inset-x-0 h-px bg-border" style={{ top: "25%" }} />
+      <div className="absolute inset-x-0 h-px bg-border" style={{ top: "50%" }} />
+      <div className="absolute inset-x-0 h-px bg-border" style={{ top: "75%" }} />
+    </div>
+  );
+}
+
 function TeamLine({
   team,
   wins,
   isWinner,
+  isDecided,
   isUser,
 }: {
   team: BracketTeam;
   wins: number | null;
   isWinner: boolean;
+  isDecided: boolean;
   isUser: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-1" title={`${team.city} ${team.name}`}>
+    <div
+      className={`flex items-center justify-between gap-1 rounded px-1 py-0.5 ${
+        isDecided && isWinner ? "bg-foreground/[0.06]" : ""
+      }`}
+      title={`${team.city} ${team.name}`}
+    >
       <div className="flex min-w-0 items-center gap-1">
         {team.logoUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={team.logoUrl} alt="" width={12} height={12} className="shrink-0" />
+          <img src={team.logoUrl} alt="" width={13} height={13} className="shrink-0" />
         )}
         <span
-          className={`truncate ${isWinner ? "font-semibold text-foreground" : "text-muted"} ${
-            isUser ? "text-accent" : ""
-          }`}
+          className={`truncate ${
+            isDecided && !isWinner
+              ? "text-muted/60"
+              : isWinner
+                ? "font-semibold text-foreground"
+                : "text-muted"
+          } ${isUser ? "text-accent" : ""}`}
         >
           {team.abbreviation}
         </span>
       </div>
-      {wins !== null && <span className="shrink-0 font-mono text-muted">{wins}</span>}
+      {wins !== null && (
+        <span
+          className={`shrink-0 font-mono ${isDecided && isWinner ? "font-semibold text-foreground" : "text-muted"}`}
+        >
+          {wins}
+        </span>
+      )}
     </div>
   );
 }
@@ -240,12 +315,10 @@ function MatchupBox({
   series,
   games,
   userTeamId,
-  width,
 }: {
   series: BracketSeries;
   games: BracketGame[];
   userTeamId: string | null;
-  width: string;
 }) {
   const decided = Boolean(series.winnerTeamId);
   const higherWon = series.winnerTeamId === series.higherSeedTeamId;
@@ -254,27 +327,29 @@ function MatchupBox({
 
   return (
     <div
-      className={`${width} rounded-md border p-1.5 text-[10px] ${
+      className={`${BOX_WIDTH} rounded-md border p-1 text-[10px] ${
         involvesUser ? "border-accent bg-accent/5" : "border-border bg-surface"
       }`}
     >
       <TeamLine
         team={series.higherSeedTeam.team}
         wins={series.higherSeedWins}
-        isWinner={decided && higherWon}
+        isWinner={higherWon}
+        isDecided={decided}
         isUser={series.higherSeedTeamId === userTeamId}
       />
       <div className="my-0.5 border-t border-border" />
       <TeamLine
         team={series.lowerSeedTeam.team}
         wins={series.lowerSeedWins}
-        isWinner={decided && !higherWon}
+        isWinner={!higherWon}
+        isDecided={decided}
         isUser={series.lowerSeedTeamId === userTeamId}
       />
       {games.length > 0 && (
         <details className="mt-0.5">
           <summary className="cursor-pointer truncate text-[9px] text-muted hover:text-foreground">
-            {games.length}g played
+            {decided ? "Final" : "In progress"} &middot; {games.length}g
           </summary>
           <ul className="mt-1 space-y-0.5 border-t border-border pt-1">
             {games.map((g, i) => {
@@ -294,16 +369,19 @@ function MatchupBox({
           </ul>
         </details>
       )}
+      {!decided && games.length === 0 && (
+        <p className="mt-0.5 text-[9px] text-muted">Not started</p>
+      )}
     </div>
   );
 }
 
-function TbdBox({ width }: { width: string }) {
+function TbdBox() {
   return (
-    <div className={`${width} rounded-md border border-dashed border-border p-1.5 text-[10px]`}>
-      <p className="text-muted">TBD</p>
+    <div className={`${BOX_WIDTH} rounded-md border border-dashed border-border p-1 text-[10px]`}>
+      <p className="px-1 py-0.5 text-muted">TBD</p>
       <div className="my-0.5 border-t border-border" />
-      <p className="text-muted">TBD</p>
+      <p className="px-1 py-0.5 text-muted">TBD</p>
     </div>
   );
 }
