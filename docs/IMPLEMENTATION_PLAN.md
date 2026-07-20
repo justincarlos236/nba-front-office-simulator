@@ -53,7 +53,7 @@ unbounded extra work over it).
 | 6   | Player Valuation Model                | ✅     | P0       | done    | —            | `src/lib/valuation/*`, rating + age curve + market value + surplus                                                                                                              |
 | 7   | AI Trade Evaluation                   | ⬜     | P1       | 6       | 21, 22       | Any legal trade currently auto-succeeds regardless of counterparty benefit                                                                                                      |
 | 8   | Franchise / GM Mode                   | ✅     | P0       | 1,2,3,4 | —            | Cap/roster/standings/playoffs/draft/multi-season progression (aging, retirement, awards) all work now                                                                           |
-| 9   | Team Dashboard                        | 🟡     | P0       | done*   | —            | Cap sheet + roster shown; draft picks not surfaced on it yet (transactions/news and history now linked via nav, see #37/#43)                                                    |
+| 9   | Team Dashboard                        | ✅     | P0       | done    | —            | Cap sheet + roster + a "Franchise overview" card row (conference rank, playoff status, draft picks, recent activity, all-time record, free agency)                              |
 | 10  | Save and Load Franchises              | ✅     | P0       | done    | —            | Continuous DB persistence; "load" = sign back in                                                                                                                                |
 | 11  | Free Agency                           | ✅     | P0       | done    | —            | `/leagues/[id]/free-agents`, real signing-mechanism validation                                                                                                                  |
 | 12  | Contract Negotiations                 | 🟡     | P2       | —       | 31           | User sets terms + system validates; no back-and-forth or player preference                                                                                                      |
@@ -146,11 +146,12 @@ unbounded extra work over it).
 | 99  | Achievements                          | ⬜     | P3       | 9       | 100          | —                                                                                                                                                                               |
 | 100 | GM Career Score                       | ⬜     | P2       | 9       | 6,37         | —                                                                                                                                                                               |
 
-\* "done" for #3/#9 means "done to the extent scoped for the MVP" — both
-are marked 🟡 above and will deepen further in later phases (roster
-management gets waive/depth-chart tools in Phase 3; the dashboard links out
-to the transaction feed and history built in Phase 5, but doesn't yet embed
-either inline).
+\* "done" for #3 means "done to the extent scoped for the MVP" - it's
+marked 🟡 above and will deepen further in Phase 3 (roster management
+gets waive/depth-chart tools). #9 (Team Dashboard) was upgraded from 🟡
+to a full ✅ once the "Franchise overview" card row was added - it now
+embeds live snapshots of standings/playoffs/draft/activity/history
+directly, not just links out to them.
 
 ## Development phases
 
@@ -602,3 +603,24 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   activity) to confirm the aggregated feed actually attributes each entry
   to the right franchise. All 10 e2e tests + 223 unit tests passing
   against a real production build.
+- **2026-07-21 (later)**: User clarified their "general dashboard" request
+  from the previous entry actually meant `/leagues/[id]` (the per-team
+  page a user lands on right after picking a team), not the `/leagues`
+  hub just redesigned above - both are reasonable readings of "homepage/
+  starting point," but this is the one they meant. Added a "Franchise
+  overview" card row (conference rank, playoff picture, this-season draft
+  picks, most recent league activity, all-time championship count, free
+  agency) between the header and the existing cap-sheet stats, so the
+  team page now surfaces a snapshot of every other section instead of
+  just linking out to them. Closes a gap flagged since Phase 4 (draft
+  picks existed in the data model but were never shown on the team
+  dashboard itself). Item #9 (Team Dashboard) moved from 🟡 to ✅.
+  New card labels initially duplicated nav link text closely enough
+  ("Standings," "Playoffs," "Latest news") to break 3 e2e tests via
+  Playwright's default substring/case-insensitive text matching -
+  renamed cards to be clearly distinct from nav labels, and scoped
+  `trade-execution.spec.ts`'s post-trade player-name assertions to the
+  roster table specifically (a trade's description text naming both
+  players is unavoidably going to share names with the roster table on
+  the same page - not something a label rename can fix). All 10 e2e
+  tests + 223 unit tests passing against a real production build.

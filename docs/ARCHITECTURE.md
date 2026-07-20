@@ -40,6 +40,49 @@ stats, biographical data) with "what's true in this specific fictional
 timeline" (current team, current rating, current contract) — those are
 different lifecycles and need to evolve independently per save.
 
+## Team dashboard
+
+`/leagues/[id]` is the page a user lands on right after picking a team,
+and returns to constantly - it needed to be a real "starting point," not
+just a roster table with a row of nav links. A "Franchise overview" card
+row sits between the header and the cap-sheet stats, giving an at-a-glance
+snapshot of every other section on the site without having to click into
+each one first:
+
+- **Conference rank** - computed from `league.teams` (already fetched for
+  the header) sorted by win pct within the user's own conference, not a
+  separate query.
+- **Playoff picture** - a compact status string (regular season in
+  progress / haven't started / alive in round N / eliminated / won it
+  all), derived the same way the playoffs page's own per-user status line
+  is, just condensed to one line.
+- **{season} draft picks** - `DraftPick` rows currently owned by this team
+  (`currentOwnerId`, which reflects trades - not `originalTeamId`) for the
+  current season, split into "pending" vs. total. This directly closes a
+  gap flagged since Phase 4: draft pick inventory existed in the data
+  model but was never surfaced anywhere on the team's own dashboard.
+- **Recent activity** - the single most recent `LeagueTransaction` for
+  this league, reusing the exact same table Phase 5's news feed reads
+  from.
+- **All-time record** - a count of `PlayoffSeries` round-4 wins for this
+  team across every season in the league's history, not just the current
+  one.
+
+**A real ambiguity this surfaced**: card labels and headlines are plain
+text sitting on the same page as the nav links and roster table above/
+below them. Card labels that echoed nav link text almost verbatim
+("Standings," "Playoffs," "Latest news") broke existing e2e tests that
+click nav links by their visible text, since Playwright's `getByText` is
+substring- and case-insensitive by default ("Latest news" matches a
+`getByText("News")` query). Fixed by giving cards clearly distinct labels
+("Conference rank," "Playoff picture," "Recent activity," "All-time
+record") rather than paraphrasing the nav. The recent-activity headline
+itself is dynamic content (a trade/signing description can name any
+player), so it can still legitimately collide with a player's name shown
+elsewhere on the same page (e.g. the roster table) - that class of
+collision isn't avoidable by renaming anything, so the affected test
+scopes its assertion to the roster table specifically instead.
+
 ## Salary cap & trade engine
 
 The core "hard engineering" piece of this project: real 2023 CBA mechanics,

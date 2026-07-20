@@ -38,8 +38,12 @@ test("propose and execute a legal trade, and the rosters actually swap", async (
   await page.getByText("Execute trade").click();
   await expect(page.getByText("Committed salary")).toBeVisible({ timeout: 15_000 });
 
-  await expect(page.getByText("Julius Randle")).toBeVisible();
-  await expect(page.getByText("Jayson Tatum")).not.toBeVisible();
+  // Scoped to the roster table, not the whole page - the dashboard's
+  // "Recent activity" card also mentions both names in the trade's
+  // description text, which would otherwise make these ambiguous.
+  const rosterTable = page.locator("table");
+  await expect(rosterTable.getByText("Julius Randle")).toBeVisible();
+  await expect(rosterTable.getByText("Jayson Tatum")).not.toBeVisible();
 
   await page.getByText("News").click();
   await expect(page.getByRole("heading", { name: "Transactions & News" })).toBeVisible();
