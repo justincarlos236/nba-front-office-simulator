@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
 import { prisma } from "@/lib/prisma";
 import { validateSigning } from "@/lib/freeagency/validateSigning";
+import { describeSigning } from "@/lib/transactions/describeTransaction";
 
 export interface SignFreeAgentInput {
   leagueId: string;
@@ -34,7 +35,10 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
   const myLeagueTeamId = league.userControlledTeamId;
   if (!myLeagueTeamId) throw new Error("You don't control a team in this league");
 
-  const freeAgent = await prisma.leaguePlayer.findUnique({ where: { id: input.leaguePlayerId } });
+  const freeAgent = await prisma.leaguePlayer.findUnique({
+    where: { id: input.leaguePlayerId },
+    include: { player: true },
+  });
   if (!freeAgent || freeAgent.leagueId !== league.id) {
     throw new Error("Player not found");
   }
@@ -49,10 +53,13 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
   const offerSalaryCents = BigInt(input.offerSalaryCents);
   if (offerSalaryCents <= 0n) throw new Error("Offer must be a positive amount");
 
-  const myPlayers = await prisma.leaguePlayer.findMany({
-    where: { leagueTeamId: myLeagueTeamId },
-    include: { contract: { include: { years: { where: { season: league.currentSeason } } } } },
-  });
+  const [myPlayers, myLeagueTeam] = await Promise.all([
+    prisma.leaguePlayer.findMany({
+      where: { leagueTeamId: myLeagueTeamId },
+      include: { contract: { include: { years: { where: { season: league.currentSeason } } } } },
+    }),
+    prisma.leagueTeam.findUniqueOrThrow({ where: { id: myLeagueTeamId }, include: { team: true } }),
+  ]);
   const capSheet = computeCapSheet({
     season: league.currentSeason,
     contracts: myPlayers
@@ -93,13 +100,31 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
       },
     });
 
+    const yearSalaries = Array.from({ length: years }, (_, i) =>
+      BigInt(Math.round(Number(offerSalaryCents) * (1 + 0.05 * i))),
+    );
     await tx.contractYear.createMany({
-      data: Array.from({ length: years }, (_, i) => ({
+      data: yearSalaries.map((salaryCents, i) => ({
         contractId: contract.id,
         season: league.currentSeason + i,
-        salaryCents: BigInt(Math.round(Number(offerSalaryCents) * (1 + 0.05 * i))),
-        guaranteedCents: BigInt(Math.round(Number(offerSalaryCents) * (1 + 0.05 * i))),
+        salaryCents,
+        guaranteedCents: salaryCents,
       })),
+    });
+
+    const totalSalaryCents = yearSalaries.reduce((sum, cents) => sum + cents, 0n);
+    await tx.leagueTransaction.create({
+      data: {
+        leagueId: league.id,
+        season: league.currentSeason,
+        type: "SIGNING",
+        description: describeSigning(
+          `${myLeagueTeam.team.city} ${myLeagueTeam.team.name}`,
+          freeAgent.player.fullName,
+          years,
+          totalSalaryCents,
+        ),
+      },
     });
   });
 

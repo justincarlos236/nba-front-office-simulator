@@ -189,9 +189,37 @@ model League {
   games            Game[]
   playoffSeries    PlayoffSeries[]
   seasonAwards     SeasonAward[]
+  transactions     LeagueTransaction[]
 
   @@index([ownerId])
   @@map("leagues")
+}
+
+enum TransactionType {
+  TRADE
+  SIGNING
+  RETIREMENT
+}
+
+// A denormalized, human-readable log entry for the transaction wire / news
+// feed. `description` is pre-rendered at write time (see
+// src/lib/transactions/describeTransaction.ts) rather than reconstructed
+// from Trade/Contract rows at read time, since a trade or signing's
+// human-readable form (team names, player names, deal terms) is fixed at
+// the moment it happens and shouldn't change if e.g. a player is later
+// traded again.
+model LeagueTransaction {
+  id          String          @id @default(cuid())
+  leagueId    String
+  season      Int
+  type        TransactionType
+  description String
+  createdAt   DateTime        @default(now())
+
+  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@index([leagueId, createdAt])
+  @@map("league_transactions")
 }
 
 model LeagueTeam {

@@ -61,7 +61,7 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
             {userLeagueTeam.team.city} {userLeagueTeam.team.name}
           </h1>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap justify-end gap-3">
           <Link
             href={`/leagues/${league.id}/standings`}
             className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
@@ -91,6 +91,18 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
             className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
           >
             Free agents
+          </Link>
+          <Link
+            href={`/leagues/${league.id}/transactions`}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
+          >
+            News
+          </Link>
+          <Link
+            href={`/leagues/${league.id}/history`}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
+          >
+            History
           </Link>
           <Link
             href={`/leagues/${league.id}/trades/new`}

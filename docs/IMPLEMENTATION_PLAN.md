@@ -53,7 +53,7 @@ unbounded extra work over it).
 | 6   | Player Valuation Model                | ✅     | P0       | done    | —            | `src/lib/valuation/*`, rating + age curve + market value + surplus                                                                                     |
 | 7   | AI Trade Evaluation                   | ⬜     | P1       | 6       | 21, 22       | Any legal trade currently auto-succeeds regardless of counterparty benefit                                                                             |
 | 8   | Franchise / GM Mode                   | ✅     | P0       | 1,2,3,4 | —            | Cap/roster/standings/playoffs/draft/multi-season progression (aging, retirement, awards) all work now                                                  |
-| 9   | Team Dashboard                        | 🟡     | P0       | done*   | —            | Cap sheet + roster shown; no transactions/draft picks on it yet                                                                                        |
+| 9   | Team Dashboard                        | 🟡     | P0       | done*   | —            | Cap sheet + roster shown; draft picks not surfaced on it yet (transactions/news and history now linked via nav, see #37/#43)                           |
 | 10  | Save and Load Franchises              | ✅     | P0       | done    | —            | Continuous DB persistence; "load" = sign back in                                                                                                       |
 | 11  | Free Agency                           | ✅     | P0       | done    | —            | `/leagues/[id]/free-agents`, real signing-mechanism validation                                                                                         |
 | 12  | Contract Negotiations                 | 🟡     | P2       | —       | 31           | User sets terms + system validates; no back-and-forth or player preference                                                                             |
@@ -80,16 +80,16 @@ unbounded extra work over it).
 | 33  | Player Roles                          | ⬜     | P3       | —       | —            | —                                                                                                                                                      |
 | 34  | Player Potential                      | 🟡     | P1       | 3       | —            | `potentialRating` computed + shown; doesn't drive development yet (see #19)                                                                            |
 | 35  | Scouting Reports                      | ⬜     | P3       | —       | —            | —                                                                                                                                                      |
-| 36  | League News Feed                      | ⬜     | P2       | 5       | 37           | —                                                                                                                                                      |
-| 37  | Transaction History                   | 🟡     | P1       | 5       | —            | `Trade`/`TradeAsset` rows persisted on execution; no viewing UI; signings aren't logged at all                                                         |
+| 36  | League News Feed                      | ✅     | P2       | 5       | 37           | Same `LeagueTransaction` feed as #37, framed as a news wire - `/leagues/[id]/transactions`                                                             |
+| 37  | Transaction History                   | ✅     | P1       | 5       | —            | `LeagueTransaction` log created on every trade, signing, and retirement; viewable at `/leagues/[id]/transactions`                                      |
 | 38  | Player Career History                 | 🔒     | P2       | —       | multi-season | Only one season (2023-24) of stats exists per player                                                                                                   |
 | 39  | NBA Awards                            | 🟡     | P2       | 3       | 15,19        | MVP/ROY/Most Improved computed and shown; DPOY/Sixth Man/All-Defense deliberately skipped (no defensive stats or depth chart to base them on honestly) |
 | 40  | All-Star Weekend                      | ⬜     | P3       | —       | 15           | —                                                                                                                                                      |
 | 41  | Hall of Fame                          | ⬜     | P3       | —       | 42           | —                                                                                                                                                      |
 | 42  | Player Retirement                     | ✅     | P3       | 3       | 19           | `retirement.ts` - age/rating-based probability, forced at 41; shown on the offseason recap page                                                        |
-| 43  | League History                        | ⬜     | P2       | 5       | 15,18,39     | —                                                                                                                                                      |
+| 43  | League History                        | ✅     | P2       | 5       | 15,18,39     | `/leagues/[id]/history` - season-by-season champions, awards, retirees                                                                                 |
 | 44  | League Records                        | ⬜     | P3       | —       | 43           | —                                                                                                                                                      |
-| 45  | Championship History                  | ⬜     | P2       | 5       | 18           | —                                                                                                                                                      |
+| 45  | Championship History                  | ✅     | P2       | 5       | 18           | Past champions shown per-season on `/leagues/[id]/history`                                                                                             |
 | 46  | AI General Managers                   | ⬜     | P1       | 6       | 21,22        | —                                                                                                                                                      |
 | 47  | GM Personalities                      | ⬜     | P2       | 6       | 46           | —                                                                                                                                                      |
 | 48  | AI Trade Negotiations                 | ⬜     | P2       | —       | 46           | —                                                                                                                                                      |
@@ -148,8 +148,9 @@ unbounded extra work over it).
 
 \* "done" for #3/#9 means "done to the extent scoped for the MVP" — both
 are marked 🟡 above and will deepen further in later phases (roster
-management gets waive/depth-chart tools in Phase 3; the dashboard gets a
-transaction feed in Phase 5).
+management gets waive/depth-chart tools in Phase 3; the dashboard links out
+to the transaction feed and history built in Phase 5, but doesn't yet embed
+either inline).
 
 ## Development phases
 
@@ -237,14 +238,18 @@ ratings, expiring contracts, and growing the cap season-to-season.
       pick inventory now exists, but trading picks needs `TradeBuilder` UI
       work (currently player-only) that's out of this phase's scope
 
-### Phase 5 — Transactions, News & League History
+### Phase 5 — Transactions, News & League History ✅ DONE (2026-07-20)
 
-Needs Phase 1-4 activity to have real content to show.
-
-- [ ] Transaction history UI (surfacing the `Trade`/`TradeAsset` rows
-      already being created, plus logging free-agent signings the same way)
-- [ ] League news feed generated from transactions/results
-- [ ] Championship/league history once playoffs (Phase 2) produce results
+- [x] Transaction history UI (`/leagues/[id]/transactions`) - a unified
+      `LeagueTransaction` log fed by trades, free-agent signings, and
+      retirements, with pre-rendered human-readable descriptions
+- [x] League news feed generated from transactions/results - the same
+      `LeagueTransaction` feed doubles as the news feed (see
+      `docs/ARCHITECTURE.md`'s "Transactions, news feed & league history"
+      section for why this is one system, not two)
+- [x] Championship/league history (`/leagues/[id]/history`) - past
+      champions, season awards, and retirees, season-by-season, once
+      playoffs (Phase 2) and offseason advancement (Phase 3) produce results
 
 ### Phase 6 — AI-Driven CPU Teams & Trade Depth
 
@@ -449,3 +454,31 @@ already exists. Good candidate to interleave between bigger phases.
   existing e2e tests (`league-creation.spec.ts`, `season-simulation.spec.ts`)
   that had baked in the old one-league-per-user / "My League" nav
   assumptions.
+- **2026-07-20 (later)**: Phase 5 completed. Added one `LeagueTransaction`
+  model/migration and wired logging into `executeTradeAction`,
+  `signFreeAgentAction`, and `advanceSeasonAction` (retirements), each
+  writing a pre-rendered description via a new pure module
+  (`src/lib/transactions/describeTransaction.ts` - `describeTrade`,
+  `describeSigning`, `describeRetirement`; 9 new unit tests). Two new
+  pages: `/leagues/[id]/transactions` (the trade/signing/retirement wire,
+  doubling as the news feed - see `docs/ARCHITECTURE.md` for why this is
+  one system, not two) and `/leagues/[id]/history` (past champions, season
+  awards, and retirees, grouped season-by-season from data Phases 2-3
+  already produce - `PlayoffSeries`, `SeasonAward`, `retiredSeason` - with
+  no new logging needed for that page). Deliberately skipped logging
+  individual CPU draft picks as transactions (60 near-identical entries
+  per draft would just be noise; the draft board already serves as that
+  event's own record). Items #36, #37, #43, #45 moved to ✅. 2 e2e tests
+  extended (`free-agency.spec.ts`, `trade-execution.spec.ts` now assert the
+  signing/trade shows up on the news feed; `offseason.spec.ts` now also
+  asserts the completed season's champion/awards appear on `/history`) -
+  all 10 e2e tests + 208 unit tests passing against a real production
+  build. Also found and fixed one stale-state issue while testing: the
+  local `npm run build && npm run start` server (used by Playwright's
+  `webServer`) had been left running from earlier in the session and was
+  serving a pre-Phase-5 production build, silently masking the new routes
+  until it was killed and rebuilt - not a code bug, but worth noting since
+  it can look exactly like one. Next recommended phase: **Phase 6
+  (AI-Driven CPU Teams & Trade Depth)** - CPU teams currently accept any
+  legal trade and never initiate one, which is the biggest remaining gap
+  in franchise-mode believability.

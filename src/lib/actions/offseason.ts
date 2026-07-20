@@ -15,6 +15,7 @@ import {
 } from "@/lib/development/seasonAwards";
 import { createSeededRandom } from "@/lib/contracts/seededRandom";
 import { generateRoundRobinSchedule } from "@/lib/simulation/generateSchedule";
+import { describeRetirement } from "@/lib/transactions/describeTransaction";
 
 // Bulk player-development writes are batched (not one giant Promise.all)
 // for the same reason simulateGamesAction batches game writes - see
@@ -27,7 +28,7 @@ async function requireOwnedLeague(leagueId: string) {
 
   const league = await prisma.league.findUnique({
     where: { id: leagueId },
-    include: { teams: true },
+    include: { teams: { include: { team: true } } },
   });
   if (!league || league.ownerId !== session.user.id) {
     throw new Error("League not found");
@@ -84,6 +85,7 @@ export async function advanceSeasonAction(leagueId: string) {
     retiredSeason: number | null;
   }[] = [];
   const contractIdsToDelete: string[] = [];
+  const retirementDescriptions: string[] = [];
 
   const rng = createSeededRandom(`${leagueId}-${season}-offseason`);
 
@@ -124,6 +126,16 @@ export async function advanceSeasonAction(leagueId: string) {
     const contractExpired = !retiring && !!lp.contract && lp.contract.endSeason < newSeason;
     if (retiring || contractExpired) {
       if (lp.contract) contractIdsToDelete.push(lp.contract.id);
+    }
+
+    if (retiring) {
+      const teamLabel = lp.leagueTeamId
+        ? (() => {
+            const team = teamById.get(lp.leagueTeamId!)?.team;
+            return team ? `${team.city} ${team.name}` : null;
+          })()
+        : null;
+      retirementDescriptions.push(describeRetirement(lp.player.fullName, teamLabel));
     }
 
     playerUpdates.push({
@@ -183,6 +195,17 @@ export async function advanceSeasonAction(leagueId: string) {
 
   if (awardRows.length > 0) {
     await prisma.seasonAward.createMany({ data: awardRows });
+  }
+
+  if (retirementDescriptions.length > 0) {
+    await prisma.leagueTransaction.createMany({
+      data: retirementDescriptions.map((description) => ({
+        leagueId,
+        season,
+        type: "RETIREMENT" as const,
+        description,
+      })),
+    });
   }
 
   const schedule = generateRoundRobinSchedule(

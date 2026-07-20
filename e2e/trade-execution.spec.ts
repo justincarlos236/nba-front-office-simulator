@@ -40,4 +40,11 @@ test("propose and execute a legal trade, and the rosters actually swap", async (
 
   await expect(page.getByText("Julius Randle")).toBeVisible();
   await expect(page.getByText("Jayson Tatum")).not.toBeVisible();
+
+  await page.getByText("News").click();
+  await expect(page.getByRole("heading", { name: "Transactions & News" })).toBeVisible();
+  await expect(
+    page.getByText(/Boston Celtics traded Jayson Tatum to the Brooklyn Nets for Julius Randle/),
+  ).toBeVisible();
+  await expect(page.getByText("Trade", { exact: true })).toBeVisible();
 });

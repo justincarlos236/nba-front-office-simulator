@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
 import { prisma } from "@/lib/prisma";
 import { validateTrade, type TradeAssetInput } from "@/lib/trade/validateTrade";
+import { describeTrade } from "@/lib/transactions/describeTransaction";
 
 export interface ExecuteTradeInput {
   leagueId: string;
@@ -48,18 +49,33 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
     throw new Error("You can only trade away players from your own team");
   }
 
-  const [myPlayers, theirPlayers, myCapSheet, theirCapSheet] = await Promise.all([
-    prisma.leaguePlayer.findMany({
-      where: { id: { in: input.myPlayerIds }, leagueTeamId: input.fromTeamId },
-      include: { contract: { include: { years: { where: { season: league.currentSeason } } } } },
-    }),
-    prisma.leaguePlayer.findMany({
-      where: { id: { in: input.theirPlayerIds }, leagueTeamId: input.toTeamId },
-      include: { contract: { include: { years: { where: { season: league.currentSeason } } } } },
-    }),
-    loadCapState(input.fromTeamId, league.currentSeason),
-    loadCapState(input.toTeamId, league.currentSeason),
-  ]);
+  const [myPlayers, theirPlayers, myCapSheet, theirCapSheet, fromLeagueTeam, toLeagueTeam] =
+    await Promise.all([
+      prisma.leaguePlayer.findMany({
+        where: { id: { in: input.myPlayerIds }, leagueTeamId: input.fromTeamId },
+        include: {
+          player: true,
+          contract: { include: { years: { where: { season: league.currentSeason } } } },
+        },
+      }),
+      prisma.leaguePlayer.findMany({
+        where: { id: { in: input.theirPlayerIds }, leagueTeamId: input.toTeamId },
+        include: {
+          player: true,
+          contract: { include: { years: { where: { season: league.currentSeason } } } },
+        },
+      }),
+      loadCapState(input.fromTeamId, league.currentSeason),
+      loadCapState(input.toTeamId, league.currentSeason),
+      prisma.leagueTeam.findUniqueOrThrow({
+        where: { id: input.fromTeamId },
+        include: { team: true },
+      }),
+      prisma.leagueTeam.findUniqueOrThrow({
+        where: { id: input.toTeamId },
+        include: { team: true },
+      }),
+    ]);
 
   if (myPlayers.length !== input.myPlayerIds.length) {
     throw new Error("One or more of your selected players is no longer on your roster");
@@ -149,6 +165,24 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
         data: { leagueTeamId: input.fromTeamId },
       });
     }
+
+    await tx.leagueTransaction.create({
+      data: {
+        leagueId: league.id,
+        season: league.currentSeason,
+        type: "TRADE",
+        description: describeTrade(
+          {
+            teamLabel: `${fromLeagueTeam.team.city} ${fromLeagueTeam.team.name}`,
+            sentPlayerNames: myPlayers.map((lp) => lp.player.fullName),
+          },
+          {
+            teamLabel: `${toLeagueTeam.team.city} ${toLeagueTeam.team.name}`,
+            sentPlayerNames: theirPlayers.map((lp) => lp.player.fullName),
+          },
+        ),
+      },
+    });
   });
 
   redirect(`/leagues/${league.id}`);

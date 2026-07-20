@@ -23,6 +23,13 @@ test("sign a free agent to a minimum deal, and reject an offer bigger than any e
   await page.getByText("Free agents").click();
   await expect(page.getByText(/unsigned players/)).toBeVisible();
 
+  const signedPlayerName = await page
+    .locator("tbody tr")
+    .first()
+    .locator("td")
+    .first()
+    .textContent();
+
   await page.getByText("Offer contract").first().click();
   await expect(page.getByText("First-year salary")).toBeVisible();
 
@@ -37,4 +44,10 @@ test("sign a free agent to a minimum deal, and reject an offer bigger than any e
 
   await page.getByText("Sign player").click();
   await expect(page.getByText("Committed salary")).toBeVisible({ timeout: 15_000 });
+
+  await page.getByText("News").click();
+  await expect(page.getByRole("heading", { name: "Transactions & News" })).toBeVisible();
+  const escapedName = signedPlayerName!.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  await expect(page.getByText(new RegExp(`signed ${escapedName} to a`))).toBeVisible();
+  await expect(page.getByText("Signing", { exact: true })).toBeVisible();
 });

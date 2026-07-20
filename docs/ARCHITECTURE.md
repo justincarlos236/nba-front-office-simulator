@@ -339,6 +339,42 @@ through development/retirement/free agency like anyone else.
   but unused Stepien-lite check) is deferred - see
   `docs/IMPLEMENTATION_PLAN.md`.
 
+## Transactions, news feed & league history
+
+Every trade, free-agent signing, and retirement writes a `LeagueTransaction`
+row (`leagueId`, `season`, `type`, `description`, `createdAt`) inside the
+same `$transaction`/batch that performs the underlying mutation, alongside
+the existing `Trade`/`TradeAsset`/`Contract`/`SeasonAward` rows. This is
+deliberately one denormalized log rather than two separate systems for
+"transaction history" and "news feed": a chronological read of the table
+_is_ the transaction ledger, and the same `description` string doubles as
+a news headline, since there's no meaningful difference between the two
+views beyond framing.
+
+- **Why pre-rendered descriptions, not reconstructed at read time**: a
+  trade or signing's human-readable form (team names, player names, deal
+  terms) is fixed at the moment it happens. Reconstructing it from current
+  `Trade`/`Contract` state at read time would make old headlines silently
+  change if e.g. a traded player is later traded again, or would require
+  carrying denormalized snapshots into those tables anyway. Pure
+  description-building functions (`src/lib/transactions/describeTransaction.ts`
+  — `describeTrade`, `describeSigning`, `describeRetirement`) are called
+  once, at write time, and unit-tested in isolation.
+- **Why CPU draft picks aren't logged as transactions**: a single draft
+  produces 60 picks; logging every CPU pick would flood the feed with
+  near-identical noise on draft day and drown out the trades/signings that
+  are the interesting events. The draft board (`DraftPick`/`DraftProspect`)
+  already serves as that event's own historical record, browsable from the
+  draft page itself.
+- **League History** (`/leagues/[id]/history`) needed no new logging at
+  all — it's a season-by-season read of data Phases 2-3 already produce
+  (`PlayoffSeries` round-4 winners, `SeasonAward`, `LeaguePlayer.retiredSeason`)
+  that had no browsable UI. The set of "completed" seasons is derived from
+  crowned champions (a season only gets a champion, and therefore awards/
+  retirements, once `advanceSeasonAction` has run for it), so champions are
+  fetched first and used as the season list that awards/retirees are
+  grouped into.
+
 ## AI GM assistant
 
 The assistant is not a chat window that free-associates about basketball.

@@ -121,4 +121,13 @@ test("play through the playoffs, then advance to the next season", async ({ page
   const remainingText = await page.getByText(/games remaining league-wide/).textContent();
   const remaining = Number(remainingText?.match(/(\d+) games/)?.[1]);
   expect(remaining).toBeGreaterThan(0);
+
+  // The completed 2023-24 season should now show up in League History, with
+  // its champion and awards - the same underlying data the offseason page
+  // showed transiently, now durably browsable.
+  await page.goto(`/leagues/${leagueId}/history`);
+  await expect(page.getByRole("heading", { name: "League History" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "2023-24" })).toBeVisible();
+  await expect(page.getByText("NBA Champions")).toBeVisible();
+  await expect(page.getByText("Most Valuable Player")).toBeVisible();
 });
