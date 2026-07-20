@@ -291,11 +291,29 @@ through development/retirement/free agency like anyone else.
 - **CPU picks**: best-player-available by rating. Real GM logic (team
   needs, timeline, positional fit) is Phase 6 territory (AI-driven CPU
   teams) - this is a documented, honest simplification until that exists.
-- **Interactive draft day** (`/leagues/[id]/draft`): the user makes their
-  own team's picks from the live board; CPU picks in between are
-  fast-forwarded in one click ("Simulate to your next pick") rather than
-  requiring 58 individual clicks - the same "advance to the next real
-  decision" pattern the playoffs page already uses.
+- **Interactive draft day** (`/leagues/[id]/draft`, `DraftExperience.tsx`):
+  the user makes their own team's picks from a live board, side by side
+  with a running draft board; CPU picks in between are fast-forwarded in
+  one click ("Simulate to your next pick") rather than requiring 58
+  individual clicks - but the board fills in _pick by pick with a brief
+  delay between each_, not instantly, so it visually reads as a sped-up
+  draft happening rather than a single jump-cut to the end state. This
+  meant moving the board to fully client-managed state: the server
+  actions (`startDraftAction`/`advanceDraftAction`/`makeDraftPickAction`)
+  return the complete ordered list of what they just resolved, and the
+  client drives its own local `picks` state from those results - it
+  doesn't wait on the automatic post-action page re-render the way
+  earlier phases' simpler action/button components did, since that would
+  make every pick appear at once again.
+- A **Scouting Board** section lists every prospect in the class
+  (drafted or not), filterable by position, each expandable into a full
+  report: five derived sub-attributes (scoring/playmaking/defense/
+  rebounding/athleticism, `scoutingProfile.ts`) as bars, plus computed
+  strengths/weaknesses. These are flavor only - deterministic and seeded
+  by prospect id, but the simulation itself still only ever uses
+  `overallRating`/`potentialRating`; no hidden mechanic depends on them.
+  The same expandable report is available inline while picking, so the
+  user can scout a prospect before drafting them, not just afterward.
 - **Rookie contracts**: reuse the exact same `generateContract` engine
   every other contract in the sim uses (not a hand-typed rookie-scale
   table) - a prospect's `overallRating` stands in for the usual

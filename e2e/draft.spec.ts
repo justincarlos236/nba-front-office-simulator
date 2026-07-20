@@ -108,9 +108,18 @@ test("run the lottery and draft all 60 picks, including the user's own", async (
 
   await expect(page.getByText("The draft is complete")).toBeVisible({ timeout: 15_000 });
 
-  const boardText = await page.textContent("body");
-  const pickCount = (boardText?.match(/Pick \d+/g) ?? []).length;
+  // "Pick N" also appears in the Scouting Board's "Drafted by ... (Pick N)"
+  // annotations, so scope the count to the Draft Board panel specifically.
+  const draftBoardText = await page.getByText("Draft Board").locator("..").textContent();
+  const pickCount = (draftBoardText?.match(/Pick \d+/g) ?? []).length;
   expect(pickCount).toBe(60);
+
+  // The Scouting Board should list all 60 prospects, every one now
+  // showing as drafted.
+  await expect(page.getByText("Scouting Board")).toBeVisible();
+  const scoutingDraftedCount = ((await page.textContent("body"))?.match(/Drafted by/g) ?? [])
+    .length;
+  expect(scoutingDraftedCount).toBe(60);
 
   // The season shouldn't be advanceable until the draft finished - now
   // that it has, the offseason page should offer the advance button.

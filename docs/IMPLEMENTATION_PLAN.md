@@ -129,7 +129,7 @@ unbounded extra work over it).
 | 82  | Custom Rosters                        | ⬜     | P3       | —       | —            | —                                                                                                                                                      |
 | 83  | League Settings                       | ⬜     | P2       | 9       | —            | —                                                                                                                                                      |
 | 84  | User Authentication                   | ✅     | P0       | done    | —            | Auth.js v5, Credentials, ownership-scoped                                                                                                              |
-| 85  | Multiple Franchise Saves              | ⬜     | P1       | 9       | —            | Currently hard-capped to one league per user                                                                                                           |
+| 85  | Multiple Franchise Saves              | ⬜     | P0       | 9*      | —            | Currently hard-capped to one league per user - **fast-tracked next per explicit user request** (2026-07-20), out of Phase 9's original order           |
 | 86  | Global Player Search                  | ⬜     | P1       | 8       | —            | —                                                                                                                                                      |
 | 87  | Global Team Search                    | ⬜     | P2       | 8       | —            | `/teams` browse exists; no search box                                                                                                                  |
 | 88  | Advanced Filters                      | ⬜     | P2       | 8       | 86           | —                                                                                                                                                      |
@@ -401,3 +401,26 @@ already exists. Good candidate to interleave between bigger phases.
   the season now depends on it. Next recommended phase: **Phase 5
   (Transactions, News & League History)**, or continue deepening Phase 4
   with pick trading once `TradeBuilder` supports non-player assets.
+- **2026-07-20 (later)**: Polish pass on the draft UI based on hands-on
+  user feedback after trying Phase 4 themselves (per the new "hands-on
+  testing per phase" process): (1) two-column layout (on-the-clock
+  picker/controls next to a live draft board, not stacked); (2) the
+  board now fills in pick-by-pick with a brief delay when fast-forwarding
+  CPU picks, instead of jumping straight to the end state - required
+  moving the board to client-managed state, with the server actions now
+  returning the full ordered list of what they resolved; (3) a position
+  filter on the prospect picker; (4) a new Scouting Board section listing
+  every prospect in the class (drafted or not) with an expandable report
+  - 5 derived sub-attributes (`scoutingProfile.ts`) plus computed
+    strengths/weaknesses, seeded by prospect id, flavor-only (the sim still
+    only uses overall/potential rating). 6 new unit tests (199 total).
+    Verified all four changes work correctly via an automated Playwright
+    pass (confirmed the animation is genuinely progressive - sampled pick
+    counts mid-animation - and that the position filter and scouting
+    expand both work, after first catching two false negatives that turned
+    out to be test-script locator bugs, not real ones) plus visual
+    screenshots. Same day, the user asked for **#85 Multiple Franchise
+    Saves** (switch between several running franchises, e.g. Bulls GM and
+    Lakers GM) to be picked up right after this draft polish - this is
+    already tracked below in Phase 9 (currently unstarted); see that
+    section for the row status.

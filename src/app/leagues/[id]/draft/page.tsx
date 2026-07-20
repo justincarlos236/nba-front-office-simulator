@@ -2,15 +2,13 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { DraftControls, type DraftPhase } from "@/components/draft/DraftControls";
+import { DraftExperience } from "@/components/draft/DraftExperience";
 
 export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
-
-const ROUND_LABELS: Record<number, string> = { 1: "Round 1", 2: "Round 2" };
 
 export default async function DraftPage({ params }: PageProps) {
   const { id } = await params;
@@ -33,38 +31,25 @@ export default async function DraftPage({ params }: PageProps) {
     prisma.playoffSeries.findFirst({ where: { leagueId: league.id, season, round: 4 } }),
     prisma.draftPick.findMany({
       where: { leagueId: league.id, season },
-      include: {
-        currentOwner: { include: { team: true } },
-        selectedProspect: true,
-      },
       orderBy: { overallPickNumber: "asc" },
     }),
     prisma.draftProspect.findMany({ where: { leagueId: league.id, season } }),
   ]);
 
-  const nextPick = draftPicks.find((p) => !p.selectedProspectId);
-  const phase: DraftPhase =
+  const gatePhase: "regular-season" | "playoffs-incomplete" | "active" =
     regularSeasonGamesRemaining > 0
       ? "regular-season"
       : !finals?.winnerTeamId
         ? "playoffs-incomplete"
-        : draftPicks.length === 0
-          ? "not-started"
-          : !nextPick
-            ? "complete"
-            : nextPick.currentOwnerId === userTeamId
-              ? "user-turn"
-              : "cpu-turn";
+        : "active";
 
-  const draftedProspectIds = new Set(
-    draftPicks.filter((p) => p.selectedProspectId).map((p) => p.selectedProspectId as string),
-  );
-  const availableProspects = draftProspects
-    .filter((p) => !draftedProspectIds.has(p.id))
-    .sort((a, b) => b.overallRating - a.overallRating);
+  const teamsById: Record<string, { city: string; name: string }> = {};
+  for (const lt of league.teams) {
+    teamsById[lt.id] = { city: lt.team.city, name: lt.team.name };
+  }
 
   return (
-    <main className="mx-auto max-w-4xl flex-1 px-6 py-16">
+    <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
       <div className="flex items-center justify-between gap-4">
         <div>
           <Link href={`/leagues/${league.id}`} className="text-sm text-muted hover:text-foreground">
@@ -89,12 +74,31 @@ export default async function DraftPage({ params }: PageProps) {
         class exists yet. See docs/ARCHITECTURE.md.
       </p>
 
-      <div className="mt-8">
-        <DraftControls
+      {gatePhase === "regular-season" && (
+        <div className="mt-8 rounded-xl border border-border bg-surface p-6">
+          <p className="text-sm text-muted">
+            Finish the regular season on the standings page before the draft.
+          </p>
+        </div>
+      )}
+      {gatePhase === "playoffs-incomplete" && (
+        <div className="mt-8 rounded-xl border border-border bg-surface p-6">
+          <p className="text-sm text-muted">Crown a champion in the playoffs before the draft.</p>
+        </div>
+      )}
+      {gatePhase === "active" && (
+        <DraftExperience
           leagueId={league.id}
-          phase={phase}
-          onClockPickNumber={nextPick?.overallPickNumber ?? null}
-          availableProspects={availableProspects.map((p) => ({
+          userTeamId={userTeamId}
+          teamsById={teamsById}
+          initialPicks={draftPicks.map((p) => ({
+            id: p.id,
+            round: p.round,
+            overallPickNumber: p.overallPickNumber!,
+            leagueTeamId: p.currentOwnerId,
+            selectedProspectId: p.selectedProspectId,
+          }))}
+          initialProspects={draftProspects.map((p) => ({
             id: p.id,
             fullName: p.fullName,
             position: p.position,
@@ -103,41 +107,6 @@ export default async function DraftPage({ params }: PageProps) {
             potentialRating: p.potentialRating,
           }))}
         />
-      </div>
-
-      {draftPicks.some((p) => p.selectedProspectId) && (
-        <section className="mt-10">
-          <h2 className="text-lg font-semibold text-foreground">Draft Board</h2>
-          <div className="mt-3 max-h-[40rem] space-y-2 overflow-y-auto pr-1">
-            {draftPicks
-              .filter((p) => p.selectedProspectId)
-              .map((pick) => {
-                const isUserPick = pick.currentOwnerId === userTeamId;
-                return (
-                  <div
-                    key={pick.id}
-                    className={`flex items-center justify-between rounded-lg border p-3 text-sm ${
-                      isUserPick ? "border-accent bg-accent/5" : "border-border bg-surface"
-                    }`}
-                  >
-                    <div>
-                      <p className="text-xs tracking-wide text-muted uppercase">
-                        Pick {pick.overallPickNumber} &middot; {ROUND_LABELS[pick.round]} &middot;{" "}
-                        {pick.currentOwner.team.city} {pick.currentOwner.team.name}
-                      </p>
-                      <p className="font-medium text-foreground">
-                        {pick.selectedProspect?.fullName}
-                      </p>
-                    </div>
-                    <span className="font-mono text-xs text-muted">
-                      {pick.selectedProspect?.position} &middot; OVR{" "}
-                      {pick.selectedProspect?.overallRating}
-                    </span>
-                  </div>
-                );
-              })}
-          </div>
-        </section>
       )}
     </main>
   );

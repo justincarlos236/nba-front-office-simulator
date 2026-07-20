@@ -43,13 +43,15 @@ interface ProspectAssignment {
  * the sim uses. Bulk-writes via `createManyAndReturn` at each stage (same
  * multi-stage pattern league bootstrap uses) rather than one round trip
  * per rookie, since a full round can be up to 30 assignments at once.
+ * Returns the same assignments back so callers (server actions) can hand
+ * the ordered pick results to the client for an animated reveal.
  */
 async function draftProspectsToTeams(
   leagueId: string,
   rookieSeason: number,
   assignments: ProspectAssignment[],
 ) {
-  if (assignments.length === 0) return;
+  if (assignments.length === 0) return assignments;
 
   const createdPlayers = await prisma.player.createManyAndReturn({
     data: assignments.map((a) => ({
@@ -119,6 +121,24 @@ async function draftProspectsToTeams(
       }),
     ),
   );
+
+  return assignments;
+}
+
+export interface StartedDraftPick {
+  id: string;
+  round: number;
+  overallPickNumber: number;
+  leagueTeamId: string;
+}
+
+export interface StartedDraftProspect {
+  id: string;
+  fullName: string;
+  position: string;
+  age: number;
+  overallRating: number;
+  potentialRating: number;
 }
 
 /**
@@ -127,6 +147,8 @@ async function draftProspectsToTeams(
  * fictional 60-prospect class. Requires a crowned playoff champion (the
  * draft happens between the just-finished season's playoffs and the next
  * season, same as the real NBA calendar) and refuses to run twice.
+ * Returns the created picks/prospects directly so the client can render
+ * the board without waiting on a full page refresh.
  */
 export async function startDraftAction(leagueId: string) {
   const league = await requireOwnedLeague(leagueId);
@@ -163,7 +185,7 @@ export async function startDraftAction(leagueId: string) {
   const pickOrder = computeDraftOrder(teams, playoffTeamIds, rng);
   const prospects = generateDraftClass(rng);
 
-  await prisma.draftProspect.createMany({
+  const createdProspects = await prisma.draftProspect.createManyAndReturn({
     data: prospects.map((p) => ({
       leagueId,
       season,
@@ -175,7 +197,7 @@ export async function startDraftAction(leagueId: string) {
     })),
   });
 
-  await prisma.draftPick.createMany({
+  const createdPicks = await prisma.draftPick.createManyAndReturn({
     data: pickOrder.map((leagueTeamId, index) => ({
       leagueId,
       season,
@@ -187,16 +209,44 @@ export async function startDraftAction(leagueId: string) {
   });
 
   revalidatePath(`/leagues/${leagueId}/draft`);
-  return { started: true };
+
+  return {
+    started: true,
+    picks: createdPicks.map((p) => ({
+      id: p.id,
+      round: p.round,
+      overallPickNumber: p.overallPickNumber!,
+      leagueTeamId: p.currentOwnerId,
+    })) as StartedDraftPick[],
+    prospects: createdProspects.map((p) => ({
+      id: p.id,
+      fullName: p.fullName,
+      position: p.position,
+      age: p.age,
+      overallRating: p.overallRating,
+      potentialRating: p.potentialRating,
+    })) as StartedDraftProspect[],
+  };
+}
+
+export interface ResolvedPick {
+  pickId: string;
+  overallPickNumber: number;
+  round: number;
+  leagueTeamId: string;
+  prospectId: string;
+  fullName: string;
+  position: string;
+  overallRating: number;
+  potentialRating: number;
 }
 
 /**
  * Resolves every CPU-owned pick in order (best-available-prospect by
  * rating - real GM-needs-based CPU logic is Phase 6 territory) until it
- * reaches a pick owned by the user's team, or the draft ends. The user
- * always gets to make their own picks; this just fast-forwards the CPU
- * picks around them, the same "advance until the next real decision"
- * pattern the playoffs page uses.
+ * reaches a pick owned by the user's team, or the draft ends. Returns the
+ * ordered list of what was resolved so the client can animate the board
+ * filling in pick by pick instead of jumping straight to the end state.
  */
 export async function advanceDraftAction(leagueId: string) {
   const league = await requireOwnedLeague(leagueId);
@@ -216,7 +266,7 @@ export async function advanceDraftAction(leagueId: string) {
 
   const pendingPicks = allPicks.filter((p) => !p.selectedProspectId);
   if (pendingPicks.length === 0) {
-    return { done: true, resolved: 0 };
+    return { done: true, resolvedPicks: [] as ResolvedPick[] };
   }
 
   const draftedProspectIds = new Set(
@@ -249,7 +299,20 @@ export async function advanceDraftAction(leagueId: string) {
   await draftProspectsToTeams(leagueId, season + 1, assignments);
 
   revalidatePath(`/leagues/${leagueId}/draft`);
-  return { done: assignments.length === pendingPicks.length, resolved: assignments.length };
+
+  const resolvedPicks: ResolvedPick[] = assignments.map((a) => ({
+    pickId: a.pickId,
+    overallPickNumber: a.overallPickNumber,
+    round: a.round,
+    leagueTeamId: a.leagueTeamId,
+    prospectId: a.prospectId,
+    fullName: a.fullName,
+    position: a.position,
+    overallRating: a.overallRating,
+    potentialRating: a.potentialRating,
+  }));
+
+  return { done: assignments.length === pendingPicks.length, resolvedPicks };
 }
 
 /**
@@ -283,7 +346,7 @@ export async function makeDraftPickAction(leagueId: string, prospectId: string) 
   });
   if (alreadyPicked) throw new Error("That prospect has already been drafted");
 
-  await draftProspectsToTeams(leagueId, season + 1, [
+  const [assignment] = await draftProspectsToTeams(leagueId, season + 1, [
     {
       pickId: nextPick.id,
       prospectId: prospect.id,
@@ -298,5 +361,18 @@ export async function makeDraftPickAction(leagueId: string, prospectId: string) 
   ]);
 
   revalidatePath(`/leagues/${leagueId}/draft`);
-  return { drafted: true };
+
+  const resolvedPick: ResolvedPick = {
+    pickId: assignment.pickId,
+    overallPickNumber: assignment.overallPickNumber,
+    round: assignment.round,
+    leagueTeamId: assignment.leagueTeamId,
+    prospectId: assignment.prospectId,
+    fullName: assignment.fullName,
+    position: assignment.position,
+    overallRating: assignment.overallRating,
+    potentialRating: assignment.potentialRating,
+  };
+
+  return { drafted: true, resolvedPick };
 }
