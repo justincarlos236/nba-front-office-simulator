@@ -41,6 +41,9 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
   if (freeAgent.leagueTeamId !== null) {
     throw new Error("This player has already signed elsewhere");
   }
+  if (!freeAgent.isActive) {
+    throw new Error("This player has retired");
+  }
 
   const years = Math.min(4, Math.max(1, Math.round(input.years)));
   const offerSalaryCents = BigInt(input.offerSalaryCents);

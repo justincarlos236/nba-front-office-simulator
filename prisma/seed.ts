@@ -48,6 +48,7 @@ async function seedTeams() {
         division: team.division,
         primaryColor: team.primaryColor,
         secondaryColor: team.secondaryColor,
+        logoUrl: team.logoUrl,
       },
       create: {
         abbreviation: team.abbreviation,
@@ -57,6 +58,7 @@ async function seedTeams() {
         division: team.division,
         primaryColor: team.primaryColor,
         secondaryColor: team.secondaryColor,
+        logoUrl: team.logoUrl,
       },
     });
   }

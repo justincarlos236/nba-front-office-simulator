@@ -71,12 +71,43 @@ export const SEASON_CAP_RULES: readonly SeasonCapRules[] = [
   },
 ];
 
+// Real NBA cap growth has ranged from ~3% (normal years) to ~10% (new TV
+// deal years) - 5%/year is a reasonable flat approximation for seasons
+// past the hand-entered table, not a claim about actual future CBA terms.
+const CAP_GROWTH_RATE = 0.05;
+
+function scaleCents(cents: bigint, factor: number): bigint {
+  return BigInt(Math.round(Number(cents) * factor));
+}
+
 export function getSeasonCapRules(season: number): SeasonCapRules {
   const exact = SEASON_CAP_RULES.find((rules) => rules.season === season);
   if (exact) return exact;
 
+  const latest = SEASON_CAP_RULES[SEASON_CAP_RULES.length - 1];
+  if (season > latest.season) {
+    // Project forward from the last hand-entered season via a flat growth
+    // rate, rather than flatlining at 2025's numbers forever - a team's
+    // cap space should still meaningfully grow across advanced seasons.
+    const factor = (1 + CAP_GROWTH_RATE) ** (season - latest.season);
+    return {
+      season,
+      salaryCapCents: scaleCents(latest.salaryCapCents, factor),
+      luxuryTaxCents: scaleCents(latest.luxuryTaxCents, factor),
+      firstApronCents: scaleCents(latest.firstApronCents, factor),
+      secondApronCents: scaleCents(latest.secondApronCents, factor),
+      nonTaxpayerMLECents: scaleCents(latest.nonTaxpayerMLECents, factor),
+      taxpayerMLECents: scaleCents(latest.taxpayerMLECents, factor),
+      roomMLECents: scaleCents(latest.roomMLECents, factor),
+      biAnnualExceptionCents: scaleCents(latest.biAnnualExceptionCents, factor),
+      emptyRosterChargeCents: scaleCents(latest.emptyRosterChargeCents, factor),
+      tradeMatchLowerBreakpointCents: scaleCents(latest.tradeMatchLowerBreakpointCents, factor),
+      tradeMatchUpperBreakpointCents: scaleCents(latest.tradeMatchUpperBreakpointCents, factor),
+    };
+  }
+
   // Fall back to the closest known season rather than throwing, so the
-  // simulator degrades gracefully for seasons we haven't hand-entered yet.
+  // simulator degrades gracefully for seasons before our hand-entered data.
   const closest = [...SEASON_CAP_RULES].sort(
     (a, b) => Math.abs(a.season - season) - Math.abs(b.season - season),
   )[0];

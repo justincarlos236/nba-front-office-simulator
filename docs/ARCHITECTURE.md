@@ -198,6 +198,63 @@ strength numbers the regular season uses.
   created already-played, so this never mattered in practice, but it
   guards against ever mixing the two once both exist in the same season.
 
+## Player development & multi-season progression
+
+Turns a single-season sandbox into an actual multi-year franchise:
+`advanceSeasonAction` (`src/lib/actions/offseason.ts`) ages every active
+player, applies development/decline, resolves retirements, expires
+contracts, computes that season's awards, resets standings, generates the
+next season's schedule, and rolls `League.currentSeason` forward - gated
+on a crowned playoff champion, so the playoffs (above) aren't a dead end,
+they're what unlocks the next season.
+
+- **Development/decline** (`developPlayerRating.ts`): players at or under
+  26 with room below their `potentialRating` grow 1-4 points/season;
+  players 30+ decline, accelerating the further past 30 they are; players
+  in between drift by ±1. A hand-tuned curve (not fitted data), shaped
+  consistently with the valuation model's `ageValueMultiplier` (peak
+  late-20s) but expressed as a rating delta since this actually mutates
+  `LeaguePlayer.overallRating`, not just a market-value multiplier.
+- **Retirement** (`retirement.ts`): zero risk below 33, ~8%/year after
+  that (higher for already-low-rated players), forced at 41. Deliberately
+  conservative: **there's no draft system yet** (`docs/IMPLEMENTATION_PLAN.md`
+  Phase 4), so retirement only removes players from the pool with nothing
+  yet replacing them - a slow, realistic rate keeps a league playable for
+  many seasons before this becomes a real constraint, but it's a known,
+  time-bounded limitation until Phase 4 ships.
+- **Awards** (`seasonAwards.ts`): MVP, Rookie of the Year, and Most
+  Improved Player, computed only from data actually tracked honestly -
+  rating, team win percentage, rookie status (0 experience), and a real
+  season-over-season rating delta. Deliberately excludes DPOY/Sixth
+  Man/All-Defense - those would need individual defensive box-score stats
+  or a bench/starter depth chart, neither of which exist (the game engine
+  is strength-based, not possession-by-possession), so faking them would
+  mean presenting a guess as a real result - the same principle already
+  applied to contract data. MVP uses an additive (not multiplicative)
+  team-record adjustment so a mediocre player on a great team can never
+  outscore a real star on a bad one; team success only tips genuinely
+  close talent gaps.
+- **Contract expiration**: `Contract.leaguePlayerId` is unique (one
+  contract per player, ever), so an expired contract is deleted (cascades
+  its `ContractYear` rows) rather than replaced in place; the player
+  becomes a free agent unless they've also retired. Until CPU-team
+  decision-making exists (Phase 6), only the user's own team actively
+  re-signs its own expiring players, so AI teams' rosters can thin out
+  over many advanced seasons - expected for now, not a bug.
+- **Cap growth**: `getSeasonCapRules` (`src/lib/cap/constants.ts`) now
+  projects the cap forward at a flat 5%/year for any season past the
+  hand-entered 2023-2025 table, instead of flatlining at 2025's numbers -
+  a documented approximation (real growth has ranged ~3-10%/year
+  historically), not a claim about actual future CBA terms.
+- **Standings reset**: `LeagueTeam.wins`/`losses` are cumulative counters
+  with no season column, so they're explicitly reset to 0 when advancing -
+  matching how real standings always show the current season, not a
+  career total (which isn't tracked/displayed anywhere in this app).
+- The `/leagues/[id]/offseason` page shows the just-completed season's
+  awards and a retirements list (name, age, final rating) - not just a
+  bare "advance" button - and highlights the user's own players among the
+  award winners.
+
 ## AI GM assistant
 
 The assistant is not a chat window that free-associates about basketball.
@@ -218,9 +275,25 @@ age-curve adjusted) that both feeds the assistant and powers standalone UI
 - **Teams**: hardcoded as a static fixture (`prisma/data/teams.ts`) rather
   than pulled from an API — conference/division/colors are effectively
   fixed, so hitting an external service for this data would just be an
-  unnecessary dependency.
+  unnecessary dependency. `logoUrl` links to each team's official crest on
+  NBA.com's own CDN (`cdn.nba.com`, keyed by each team's stable numeric NBA
+  team ID) rather than a copy stored in this repo — the same way any site
+  cites an official public asset instead of redistributing it.
 - **Players**: bios (name, position, height/weight, draft info, current
-  team) come from the balldontlie API.
+  team) come from the balldontlie API. Known limitation: a small number of
+  common-name players can get bio data matched to the wrong real person -
+  e.g. two players (external IDs `2336`, `46405409`) had their bios
+  matched to a 1976-drafted namesake instead of the actual 2023-24 player
+  the imported stat line belongs to, which surfaced as an absurd
+  "retired at 69" once Phase 3 started actually displaying computed ages.
+  Fixed by nulling the incorrect draft fields for those two records rather
+  than asserting a still-possibly-wrong specific identity - more honest
+  than a confident guess. Separately, `Player.currentTeamId` isn't audited
+  for full roster accuracy against today's real rosters (e.g. one known
+  case has a player's bio pointing at the wrong team); this doesn't affect
+  simulation correctness (each league clones its own mutable roster
+  regardless), just the "who plays for whom" bio display for a handful of
+  players - a wider accuracy audit is future work, not blocking.
 - **Season stats**: real per-player 2023-24 season averages, but not from a
   live API — that season's per-game box scores are bundled from
   [NocturneBear/NBA-Data-2010-2024](https://github.com/NocturneBear/NBA-Data-2010-2024)

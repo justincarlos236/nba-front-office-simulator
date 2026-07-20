@@ -5,25 +5,10 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { planLeaguePlayer } from "@/lib/league/planLeaguePlayer";
 import { generateRoundRobinSchedule } from "@/lib/simulation/generateSchedule";
+import { estimateAge, estimateExperience } from "@/lib/players/age";
 
 const SEASON = 2023;
 const FREE_AGENT_RATING_CUTOFF = 25;
-
-/**
- * Real birth dates aren't available from the free bio API (see
- * docs/ARCHITECTURE.md), so age/experience are estimated from draft year -
- * good enough to drive the age curve and rookie-scale discount without
- * claiming precision we don't have.
- */
-function estimateAge(draftYear: number | null): number {
-  if (!draftYear) return 27;
-  return Math.max(19, SEASON - draftYear + 22);
-}
-
-function estimateExperience(draftYear: number | null): number {
-  if (!draftYear) return 5;
-  return Math.max(0, SEASON - draftYear);
-}
 
 /**
  * Bootstraps a brand-new League from the reference snapshot: clones all 30
@@ -91,8 +76,8 @@ export async function createLeagueAction(formData: FormData) {
 
     const plan = planLeaguePlayer({
       season: SEASON,
-      age: estimateAge(player.draftYear),
-      yearsOfExperience: estimateExperience(player.draftYear),
+      age: estimateAge(player.draftYear, SEASON),
+      yearsOfExperience: estimateExperience(player.draftYear, SEASON),
       stats: { ...stat, trueShootingPct: stat.trueShootingPct ?? 0.56 },
       seed: player.id,
     });

@@ -187,6 +187,7 @@ model League {
   assistantThreads AssistantThread[]
   games            Game[]
   playoffSeries    PlayoffSeries[]
+  seasonAwards     SeasonAward[]
 
   @@index([ownerId])
   @@map("leagues")
@@ -304,16 +305,45 @@ model LeaguePlayer {
   potentialRating Int
   injuryStatus    InjuryStatus @default(HEALTHY)
   isActive        Boolean      @default(true) // false once retired within this league
+  retiredSeason   Int? // the season this player retired after, if any
 
   league      League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   player      Player       @relation(fields: [playerId], references: [id])
   leagueTeam  LeagueTeam?  @relation(fields: [leagueTeamId], references: [id])
   contract    Contract?
   tradeAssets TradeAsset[]
+  seasonAwards SeasonAward[]
 
   @@unique([leagueId, playerId])
   @@index([leagueId, leagueTeamId])
   @@map("league_players")
+}
+
+enum AwardCategory {
+  MVP
+  ROOKIE_OF_THE_YEAR
+  MOST_IMPROVED_PLAYER
+}
+
+// One row per league+season+category. Computed once when the season is
+// advanced (from that season's final ratings/standings), then persisted
+// rather than recomputed on every page view.
+model SeasonAward {
+  id             String        @id @default(cuid())
+  leagueId       String
+  season         Int
+  category       AwardCategory
+  leaguePlayerId String
+  // The stat the award was decided on - rating for MVP/ROY, rating delta
+  // for MIP - kept so the UI can show "why" without recomputing.
+  value          Float
+
+  league       League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leaguePlayer LeaguePlayer @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, season, category])
+  @@index([leagueId, season])
+  @@map("season_awards")
 }
 
 enum ContractOptionType {

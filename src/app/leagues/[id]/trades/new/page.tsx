@@ -51,7 +51,19 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
 
   const league = await prisma.league.findUnique({
     where: { id },
-    include: { teams: { include: { team: true } } },
+    include: {
+      teams: {
+        include: { team: true },
+        // Postgres doesn't guarantee row order without an explicit
+        // orderBy - this list is directly user-visible, so it needs a
+        // deterministic order rather than incidental physical row order.
+        orderBy: [
+          { team: { conference: "asc" } },
+          { team: { division: "asc" } },
+          { team: { city: "asc" } },
+        ],
+      },
+    },
   });
   if (!league || league.ownerId !== session.user.id) notFound();
 

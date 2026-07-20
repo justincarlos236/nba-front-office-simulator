@@ -20,7 +20,13 @@ test("propose and execute a legal trade, and the rosters actually swap", async (
 
   await page.getByText("Propose a trade").click();
   await expect(page.getByRole("heading", { name: "Propose a trade with..." })).toBeVisible();
-  await page.locator("a[href*='trades/new?with=']").first().click();
+  // Target the Nets by name rather than "whichever team is first" - the
+  // list has no meaningful order guarantee to depend on. Julius Randle's
+  // currentTeamId in the imported reference data points here (a known,
+  // separate data-import quirk - see docs/ARCHITECTURE.md), not the real
+  // Knicks; this test just needs a specific, reproducible roster to trade
+  // against, not real-world team accuracy.
+  await page.locator("a[href*='trades/new?with=']", { hasText: "Brooklyn Nets" }).click();
   await expect(page.getByText("Select players on each side")).toBeVisible();
 
   // Click the player name labels directly, as a real user would - clicking

@@ -43,108 +43,108 @@ unbounded extra work over it).
 
 ## Feature status table
 
-| #   | Feature                               | Status | Priority | Phase  | Depends on   | Notes                                                                                             |
-| --- | ------------------------------------- | ------ | -------- | ------ | ------------ | ------------------------------------------------------------------------------------------------- |
-| 1   | NBA Trade Machine                     | ✅     | P0       | done   | —            | `/leagues/[id]/trades/new`, 2-team only, players only (no picks)                                  |
-| 2   | Realistic Salary Cap Engine           | ✅     | P0       | done   | —            | `src/lib/cap/*`, 39 unit tests, real 2023 CBA aprons/MLE                                          |
-| 3   | Full Roster Management                | 🟡     | P0       | done*  | —            | View is complete; no waive/release/lineup management yet                                          |
-| 4   | Real NBA Teams and Players            | ✅     | P0       | done   | —            | 30 real teams, 497 real players + 2023-24 stats                                                   |
-| 5   | AI GM Assistant                       | ⬜     | P1       | paused | —            | Started, then user explicitly said skip for now — **do not resume unprompted**                    |
-| 6   | Player Valuation Model                | ✅     | P0       | done   | —            | `src/lib/valuation/*`, rating + age curve + market value + surplus                                |
-| 7   | AI Trade Evaluation                   | ⬜     | P1       | 6      | 21, 22       | Any legal trade currently auto-succeeds regardless of counterparty benefit                        |
-| 8   | Franchise / GM Mode                   | 🟡     | P0       | 1,2    | —            | Cap/roster/standings all work now; still no multi-season progression (Phase 3)                    |
-| 9   | Team Dashboard                        | 🟡     | P0       | done*  | —            | Cap sheet + roster shown; no transactions/draft picks on it yet                                   |
-| 10  | Save and Load Franchises              | ✅     | P0       | done   | —            | Continuous DB persistence; "load" = sign back in                                                  |
-| 11  | Free Agency                           | ✅     | P0       | done   | —            | `/leagues/[id]/free-agents`, real signing-mechanism validation                                    |
-| 12  | Contract Negotiations                 | 🟡     | P2       | —      | 31           | User sets terms + system validates; no back-and-forth or player preference                        |
-| 13  | NBA Draft                             | ⬜     | P1       | 4      | 66,67        | —                                                                                                 |
-| 14  | Draft Pick Trading                    | ⬜     | P2       | 4      | 62           | Stepien-lite check exists in `validateTrade` unused - no pick inventory                           |
-| 15  | Season Simulation                     | ✅     | P0       | 1      | —            | Batch-simulate 1/10/50 games from `/leagues/[id]/standings`                                       |
-| 16  | Game Simulation Engine                | ✅     | P0       | 1      | —            | `src/lib/simulation/simulateGame.ts` — strength-based, not possession-level (documented)          |
-| 17  | League Standings                      | ✅     | P0       | 1      | —            | `/leagues/[id]/standings`, conference-sorted, live games-back                                     |
-| 18  | NBA Playoffs                          | ✅     | P1       | 2      | 15,16,17     | Play-in + fixed single-elim bracket, `/leagues/[id]/playoffs`, real 2-2-1-1-1 home pattern        |
-| 19  | Player Development                    | ⬜     | P1       | 3      | 15           | Ratings are static post-bootstrap today                                                           |
-| 20  | Dynamic Player Ratings                | ⬜     | P1       | 3      | 19           | Same root cause as #19                                                                            |
-| 21  | Team Direction System                 | ⬜     | P1       | 6      | —            | —                                                                                                 |
-| 22  | Team Needs System                     | ⬜     | P1       | 6      | —            | —                                                                                                 |
-| 23  | Trade Finder                          | ⬜     | P2       | 6      | 6,21,22      | —                                                                                                 |
-| 24  | Three/Multi-Team Trades               | 🟡     | P2       | —      | —            | `validateTrade` supports N teams (tested); `TradeBuilder` UI is 2-team only                       |
-| 25  | Trade Grades                          | ⬜     | P2       | 6      | 6            | Legality validation exists; a quality "grade" doesn't                                             |
-| 26  | Advanced Player Statistics            | 🟡     | P2       | —      | —            | PPG/RPG/APG/TS%/FG% shown; PER/BPM/usage columns exist but unpopulated (no source)                |
-| 27  | Player Comparison Tool                | ⬜     | P1       | 7      | —            | —                                                                                                 |
-| 28  | Depth Chart Management                | ⬜     | P2       | 3      | —            | Best paired with sim engine so lineups matter                                                     |
-| 29  | Rotation Management                   | ⬜     | P2       | 3      | 28           | —                                                                                                 |
-| 30  | Injury System                         | ⬜     | P2       | 3      | 15,16        | `InjuryStatus` enum exists on schema, unused                                                      |
-| 31  | Player Morale                         | ⬜     | P2       | 6      | —            | —                                                                                                 |
-| 32  | Trade Requests                        | ⬜     | P3       | —      | 31           | —                                                                                                 |
-| 33  | Player Roles                          | ⬜     | P3       | —      | —            | —                                                                                                 |
-| 34  | Player Potential                      | 🟡     | P1       | 3      | —            | `potentialRating` computed + shown; doesn't drive development yet (see #19)                       |
-| 35  | Scouting Reports                      | ⬜     | P3       | —      | —            | —                                                                                                 |
-| 36  | League News Feed                      | ⬜     | P2       | 5      | 37           | —                                                                                                 |
-| 37  | Transaction History                   | 🟡     | P1       | 5      | —            | `Trade`/`TradeAsset` rows persisted on execution; no viewing UI; signings aren't logged at all    |
-| 38  | Player Career History                 | 🔒     | P2       | —      | multi-season | Only one season (2023-24) of stats exists per player                                              |
-| 39  | NBA Awards                            | ⬜     | P2       | 3      | 15,19        | —                                                                                                 |
-| 40  | All-Star Weekend                      | ⬜     | P3       | —      | 15           | —                                                                                                 |
-| 41  | Hall of Fame                          | ⬜     | P3       | —      | 42           | —                                                                                                 |
-| 42  | Player Retirement                     | ⬜     | P3       | 3      | 19           | —                                                                                                 |
-| 43  | League History                        | ⬜     | P2       | 5      | 15,18,39     | —                                                                                                 |
-| 44  | League Records                        | ⬜     | P3       | —      | 43           | —                                                                                                 |
-| 45  | Championship History                  | ⬜     | P2       | 5      | 18           | —                                                                                                 |
-| 46  | AI General Managers                   | ⬜     | P1       | 6      | 21,22        | —                                                                                                 |
-| 47  | GM Personalities                      | ⬜     | P2       | 6      | 46           | —                                                                                                 |
-| 48  | AI Trade Negotiations                 | ⬜     | P2       | —      | 46           | —                                                                                                 |
-| 49  | AI GM Chat                            | ⬜     | P1       | paused | —            | The explicitly-paused conversational assistant                                                    |
-| 50  | Natural-Language Player Search        | ⬜     | P2       | —      | 86           | LLM-flavored - hold pending user re-opening the AI thread                                         |
-| 51  | AI Roster Analysis                    | ⬜     | P2       | —      | 6,49         | —                                                                                                 |
-| 52  | AI Offseason Plan                     | ⬜     | P3       | —      | 49           | —                                                                                                 |
-| 53  | AI Trade Suggestions                  | ⬜     | P2       | —      | 6,49         | —                                                                                                 |
-| 54  | AI Trade Explanations                 | ⬜     | P2       | —      | 49           | —                                                                                                 |
-| 55  | AI Counteroffers                      | ⬜     | P3       | —      | 48           | —                                                                                                 |
-| 56  | Trade Value Visualization             | ⬜     | P2       | 7      | 6            | Values shown as numbers/tables today, no chart                                                    |
-| 57  | Championship Probability              | ⬜     | P3       | —      | 15,16        | —                                                                                                 |
-| 58  | Playoff Probability                   | ⬜     | P2       | —      | 15,16,17     | —                                                                                                 |
-| 59  | Team Power Rankings                   | ⬜     | P2       | 2      | 17           | Natural add-on once standings exist                                                               |
-| 60  | Salary Cap Visualization              | ⬜     | P1       | 7      | —            | Cap sheet is text stat cards today, not a chart                                                   |
-| 61  | Contract Timeline                     | 🟡     | P2       | 7      | —            | Current-season salary + end year shown; no multi-year visual                                      |
-| 62  | Draft Pick Inventory                  | ⬜     | P1       | 4      | —            | Prerequisite for #14, #71, #72, #73                                                               |
-| 63  | Roster Strength Analysis              | ⬜     | P2       | 7      | 6            | —                                                                                                 |
-| 64  | Player Performance Trends             | 🔒     | P3       | —      | multi-season | Only one season of data exists                                                                    |
-| 65  | Team Performance Trends               | 🔒     | P2       | —      | 15,16,17     | Needs games actually being simulated over time                                                    |
-| 66  | Draft Lottery                         | ⬜     | P1       | 4      | 17           | Needs standings (worst record = best odds)                                                        |
-| 67  | Generated Draft Classes               | ⬜     | P1       | 4      | —            | —                                                                                                 |
-| 68  | Prospect Scouting                     | ⬜     | P2       | 4      | 67           | —                                                                                                 |
-| 69  | Mock Drafts                           | ⬜     | P2       | 4      | 67, 21/22    | —                                                                                                 |
-| 70  | Draft Combine                         | ⬜     | P3       | —      | 67           | —                                                                                                 |
-| 71  | Draft-Day Trades                      | ⬜     | P2       | 4      | 1, 62        | —                                                                                                 |
-| 72  | Pick Protections                      | ⬜     | P2       | 4      | 62           | `protectionNote` field already exists on `DraftPick`, unused                                      |
-| 73  | Pick Swaps                            | ⬜     | P3       | —      | 62           | —                                                                                                 |
-| 74  | Multi-Season Simulation               | ⬜     | P1       | 3      | 15,19        | "Advance to next season" mechanic                                                                 |
-| 75  | Salary Cap Growth                     | 🟡     | P1       | 3      | 74           | `SEASON_CAP_RULES` has real multi-season figures; nothing advances `currentSeason` yet            |
-| 76  | League Evolution                      | ⬜     | P3       | —      | 74           | —                                                                                                 |
-| 77  | Expansion Teams                       | ⬜     | P3       | —      | —            | —                                                                                                 |
-| 78  | Expansion Draft                       | ⬜     | P3       | —      | 77           | —                                                                                                 |
-| 79  | Custom Team Creation                  | ⬜     | P3       | —      | —            | —                                                                                                 |
-| 80  | Historical Seasons                    | 🟡     | P3       | —      | —            | Fixed to 2023-24 only; not selectable                                                             |
-| 81  | What-If Mode                          | ⬜     | P3       | —      | 79/82        | —                                                                                                 |
-| 82  | Custom Rosters                        | ⬜     | P3       | —      | —            | —                                                                                                 |
-| 83  | League Settings                       | ⬜     | P2       | 9      | —            | —                                                                                                 |
-| 84  | User Authentication                   | ✅     | P0       | done   | —            | Auth.js v5, Credentials, ownership-scoped                                                         |
-| 85  | Multiple Franchise Saves              | ⬜     | P1       | 9      | —            | Currently hard-capped to one league per user                                                      |
-| 86  | Global Player Search                  | ⬜     | P1       | 8      | —            | —                                                                                                 |
-| 87  | Global Team Search                    | ⬜     | P2       | 8      | —            | `/teams` browse exists; no search box                                                             |
-| 88  | Advanced Filters                      | ⬜     | P2       | 8      | 86           | —                                                                                                 |
-| 89  | Command Palette                       | ⬜     | P2       | 8      | 86,87        | —                                                                                                 |
-| 90  | Shareable Trades                      | ⬜     | P3       | —      | 1            | —                                                                                                 |
-| 91  | Trade Card Generator                  | ⬜     | P3       | —      | 90           | —                                                                                                 |
-| 92  | Beautiful Player Profile Pages        | 🟡     | P2       | 7      | —            | Bio+stats+valuation exist; no photo (field unpopulated), no career history section                |
-| 93  | Detailed Team Pages                   | 🟡     | P2       | 7      | —            | Roster+colors+division shown; no payroll chart, draft assets, or transaction history              |
-| 94  | Interactive League Dashboard          | 🟡     | P2       | 2      | 17           | Standings page now has recent league-wide results + a playoffs link; still no news/power rankings |
-| 95  | Responsive Design                     | 🟡     | P2       | 7      | —            | Some Tailwind responsive classes used; not comprehensively verified across breakpoints            |
-| 96  | Dark and Light Mode                   | 🟡     | P3       | —      | —            | Dark theme only, no toggle                                                                        |
-| 97  | Interactive Charts and Visualizations | 🟡     | P1       | 7      | —            | One recharts scatter chart exists; cap/trend visualizations don't                                 |
-| 98  | Onboarding Tutorial                   | ⬜     | P3       | —      | —            | —                                                                                                 |
-| 99  | Achievements                          | ⬜     | P3       | 9      | 100          | —                                                                                                 |
-| 100 | GM Career Score                       | ⬜     | P2       | 9      | 6,37         | —                                                                                                 |
+| #   | Feature                               | Status | Priority | Phase  | Depends on   | Notes                                                                                                                                                  |
+| --- | ------------------------------------- | ------ | -------- | ------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | NBA Trade Machine                     | ✅     | P0       | done   | —            | `/leagues/[id]/trades/new`, 2-team only, players only (no picks)                                                                                       |
+| 2   | Realistic Salary Cap Engine           | ✅     | P0       | done   | —            | `src/lib/cap/*`, 39 unit tests, real 2023 CBA aprons/MLE                                                                                               |
+| 3   | Full Roster Management                | 🟡     | P0       | done*  | —            | View is complete; no waive/release/lineup management yet                                                                                               |
+| 4   | Real NBA Teams and Players            | ✅     | P0       | done   | —            | 30 real teams, 497 real players + 2023-24 stats                                                                                                        |
+| 5   | AI GM Assistant                       | ⬜     | P1       | paused | —            | Started, then user explicitly said skip for now — **do not resume unprompted**                                                                         |
+| 6   | Player Valuation Model                | ✅     | P0       | done   | —            | `src/lib/valuation/*`, rating + age curve + market value + surplus                                                                                     |
+| 7   | AI Trade Evaluation                   | ⬜     | P1       | 6      | 21, 22       | Any legal trade currently auto-succeeds regardless of counterparty benefit                                                                             |
+| 8   | Franchise / GM Mode                   | ✅     | P0       | 1,2,3  | —            | Cap/roster/standings/playoffs/multi-season progression (aging, retirement, awards) all work now                                                        |
+| 9   | Team Dashboard                        | 🟡     | P0       | done*  | —            | Cap sheet + roster shown; no transactions/draft picks on it yet                                                                                        |
+| 10  | Save and Load Franchises              | ✅     | P0       | done   | —            | Continuous DB persistence; "load" = sign back in                                                                                                       |
+| 11  | Free Agency                           | ✅     | P0       | done   | —            | `/leagues/[id]/free-agents`, real signing-mechanism validation                                                                                         |
+| 12  | Contract Negotiations                 | 🟡     | P2       | —      | 31           | User sets terms + system validates; no back-and-forth or player preference                                                                             |
+| 13  | NBA Draft                             | ⬜     | P1       | 4      | 66,67        | —                                                                                                                                                      |
+| 14  | Draft Pick Trading                    | ⬜     | P2       | 4      | 62           | Stepien-lite check exists in `validateTrade` unused - no pick inventory                                                                                |
+| 15  | Season Simulation                     | ✅     | P0       | 1      | —            | Batch-simulate 1/10/50 games from `/leagues/[id]/standings`                                                                                            |
+| 16  | Game Simulation Engine                | ✅     | P0       | 1      | —            | `src/lib/simulation/simulateGame.ts` — strength-based, not possession-level (documented)                                                               |
+| 17  | League Standings                      | ✅     | P0       | 1      | —            | `/leagues/[id]/standings`, conference-sorted, live games-back                                                                                          |
+| 18  | NBA Playoffs                          | ✅     | P1       | 2      | 15,16,17     | Play-in + fixed single-elim bracket, `/leagues/[id]/playoffs`, real 2-2-1-1-1 home pattern                                                             |
+| 19  | Player Development                    | ✅     | P1       | 3      | 15           | `developPlayerRating.ts` - age-based growth/decline, applied by `advanceSeasonAction`                                                                  |
+| 20  | Dynamic Player Ratings                | ✅     | P1       | 3      | 19           | Ratings now actually change season-over-season (see #19)                                                                                               |
+| 21  | Team Direction System                 | ⬜     | P1       | 6      | —            | —                                                                                                                                                      |
+| 22  | Team Needs System                     | ⬜     | P1       | 6      | —            | —                                                                                                                                                      |
+| 23  | Trade Finder                          | ⬜     | P2       | 6      | 6,21,22      | —                                                                                                                                                      |
+| 24  | Three/Multi-Team Trades               | 🟡     | P2       | —      | —            | `validateTrade` supports N teams (tested); `TradeBuilder` UI is 2-team only                                                                            |
+| 25  | Trade Grades                          | ⬜     | P2       | 6      | 6            | Legality validation exists; a quality "grade" doesn't                                                                                                  |
+| 26  | Advanced Player Statistics            | 🟡     | P2       | —      | —            | PPG/RPG/APG/TS%/FG% shown; PER/BPM/usage columns exist but unpopulated (no source)                                                                     |
+| 27  | Player Comparison Tool                | ⬜     | P1       | 7      | —            | —                                                                                                                                                      |
+| 28  | Depth Chart Management                | ⬜     | P2       | 7      | —            | Deliberately deferred out of Phase 3 - roster micromanagement, not season progression                                                                  |
+| 29  | Rotation Management                   | ⬜     | P2       | 3      | 28           | —                                                                                                                                                      |
+| 30  | Injury System                         | ⬜     | P2       | 7      | 15,16        | Deliberately deferred out of Phase 3 (same reason as #28); `InjuryStatus` enum exists, unused                                                          |
+| 31  | Player Morale                         | ⬜     | P2       | 6      | —            | —                                                                                                                                                      |
+| 32  | Trade Requests                        | ⬜     | P3       | —      | 31           | —                                                                                                                                                      |
+| 33  | Player Roles                          | ⬜     | P3       | —      | —            | —                                                                                                                                                      |
+| 34  | Player Potential                      | 🟡     | P1       | 3      | —            | `potentialRating` computed + shown; doesn't drive development yet (see #19)                                                                            |
+| 35  | Scouting Reports                      | ⬜     | P3       | —      | —            | —                                                                                                                                                      |
+| 36  | League News Feed                      | ⬜     | P2       | 5      | 37           | —                                                                                                                                                      |
+| 37  | Transaction History                   | 🟡     | P1       | 5      | —            | `Trade`/`TradeAsset` rows persisted on execution; no viewing UI; signings aren't logged at all                                                         |
+| 38  | Player Career History                 | 🔒     | P2       | —      | multi-season | Only one season (2023-24) of stats exists per player                                                                                                   |
+| 39  | NBA Awards                            | 🟡     | P2       | 3      | 15,19        | MVP/ROY/Most Improved computed and shown; DPOY/Sixth Man/All-Defense deliberately skipped (no defensive stats or depth chart to base them on honestly) |
+| 40  | All-Star Weekend                      | ⬜     | P3       | —      | 15           | —                                                                                                                                                      |
+| 41  | Hall of Fame                          | ⬜     | P3       | —      | 42           | —                                                                                                                                                      |
+| 42  | Player Retirement                     | ✅     | P3       | 3      | 19           | `retirement.ts` - age/rating-based probability, forced at 41; shown on the offseason recap page                                                        |
+| 43  | League History                        | ⬜     | P2       | 5      | 15,18,39     | —                                                                                                                                                      |
+| 44  | League Records                        | ⬜     | P3       | —      | 43           | —                                                                                                                                                      |
+| 45  | Championship History                  | ⬜     | P2       | 5      | 18           | —                                                                                                                                                      |
+| 46  | AI General Managers                   | ⬜     | P1       | 6      | 21,22        | —                                                                                                                                                      |
+| 47  | GM Personalities                      | ⬜     | P2       | 6      | 46           | —                                                                                                                                                      |
+| 48  | AI Trade Negotiations                 | ⬜     | P2       | —      | 46           | —                                                                                                                                                      |
+| 49  | AI GM Chat                            | ⬜     | P1       | paused | —            | The explicitly-paused conversational assistant                                                                                                         |
+| 50  | Natural-Language Player Search        | ⬜     | P2       | —      | 86           | LLM-flavored - hold pending user re-opening the AI thread                                                                                              |
+| 51  | AI Roster Analysis                    | ⬜     | P2       | —      | 6,49         | —                                                                                                                                                      |
+| 52  | AI Offseason Plan                     | ⬜     | P3       | —      | 49           | —                                                                                                                                                      |
+| 53  | AI Trade Suggestions                  | ⬜     | P2       | —      | 6,49         | —                                                                                                                                                      |
+| 54  | AI Trade Explanations                 | ⬜     | P2       | —      | 49           | —                                                                                                                                                      |
+| 55  | AI Counteroffers                      | ⬜     | P3       | —      | 48           | —                                                                                                                                                      |
+| 56  | Trade Value Visualization             | ⬜     | P2       | 7      | 6            | Values shown as numbers/tables today, no chart                                                                                                         |
+| 57  | Championship Probability              | ⬜     | P3       | —      | 15,16        | —                                                                                                                                                      |
+| 58  | Playoff Probability                   | ⬜     | P2       | —      | 15,16,17     | —                                                                                                                                                      |
+| 59  | Team Power Rankings                   | ⬜     | P2       | 2      | 17           | Natural add-on once standings exist                                                                                                                    |
+| 60  | Salary Cap Visualization              | ⬜     | P1       | 7      | —            | Cap sheet is text stat cards today, not a chart                                                                                                        |
+| 61  | Contract Timeline                     | 🟡     | P2       | 7      | —            | Current-season salary + end year shown; no multi-year visual                                                                                           |
+| 62  | Draft Pick Inventory                  | ⬜     | P1       | 4      | —            | Prerequisite for #14, #71, #72, #73                                                                                                                    |
+| 63  | Roster Strength Analysis              | ⬜     | P2       | 7      | 6            | —                                                                                                                                                      |
+| 64  | Player Performance Trends             | 🔒     | P3       | —      | multi-season | Only one season of data exists                                                                                                                         |
+| 65  | Team Performance Trends               | 🔒     | P2       | —      | 15,16,17     | Needs games actually being simulated over time                                                                                                         |
+| 66  | Draft Lottery                         | ⬜     | P1       | 4      | 17           | Needs standings (worst record = best odds)                                                                                                             |
+| 67  | Generated Draft Classes               | ⬜     | P1       | 4      | —            | —                                                                                                                                                      |
+| 68  | Prospect Scouting                     | ⬜     | P2       | 4      | 67           | —                                                                                                                                                      |
+| 69  | Mock Drafts                           | ⬜     | P2       | 4      | 67, 21/22    | —                                                                                                                                                      |
+| 70  | Draft Combine                         | ⬜     | P3       | —      | 67           | —                                                                                                                                                      |
+| 71  | Draft-Day Trades                      | ⬜     | P2       | 4      | 1, 62        | —                                                                                                                                                      |
+| 72  | Pick Protections                      | ⬜     | P2       | 4      | 62           | `protectionNote` field already exists on `DraftPick`, unused                                                                                           |
+| 73  | Pick Swaps                            | ⬜     | P3       | —      | 62           | —                                                                                                                                                      |
+| 74  | Multi-Season Simulation               | ⬜     | P1       | 3      | 15,19        | "Advance to next season" mechanic                                                                                                                      |
+| 75  | Salary Cap Growth                     | 🟡     | P1       | 3      | 74           | `SEASON_CAP_RULES` has real multi-season figures; nothing advances `currentSeason` yet                                                                 |
+| 76  | League Evolution                      | ⬜     | P3       | —      | 74           | —                                                                                                                                                      |
+| 77  | Expansion Teams                       | ⬜     | P3       | —      | —            | —                                                                                                                                                      |
+| 78  | Expansion Draft                       | ⬜     | P3       | —      | 77           | —                                                                                                                                                      |
+| 79  | Custom Team Creation                  | ⬜     | P3       | —      | —            | —                                                                                                                                                      |
+| 80  | Historical Seasons                    | 🟡     | P3       | —      | —            | Fixed to 2023-24 only; not selectable                                                                                                                  |
+| 81  | What-If Mode                          | ⬜     | P3       | —      | 79/82        | —                                                                                                                                                      |
+| 82  | Custom Rosters                        | ⬜     | P3       | —      | —            | —                                                                                                                                                      |
+| 83  | League Settings                       | ⬜     | P2       | 9      | —            | —                                                                                                                                                      |
+| 84  | User Authentication                   | ✅     | P0       | done   | —            | Auth.js v5, Credentials, ownership-scoped                                                                                                              |
+| 85  | Multiple Franchise Saves              | ⬜     | P1       | 9      | —            | Currently hard-capped to one league per user                                                                                                           |
+| 86  | Global Player Search                  | ⬜     | P1       | 8      | —            | —                                                                                                                                                      |
+| 87  | Global Team Search                    | ⬜     | P2       | 8      | —            | `/teams` browse exists; no search box                                                                                                                  |
+| 88  | Advanced Filters                      | ⬜     | P2       | 8      | 86           | —                                                                                                                                                      |
+| 89  | Command Palette                       | ⬜     | P2       | 8      | 86,87        | —                                                                                                                                                      |
+| 90  | Shareable Trades                      | ⬜     | P3       | —      | 1            | —                                                                                                                                                      |
+| 91  | Trade Card Generator                  | ⬜     | P3       | —      | 90           | —                                                                                                                                                      |
+| 92  | Beautiful Player Profile Pages        | 🟡     | P2       | 7      | —            | Bio+stats+valuation exist; no photo (field unpopulated), no career history section                                                                     |
+| 93  | Detailed Team Pages                   | 🟡     | P2       | 7      | —            | Roster+colors+division shown; no payroll chart, draft assets, or transaction history                                                                   |
+| 94  | Interactive League Dashboard          | 🟡     | P2       | 2      | 17           | Standings page now has recent league-wide results + a playoffs link; still no news/power rankings                                                      |
+| 95  | Responsive Design                     | 🟡     | P2       | 7      | —            | Some Tailwind responsive classes used; not comprehensively verified across breakpoints                                                                 |
+| 96  | Dark and Light Mode                   | 🟡     | P3       | —      | —            | Dark theme only, no toggle                                                                                                                             |
+| 97  | Interactive Charts and Visualizations | 🟡     | P1       | 7      | —            | One recharts scatter chart exists; cap/trend visualizations don't                                                                                      |
+| 98  | Onboarding Tutorial                   | ⬜     | P3       | —      | —            | —                                                                                                                                                      |
+| 99  | Achievements                          | ⬜     | P3       | 9      | 100          | —                                                                                                                                                      |
+| 100 | GM Career Score                       | ⬜     | P2       | 9      | 6,37         | —                                                                                                                                                      |
 
 \* "done" for #3/#9 means "done to the extent scoped for the MVP" — both
 are marked 🟡 above and will deepen further in later phases (roster
@@ -191,19 +191,28 @@ in later phases.
       recent results (last 10 games, any type), not just the user's own
       team's record
 
-### Phase 3 — Player Development & Multi-Season Progression
+### Phase 3 — Player Development & Multi-Season Progression ✅ DONE (2026-07-20)
 
-The other big unlock: advancing `League.currentSeason`, applying the
-existing age curve to evolve ratings, expiring contracts, and letting the
-cap grow season-to-season using the already-defined `SEASON_CAP_RULES`.
+The other big unlock: advancing `League.currentSeason`, aging/developing
+ratings, expiring contracts, and growing the cap season-to-season.
 
-- [ ] "Advance to next season" flow (age players, apply development/decline
-      using existing `ageValueMultiplier`, expire contracts, roll `currentSeason`)
-- [ ] Dynamic ratings that actually change year over year
-- [ ] Retirement (age/rating-based)
-- [ ] Awards (MVP/DPOY/ROY/etc., computed from that season's stats/results)
-- [ ] Depth chart + rotations (minutes distribution feeding team strength)
-- [ ] Injuries (using the existing `InjuryStatus` enum)
+- [x] "Advance to next season" flow (`advanceSeasonAction`) - ages every
+      active player, applies development/decline, resolves retirements,
+      expires contracts, resets standings, generates the next season's
+      schedule, rolls `currentSeason` forward. Gated on a crowned playoff
+      champion for the season being closed out.
+- [x] Dynamic ratings that actually change year over year
+      (`developPlayerRating.ts`, unit tested)
+- [x] Retirement (age/rating-based, `retirement.ts`) - deliberately
+      conservative since there's no draft yet (Phase 4) to replenish the
+      talent pool
+- [x] Awards (MVP/Rookie of the Year/Most Improved computed and shown on
+      `/leagues/[id]/offseason`; DPOY/Sixth Man/All-Defense deliberately
+      skipped - no honest data to base them on, see docs/ARCHITECTURE.md)
+- [ ] Depth chart + rotations (minutes distribution feeding team strength) - **moved to Phase 7**: this is roster micromanagement, not season
+      progression, and didn't need to block this phase
+- [ ] Injuries (using the existing `InjuryStatus` enum) - **moved to
+      Phase 7** for the same reason
 
 ### Phase 4 — Draft System
 
@@ -251,6 +260,10 @@ already exists. Good candidate to interleave between bigger phases.
 - [ ] Roster strength breakdown
 - [ ] Richer player/team profile pages
 - [ ] Responsive design pass across breakpoints
+- [ ] Depth chart + rotations (#28, moved from Phase 3 - roster
+      micromanagement, not season progression)
+- [ ] Injury system (#30, moved from Phase 3 for the same reason;
+      `InjuryStatus` enum exists, unused)
 
 ### Phase 8 — Search & Discovery
 
@@ -310,3 +323,34 @@ already exists. Good candidate to interleave between bigger phases.
   #94 upgraded to reflect the new league-wide results section. Next
   recommended phase: **Phase 3 (Player Development & Multi-Season
   Progression)**, per the plan above.
+- **2026-07-20**: Phase 3 completed. Added `SeasonAward` model +
+  `LeaguePlayer.retiredSeason` field (two migrations), four new
+  pure/unit-tested modules (`developPlayerRating.ts`, `retirement.ts`,
+  `seasonAwards.ts`, plus `getSeasonCapRules` extended to project cap
+  growth past 2025), a shared season-parameterized `estimateAge`/
+  `estimateExperience` module, and `advanceSeasonAction` - ages every
+  active player, applies development/decline, resolves retirements,
+  expires contracts (deleting the old `Contract` row, since
+  `leaguePlayerId` is unique), computes MVP/ROY/Most Improved, resets
+  standings, generates the next season's schedule, and rolls
+  `currentSeason` forward. New `/leagues/[id]/offseason` page shows the
+  completed season's awards and a retirements list, gated on a crowned
+  playoff champion. 37 new unit tests (174 total), 1 new e2e test
+  (`offseason.spec.ts`), all passing against a real production build.
+  Items #8, #19, #20, #42 moved to ✅; #39 upgraded to 🟡 (MVP/ROY/MIP
+  shipped, DPOY/Sixth Man/All-Defense deliberately skipped - no honest
+  data source, see docs/ARCHITECTURE.md). #28 and #30 (depth chart,
+  injuries) moved from Phase 3 to Phase 7 - roster micromanagement, not
+  season progression, so they didn't need to block this phase.
+  Also this session: (1) added team `logoUrl` (NBA.com's own CDN) and
+  wired it into the team-selection page per user request; (2) found and
+  fixed a real data bug (two players' bios matched to an unrelated
+  1976-drafted namesake, surfaced as "retired at age 69" once this phase
+  started displaying computed ages - fixed by nulling the incorrect
+  draft fields rather than asserting a still-uncertain identity); (3)
+  found and fixed a latent ordering bug where the trade-partner list had
+  no explicit `orderBy` and silently depended on Postgres's incidental
+  row order - added deterministic ordering and fixed the one e2e test
+  that (unknowingly) depended on the old incidental order. Next
+  recommended phase: **Phase 4 (Draft System)** - also what unblocks
+  retirement no longer being a one-way drain on the talent pool.

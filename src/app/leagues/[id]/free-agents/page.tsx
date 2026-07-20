@@ -21,7 +21,7 @@ export default async function FreeAgentsPage({ params }: PageProps) {
   if (!league || league.ownerId !== session.user.id) notFound();
 
   const freeAgents = await prisma.leaguePlayer.findMany({
-    where: { leagueId: league.id, leagueTeamId: null },
+    where: { leagueId: league.id, leagueTeamId: null, isActive: true },
     include: {
       player: { include: { seasonStats: { where: { season: league.currentSeason } } } },
     },

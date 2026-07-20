@@ -37,10 +37,21 @@ export default async function NewLeaguePage() {
               className="w-full rounded-xl border border-border bg-surface p-5 text-left transition hover:border-accent/40"
               style={{ borderLeftColor: team.primaryColor, borderLeftWidth: "4px" }}
             >
-              <p className="text-xs text-muted">{team.division}</p>
-              <h3 className="font-semibold text-foreground">
-                {team.city} {team.name}
-              </h3>
+              <div className="flex items-center gap-3">
+                {team.logoUrl && (
+                  // External SVG crest; Next's image optimizer doesn't apply to
+                  // SVGs anyway, so a plain <img> avoids remote-pattern +
+                  // dangerouslyAllowSVG config for no real benefit.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={team.logoUrl} alt="" width={32} height={32} className="shrink-0" />
+                )}
+                <div>
+                  <p className="text-xs text-muted">{team.division}</p>
+                  <h3 className="font-semibold text-foreground">
+                    {team.city} {team.name}
+                  </h3>
+                </div>
+              </div>
             </button>
           </form>
         ))}

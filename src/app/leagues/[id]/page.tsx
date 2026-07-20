@@ -75,6 +75,12 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
             Playoffs
           </Link>
           <Link
+            href={`/leagues/${league.id}/offseason`}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
+          >
+            Offseason
+          </Link>
+          <Link
             href={`/leagues/${league.id}/free-agents`}
             className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
           >

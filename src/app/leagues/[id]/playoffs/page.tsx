@@ -136,6 +136,12 @@ export default async function PlayoffsPage({ params }: PageProps) {
         <div className="mt-8 rounded-xl border border-accent bg-accent/10 p-6 text-center">
           <p className="text-sm tracking-wide text-muted uppercase">League Champion</p>
           <p className="mt-1 text-2xl font-bold text-foreground">{teamName(champion.team)}</p>
+          <Link
+            href={`/leagues/${league.id}/offseason`}
+            className="mt-4 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90"
+          >
+            Continue to the offseason &rarr;
+          </Link>
         </div>
       )}
 

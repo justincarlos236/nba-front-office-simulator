@@ -33,7 +33,12 @@ export default async function SignFreeAgentPage({ params }: PageProps) {
       player: { include: { seasonStats: { where: { season: league.currentSeason } } } },
     },
   });
-  if (!freeAgent || freeAgent.leagueId !== league.id || freeAgent.leagueTeamId !== null) {
+  if (
+    !freeAgent ||
+    freeAgent.leagueId !== league.id ||
+    freeAgent.leagueTeamId !== null ||
+    !freeAgent.isActive
+  ) {
     notFound();
   }
 
