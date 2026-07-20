@@ -55,7 +55,9 @@ test("start the playoffs and simulate to a champion", async ({ page }) => {
   await page.getByText("Start playoffs (simulate play-in)").click();
   await expect(page.getByText(/Round 1 matchups are set/)).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("heading", { name: "Play-In Tournament" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Round 1" })).toBeVisible();
+  // "Round 1" appears once per conference column in the bracket - just
+  // confirm it rendered at all, not which side.
+  await expect(page.getByRole("heading", { name: "Round 1" }).first()).toBeVisible();
 
   // Advance the bracket one round at a time: Round 1 -> Conf Semis -> Conf
   // Finals -> NBA Finals, until a champion is crowned.

@@ -254,6 +254,20 @@ strength numbers the regular season uses.
   query by `type: REGULAR_SEASON`. Play-in/playoff games are always
   created already-played, so this never mattered in practice, but it
   guards against ever mixing the two once both exist in the same season.
+- **Bracket UI** (`src/components/playoffs/PlayoffBracket.tsx`): a real
+  visual bracket - East on the left, West on the right, both fanning
+  inward to a centered Finals box - built with plain CSS Grid rather than
+  a charting library. Each round's row-start/span is derived purely from
+  `2 ** roundIndex` (round 2's box always covers exactly the 2 round-1
+  rows that feed it, round 3 covers all 4, etc.), so the connector lines
+  and box positions stay pixel-aligned automatically without any manual
+  height math, and it degrades gracefully to explicit "TBD" placeholder
+  boxes for rounds not reached yet - the bracket's shape is stable from
+  the moment the playoffs start, it just fills in round by round. Uses
+  team abbreviations (not full names) and small fixed-width boxes
+  specifically so the whole bracket fits on one screen with no horizontal
+  scrolling - an earlier version used full team names and needed a
+  scrollable container, which wasn't the intended user experience.
 
 ## Player development & multi-season progression
 

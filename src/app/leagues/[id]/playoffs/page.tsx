@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { PlayoffControls } from "@/components/playoffs/PlayoffControls";
+import { PlayoffBracket, type BracketSeries } from "@/components/playoffs/PlayoffBracket";
 
 export const dynamic = "force-dynamic";
 
@@ -127,13 +128,13 @@ export default async function PlayoffsPage({ params }: PageProps) {
       </p>
 
       {userStatus && (
-        <div className="mt-4 rounded-lg border border-border bg-surface px-4 py-3 text-sm text-foreground">
+        <div className="mt-4 max-w-2xl rounded-lg border border-border bg-surface px-4 py-3 text-sm text-foreground">
           {userStatus}
         </div>
       )}
 
       {champion && (
-        <div className="mt-8 rounded-xl border border-accent bg-accent/10 p-6 text-center">
+        <div className="mx-auto mt-8 max-w-md rounded-xl border border-accent bg-accent/10 p-6 text-center">
           <p className="text-sm tracking-wide text-muted uppercase">League Champion</p>
           <p className="mt-1 text-2xl font-bold text-foreground">{teamName(champion.team)}</p>
           <Link
@@ -192,55 +193,26 @@ export default async function PlayoffsPage({ params }: PageProps) {
         </section>
       )}
 
-      {[1, 2, 3].map((round) => {
-        const eastSeries = seriesByConferenceAndRound.get(`EAST-${round}`) ?? [];
-        const westSeries = seriesByConferenceAndRound.get(`WEST-${round}`) ?? [];
-        if (eastSeries.length === 0 && westSeries.length === 0) return null;
-        return (
-          <section key={round} className="mt-10">
-            <h2 className="text-lg font-semibold text-foreground">{ROUND_LABELS[round]}</h2>
-            <div className="mt-3 grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <div className="space-y-3">
-                <p className="text-xs tracking-wide text-muted uppercase">Eastern Conference</p>
-                {eastSeries.map((s) => (
-                  <SeriesCard
-                    key={s.id}
-                    series={s}
-                    games={gamesBySeries.get(s.id) ?? []}
-                    userTeamId={userTeamId}
-                  />
-                ))}
-              </div>
-              <div className="space-y-3">
-                <p className="text-xs tracking-wide text-muted uppercase">Western Conference</p>
-                {westSeries.map((s) => (
-                  <SeriesCard
-                    key={s.id}
-                    series={s}
-                    games={gamesBySeries.get(s.id) ?? []}
-                    userTeamId={userTeamId}
-                  />
-                ))}
-              </div>
-            </div>
-          </section>
-        );
-      })}
-
-      {(seriesByConferenceAndRound.get("FINALS-4") ?? []).length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-lg font-semibold text-foreground">{ROUND_LABELS[4]}</h2>
-          <div className="mt-3 max-w-sm">
-            {(seriesByConferenceAndRound.get("FINALS-4") ?? []).map((s) => (
-              <SeriesCard
-                key={s.id}
-                series={s}
-                games={gamesBySeries.get(s.id) ?? []}
-                userTeamId={userTeamId}
-              />
-            ))}
-          </div>
-        </section>
+      {hasStarted && (
+        <PlayoffBracket
+          eastRounds={
+            [
+              seriesByConferenceAndRound.get("EAST-1") ?? [],
+              seriesByConferenceAndRound.get("EAST-2") ?? [],
+              seriesByConferenceAndRound.get("EAST-3") ?? [],
+            ] as [BracketSeries[], BracketSeries[], BracketSeries[]]
+          }
+          westRounds={
+            [
+              seriesByConferenceAndRound.get("WEST-1") ?? [],
+              seriesByConferenceAndRound.get("WEST-2") ?? [],
+              seriesByConferenceAndRound.get("WEST-3") ?? [],
+            ] as [BracketSeries[], BracketSeries[], BracketSeries[]]
+          }
+          finals={seriesByConferenceAndRound.get("FINALS-4") ?? []}
+          gamesBySeriesId={gamesBySeries}
+          userTeamId={userTeamId}
+        />
       )}
     </main>
   );
@@ -293,75 +265,4 @@ function describeUserStatus({
   if (wasInPlayIn) return "Your team was eliminated in the play-in tournament.";
 
   return "Your team did not qualify for the playoffs this season.";
-}
-
-function SeriesCard({
-  series,
-  games,
-  userTeamId,
-}: {
-  series: {
-    id: string;
-    higherSeedTeam: { team: { city: string; name: string } };
-    lowerSeedTeam: { team: { city: string; name: string } };
-    higherSeedWins: number;
-    lowerSeedWins: number;
-    winnerTeamId: string | null;
-    higherSeedTeamId: string;
-    lowerSeedTeamId: string;
-  };
-  games: PlayoffGame[];
-  userTeamId: string | null;
-}) {
-  const decided = Boolean(series.winnerTeamId);
-  const higherWon = series.winnerTeamId === series.higherSeedTeamId;
-  const involvesUser =
-    series.higherSeedTeamId === userTeamId || series.lowerSeedTeamId === userTeamId;
-
-  return (
-    <div
-      className={`rounded-lg border p-4 text-sm ${
-        involvesUser ? "border-accent bg-accent/5" : "border-border bg-surface"
-      }`}
-    >
-      <div className="flex items-center justify-between">
-        <span className={decided && higherWon ? "font-semibold text-foreground" : "text-muted"}>
-          {teamName(series.higherSeedTeam.team)}
-        </span>
-        <span className="font-mono">{series.higherSeedWins}</span>
-      </div>
-      <div className="mt-1 flex items-center justify-between">
-        <span className={decided && !higherWon ? "font-semibold text-foreground" : "text-muted"}>
-          {teamName(series.lowerSeedTeam.team)}
-        </span>
-        <span className="font-mono">{series.lowerSeedWins}</span>
-      </div>
-      {!decided && games.length === 0 && (
-        <p className="mt-2 text-xs text-muted">Series in progress</p>
-      )}
-      {games.length > 0 && (
-        <details className="mt-2">
-          <summary className="cursor-pointer text-xs text-muted hover:text-foreground">
-            {games.length} game{games.length > 1 ? "s" : ""} played
-          </summary>
-          <ul className="mt-2 space-y-1 border-t border-border pt-2">
-            {games.map((g, i) => {
-              const higherHome = g.homeLeagueTeamId === series.higherSeedTeamId;
-              const higherScore = higherHome ? g.homeScore : g.awayScore;
-              const lowerScore = higherHome ? g.awayScore : g.homeScore;
-              return (
-                <li key={g.id} className="flex items-center justify-between text-xs text-muted">
-                  <span>Game {i + 1}</span>
-                  <span className="font-mono">
-                    {higherScore}-{lowerScore}
-                    {higherHome ? " (H)" : " (A)"}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </details>
-      )}
-    </div>
-  );
 }

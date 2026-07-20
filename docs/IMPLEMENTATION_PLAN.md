@@ -62,7 +62,7 @@ unbounded extra work over it).
 | 15  | Season Simulation                     | ✅     | P0       | 1       | —            | Batch-simulate 1/10/50 games from `/leagues/[id]/standings`                                                                                                                     |
 | 16  | Game Simulation Engine                | ✅     | P0       | 1       | —            | `src/lib/simulation/simulateGame.ts` — strength-based, not possession-level (documented)                                                                                        |
 | 17  | League Standings                      | ✅     | P0       | 1       | —            | `/leagues/[id]/standings`, conference-sorted, live games-back                                                                                                                   |
-| 18  | NBA Playoffs                          | ✅     | P1       | 2       | 15,16,17     | Play-in + fixed single-elim bracket, `/leagues/[id]/playoffs`, real 2-2-1-1-1 home pattern                                                                                      |
+| 18  | NBA Playoffs                          | ✅     | P1       | 2       | 15,16,17     | Play-in + fixed single-elim bracket, `/leagues/[id]/playoffs` (real visual bracket, East/West/Finals), real 2-2-1-1-1 home pattern                                              |
 | 19  | Player Development                    | ✅     | P1       | 3       | 15           | `developPlayerRating.ts` - age-based growth/decline, applied by `advanceSeasonAction`                                                                                           |
 | 20  | Dynamic Player Ratings                | ✅     | P1       | 3       | 19           | Ratings now actually change season-over-season (see #19)                                                                                                                        |
 | 21  | Team Direction System                 | ⬜     | P1       | 6       | —            | —                                                                                                                                                                               |
@@ -536,3 +536,26 @@ already exists. Good candidate to interleave between bigger phases.
     deeper "should this team want this trade" logic, or **Phase 7**'s
     remaining depth-chart/rotation item, which the injury system's roster
     exclusion now makes more relevant than before.
+- **2026-07-21**: Playoffs bracket UI redesign, requested directly by the
+  user ("bracket style look, East on left, West on right, updates all the
+  way to the finals"). Replaced the old stacked-by-round grid-of-cards
+  layout with a real visual bracket (`PlayoffBracket.tsx`) built on plain
+  CSS Grid - round-N box row-start/span derived purely from `2 **
+roundIndex`, so connector lines and box positions stay pixel-aligned
+  without manual height math. Renders "TBD" placeholder boxes for rounds
+  not yet reached, so the bracket's overall shape is visible and stable
+  from the moment the playoffs start, filling in round by round as the
+  user simulates. First pass used full team names and needed a horizontal
+  scroll container to fit - user explicitly rejected that ("i dont want a
+  scroll bracket") - revised to team abbreviations and compact fixed-width
+  boxes so the entire bracket (East + Finals + West) fits on one screen at
+  a normal viewport width with no scrolling. That revision initially
+  dropped the per-round labels ("Round 1", "Conf. Semis", "Conf. Finals")
+  that the old layout had, breaking `playoffs.spec.ts`'s assertion for
+  them - a real UX regression, not just a test artifact, so added them
+  back as compact column headers rather than just patching the test.
+  Verified visually via Playwright screenshots at multiple bracket
+  progress stages (round 1 just started, mid-bracket, champion crowned) -
+  not just passing tests - since this was a pure layout/visual change.
+  All 10 e2e tests + 223 unit tests passing against a real production
+  build.
