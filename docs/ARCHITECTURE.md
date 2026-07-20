@@ -157,6 +157,19 @@ plain language, without touching how legality is actually decided:
   "Signing Exception" concept, and `VETERAN_MINIMUM` into "Minimum
   Contract" - a user never needs to know which flavor of exception their
   team happens to be eligible for, only that they have one.
+- **`/guide/finances`** - a standalone reference page (not nested under
+  `/leagues/[id]`, since the content is the same for every league) walking
+  through Financial Status, Player Value Tiers, the Trade Financial
+  Check, Re-Signing Rights, and the Signing Exception in plain language,
+  each in its own anchored section. Linked contextually from exactly
+  where a user would actually wonder "why," rather than buried in a nav
+  menu: the team dashboard's financial-status line, the trade builder's
+  feasibility result (deep-links to `#trades`), and the sign-offer form
+  (deep-links to `#re-signing-rights` or `#signing-exception` depending
+  on which one is actually relevant to that offer). The trade
+  builder/sign-offer links open in a new tab deliberately - both are
+  client-side forms with in-progress selections that navigating away
+  would otherwise discard.
 
 **Still real CBA concepts, not yet simplified in the UI** (tracked as
 follow-up work, not overlooked): Bird/Early-Bird/Non-Bird re-signing

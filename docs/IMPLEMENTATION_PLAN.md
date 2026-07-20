@@ -313,7 +313,7 @@ large for one pass. Split into sub-phases; only the first is done.
 
 - [x] **10a - Simplified financial presentation layer** ✅ DONE
       (2026-07-21): player market-value tiers, `Under the Cap`/`Over the
-  Cap`/`Luxury Tax` status replacing raw apron enums, plain-English
+Cap`/`Luxury Tax` status replacing raw apron enums, plain-English
       trade/signing feasibility messaging - all sitting on top of the
       existing real cap engine, which is unchanged underneath. See
       `docs/ARCHITECTURE.md`'s "Simplified financial presentation layer".
@@ -742,5 +742,26 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   contract existed to test against) and confirming the badge, the
   exception math, and the rejection of an over-the-line offer all
   render correctly - not just that the unit tests pass. All 10 e2e tests
-  - 246 unit tests passing against a real production build. Next up:
-    **10c (multi-year cap projections + Financial Flexibility Grade)**.
+  and all 246 unit tests passing against a real production build. Next
+  up: **10c (multi-year cap projections + Financial Flexibility Grade)**.
+- **2026-07-21 (later)**: User asked for an in-app guide explaining the
+  Trade Financial Check (asked a few turns earlier, deferred to "after
+  10d" at the time) plus one for 10b's new mechanics, rather than waiting
+  - reasonable, since users hitting Re-Signing Rights/Signing Exception
+    right now shouldn't have to wait for a future phase to understand them.
+    Added one consolidated, extensible reference page (`/guide/finances`)
+    covering Financial Status, Player Value Tiers, the Trade Financial
+    Check, Re-Signing Rights, and the Signing Exception, each in its own
+    anchored section - built so a 10c section can be appended the same way
+    later, rather than a new page per phase. Linked contextually (not from
+    the nav) from exactly where confusion would actually happen: the team
+    dashboard's financial-status line, the trade builder's feasibility
+    result (deep-links straight to `#trades`), and the sign-offer form
+    (deep-links to whichever of `#re-signing-rights`/`#signing-exception`
+    is actually relevant to that specific offer). The trade
+    builder/sign-offer links open in a new tab on purpose, since both are
+    client-side forms with in-progress selections a same-tab navigation
+    would discard. Verified all three links render and point at the
+    correct anchors via a Playwright script. All 10 e2e tests and 246 unit
+    tests still passing (no new logic, so no new unit tests needed) against
+    a real production build.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { formatCentsCompact } from "@/lib/money";
 import { executeTradeAction } from "@/lib/actions/trade";
 import { ApronLevel } from "@/lib/cap/apron";
@@ -179,6 +180,13 @@ export function TradeBuilder({
             {feasibility.detail && <p className="mt-1 text-sm text-muted">{feasibility.detail}</p>}
           </div>
         )}
+        <Link
+          href="/guide/finances#trades"
+          target="_blank"
+          className="mt-2 inline-block text-xs text-muted underline hover:text-foreground"
+        >
+          How does this work?
+        </Link>
 
         {submitError && <p className="mt-3 text-sm text-red-400">{submitError}</p>}
 

@@ -296,7 +296,10 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
         <CapStat label="Roster size" value={String(leaguePlayers.length)} />
       </div>
       <p className="mt-3 text-sm text-muted">
-        {CAP_STATUS_DESCRIPTION[simplifyCapStatus(capSheet.apronLevel)]}
+        {CAP_STATUS_DESCRIPTION[simplifyCapStatus(capSheet.apronLevel)]}{" "}
+        <Link href="/guide/finances" className="underline hover:text-foreground">
+          How does this work?
+        </Link>
       </p>
 
       <div className="mt-10 overflow-x-auto rounded-xl border border-border">
