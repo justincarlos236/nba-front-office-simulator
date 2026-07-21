@@ -157,19 +157,37 @@ plain language, without touching how legality is actually decided:
   "Signing Exception" concept, and `VETERAN_MINIMUM` into "Minimum
   Contract" - a user never needs to know which flavor of exception their
   team happens to be eligible for, only that they have one.
+- **`src/lib/cap/multiYearProjection.ts`** - projects a team's _already
+  committed_ payroll forward across the next 4 seasons from its current
+  roster's contracts. Deliberately not a prediction of future moves (no
+  assumed re-signings or new signings) - just what decisions already made
+  have locked in, which is exactly what "long-term contracts affect
+  future flexibility" means in practice. A team's committed payroll
+  naturally tapers off in the projection as shorter deals expire, making
+  the "cliff" visible without any extra modeling.
+- **`src/lib/cap/financialFlexibilityGrade.ts`** - an A-F grade folding
+  together the current Financial Status, the 4-season projection above,
+  and a per-contract check for "albatross" deals (3+ years remaining,
+  still commanding 15%+ of the cap) into one letter, the same "read one
+  summary instead of reasoning through several seasons of cap sheets
+  yourself" philosophy as the rest of this layer. A heuristic scoring
+  model (start at 100, subtract weighted penalties, clamp and bucket into
+  letters) in the same spirit as the player valuation model - tuned for
+  sensible relative ordering, not a claim of precise real-world grading.
 - **`/guide/finances`** - a standalone reference page (not nested under
   `/leagues/[id]`, since the content is the same for every league) walking
   through Financial Status, Player Value Tiers, the Trade Financial
-  Check, Re-Signing Rights, and the Signing Exception in plain language,
-  each in its own anchored section. Linked contextually from exactly
-  where a user would actually wonder "why," rather than buried in a nav
-  menu: the team dashboard's financial-status line, the trade builder's
-  feasibility result (deep-links to `#trades`), and the sign-offer form
-  (deep-links to `#re-signing-rights` or `#signing-exception` depending
-  on which one is actually relevant to that offer). The trade
-  builder/sign-offer links open in a new tab deliberately - both are
-  client-side forms with in-progress selections that navigating away
-  would otherwise discard.
+  Check, Re-Signing Rights, the Signing Exception, and the Financial
+  Flexibility Grade in plain language, each in its own anchored section.
+  Linked contextually from exactly where a user would actually wonder
+  "why," rather than buried in a nav menu: the team dashboard's
+  financial-status line and Future Financial Flexibility card, the trade
+  builder's feasibility result (deep-links to `#trades`), and the
+  sign-offer form (deep-links to `#re-signing-rights` or
+  `#signing-exception` depending on which one is actually relevant to
+  that offer). The trade builder/sign-offer links open in a new tab
+  deliberately - both are client-side forms with in-progress selections
+  that navigating away would otherwise discard.
 
 **Still real CBA concepts, not yet simplified in the UI** (tracked as
 follow-up work, not overlooked): Bird/Early-Bird/Non-Bird re-signing

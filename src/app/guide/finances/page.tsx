@@ -39,6 +39,7 @@ export default function FinancialGuidePage() {
           ["#trades", "Trade Financial Check"],
           ["#re-signing-rights", "Re-Signing Rights"],
           ["#signing-exception", "Signing Exception"],
+          ["#financial-flexibility", "Financial Flexibility Grade"],
         ].map(([href, label]) => (
           <a
             key={href}
@@ -146,6 +147,29 @@ export default function FinancialGuidePage() {
           Regardless of your Signing Exception or cap situation, every team can always sign a player
           to a <span className="text-foreground">Minimum Contract</span> - that path is never
           restricted.
+        </p>
+      </Section>
+
+      <Section id="financial-flexibility" title="Financial Flexibility Grade">
+        <p>
+          Long-term contracts affect more than this season - a big four-year deal eats into cap room
+          for years after you sign it. Every team gets a single{" "}
+          <span className="text-foreground">Financial Flexibility Grade</span> (A through F)
+          summarizing:
+        </p>
+        <ul className="list-inside list-disc space-y-1">
+          <li>Your current Financial Status</li>
+          <li>How much payroll is already committed in each of the next four seasons</li>
+          <li>
+            Any single large, long-term contract still on the books several years out (an
+            &quot;albatross&quot; deal)
+          </li>
+        </ul>
+        <p>
+          A team with an A has a clean books for years to come; an F means payroll is locked up well
+          into the future with little room to maneuver. It&apos;s a snapshot of what&apos;s
+          <span className="text-foreground"> already committed</span> from decisions you&apos;ve
+          already made - not a prediction of what you&apos;ll do next.
         </p>
       </Section>
 

@@ -7,9 +7,22 @@ import {
   CAP_STATUS_DESCRIPTION,
   simplifyCapStatus,
 } from "@/lib/cap/capStatusLabel";
+import { getSeasonCapRules } from "@/lib/cap/constants";
+import { computeMultiYearProjection } from "@/lib/cap/multiYearProjection";
+import { computeFinancialFlexibilityGrade } from "@/lib/cap/financialFlexibilityGrade";
 import { formatCentsCompact } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 import { getPlayerValueTier, PLAYER_VALUE_TIER_LABEL } from "@/lib/valuation/playerValueTier";
+
+const PROJECTION_YEARS_AHEAD = 4;
+
+const GRADE_BADGE_CLASS: Record<string, string> = {
+  A: "bg-emerald-500/15 text-emerald-400",
+  B: "bg-sky-500/15 text-sky-400",
+  C: "bg-purple-500/15 text-purple-400",
+  D: "bg-orange-500/15 text-orange-400",
+  F: "bg-red-500/15 text-red-400",
+};
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -145,6 +158,14 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
     }),
   ]);
 
+  const futureContractYears = await prisma.contractYear.findMany({
+    where: {
+      season: { in: Array.from({ length: PROJECTION_YEARS_AHEAD }, (_, i) => season + 1 + i) },
+      contract: { leagueTeamId: userLeagueTeam.id },
+    },
+    select: { season: true, salaryCents: true },
+  });
+
   const capSheet = computeCapSheet({
     season: league.currentSeason,
     contracts: leaguePlayers
@@ -154,6 +175,23 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
         salaryCents: lp.contract!.years[0].salaryCents,
       })),
   });
+
+  const futureProjections = computeMultiYearProjection(
+    futureContractYears,
+    season + 1,
+    PROJECTION_YEARS_AHEAD,
+  );
+  const flexibilityGrade = computeFinancialFlexibilityGrade(
+    capSheet.apronLevel,
+    futureProjections,
+    leaguePlayers
+      .filter((lp) => lp.contract?.years[0])
+      .map((lp) => ({
+        currentSalaryCents: lp.contract!.years[0].salaryCents,
+        yearsRemaining: lp.contract!.endSeason - season + 1,
+      })),
+    getSeasonCapRules(season).salaryCapCents,
+  );
 
   const rank = conferenceRank(
     league.teams.map((t) => ({
@@ -301,6 +339,39 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
           How does this work?
         </Link>
       </p>
+
+      <div className="mt-10 rounded-xl border border-border bg-surface p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="font-semibold text-foreground">Future Financial Flexibility</h2>
+            <p className="mt-1 text-sm text-muted">{flexibilityGrade.summary}</p>
+          </div>
+          <span
+            className={`shrink-0 rounded-full px-3 py-1.5 text-lg font-bold ${GRADE_BADGE_CLASS[flexibilityGrade.grade]}`}
+          >
+            {flexibilityGrade.grade}
+          </span>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {futureProjections.map((projection) => (
+            <div key={projection.season} className="rounded-lg border border-border p-3">
+              <p className="text-xs tracking-wide text-muted uppercase">
+                {projection.season}-{(projection.season + 1).toString().slice(-2)}
+              </p>
+              <p className="mt-1 font-mono text-foreground">
+                {formatCentsCompact(projection.committedSalaryCents)}
+              </p>
+              <p className="text-xs text-muted">committed</p>
+            </div>
+          ))}
+        </div>
+        <Link
+          href="/guide/finances#financial-flexibility"
+          className="mt-3 inline-block text-xs text-muted underline hover:text-foreground"
+        >
+          How does this work?
+        </Link>
+      </div>
 
       <div className="mt-10 overflow-x-auto rounded-xl border border-border">
         <table className="w-full text-left text-sm">

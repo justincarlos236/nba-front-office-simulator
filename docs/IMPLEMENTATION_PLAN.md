@@ -327,9 +327,14 @@ Cap`/`Luxury Tax` status replacing raw apron enums, plain-English
       derived from existing `Contract.signedUsing` rows (no new running
       total to keep in sync). See `docs/ARCHITECTURE.md`'s "Free agency"
       section.
-- [ ] **10c - Multi-year cap projections + Financial Flexibility Grade**:
-      a future-committed-payroll table (next several seasons) and an A-F
-      grade summarizing it.
+- [x] **10c - Multi-year cap projections + Financial Flexibility Grade**
+      ✅ DONE (2026-07-21): a "Future Financial Flexibility" card on the
+      team dashboard showing the next 4 seasons' already-committed
+      payroll (tapering off naturally as shorter deals expire) plus an
+      A-F grade folding in current Financial Status, the 4-season
+      projection, and a check for single large long-term ("albatross")
+      contracts. See `docs/ARCHITECTURE.md`'s "Simplified financial
+      presentation layer".
 - [ ] **10d - Owner Confidence, expectations, directives & firing**: the
       big new GM-accountability meta-system - preseason expectations set
       from payroll tier + roster quality, end-of-season evaluation,
@@ -765,3 +770,20 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
     correct anchors via a Playwright script. All 10 e2e tests and 246 unit
     tests still passing (no new logic, so no new unit tests needed) against
     a real production build.
+- **2026-07-21 (later)**: Phase 10c completed. Two new pure modules:
+  `computeMultiYearProjection` (sums each future season's already-committed
+  payroll from `ContractYear` rows, no assumed future moves) and
+  `computeFinancialFlexibilityGrade` (an A-F letter from current Financial
+  Status + the 4-season projection + a check for single large long-term
+  contracts, 10 new unit tests combined). Added a "Future Financial
+  Flexibility" card to the team dashboard between the cap stats and the
+  roster table: the grade badge, a one-line plain-English summary, and 4
+  season cards showing committed payroll tapering off as contracts expire
+  - verified visually that a real roster's numbers taper correctly (e.g.
+    $125.2M -> $70.6M -> $0 -> $0 as shorter deals fell off). Extended
+    `/guide/finances` with a matching `#financial-flexibility` section and
+    a dashboard link into it. All 10 e2e tests and 256 unit tests passing
+    against a real production build. Phase 10's remaining piece is **10d
+    (Owner Confidence, expectations, directives & firing)** - the big new
+    GM-accountability system, deliberately saved for last since it builds
+    on the tier/status/grade concepts from 10a-10c.
