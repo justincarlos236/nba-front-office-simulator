@@ -4,6 +4,10 @@ import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
 import { prisma } from "@/lib/prisma";
 import { TradeBuilder } from "@/components/trades/TradeBuilder";
+import { computeCompetitivenessPercentiles } from "@/lib/actions/competitiveness";
+import { computeTeamIdentity } from "@/lib/gm/teamIdentity";
+import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
+import { estimateAge } from "@/lib/players/age";
 
 export const dynamic = "force-dynamic";
 
@@ -36,11 +40,27 @@ async function loadRoster(leagueTeamId: string, season: number) {
       fullName: lp.player.fullName,
       position: lp.player.position,
       overallRating: lp.overallRating,
+      potentialRating: lp.potentialRating,
+      age: estimateAge(lp.player.draftYear, season),
       salaryCents: lp.contract!.years[0].salaryCents.toString(),
       noTradeClause: lp.contract!.noTradeClause,
+      injuryStatus: lp.injuryStatus,
+      careerGamesMissedToInjury: lp.careerGamesMissedToInjury,
     }));
 
-  return { players, capSheet };
+  // Team identity/needs (Phase 11b/11c) - active roster, not just the
+  // subset with a valid current-season contract the trade UI itself uses.
+  const activeRoster = leaguePlayers.filter((lp) => lp.isActive);
+  const avgAge =
+    activeRoster.length > 0
+      ? activeRoster.reduce((sum, lp) => sum + estimateAge(lp.player.draftYear, season), 0) /
+        activeRoster.length
+      : 27;
+  const needs = computeTeamNeeds(
+    activeRoster.map((lp) => ({ position: lp.player.position, overallRating: lp.overallRating })),
+  );
+
+  return { players, capSheet, avgAge, needs };
 }
 
 /** Every pick this team currently owns and hasn't used yet - tradeable regardless of whether that season's own draft has happened. */
@@ -146,6 +166,7 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
     theirPicks,
     mineOwnedFirstRoundSeasons,
     theirOwnedFirstRoundSeasons,
+    competitivenessPercentiles,
   ] = await Promise.all([
     loadRoster(myLeagueTeam.id, league.currentSeason),
     loadRoster(otherLeagueTeam.id, league.currentSeason),
@@ -153,13 +174,26 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
     loadTradeablePicks(otherLeagueTeam.id),
     loadOwnedFutureFirstRoundSeasons(myLeagueTeam.id, league.currentSeason),
     loadOwnedFutureFirstRoundSeasons(otherLeagueTeam.id, league.currentSeason),
+    computeCompetitivenessPercentiles(league.teams),
   ]);
+
+  const myIdentity = computeTeamIdentity(
+    competitivenessPercentiles.get(myLeagueTeam.id) ?? 0.5,
+    mine.avgAge,
+  );
+  const theirIdentity = computeTeamIdentity(
+    competitivenessPercentiles.get(otherLeagueTeam.id) ?? 0.5,
+    theirs.avgAge,
+  );
 
   const toPickDTO = (picks: Awaited<ReturnType<typeof loadTradeablePicks>>) =>
     picks.map((p) => ({
       draftPickId: p.id,
       season: p.season,
       round: p.round,
+      overallPickNumber: p.overallPickNumber,
+      originalTeamCompetitivenessPercentile:
+        competitivenessPercentiles.get(p.originalTeamId) ?? 0.5,
       originalTeamLabel:
         p.originalTeamId === p.currentOwnerId
           ? null
@@ -194,6 +228,10 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
             players: mine.players,
             picks: toPickDTO(minePicks),
             ownedFutureFirstRoundPickSeasons: mineOwnedFirstRoundSeasons,
+            identity: myIdentity,
+            needs: mine.needs,
+            personality: myLeagueTeam.gmPersonality,
+            roster: mine.players.map((p) => ({ overallRating: p.overallRating, age: p.age })),
           }}
           theirTeam={{
             leagueTeamId: otherLeagueTeam.id,
@@ -203,6 +241,10 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
             players: theirs.players,
             picks: toPickDTO(theirPicks),
             ownedFutureFirstRoundPickSeasons: theirOwnedFirstRoundSeasons,
+            identity: theirIdentity,
+            needs: theirs.needs,
+            personality: otherLeagueTeam.gmPersonality,
+            roster: theirs.players.map((p) => ({ overallRating: p.overallRating, age: p.age })),
           }}
         />
       </div>

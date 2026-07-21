@@ -313,14 +313,14 @@ successful team would nag the user for no reason it could ever resolve.
 
 ## Trade AI foundations: team identity & needs
 
-Phase 11's eventual "does this team actually want this trade" evaluation
-(11c) needs two inputs about the _other_ side of a deal, built in 11b as
-small, pure, on-demand-computed modules under `src/lib/gm/` - deliberately
-not persisted state, unlike `SeasonExpectation`/`DraftPick`, so there's no
-backfill risk for existing leagues (see the Phase 11a/10d incident logged
-in `docs/IMPLEMENTATION_PLAN.md` - anything that instead _persists_ new
-state has to be explicitly backfilled onto every existing league, not
-just wired into `createLeagueAction`).
+The trade-AI evaluation engine (11c, below) needs two inputs about the
+_other_ side of a deal, built in 11b as small, pure, on-demand-computed
+modules under `src/lib/gm/` - deliberately not persisted state, unlike
+`SeasonExpectation`/`DraftPick`, so there's no backfill risk for existing
+leagues (see the Phase 11a/10d incident logged in
+`docs/IMPLEMENTATION_PLAN.md` - anything that instead _persists_ new state
+has to be explicitly backfilled onto every existing league, not just
+wired into `createLeagueAction`).
 
 - **`teamIdentity.ts`** (`computeTeamIdentity`) - buckets a team into
   Contender/Playoff Team/Play-In Team/Rebuilding/Tanking from a
@@ -329,7 +329,9 @@ just wired into `createLeagueAction`).
   Tanking at the bottom (a bad-but-young team is still developing, not
   necessarily playing for next year's lottery on purpose). The percentile
   itself is deliberately an opaque input the pure function doesn't derive
-  itself - the caller (team dashboard) uses actual win percentage once
+  itself - `src/lib/actions/competitiveness.ts`'s
+  `computeCompetitivenessPercentiles` (shared by the team dashboard and
+  `executeTradeAction`/`trades/new` alike) uses actual win percentage once
   20+ games have been played this season, or falls back to
   `computeLeagueTeamStrengths` (the same team-strength function actual
   game simulation already uses) before that, since win% means little
@@ -347,10 +349,90 @@ just wired into `createLeagueAction`).
   prospects, only `overallRating`/`potentialRating`/`position`/age), so
   faking a "shooting need" would be noise rather than a documented
   simplification like everything else in this layer.
-- Surfaced today as a "Team identity" card on the team dashboard (headline
-  - needs summary); the trade builder itself doesn't use these yet - that
-    wiring is 11c's job, once there's an actual acceptance-score engine to
-    feed them into.
+- Surfaced on the team dashboard's "Team identity" card, and (as of 11c)
+  on the Trade Builder page for both sides of a proposed deal.
+
+## Trade AI: value engine, GM personality & the acceptance decision
+
+The core of the whole trade-AI overhaul (Phase 11c): a CPU team now
+actually evaluates whether a proposed trade is good for it, instead of any
+financially-legal trade auto-succeeding.
+
+- **`src/lib/gm/playerTradeValue.ts`** (`computePlayerTradeValue`) - a
+  single cents-denominated trade-value figure per player, so players and
+  picks can be summed and compared directly. Combines current production
+  (age-adjusted `overallRating`, via the same `ageValueMultiplier` curve
+  the free-agency market-value model uses), untapped potential (the gap
+  between `potentialRating` and current rating - proven production still
+  weighs more, since upside carries real bust risk), contract quality
+  (bargain vs. overpay, the same idea as the unused `evaluatePlayer`'s
+  `surplusValueCents` but driven off `overallRating` instead of real
+  box-score stats, which don't exist past the original season snapshot),
+  and an injury discount (current status plus career games missed -
+  `LeaguePlayer.careerGamesMissedToInjury`, a new counter incremented
+  alongside the existing `INJURY` transaction log in
+  `src/lib/actions/leagueEvents.ts`).
+- **`src/lib/gm/draftPickTradeValue.ts`** (`computeDraftPickTradeValue`) -
+  the same cents unit for a pick. A current-season pick with a known
+  `overallPickNumber` is valued directly; a future pick projects an
+  expected slot from its _original_ team's current competitiveness
+  (worse team → earlier/better projected pick - a simplified linear
+  stand-in for the real lottery, not a claim about the actual future
+  order), then reuses `generateDraftClass.ts`'s exact rating-by-pick curve
+  (exported for this purpose, rather than a second hand-tuned scale that
+  could drift out of sync) to estimate what that slot's prospect would be
+  worth via the same `scoreToCapFraction`/`ageValueMultiplier` machinery
+  players use. A compounding per-year discount and a steep 2nd-round
+  multiplier apply on top - real 2nd-rounders are worth much less than
+  their talent curve alone implies (non-guaranteed contracts, easy roster
+  churn).
+- **`src/lib/gm/gmPersonality.ts`** - a 7-value `GmPersonality` enum
+  (`AGGRESSIVE`/`CONSERVATIVE`/`WIN_NOW`/`PROSPECT_LOVER`/`PICK_HOARDER`/
+  `SALARY_CONSCIOUS`/`BALANCED`), persisted on `LeagueTeam.gmPersonality`
+  and assigned once per team at league bootstrap via the same
+  `createSeededRandom` pattern used elsewhere (deterministic per
+  league+team, so a save's personalities never change). Each personality
+  is a table of five **bounded 0.7-1.3 multipliers** (pick value, incoming
+  youth value, incoming veteran value, bad-contract sensitivity, and the
+  overall acceptance-bar threshold) - deliberately narrow, so personality
+  can only nudge a team's evaluation within a realistic band around "fair,"
+  never flip a lopsided trade into an accept. `BALANCED` isn't a fallback
+  default; every team gets a personality with equal probability.
+- **`src/lib/trade/evaluateTradeOffer.ts`** - the core decision function.
+  Computes every incoming/outgoing asset's objective value, layers on
+  personality multipliers plus identity-based bonuses (Contenders/Playoff
+  Teams value incoming proven veterans more; Rebuilding/Tanking teams
+  value incoming youth and picks more) and a need-fit bonus (an incoming
+  player who fills a recognized need from `computeTeamNeeds` is worth
+  more to _this_ team specifically), then checks a hard **untouchable-
+  player gate** before anything else: a young (≤25) superstar-tier player
+  anywhere, or a Contender/Playoff Team's own top 2 rated players, can't
+  be moved unless the incoming value clears a 1.75x objective overpay -
+  no personality or identity weighting overrides this gate. The resulting
+  incoming/outgoing value ratio (after all weighting) is compared against
+  a fixed accept/counter threshold, itself shifted by the personality's
+  bounded acceptance multiplier, into an Accept/Reject/Counter decision.
+  Returns reason _codes_ (not prose) - the plain-English rejection-message
+  bank that turns these into believable sentences is Phase 11d's job,
+  keeping this module's output structured data, the same separation of
+  objective computation from presentation the rest of this layer uses.
+- **The fairness safeguard**: personality/identity weighting is real but
+  narrow by construction - every multiplier in this whole system is
+  bounded 0.7-1.3, and the gap between "genuinely lopsided" and "close to
+  fair" trade ratios is wide enough that no combination of personality
+  and identity bonuses can turn a robbery into an accept. Verified by a
+  test that throws one blatantly lopsided trade at all 7 personalities
+  and asserts every single one rejects it.
+- **Wiring**: `executeTradeAction` calls `evaluateTradeOffer` immediately
+  after `validateTrade` passes (a CPU team never considers a trade its
+  own side can't legally make) and throws a descriptive error on anything
+  other than `ACCEPT` - reusing `TradeBuilder.tsx`'s existing error
+  display, no new UI state needed. `TradeBuilder.tsx` also runs the same
+  function client-side for an instant "would they take this?" preview,
+  identical in spirit to how `validateTrade`'s own live preview works,
+  and shows both sides' identity/needs/personality on the page itself (a
+  scope addition made while testing 11b, once it was clear the trade
+  builder was the only place that context is actually useful).
 
 ## Season simulation & standings
 

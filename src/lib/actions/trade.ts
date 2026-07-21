@@ -6,6 +6,11 @@ import { computeCapSheet } from "@/lib/cap/capSheet";
 import { prisma } from "@/lib/prisma";
 import { validateTrade, type TradeAssetInput } from "@/lib/trade/validateTrade";
 import { describeTrade } from "@/lib/transactions/describeTransaction";
+import { computeCompetitivenessPercentiles } from "@/lib/actions/competitiveness";
+import { computeTeamIdentity } from "@/lib/gm/teamIdentity";
+import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
+import { estimateAge } from "@/lib/players/age";
+import { evaluateTradeOffer, type TradeAssetForEvaluation } from "@/lib/trade/evaluateTradeOffer";
 
 export interface ExecuteTradeInput {
   leagueId: string;
@@ -64,7 +69,10 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
   const session = await auth();
   if (!session?.user) redirect("/sign-in");
 
-  const league = await prisma.league.findUnique({ where: { id: input.leagueId } });
+  const league = await prisma.league.findUnique({
+    where: { id: input.leagueId },
+    include: { teams: true },
+  });
   if (!league || league.ownerId !== session.user.id) {
     throw new Error("League not found");
   }
@@ -83,6 +91,8 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
     theirOwnedFirstRoundSeasons,
     fromLeagueTeam,
     toLeagueTeam,
+    toTeamRoster,
+    competitivenessPercentiles,
   ] = await Promise.all([
     prisma.leaguePlayer.findMany({
       where: { id: { in: input.myPlayerIds }, leagueTeamId: input.fromTeamId },
@@ -124,6 +134,14 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
       where: { id: input.toTeamId },
       include: { team: true },
     }),
+    // The CPU team's own full active roster - identity/needs/untouchable
+    // context for evaluateTradeOffer, distinct from theirPlayers (just the
+    // players actually being traded away).
+    prisma.leaguePlayer.findMany({
+      where: { leagueTeamId: input.toTeamId, isActive: true },
+      include: { player: true },
+    }),
+    computeCompetitivenessPercentiles(league.teams),
   ]);
 
   if (myPlayers.length !== input.myPlayerIds.length) {
@@ -193,6 +211,70 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
 
   if (!validation.isValid) {
     throw new Error(validation.violations.map((v) => v.message).join(" "));
+  }
+
+  // Trade-AI evaluation (Phase 11c): does the CPU team actually want this
+  // deal? Runs only after legality passes - a real GM never considers a
+  // trade its team can't even legally make.
+  const toTeamAvgAge =
+    toTeamRoster.length > 0
+      ? toTeamRoster.reduce(
+          (sum, lp) => sum + estimateAge(lp.player.draftYear, league.currentSeason),
+          0,
+        ) / toTeamRoster.length
+      : 27;
+  const toTeamIdentity = computeTeamIdentity(
+    competitivenessPercentiles.get(input.toTeamId) ?? 0.5,
+    toTeamAvgAge,
+  );
+  const toTeamNeeds = computeTeamNeeds(
+    toTeamRoster.map((lp) => ({ position: lp.player.position, overallRating: lp.overallRating })),
+  );
+
+  const toPlayerAsset = (lp: (typeof myPlayers)[number]): TradeAssetForEvaluation => ({
+    type: "PLAYER",
+    overallRating: lp.overallRating,
+    potentialRating: lp.potentialRating,
+    age: estimateAge(lp.player.draftYear, league.currentSeason),
+    position: lp.player.position,
+    currentSalaryCents: lp.contract!.years[0].salaryCents,
+    injuryStatus: lp.injuryStatus,
+    careerGamesMissedToInjury: lp.careerGamesMissedToInjury,
+  });
+  const toPickAsset = (p: (typeof myPicks)[number]): TradeAssetForEvaluation => ({
+    type: "DRAFT_PICK",
+    pickSeason: p.season,
+    round: p.round as 1 | 2,
+    overallPickNumber: p.overallPickNumber,
+    originalTeamCompetitivenessPercentile: competitivenessPercentiles.get(p.originalTeamId) ?? 0.5,
+  });
+
+  const evaluation = evaluateTradeOffer({
+    respondingTeam: {
+      identity: toTeamIdentity,
+      needs: toTeamNeeds,
+      personality: toLeagueTeam.gmPersonality,
+      roster: toTeamRoster.map((lp) => ({
+        overallRating: lp.overallRating,
+        age: estimateAge(lp.player.draftYear, league.currentSeason),
+      })),
+    },
+    currentSeason: league.currentSeason,
+    incoming: [...myPlayers.map(toPlayerAsset), ...myPicks.map(toPickAsset)],
+    outgoing: [...theirPlayers.map(toPlayerAsset), ...theirPicks.map(toPickAsset)],
+  });
+
+  if (evaluation.decision !== "ACCEPT") {
+    const teamLabel = `${toLeagueTeam.team.city} ${toLeagueTeam.team.name}`;
+    if (evaluation.reasons.includes("UNTOUCHABLE_PLAYER")) {
+      throw new Error(`The ${teamLabel} are unwilling to move that player for what's on offer.`);
+    }
+    if (evaluation.decision === "COUNTER") {
+      throw new Error(
+        `The ${teamLabel} don't think this deal quite works for them - try sweetening the offer.`,
+      );
+    }
+    throw new Error(`The ${teamLabel} don't believe this trade is in their favor.`);
   }
 
   await prisma.$transaction(async (tx) => {

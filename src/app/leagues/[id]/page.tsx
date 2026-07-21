@@ -20,15 +20,10 @@ import {
   type JobSecurityLevel,
 } from "@/lib/gm/jobSecurity";
 import { EXPECTATION_LEVEL_LABEL } from "@/lib/gm/expectationLevel";
-import { computeLeagueTeamStrengths } from "@/lib/actions/leagueTeamStrength";
+import { computeCompetitivenessPercentiles } from "@/lib/actions/competitiveness";
 import { computeTeamIdentity, TEAM_IDENTITY_LABEL } from "@/lib/gm/teamIdentity";
 import { computeTeamNeeds, TEAM_NEED_LABEL } from "@/lib/gm/teamNeeds";
 import { estimateAge } from "@/lib/players/age";
-
-// Below this many games played this season, win percentage doesn't mean
-// much yet (a 2-0 start isn't a real signal) - team strength stands in as
-// the "how competitive is this team" proxy until there's a real sample.
-const MIN_GAMES_FOR_WIN_PCT_SIGNAL = 20;
 
 const PROJECTION_YEARS_AHEAD = 4;
 
@@ -197,19 +192,10 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
     where: { leagueId_season: { leagueId: league.id, season } },
   });
 
-  // Team identity/needs (Phase 11b) - the lens the eventual trade-AI
-  // evaluation engine (11c) reasons through.
-  const userGamesPlayed = userLeagueTeam.wins + userLeagueTeam.losses;
-  const useWinPctSignal = userGamesPlayed >= MIN_GAMES_FOR_WIN_PCT_SIGNAL;
-  const competitivenessScoreByTeam = useWinPctSignal
-    ? new Map(
-        league.teams.map((t) => [t.id, t.wins + t.losses > 0 ? t.wins / (t.wins + t.losses) : 0]),
-      )
-    : await computeLeagueTeamStrengths(league.teams.map((t) => t.id));
-  const teamsRankedDesc = [...competitivenessScoreByTeam.entries()].sort((a, b) => b[1] - a[1]);
-  const userRankIndex = teamsRankedDesc.findIndex(([teamId]) => teamId === userLeagueTeam.id);
-  const competitivenessPercentile =
-    teamsRankedDesc.length > 1 ? 1 - userRankIndex / (teamsRankedDesc.length - 1) : 1;
+  // Team identity/needs (Phase 11b) - the lens the trade-AI evaluation
+  // engine (11c) reasons through.
+  const competitivenessPercentiles = await computeCompetitivenessPercentiles(league.teams);
+  const competitivenessPercentile = competitivenessPercentiles.get(userLeagueTeam.id) ?? 1;
 
   const avgRosterAge =
     leaguePlayers.length > 0

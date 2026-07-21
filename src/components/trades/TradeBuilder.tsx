@@ -11,20 +11,30 @@ import {
   type TeamTradeFinancials,
 } from "@/lib/trade/describeTradeFeasibility";
 import { getPlayerValueTier, PLAYER_VALUE_TIER_LABEL } from "@/lib/valuation/playerValueTier";
+import { evaluateTradeOffer, type TradeAssetForEvaluation } from "@/lib/trade/evaluateTradeOffer";
+import { TEAM_IDENTITY_LABEL, type TeamIdentity } from "@/lib/gm/teamIdentity";
+import { TEAM_NEED_LABEL, type TeamNeed } from "@/lib/gm/teamNeeds";
+import { GM_PERSONALITY_LABEL, type GmPersonality } from "@/lib/gm/gmPersonality";
 
 interface RosterPlayerDTO {
   leaguePlayerId: string;
   fullName: string;
-  position: string;
+  position: "PG" | "SG" | "SF" | "PF" | "C";
   overallRating: number;
+  potentialRating: number;
+  age: number;
   salaryCents: string;
   noTradeClause: boolean;
+  injuryStatus: "HEALTHY" | "DAY_TO_DAY" | "OUT" | "SEASON_ENDING";
+  careerGamesMissedToInjury: number;
 }
 
 interface DraftPickDTO {
   draftPickId: string;
   season: number;
   round: number;
+  overallPickNumber: number | null;
+  originalTeamCompetitivenessPercentile: number;
   /** Set when this isn't the team's own original pick (acquired via an earlier trade). */
   originalTeamLabel: string | null;
 }
@@ -38,7 +48,19 @@ interface TeamSideDTO {
   picks: DraftPickDTO[];
   /** Future seasons this team currently owns its own round-1 pick for - the Stepien-rule input. */
   ownedFutureFirstRoundPickSeasons: number[];
+  identity: TeamIdentity;
+  needs: TeamNeed[];
+  personality: GmPersonality;
+  /** Full active roster ratings/ages - the untouchable-player check's input. */
+  roster: { overallRating: number; age: number }[];
 }
+
+const REASON_CODE_LABEL: Record<string, string> = {
+  UNTOUCHABLE_PLAYER: "They won't move that player for this",
+  BELOW_FAIR_VALUE: "This doesn't meet their value bar",
+  FILLS_A_NEED: "This fills one of their roster needs",
+  FAIR_VALUE: "They see this as fair value",
+};
 
 function pickLabel(pick: DraftPickDTO): string {
   const roundLabel = pick.round === 1 ? "1st" : "2nd";
@@ -166,6 +188,60 @@ export function TradeBuilder({
     return describeTradeFeasibility(result, teams, season);
   }, [result, mySelected, theirSelected, myTeam, theirTeam, season]);
 
+  // Trade-AI preview (Phase 11c) - the same evaluation executeTradeAction
+  // runs server-side as the authoritative gate, previewed here purely for
+  // UX (like validateTrade's own live preview). Only meaningful once the
+  // deal is at least financially legal.
+  const aiPreview = useMemo(() => {
+    if (result === null || !result.isValid) return null;
+    if (mySelected.size === 0 && mySelectedPicks.size === 0) return null;
+
+    const toPlayerAsset = (p: RosterPlayerDTO): TradeAssetForEvaluation => ({
+      type: "PLAYER",
+      overallRating: p.overallRating,
+      potentialRating: p.potentialRating,
+      age: p.age,
+      position: p.position,
+      currentSalaryCents: BigInt(p.salaryCents),
+      injuryStatus: p.injuryStatus,
+      careerGamesMissedToInjury: p.careerGamesMissedToInjury,
+    });
+    const toPickAsset = (p: DraftPickDTO): TradeAssetForEvaluation => ({
+      type: "DRAFT_PICK",
+      pickSeason: p.season,
+      round: p.round as 1 | 2,
+      overallPickNumber: p.overallPickNumber,
+      originalTeamCompetitivenessPercentile: p.originalTeamCompetitivenessPercentile,
+    });
+
+    return evaluateTradeOffer({
+      respondingTeam: {
+        identity: theirTeam.identity,
+        needs: theirTeam.needs,
+        personality: theirTeam.personality,
+        roster: theirTeam.roster,
+      },
+      currentSeason: season,
+      incoming: [
+        ...myTeam.players.filter((p) => mySelected.has(p.leaguePlayerId)).map(toPlayerAsset),
+        ...myTeam.picks.filter((p) => mySelectedPicks.has(p.draftPickId)).map(toPickAsset),
+      ],
+      outgoing: [
+        ...theirTeam.players.filter((p) => theirSelected.has(p.leaguePlayerId)).map(toPlayerAsset),
+        ...theirTeam.picks.filter((p) => theirSelectedPicks.has(p.draftPickId)).map(toPickAsset),
+      ],
+    });
+  }, [
+    result,
+    mySelected,
+    theirSelected,
+    mySelectedPicks,
+    theirSelectedPicks,
+    myTeam,
+    theirTeam,
+    season,
+  ]);
+
   const canSubmit = result !== null && result.isValid && !isPending;
 
   function toggle(set: Set<string>, setSet: (s: Set<string>) => void, id: string) {
@@ -199,7 +275,12 @@ export function TradeBuilder({
 
   return (
     <div>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <TeamIdentityCard team={myTeam} />
+        <TeamIdentityCard team={theirTeam} />
+      </div>
+
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <RosterColumn
           title={`Send from ${myTeam.name}`}
           players={myTeam.players}
@@ -233,6 +314,31 @@ export function TradeBuilder({
             {feasibility.detail && <p className="mt-1 text-sm text-muted">{feasibility.detail}</p>}
           </div>
         )}
+
+        {aiPreview && (
+          <div className="mt-3 border-t border-border pt-3">
+            <p
+              className={`text-sm font-semibold ${
+                aiPreview.decision === "ACCEPT"
+                  ? "text-accent"
+                  : aiPreview.decision === "COUNTER"
+                    ? "text-orange-400"
+                    : "text-red-400"
+              }`}
+            >
+              {theirTeam.name}:{" "}
+              {aiPreview.decision === "ACCEPT"
+                ? "Likely to accept"
+                : aiPreview.decision === "COUNTER"
+                  ? "Wants a better offer"
+                  : "Likely to reject"}
+            </p>
+            {aiPreview.reasons[0] && (
+              <p className="mt-1 text-sm text-muted">{REASON_CODE_LABEL[aiPreview.reasons[0]]}</p>
+            )}
+          </div>
+        )}
+
         <Link
           href="/guide/finances#trades"
           target="_blank"
@@ -252,6 +358,24 @@ export function TradeBuilder({
           {isPending ? "Executing trade..." : "Execute trade"}
         </button>
       </div>
+    </div>
+  );
+}
+
+function TeamIdentityCard({ team }: { team: TeamSideDTO }) {
+  return (
+    <div className="rounded-xl border border-border bg-surface p-4">
+      <p className="font-semibold text-foreground">{team.name}</p>
+      <p className="mt-1 text-sm text-muted">
+        <span className="text-foreground">{TEAM_IDENTITY_LABEL[team.identity]}</span>
+        {" · "}
+        {GM_PERSONALITY_LABEL[team.personality]} front office
+      </p>
+      {team.needs.length > 0 && (
+        <p className="mt-1 text-xs text-muted">
+          Needs: {team.needs.map((n) => TEAM_NEED_LABEL[n]).join(", ")}
+        </p>
+      )}
     </div>
   );
 }

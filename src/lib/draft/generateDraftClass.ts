@@ -11,24 +11,27 @@ export interface GeneratedProspect {
   potentialRating: number;
 }
 
-const CLASS_SIZE = 60;
+export const CLASS_SIZE = 60;
 
 // Pick 1's expected rating vs. pick 60's - real rookies rarely enter the
 // league as immediate stars even at the top of the draft (potential is
 // what separates them), and talent drops off, but not on a straight line -
 // the gap closes late in the class since fringe two-way talent isn't that
-// different pick 50 to pick 60.
-const OVERALL_AT_PICK_1 = 68;
-const OVERALL_AT_PICK_60 = 45;
-const POTENTIAL_AT_PICK_1 = 92;
-const POTENTIAL_AT_PICK_60 = 65;
+// different pick 50 to pick 60. Exported for reuse by
+// `src/lib/gm/draftPickTradeValue.ts`, which projects a not-yet-drafted
+// future pick's expected rating off this exact same curve, rather than a
+// second hand-tuned scale that could drift out of sync with it.
+export const OVERALL_AT_PICK_1 = 68;
+export const OVERALL_AT_PICK_60 = 45;
+export const POTENTIAL_AT_PICK_1 = 92;
+export const POTENTIAL_AT_PICK_60 = 65;
 const RATING_VARIANCE = 8; // +/- swing so pick order isn't perfectly predictive
 
 function randomIntInclusive(rng: () => number, min: number, max: number): number {
   return min + Math.floor(rng() * (max - min + 1));
 }
 
-function expectedRatingForPick(pick: number, atPick1: number, atPick60: number): number {
+export function expectedRatingForPick(pick: number, atPick1: number, atPick60: number): number {
   const t = (pick - 1) / (CLASS_SIZE - 1); // 0 at pick 1, 1 at pick 60
   return atPick1 + (atPick60 - atPick1) * t;
 }

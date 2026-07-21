@@ -13,6 +13,8 @@ import { computeTeamStrength } from "@/lib/simulation/teamStrength";
 import { computePayrollTier } from "@/lib/gm/payrollTier";
 import { computeExpectationLevel } from "@/lib/gm/expectationLevel";
 import { buildFuturePickRows, FUTURE_PICK_WINDOW_YEARS } from "@/lib/draft/futurePicks";
+import { pickRandomGmPersonality } from "@/lib/gm/gmPersonality";
+import { createSeededRandom } from "@/lib/contracts/seededRandom";
 
 const SEASON = 2023;
 const FREE_AGENT_RATING_CUTOFF = 25;
@@ -53,8 +55,17 @@ export async function createLeagueAction(formData: FormData) {
     },
   });
 
+  // GM personality (Phase 11c) - a persistent per-team front-office
+  // philosophy, seeded deterministically per league+team so the same
+  // league always reproduces the same personalities.
   const leagueTeams = await prisma.leagueTeam.createManyAndReturn({
-    data: teams.map((team) => ({ leagueId: league.id, teamId: team.id })),
+    data: teams.map((team) => ({
+      leagueId: league.id,
+      teamId: team.id,
+      gmPersonality: pickRandomGmPersonality(
+        createSeededRandom(`${league.id}-${team.id}-personality`),
+      ),
+    })),
   });
   const teamIdToLeagueTeamId = new Map(leagueTeams.map((lt) => [lt.teamId, lt.id]));
 

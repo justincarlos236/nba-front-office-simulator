@@ -51,7 +51,7 @@ unbounded extra work over it).
 | 4   | Real NBA Teams and Players            | ✅     | P0       | done    | —            | 30 real teams, 497 real players + 2023-24 stats                                                                                                                                 |
 | 5   | AI GM Assistant                       | ⬜     | P1       | paused  | —            | Started, then user explicitly said skip for now — **do not resume unprompted**                                                                                                  |
 | 6   | Player Valuation Model                | ✅     | P0       | done    | —            | `src/lib/valuation/*`, rating + age curve + market value + surplus                                                                                                              |
-| 7   | AI Trade Evaluation                   | ⬜     | P1       | 11      | 21, 22       | Any legal trade currently auto-succeeds regardless of counterparty benefit - scoped as Phase 11c                                                                                |
+| 7   | AI Trade Evaluation                   | ✅     | P1       | 11      | 21, 22       | ✅ DONE (Phase 11c) - `evaluateTradeOffer` gates `executeTradeAction`; CPU-CPU random trades (`rollForCpuTrade`) still don't use it                                             |
 | 8   | Franchise / GM Mode                   | ✅     | P0       | 1,2,3,4 | —            | Cap/roster/standings/playoffs/draft/multi-season progression (aging, retirement, awards) all work now                                                                           |
 | 9   | Team Dashboard                        | ✅     | P0       | done    | —            | Cap sheet + roster + a "Franchise overview" card row (conference rank, playoff status, draft picks, recent activity, all-time record, free agency)                              |
 | 10  | Save and Load Franchises              | ✅     | P0       | done    | —            | Continuous DB persistence; "load" = sign back in                                                                                                                                |
@@ -65,8 +65,8 @@ unbounded extra work over it).
 | 18  | NBA Playoffs                          | ✅     | P1       | 2       | 15,16,17     | Play-in + fixed single-elim bracket, `/leagues/[id]/playoffs` (real visual bracket, East/West/Finals), real 2-2-1-1-1 home pattern                                              |
 | 19  | Player Development                    | ✅     | P1       | 3       | 15           | `developPlayerRating.ts` - age-based growth/decline, applied by `advanceSeasonAction`                                                                                           |
 | 20  | Dynamic Player Ratings                | ✅     | P1       | 3       | 19           | Ratings now actually change season-over-season (see #19)                                                                                                                        |
-| 21  | Team Direction System                 | ⬜     | P1       | 11      | —            | Scoped as Phase 11b (`computeTeamIdentity`)                                                                                                                                     |
-| 22  | Team Needs System                     | ⬜     | P1       | 11      | —            | Scoped as Phase 11b (`computeTeamNeeds`)                                                                                                                                        |
+| 21  | Team Direction System                 | ✅     | P1       | 11      | —            | ✅ DONE (Phase 11b) - `computeTeamIdentity`                                                                                                                                     |
+| 22  | Team Needs System                     | ✅     | P1       | 11      | —            | ✅ DONE (Phase 11b) - `computeTeamNeeds`, minus "Shooting" (no detectable signal)                                                                                               |
 | 23  | Trade Finder                          | ⬜     | P2       | 6       | 6,21,22      | —                                                                                                                                                                               |
 | 24  | Three/Multi-Team Trades               | 🟡     | P2       | —       | —            | `validateTrade` supports N teams (tested); `TradeBuilder` UI is 2-team only                                                                                                     |
 | 25  | Trade Grades                          | ⬜     | P2       | 6       | 6            | Legality validation exists; a quality "grade" doesn't                                                                                                                           |
@@ -90,8 +90,8 @@ unbounded extra work over it).
 | 43  | League History                        | ✅     | P2       | 5       | 15,18,39     | `/leagues/[id]/history` - season-by-season champions, awards, retirees                                                                                                          |
 | 44  | League Records                        | ⬜     | P3       | —       | 43           | —                                                                                                                                                                               |
 | 45  | Championship History                  | ✅     | P2       | 5       | 18           | Past champions shown per-season on `/leagues/[id]/history`                                                                                                                      |
-| 46  | AI General Managers                   | 🟡     | P1       | 11      | 21,22        | CPU teams now trade with each other and sign free agents (random-but-cap-legal, fast-tracked - see #30's note); real evaluation logic (#21/#22/#7) scoped as Phase 11c          |
-| 47  | GM Personalities                      | ⬜     | P2       | 11      | 46           | Scoped as Phase 11c                                                                                                                                                             |
+| 46  | AI General Managers                   | 🟡     | P1       | 11      | 21,22        | CPU teams now genuinely evaluate user-proposed trades (Phase 11c); CPU-CPU trades and free-agent signings are still random-but-cap-legal, not run through the new evaluation    |
+| 47  | GM Personalities                      | ✅     | P2       | 11      | 46           | ✅ DONE (Phase 11c) - `GmPersonality`, 7 values, randomized per team at bootstrap                                                                                               |
 | 48  | AI Trade Negotiations                 | ⬜     | P2       | 11      | 46           | Scoped as Phase 11d                                                                                                                                                             |
 | 49  | AI GM Chat                            | ⬜     | P1       | paused  | —            | The explicitly-paused conversational assistant                                                                                                                                  |
 | 50  | Natural-Language Player Search        | ⬜     | P2       | —       | 86           | LLM-flavored - hold pending user re-opening the AI thread                                                                                                                       |
@@ -404,16 +404,42 @@ same pattern as Phase 10; only the first is done so far.
       295 unit tests (10 new) passing against a real production build.
       Next up: **11c (Trade Value Engine + GM Personality + Acceptance
       Score)**.
-- [ ] **11c - Trade Value Engine + GM Personality + Acceptance Score**:
-      objective player/pick trade values, a 7-value `GmPersonality` enum
-      assigned once per team at bootstrap, and `evaluateTradeOffer`
-      combining identity/needs/personality/untouchable-player checks into
-      an Accept/Reject/Counter decision - wired into `executeTradeAction`
-      as a real gate. Personality reweights _how much_ a team leans toward
-      certain factors; it never overrides the objective "is this fair"
-      floor, the untouchable-player gate, or `validateTrade`'s legality
-      check - a specific test throws one lopsided trade at all 7
-      personalities and asserts every one rejects it.
+- [x] **11c - Trade Value Engine + GM Personality + Acceptance Score** ✅
+      DONE (2026-07-21): CPU teams now actually evaluate whether a
+      proposed trade is good for them - the core of the whole trade-AI
+      overhaul. `computePlayerTradeValue`/`computeDraftPickTradeValue`
+      (`src/lib/gm/`) give every player/pick an objective cents-denominated
+      value (rating/potential/age/contract-quality/injury for players;
+      projected slot/years-away/round for picks - picks reuse the exact
+      rating-by-pick curve `generateDraftClass.ts` already uses, rather
+      than a second hand-tuned scale). A 7-value `GmPersonality` enum
+      (`LeagueTeam.gmPersonality`, new migration) assigned once per team at
+      bootstrap reweights _how much_ a team leans toward certain factors
+      via bounded 0.7-1.3 multipliers - it never overrides whether a trade
+      is objectively fair. `evaluateTradeOffer` (`src/lib/trade/`) combines
+      identity (11b) + needs (11b) + personality + an untouchable-player
+      gate (young superstars, or a contender/playoff team's top 2 by
+      rating, require a 1.75x objective overpay to even consider) into an
+      Accept/Reject/Counter decision - wired into `executeTradeAction` as
+      the real, authoritative gate (after `validateTrade`'s legality check,
+      never before) and into `TradeBuilder.tsx` as a live client-side
+      preview, same pattern as `validateTrade`'s own preview. Both teams'
+      identity/needs/personality now also show on the Trade Builder page
+      itself (a scope addition the user asked for while testing 11b).
+      **Safeguard verified**: a specific test throws one blatantly
+      lopsided trade (bench player for a near-max-value young superstar)
+      at all 7 personalities and asserts every single one rejects it -
+      personality differences only ever show up on genuinely close-to-fair
+      trades. Also backfilled: `LeaguePlayer.careerGamesMissedToInjury`
+      (incremented alongside the existing INJURY transaction log) gives
+      the value model a real injury-history signal, and a one-time script
+      randomized `gmPersonality` across every existing real league (the
+      new column defaulted all of them to `BALANCED`, which would have
+      made every CPU team identical - the same backfill discipline
+      established after 11a/10d's gap). All 10 e2e tests (including 5
+      repeat runs of the trade-execution test, since GM personality is
+      randomized per league) and 315 unit tests passing against a real
+      production build.
 - [ ] **11d - Counter-Offers, Rejection Messaging & Guide**: intelligent
       counter-offer suggestions (add a pick, swap in a better player, add
       salary filler, drop an unwanted contract), a bank of plain-English

@@ -100,7 +100,7 @@ export async function applyLeagueEvents(
     healthyByTeam.set(lp.leagueTeamId, list);
   }
 
-  const newInjuryUpdates: { id: string; returnsAt: number }[] = [];
+  const newInjuryUpdates: { id: string; returnsAt: number; durationGames: number }[] = [];
   for (const game of simulatedGames) {
     for (const teamId of [game.homeLeagueTeamId, game.awayLeagueTeamId]) {
       const pool = healthyByTeam.get(teamId) ?? [];
@@ -116,7 +116,11 @@ export async function applyLeagueEvents(
       );
 
       const returnsAt = (gamesPlayedByTeam.get(teamId) ?? 0) + result.durationGames;
-      newInjuryUpdates.push({ id: result.leaguePlayerId, returnsAt });
+      newInjuryUpdates.push({
+        id: result.leaguePlayerId,
+        returnsAt,
+        durationGames: result.durationGames,
+      });
       transactions.push({
         type: "INJURY",
         description: `${result.playerName} suffers ${result.injuryName}, expected to miss ${result.durationGames} games.`,
@@ -127,7 +131,14 @@ export async function applyLeagueEvents(
     newInjuryUpdates.map((u) =>
       prisma.leaguePlayer.update({
         where: { id: u.id },
-        data: { injuryStatus: "OUT", injuryReturnsAtGamesPlayed: u.returnsAt },
+        data: {
+          injuryStatus: "OUT",
+          injuryReturnsAtGamesPlayed: u.returnsAt,
+          // Career injury-history signal for the trade-value model (Phase
+          // 11c) - incremented by the games this specific injury cost,
+          // right alongside the transaction that announces it.
+          careerGamesMissedToInjury: { increment: u.durationGames },
+        },
       }),
     ),
   );

@@ -273,6 +273,21 @@ model LeagueTransaction {
   @@map("league_transactions")
 }
 
+// GM personality traits (Phase 11c) - a persistent front-office philosophy
+// that reweights how much a team leans toward certain trade factors
+// (youth vs. production, picks vs. players, salary flexibility). Assigned
+// once per team at league bootstrap and stable for the life of the save,
+// same as a real front office's standing tendencies.
+enum GmPersonality {
+  AGGRESSIVE
+  CONSERVATIVE
+  WIN_NOW
+  PROSPECT_LOVER
+  PICK_HOARDER
+  SALARY_CONSCIOUS
+  BALANCED
+}
+
 model LeagueTeam {
   id       String @id @default(cuid())
   leagueId String
@@ -280,6 +295,7 @@ model LeagueTeam {
 
   wins   Int @default(0)
   losses Int @default(0)
+  gmPersonality GmPersonality @default(BALANCED)
 
   league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   team   Team   @relation(fields: [teamId], references: [id])
@@ -390,6 +406,11 @@ model LeaguePlayer {
   // against the team's regular-season game count, not a calendar date -
   // see src/lib/actions/leagueEvents.ts.
   injuryReturnsAtGamesPlayed Int?
+  // Total games missed to injury across this player's whole league career
+  // (incremented alongside the INJURY transaction log in
+  // src/lib/actions/leagueEvents.ts) - real injury-history signal for the
+  // trade-value model (Phase 11c), not just current health.
+  careerGamesMissedToInjury Int @default(0)
   isActive        Boolean      @default(true) // false once retired within this league
   retiredSeason   Int? // the season this player retired after, if any
   // The team currently holding this player's simplified "Re-Signing
