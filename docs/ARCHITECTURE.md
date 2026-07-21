@@ -20,11 +20,13 @@ Two layers, on purpose:
 **Reference data** (`Team`, `Player`, `PlayerSeasonStat`) — a single
 real-world snapshot, imported once by the seed pipeline. Never mutated by
 gameplay. This is what a scouting page's career stats table reads from.
-Note `Player.currentTeamId` reflects each player's actual real-world team
-as of the seed run, while `PlayerSeasonStat` is season-scoped historical
-data - the two can legitimately disagree (e.g. Luka Doncic's bio points to
-the Lakers post-trade, while his 2023-24 stat line is correctly still
-attributed to Dallas).
+`Player.currentTeamId` is deliberately **season-accurate to 2023-24**, not
+each player's real-world-current team - it's exactly what
+`createLeagueAction` uses to decide which team a new league starts a
+player on, so it has to agree with the season `PlayerSeasonStat` line it's
+seeded alongside (e.g. Luka Dončić's `currentTeamId` points to Dallas,
+matching his 2023-24 stat line, even though he's really on the Lakers as
+of today) - see "Data sourcing" below for the bug this was fixed from.
 
 **Per-save state** (`League`, `LeagueTeam`, `LeaguePlayer`, `Contract`,
 `ContractYear`, `DraftPick`, `Trade`, `TradeAsset`, `TradeException`) — one
