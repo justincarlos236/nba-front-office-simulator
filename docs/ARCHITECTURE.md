@@ -942,12 +942,23 @@ trade-AI valuation) reads or recalibrates against.
   "retired at 69" once Phase 3 started actually displaying computed ages.
   Fixed by nulling the incorrect draft fields for those two records rather
   than asserting a still-possibly-wrong specific identity - more honest
-  than a confident guess. Separately, `Player.currentTeamId` isn't audited
-  for full roster accuracy against today's real rosters (e.g. one known
-  case has a player's bio pointing at the wrong team); this doesn't affect
-  simulation correctness (each league clones its own mutable roster
-  regardless), just the "who plays for whom" bio display for a handful of
-  players - a wider accuracy audit is future work, not blocking.
+  than a confident guess. `Player.currentTeamId` (and the `teamAbbreviation`
+  it's derived from in `players.json`) is deliberately kept **season-accurate
+  to 2023-24**, not balldontlie's live "current team" - `scripts/import-players.ts`
+  prefers the season-stats fixture's own `team` field over `bio.team`. This
+  was originally the other way around (preferring balldontlie's current
+  team) and was found to be a real, simulation-affecting bug, not just a
+  cosmetic one: `currentTeamId` is exactly what `createLeagueAction`/`seed.ts`
+  use to decide which team a new league starts a player on, so a handful of
+  players traded in real life since 2023-24 (e.g. Luka Dončić to the Lakers
+  in Feb 2025) were showing up on their _current_ real team instead of the
+  team their actual 2023-24 stat line belongs to - scrambling several
+  teams' opening-day rosters against the season the whole simulator is
+  built on (surfaced by a user starting a new Jazz franchise with only 6
+  rostered players, several of whom weren't real 2023-24 Jazz players at
+  all). Fixed by preferring the stats fixture's team; see
+  `prisma/data/players.test.ts`'s Dončić/Jokić cases for the exact
+  regression coverage.
 - **Season stats**: real per-player 2023-24 season averages, but not from a
   live API — that season's per-game box scores are bundled from
   [NocturneBear/NBA-Data-2010-2024](https://github.com/NocturneBear/NBA-Data-2010-2024)

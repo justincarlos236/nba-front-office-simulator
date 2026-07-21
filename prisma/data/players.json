@@ -85,7 +85,7 @@
       "draftYear": 2014,
       "draftRound": 1,
       "draftPick": 30,
-      "teamAbbreviation": "TOR",
+      "teamAbbreviation": "MIN",
       "stats": {
         "gamesPlayed": 79,
         "minutesPerGame": 22.56,
@@ -110,7 +110,7 @@
       "draftYear": 2013,
       "draftRound": 1,
       "draftPick": 15,
-      "teamAbbreviation": "MIA",
+      "teamAbbreviation": "MIL",
       "stats": {
         "gamesPlayed": 73,
         "minutesPerGame": 35.17,
@@ -135,7 +135,7 @@
       "draftYear": 2017,
       "draftRound": 1,
       "draftPick": 23,
-      "teamAbbreviation": "NYK",
+      "teamAbbreviation": "TOR",
       "stats": {
         "gamesPlayed": 50,
         "minutesPerGame": 34.04,
@@ -185,7 +185,7 @@
       "draftYear": 2018,
       "draftRound": 1,
       "draftPick": 1,
-      "teamAbbreviation": "WAS",
+      "teamAbbreviation": "POR",
       "stats": {
         "gamesPlayed": 55,
         "minutesPerGame": 32.43,
@@ -210,7 +210,7 @@
       "draftYear": 2018,
       "draftRound": 1,
       "draftPick": 2,
-      "teamAbbreviation": "DAL",
+      "teamAbbreviation": "DET",
       "stats": {
         "gamesPlayed": 50,
         "minutesPerGame": 21.07,
@@ -235,7 +235,7 @@
       "draftYear": 2018,
       "draftRound": 1,
       "draftPick": 6,
-      "teamAbbreviation": "UTA",
+      "teamAbbreviation": "PHI",
       "stats": {
         "gamesPlayed": 57,
         "minutesPerGame": 12.99,
@@ -260,7 +260,7 @@
       "draftYear": 2012,
       "draftRound": 1,
       "draftPick": 7,
-      "teamAbbreviation": "SAS",
+      "teamAbbreviation": "SAC",
       "stats": {
         "gamesPlayed": 82,
         "minutesPerGame": 29.04,
@@ -285,7 +285,7 @@
       "draftYear": 2018,
       "draftRound": 2,
       "draftPick": 48,
-      "teamAbbreviation": "MIN",
+      "teamAbbreviation": "PHX",
       "stats": {
         "gamesPlayed": 53,
         "minutesPerGame": 12.54,
@@ -310,7 +310,7 @@
       "draftYear": 2008,
       "draftRound": 1,
       "draftPick": 25,
-      "teamAbbreviation": "LAC",
+      "teamAbbreviation": "PHI",
       "stats": {
         "gamesPlayed": 60,
         "minutesPerGame": 25.49,
@@ -335,7 +335,7 @@
       "draftYear": 2012,
       "draftRound": 1,
       "draftPick": 3,
-      "teamAbbreviation": "LAC",
+      "teamAbbreviation": "PHX",
       "stats": {
         "gamesPlayed": 53,
         "minutesPerGame": 33.33,
@@ -360,7 +360,7 @@
       "draftYear": 2016,
       "draftRound": 1,
       "draftPick": 19,
-      "teamAbbreviation": "DET",
+      "teamAbbreviation": "MIL",
       "stats": {
         "gamesPlayed": 79,
         "minutesPerGame": 29.59,
@@ -410,7 +410,7 @@
       "draftYear": 2009,
       "draftRound": 2,
       "draftPick": 42,
-      "teamAbbreviation": "MIL",
+      "teamAbbreviation": "PHI",
       "stats": {
         "gamesPlayed": 73,
         "minutesPerGame": 20.03,
@@ -435,7 +435,7 @@
       "draftYear": 2011,
       "draftRound": 1,
       "draftPick": 7,
-      "teamAbbreviation": "SAS",
+      "teamAbbreviation": "MEM",
       "stats": {
         "gamesPlayed": 40,
         "minutesPerGame": 19.79,
@@ -460,7 +460,7 @@
       "draftYear": 2014,
       "draftRound": 1,
       "draftPick": 27,
-      "teamAbbreviation": "HOU",
+      "teamAbbreviation": "ATL",
       "stats": {
         "gamesPlayed": 79,
         "minutesPerGame": 30.4,
@@ -535,7 +535,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "BOS",
+      "teamAbbreviation": "TOR",
       "stats": {
         "gamesPlayed": 50,
         "minutesPerGame": 14.1,
@@ -560,7 +560,7 @@
       "draftYear": 2018,
       "draftRound": 1,
       "draftPick": 10,
-      "teamAbbreviation": "NYK",
+      "teamAbbreviation": "BKN",
       "stats": {
         "gamesPlayed": 82,
         "minutesPerGame": 34.81,
@@ -610,7 +610,7 @@
       "draftYear": 2016,
       "draftRound": 2,
       "draftPick": 36,
-      "teamAbbreviation": "NYK",
+      "teamAbbreviation": "POR",
       "stats": {
         "gamesPlayed": 39,
         "minutesPerGame": 28.74,
@@ -635,7 +635,7 @@
       "draftYear": 2017,
       "draftRound": 2,
       "draftPick": 45,
-      "teamAbbreviation": "PHX",
+      "teamAbbreviation": "HOU",
       "stats": {
         "gamesPlayed": 72,
         "minutesPerGame": 30.93,
@@ -660,7 +660,7 @@
       "draftYear": 2018,
       "draftRound": 1,
       "draftPick": 15,
-      "teamAbbreviation": "DET",
+      "teamAbbreviation": "MIN",
       "stats": {
         "gamesPlayed": 59,
         "minutesPerGame": 14.01,
@@ -685,7 +685,7 @@
       "draftYear": 2018,
       "draftRound": 2,
       "draftPick": 42,
-      "teamAbbreviation": "DEN",
+      "teamAbbreviation": "TOR",
       "stats": {
         "gamesPlayed": 67,
         "minutesPerGame": 27.84,
@@ -710,7 +710,7 @@
       "draftYear": 2016,
       "draftRound": 1,
       "draftPick": 3,
-      "teamAbbreviation": "PHI",
+      "teamAbbreviation": "BOS",
       "stats": {
         "gamesPlayed": 70,
         "minutesPerGame": 33.46,
@@ -760,7 +760,7 @@
       "draftYear": 2017,
       "draftRound": 2,
       "draftPick": 42,
-      "teamAbbreviation": "CLE",
+      "teamAbbreviation": "MIA",
       "stats": {
         "gamesPlayed": 38,
         "minutesPerGame": 11.62,
@@ -810,7 +810,7 @@
       "draftYear": 2011,
       "draftRound": 1,
       "draftPick": 12,
-      "teamAbbreviation": "MIA",
+      "teamAbbreviation": "DET",
       "stats": {
         "gamesPlayed": 66,
         "minutesPerGame": 18.36,
@@ -835,7 +835,7 @@
       "draftYear": 2011,
       "draftRound": 1,
       "draftPick": 30,
-      "teamAbbreviation": "GSW",
+      "teamAbbreviation": "MIA",
       "stats": {
         "gamesPlayed": 60,
         "minutesPerGame": 34.03,
@@ -860,7 +860,7 @@
       "draftYear": 2013,
       "draftRound": 1,
       "draftPick": 8,
-      "teamAbbreviation": "MEM",
+      "teamAbbreviation": "DEN",
       "stats": {
         "gamesPlayed": 76,
         "minutesPerGame": 31.6,
@@ -885,7 +885,7 @@
       "draftYear": 2014,
       "draftRound": 1,
       "draftPick": 25,
-      "teamAbbreviation": "HOU",
+      "teamAbbreviation": "ATL",
       "stats": {
         "gamesPlayed": 73,
         "minutesPerGame": 25.8,
@@ -935,7 +935,7 @@
       "draftYear": 2018,
       "draftRound": 2,
       "draftPick": 32,
-      "teamAbbreviation": "ORL",
+      "teamAbbreviation": "CHI",
       "stats": {
         "gamesPlayed": 72,
         "minutesPerGame": 13.94,
@@ -960,7 +960,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "OKC",
+      "teamAbbreviation": "CHI",
       "stats": {
         "gamesPlayed": 71,
         "minutesPerGame": 28.74,
@@ -985,7 +985,7 @@
       "draftYear": 2014,
       "draftRound": 2,
       "draftPick": 46,
-      "teamAbbreviation": "NYK",
+      "teamAbbreviation": "UTA",
       "stats": {
         "gamesPlayed": 55,
         "minutesPerGame": 30.59,
@@ -1010,7 +1010,7 @@
       "draftYear": 2017,
       "draftRound": 1,
       "draftPick": 19,
-      "teamAbbreviation": "DET",
+      "teamAbbreviation": "UTA",
       "stats": {
         "gamesPlayed": 68,
         "minutesPerGame": 27.96,
@@ -1035,7 +1035,7 @@
       "draftYear": 2017,
       "draftRound": 1,
       "draftPick": 10,
-      "teamAbbreviation": "CHI",
+      "teamAbbreviation": "SAS",
       "stats": {
         "gamesPlayed": 69,
         "minutesPerGame": 22.11,
@@ -1060,7 +1060,7 @@
       "draftYear": 2007,
       "draftRound": 1,
       "draftPick": 4,
-      "teamAbbreviation": "BOS",
+      "teamAbbreviation": "MIN",
       "stats": {
         "gamesPlayed": 76,
         "minutesPerGame": 28.86,
@@ -1085,7 +1085,7 @@
       "draftYear": 2015,
       "draftRound": 2,
       "draftPick": 41,
-      "teamAbbreviation": "CHA",
+      "teamAbbreviation": "MIL",
       "stats": {
         "gamesPlayed": 76,
         "minutesPerGame": 22.06,
@@ -1135,7 +1135,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "BOS",
+      "teamAbbreviation": "CHI",
       "stats": {
         "gamesPlayed": 53,
         "minutesPerGame": 19.78,
@@ -1160,7 +1160,7 @@
       "draftYear": 2012,
       "draftRound": 2,
       "draftPick": 34,
-      "teamAbbreviation": "SAC",
+      "teamAbbreviation": "MIL",
       "stats": {
         "gamesPlayed": 50,
         "minutesPerGame": 23.11,
@@ -1185,7 +1185,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "GSW",
+      "teamAbbreviation": "DAL",
       "stats": {
         "gamesPlayed": 44,
         "minutesPerGame": 13.99,
@@ -1235,7 +1235,7 @@
       "draftYear": 2012,
       "draftRound": 1,
       "draftPick": 1,
-      "teamAbbreviation": "WAS",
+      "teamAbbreviation": "LAL",
       "stats": {
         "gamesPlayed": 76,
         "minutesPerGame": 35.53,
@@ -1260,7 +1260,7 @@
       "draftYear": 2009,
       "draftRound": 1,
       "draftPick": 9,
-      "teamAbbreviation": "SAC",
+      "teamAbbreviation": "CHI",
       "stats": {
         "gamesPlayed": 79,
         "minutesPerGame": 37.83,
@@ -1285,7 +1285,7 @@
       "draftYear": 2014,
       "draftRound": 2,
       "draftPick": 38,
-      "teamAbbreviation": "CHA",
+      "teamAbbreviation": "BKN",
       "stats": {
         "gamesPlayed": 76,
         "minutesPerGame": 28.32,
@@ -1310,7 +1310,7 @@
       "draftYear": 2018,
       "draftRound": 1,
       "draftPick": 17,
-      "teamAbbreviation": "MIN",
+      "teamAbbreviation": "NYK",
       "stats": {
         "gamesPlayed": 81,
         "minutesPerGame": 29.14,
@@ -1335,7 +1335,7 @@
       "draftYear": 2018,
       "draftRound": 1,
       "draftPick": 3,
-      "teamAbbreviation": "LAL",
+      "teamAbbreviation": "DAL",
       "stats": {
         "gamesPlayed": 70,
         "minutesPerGame": 37.49,
@@ -1360,7 +1360,7 @@
       "draftYear": 2012,
       "draftRound": 1,
       "draftPick": 9,
-      "teamAbbreviation": "NYK",
+      "teamAbbreviation": "CHI",
       "stats": {
         "gamesPlayed": 79,
         "minutesPerGame": 17.1,
@@ -1385,7 +1385,7 @@
       "draftYear": 2016,
       "draftRound": 1,
       "draftPick": 5,
-      "teamAbbreviation": "LAC",
+      "teamAbbreviation": "UTA",
       "stats": {
         "gamesPlayed": 66,
         "minutesPerGame": 18.93,
@@ -1410,7 +1410,7 @@
       "draftYear": 2007,
       "draftRound": 1,
       "draftPick": 2,
-      "teamAbbreviation": "HOU",
+      "teamAbbreviation": "PHX",
       "stats": {
         "gamesPlayed": 75,
         "minutesPerGame": 37.21,
@@ -1460,7 +1460,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "SAC",
+      "teamAbbreviation": "PHX",
       "stats": {
         "gamesPlayed": 75,
         "minutesPerGame": 15.58,
@@ -1510,7 +1510,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "CHA",
+      "teamAbbreviation": "BKN",
       "stats": {
         "gamesPlayed": 68,
         "minutesPerGame": 28.45,
@@ -1560,7 +1560,7 @@
       "draftYear": 2017,
       "draftRound": 1,
       "draftPick": 5,
-      "teamAbbreviation": "SAS",
+      "teamAbbreviation": "SAC",
       "stats": {
         "gamesPlayed": 74,
         "minutesPerGame": 35.93,
@@ -1585,7 +1585,7 @@
       "draftYear": 2017,
       "draftRound": 1,
       "draftPick": 1,
-      "teamAbbreviation": "TOR",
+      "teamAbbreviation": "ORL",
       "stats": {
         "gamesPlayed": 43,
         "minutesPerGame": 21.16,
@@ -1610,7 +1610,7 @@
       "draftYear": 2008,
       "draftRound": 1,
       "draftPick": 6,
-      "teamAbbreviation": "MIL",
+      "teamAbbreviation": "WAS",
       "stats": {
         "gamesPlayed": 49,
         "minutesPerGame": 12.84,
@@ -1635,7 +1635,7 @@
       "draftYear": 2010,
       "draftRound": 1,
       "draftPick": 10,
-      "teamAbbreviation": "BOS",
+      "teamAbbreviation": "LAC",
       "stats": {
         "gamesPlayed": 74,
         "minutesPerGame": 33.81,
@@ -1660,7 +1660,7 @@
       "draftYear": 2009,
       "draftRound": 1,
       "draftPick": 26,
-      "teamAbbreviation": "MEM",
+      "teamAbbreviation": "NYK",
       "stats": {
         "gamesPlayed": 20,
         "minutesPerGame": 10.22,
@@ -1685,7 +1685,7 @@
       "draftYear": 2017,
       "draftRound": 1,
       "draftPick": 20,
-      "teamAbbreviation": "SAC",
+      "teamAbbreviation": "BKN",
       "stats": {
         "gamesPlayed": 23,
         "minutesPerGame": 4.34,
@@ -1785,7 +1785,7 @@
       "draftYear": 2008,
       "draftRound": 1,
       "draftPick": 7,
-      "teamAbbreviation": "PHI",
+      "teamAbbreviation": "PHX",
       "stats": {
         "gamesPlayed": 68,
         "minutesPerGame": 27.83,
@@ -1810,7 +1810,7 @@
       "draftYear": 2018,
       "draftRound": 2,
       "draftPick": 34,
-      "teamAbbreviation": "POR",
+      "teamAbbreviation": "SAS",
       "stats": {
         "gamesPlayed": 23,
         "minutesPerGame": 13.61,
@@ -1835,7 +1835,7 @@
       "draftYear": 2014,
       "draftRound": 2,
       "draftPick": 39,
-      "teamAbbreviation": "MEM",
+      "teamAbbreviation": "POR",
       "stats": {
         "gamesPlayed": 54,
         "minutesPerGame": 33.89,
@@ -1910,7 +1910,7 @@
       "draftYear": 2013,
       "draftRound": 1,
       "draftPick": 24,
-      "teamAbbreviation": "MIA",
+      "teamAbbreviation": "DAL",
       "stats": {
         "gamesPlayed": 79,
         "minutesPerGame": 26.84,
@@ -1935,7 +1935,7 @@
       "draftYear": 2009,
       "draftRound": 1,
       "draftPick": 3,
-      "teamAbbreviation": "CLE",
+      "teamAbbreviation": "LAC",
       "stats": {
         "gamesPlayed": 72,
         "minutesPerGame": 34.3,
@@ -1960,7 +1960,7 @@
       "draftYear": 2014,
       "draftRound": 1,
       "draftPick": 19,
-      "teamAbbreviation": "DET",
+      "teamAbbreviation": "ORL",
       "stats": {
         "gamesPlayed": 54,
         "minutesPerGame": 24.02,
@@ -2010,7 +2010,7 @@
       "draftYear": 2011,
       "draftRound": 1,
       "draftPick": 19,
-      "teamAbbreviation": "SAS",
+      "teamAbbreviation": "PHI",
       "stats": {
         "gamesPlayed": 70,
         "minutesPerGame": 33.83,
@@ -2035,7 +2035,7 @@
       "draftYear": 2017,
       "draftRound": 2,
       "draftPick": 43,
-      "teamAbbreviation": "OKC",
+      "teamAbbreviation": "NYK",
       "stats": {
         "gamesPlayed": 75,
         "minutesPerGame": 25.28,
@@ -2110,7 +2110,7 @@
       "draftYear": 2016,
       "draftRound": 1,
       "draftPick": 6,
-      "teamAbbreviation": "ATL",
+      "teamAbbreviation": "IND",
       "stats": {
         "gamesPlayed": 84,
         "minutesPerGame": 25.71,
@@ -2160,7 +2160,7 @@
       "draftYear": 2009,
       "draftRound": 1,
       "draftPick": 17,
-      "teamAbbreviation": "POR",
+      "teamAbbreviation": "BOS",
       "stats": {
         "gamesPlayed": 69,
         "minutesPerGame": 32.8,
@@ -2210,7 +2210,7 @@
       "draftYear": 2015,
       "draftRound": 2,
       "draftPick": 37,
-      "teamAbbreviation": "WAS",
+      "teamAbbreviation": "DAL",
       "stats": {
         "gamesPlayed": 40,
         "minutesPerGame": 13.85,
@@ -2235,7 +2235,7 @@
       "draftYear": 2007,
       "draftRound": 1,
       "draftPick": 3,
-      "teamAbbreviation": "GSW",
+      "teamAbbreviation": "BOS",
       "stats": {
         "gamesPlayed": 65,
         "minutesPerGame": 26.77,
@@ -2260,7 +2260,7 @@
       "draftYear": 2018,
       "draftRound": 1,
       "draftPick": 19,
-      "teamAbbreviation": "DET",
+      "teamAbbreviation": "SAC",
       "stats": {
         "gamesPlayed": 64,
         "minutesPerGame": 24.41,
@@ -2285,7 +2285,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "MIN",
+      "teamAbbreviation": "ORL",
       "stats": {
         "gamesPlayed": 68,
         "minutesPerGame": 17.19,
@@ -2310,7 +2310,7 @@
       "draftYear": 2016,
       "draftRound": 1,
       "draftPick": 2,
-      "teamAbbreviation": "TOR",
+      "teamAbbreviation": "NOP",
       "stats": {
         "gamesPlayed": 64,
         "minutesPerGame": 32.85,
@@ -2385,7 +2385,7 @@
       "draftYear": 2018,
       "draftRound": 1,
       "draftPick": 4,
-      "teamAbbreviation": "UTA",
+      "teamAbbreviation": "MEM",
       "stats": {
         "gamesPlayed": 66,
         "minutesPerGame": 32.18,
@@ -2410,7 +2410,7 @@
       "draftYear": 2011,
       "draftRound": 1,
       "draftPick": 24,
-      "teamAbbreviation": "PHI",
+      "teamAbbreviation": "DEN",
       "stats": {
         "gamesPlayed": 82,
         "minutesPerGame": 22.16,
@@ -2485,7 +2485,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "LAC",
+      "teamAbbreviation": "DAL",
       "stats": {
         "gamesPlayed": 76,
         "minutesPerGame": 23.46,
@@ -2535,7 +2535,7 @@
       "draftYear": 2015,
       "draftRound": 1,
       "draftPick": 24,
-      "teamAbbreviation": "DEN",
+      "teamAbbreviation": "WAS",
       "stats": {
         "gamesPlayed": 66,
         "minutesPerGame": 29.28,
@@ -2560,7 +2560,7 @@
       "draftYear": 2008,
       "draftRound": 2,
       "draftPick": 35,
-      "teamAbbreviation": "NOP",
+      "teamAbbreviation": "DEN",
       "stats": {
         "gamesPlayed": 36,
         "minutesPerGame": 10.99,
@@ -2585,7 +2585,7 @@
       "draftYear": 2011,
       "draftRound": 1,
       "draftPick": 29,
-      "teamAbbreviation": "ORL",
+      "teamAbbreviation": "GSW",
       "stats": {
         "gamesPlayed": 26,
         "minutesPerGame": 11.38,
@@ -2610,7 +2610,7 @@
       "draftYear": 2017,
       "draftRound": 1,
       "draftPick": 12,
-      "teamAbbreviation": "LAL",
+      "teamAbbreviation": "MEM",
       "stats": {
         "gamesPlayed": 39,
         "minutesPerGame": 25.62,
@@ -2635,7 +2635,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "LAL",
+      "teamAbbreviation": "DAL",
       "stats": {
         "gamesPlayed": 43,
         "minutesPerGame": 20.27,
@@ -2660,7 +2660,7 @@
       "draftYear": 2018,
       "draftRound": 1,
       "draftPick": 9,
-      "teamAbbreviation": "GSW",
+      "teamAbbreviation": "DET",
       "stats": {
         "gamesPlayed": 31,
         "minutesPerGame": 18.07,
@@ -2710,7 +2710,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "SAS",
+      "teamAbbreviation": "BOS",
       "stats": {
         "gamesPlayed": 63,
         "minutesPerGame": 15.61,
@@ -2735,7 +2735,7 @@
       "draftYear": 2017,
       "draftRound": 1,
       "draftPick": 27,
-      "teamAbbreviation": "MIL",
+      "teamAbbreviation": "WAS",
       "stats": {
         "gamesPlayed": 70,
         "minutesPerGame": 32.59,
@@ -2760,7 +2760,7 @@
       "draftYear": 2014,
       "draftRound": 1,
       "draftPick": 13,
-      "teamAbbreviation": "SAC",
+      "teamAbbreviation": "CHI",
       "stats": {
         "gamesPlayed": 25,
         "minutesPerGame": 34.87,
@@ -2785,7 +2785,7 @@
       "draftYear": 2013,
       "draftRound": 1,
       "draftPick": 5,
-      "teamAbbreviation": "NYK",
+      "teamAbbreviation": "SAC",
       "stats": {
         "gamesPlayed": 48,
         "minutesPerGame": 9.26,
@@ -2835,7 +2835,7 @@
       "draftYear": 2016,
       "draftRound": 1,
       "draftPick": 20,
-      "teamAbbreviation": "MIL",
+      "teamAbbreviation": "CLE",
       "stats": {
         "gamesPlayed": 68,
         "minutesPerGame": 28.8,
@@ -2860,7 +2860,7 @@
       "draftYear": 2012,
       "draftRound": 1,
       "draftPick": 6,
-      "teamAbbreviation": "POR",
+      "teamAbbreviation": "MIL",
       "stats": {
         "gamesPlayed": 73,
         "minutesPerGame": 35.32,
@@ -2885,7 +2885,7 @@
       "draftYear": 2015,
       "draftRound": 1,
       "draftPick": 30,
-      "teamAbbreviation": "NOP",
+      "teamAbbreviation": "GSW",
       "stats": {
         "gamesPlayed": 74,
         "minutesPerGame": 16.14,
@@ -2910,7 +2910,7 @@
       "draftYear": 2008,
       "draftRound": 1,
       "draftPick": 10,
-      "teamAbbreviation": "LAC",
+      "teamAbbreviation": "MIL",
       "stats": {
         "gamesPlayed": 79,
         "minutesPerGame": 30.52,
@@ -2960,7 +2960,7 @@
       "draftYear": 2008,
       "draftRound": 1,
       "draftPick": 5,
-      "teamAbbreviation": "UTA",
+      "teamAbbreviation": "MIA",
       "stats": {
         "gamesPlayed": 55,
         "minutesPerGame": 16.81,
@@ -2985,7 +2985,7 @@
       "draftYear": 2006,
       "draftRound": 1,
       "draftPick": 24,
-      "teamAbbreviation": "PHI",
+      "teamAbbreviation": "MIA",
       "stats": {
         "gamesPlayed": 60,
         "minutesPerGame": 28.16,
@@ -3010,7 +3010,7 @@
       "draftYear": 2015,
       "draftRound": 1,
       "draftPick": 12,
-      "teamAbbreviation": "MIN",
+      "teamAbbreviation": "SAC",
       "stats": {
         "gamesPlayed": 58,
         "minutesPerGame": 19.97,
@@ -3110,7 +3110,7 @@
       "draftYear": 2013,
       "draftRound": 1,
       "draftPick": 10,
-      "teamAbbreviation": "ATL",
+      "teamAbbreviation": "NOP",
       "stats": {
         "gamesPlayed": 66,
         "minutesPerGame": 32.71,
@@ -3160,7 +3160,7 @@
       "draftYear": 2014,
       "draftRound": 1,
       "draftPick": 11,
-      "teamAbbreviation": "SAC",
+      "teamAbbreviation": "SAS",
       "stats": {
         "gamesPlayed": 64,
         "minutesPerGame": 14.13,
@@ -3210,7 +3210,7 @@
       "draftYear": 2018,
       "draftRound": 2,
       "draftPick": 46,
-      "teamAbbreviation": "GSW",
+      "teamAbbreviation": "PHI",
       "stats": {
         "gamesPlayed": 38,
         "minutesPerGame": 26.93,
@@ -3235,7 +3235,7 @@
       "draftYear": 2018,
       "draftRound": 2,
       "draftPick": 49,
-      "teamAbbreviation": "DET",
+      "teamAbbreviation": "PHX",
       "stats": {
         "gamesPlayed": 51,
         "minutesPerGame": 16.84,
@@ -3260,7 +3260,7 @@
       "draftYear": 2012,
       "draftRound": 2,
       "draftPick": 39,
-      "teamAbbreviation": "WAS",
+      "teamAbbreviation": "MIL",
       "stats": {
         "gamesPlayed": 55,
         "minutesPerGame": 27.04,
@@ -3285,7 +3285,7 @@
       "draftYear": 2009,
       "draftRound": 2,
       "draftPick": 55,
-      "teamAbbreviation": "LAC",
+      "teamAbbreviation": "ATL",
       "stats": {
         "gamesPlayed": 32,
         "minutesPerGame": 12.98,
@@ -3310,7 +3310,7 @@
       "draftYear": 2018,
       "draftRound": 2,
       "draftPick": 54,
-      "teamAbbreviation": "LAL",
+      "teamAbbreviation": "MIN",
       "stats": {
         "gamesPlayed": 48,
         "minutesPerGame": 12.11,
@@ -3385,7 +3385,7 @@
       "draftYear": 2011,
       "draftRound": 1,
       "draftPick": 14,
-      "teamAbbreviation": "CLE",
+      "teamAbbreviation": "PHI",
       "stats": {
         "gamesPlayed": 49,
         "minutesPerGame": 16.67,
@@ -3410,7 +3410,7 @@
       "draftYear": 2011,
       "draftRound": 1,
       "draftPick": 13,
-      "teamAbbreviation": "LAL",
+      "teamAbbreviation": "DAL",
       "stats": {
         "gamesPlayed": 26,
         "minutesPerGame": 8.32,
@@ -3435,7 +3435,7 @@
       "draftYear": 2017,
       "draftRound": 2,
       "draftPick": 51,
-      "teamAbbreviation": "IND",
+      "teamAbbreviation": "MIN",
       "stats": {
         "gamesPlayed": 33,
         "minutesPerGame": 14.43,
@@ -3460,7 +3460,7 @@
       "draftYear": 2016,
       "draftRound": 1,
       "draftPick": 29,
-      "teamAbbreviation": "NOP",
+      "teamAbbreviation": "ATL",
       "stats": {
         "gamesPlayed": 78,
         "minutesPerGame": 35.68,
@@ -3510,7 +3510,7 @@
       "draftYear": 2013,
       "draftRound": 2,
       "draftPick": 44,
-      "teamAbbreviation": "OKC",
+      "teamAbbreviation": "WAS",
       "stats": {
         "gamesPlayed": 53,
         "minutesPerGame": 11.32,
@@ -3535,7 +3535,7 @@
       "draftYear": 2018,
       "draftRound": 2,
       "draftPick": 47,
-      "teamAbbreviation": "UTA",
+      "teamAbbreviation": "BOS",
       "stats": {
         "gamesPlayed": 41,
         "minutesPerGame": 10.08,
@@ -3560,7 +3560,7 @@
       "draftYear": 2015,
       "draftRound": 1,
       "draftPick": 27,
-      "teamAbbreviation": "IND",
+      "teamAbbreviation": "NOP",
       "stats": {
         "gamesPlayed": 61,
         "minutesPerGame": 19.94,
@@ -3585,7 +3585,7 @@
       "draftYear": 2016,
       "draftRound": 2,
       "draftPick": 50,
-      "teamAbbreviation": "ATL",
+      "teamAbbreviation": "CLE",
       "stats": {
         "gamesPlayed": 82,
         "minutesPerGame": 22.33,
@@ -3610,7 +3610,7 @@
       "draftYear": 2014,
       "draftRound": 1,
       "draftPick": 16,
-      "teamAbbreviation": "UTA",
+      "teamAbbreviation": "PHX",
       "stats": {
         "gamesPlayed": 76,
         "minutesPerGame": 27.34,
@@ -3635,7 +3635,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "PHX",
+      "teamAbbreviation": "BKN",
       "stats": {
         "gamesPlayed": 79,
         "minutesPerGame": 24.74,
@@ -3660,7 +3660,7 @@
       "draftYear": 2018,
       "draftRound": 1,
       "draftPick": 20,
-      "teamAbbreviation": "UTA",
+      "teamAbbreviation": "PHX",
       "stats": {
         "gamesPlayed": 60,
         "minutesPerGame": 16,
@@ -3685,7 +3685,7 @@
       "draftYear": 2013,
       "draftRound": 1,
       "draftPick": 13,
-      "teamAbbreviation": "SAS",
+      "teamAbbreviation": "UTA",
       "stats": {
         "gamesPlayed": 78,
         "minutesPerGame": 22.55,
@@ -3735,7 +3735,7 @@
       "draftYear": 2015,
       "draftRound": 1,
       "draftPick": 15,
-      "teamAbbreviation": "IND",
+      "teamAbbreviation": "PHI",
       "stats": {
         "gamesPlayed": 68,
         "minutesPerGame": 30.23,
@@ -3760,7 +3760,7 @@
       "draftYear": 2005,
       "draftRound": 1,
       "draftPick": 4,
-      "teamAbbreviation": "LAC",
+      "teamAbbreviation": "GSW",
       "stats": {
         "gamesPlayed": 58,
         "minutesPerGame": 26.39,
@@ -3785,7 +3785,7 @@
       "draftYear": 2015,
       "draftRound": 1,
       "draftPick": 14,
-      "teamAbbreviation": "PHI",
+      "teamAbbreviation": "MIL",
       "stats": {
         "gamesPlayed": 78,
         "minutesPerGame": 16.72,
@@ -3810,7 +3810,7 @@
       "draftYear": 2013,
       "draftRound": 1,
       "draftPick": 22,
-      "teamAbbreviation": "SAS",
+      "teamAbbreviation": "LAC",
       "stats": {
         "gamesPlayed": 46,
         "minutesPerGame": 14.65,
@@ -3860,7 +3860,7 @@
       "draftYear": 2018,
       "draftRound": 1,
       "draftPick": 14,
-      "teamAbbreviation": "BKN",
+      "teamAbbreviation": "DEN",
       "stats": {
         "gamesPlayed": 81,
         "minutesPerGame": 31.66,
@@ -3910,7 +3910,7 @@
       "draftYear": 2015,
       "draftRound": 1,
       "draftPick": 22,
-      "teamAbbreviation": "MIA",
+      "teamAbbreviation": "MIL",
       "stats": {
         "gamesPlayed": 82,
         "minutesPerGame": 24.49,
@@ -3935,7 +3935,7 @@
       "draftYear": 2015,
       "draftRound": 1,
       "draftPick": 4,
-      "teamAbbreviation": "GSW",
+      "teamAbbreviation": "BOS",
       "stats": {
         "gamesPlayed": 57,
         "minutesPerGame": 29.65,
@@ -3985,7 +3985,7 @@
       "draftYear": 2015,
       "draftRound": 2,
       "draftPick": 46,
-      "teamAbbreviation": "CHI",
+      "teamAbbreviation": "LAC",
       "stats": {
         "gamesPlayed": 76,
         "minutesPerGame": 26.19,
@@ -4010,7 +4010,7 @@
       "draftYear": 2016,
       "draftRound": 1,
       "draftPick": 12,
-      "teamAbbreviation": "DET",
+      "teamAbbreviation": "LAL",
       "stats": {
         "gamesPlayed": 78,
         "minutesPerGame": 27.02,
@@ -4035,7 +4035,7 @@
       "draftYear": 2014,
       "draftRound": 1,
       "draftPick": 7,
-      "teamAbbreviation": "BKN",
+      "teamAbbreviation": "NYK",
       "stats": {
         "gamesPlayed": 46,
         "minutesPerGame": 35.44,
@@ -4085,7 +4085,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "DET",
+      "teamAbbreviation": "MIA",
       "stats": {
         "gamesPlayed": 68,
         "minutesPerGame": 28.02,
@@ -4135,7 +4135,7 @@
       "draftYear": 2018,
       "draftRound": 2,
       "draftPick": 36,
-      "teamAbbreviation": "BOS",
+      "teamAbbreviation": "NYK",
       "stats": {
         "gamesPlayed": 31,
         "minutesPerGame": 24.78,
@@ -4210,7 +4210,7 @@
       "draftYear": 2015,
       "draftRound": 1,
       "draftPick": 2,
-      "teamAbbreviation": "MEM",
+      "teamAbbreviation": "LAL",
       "stats": {
         "gamesPlayed": 76,
         "minutesPerGame": 32.69,
@@ -4260,7 +4260,7 @@
       "draftYear": 2014,
       "draftRound": 1,
       "draftPick": 12,
-      "teamAbbreviation": "SAC",
+      "teamAbbreviation": "GSW",
       "stats": {
         "gamesPlayed": 64,
         "minutesPerGame": 17.15,
@@ -4285,7 +4285,7 @@
       "draftYear": 2013,
       "draftRound": 1,
       "draftPick": 17,
-      "teamAbbreviation": "CLE",
+      "teamAbbreviation": "TOR",
       "stats": {
         "gamesPlayed": 80,
         "minutesPerGame": 31.07,
@@ -4310,7 +4310,7 @@
       "draftYear": 2018,
       "draftRound": 1,
       "draftPick": 8,
-      "teamAbbreviation": "LAL",
+      "teamAbbreviation": "UTA",
       "stats": {
         "gamesPlayed": 78,
         "minutesPerGame": 26.6,
@@ -4335,7 +4335,7 @@
       "draftYear": 2018,
       "draftRound": 1,
       "draftPick": 26,
-      "teamAbbreviation": "NYK",
+      "teamAbbreviation": "WAS",
       "stats": {
         "gamesPlayed": 46,
         "minutesPerGame": 15.79,
@@ -4385,7 +4385,7 @@
       "draftYear": 2016,
       "draftRound": 1,
       "draftPick": 1,
-      "teamAbbreviation": "LAC",
+      "teamAbbreviation": "BKN",
       "stats": {
         "gamesPlayed": 15,
         "minutesPerGame": 23.93,
@@ -4410,7 +4410,7 @@
       "draftYear": 2018,
       "draftRound": 1,
       "draftPick": 24,
-      "teamAbbreviation": "PHI",
+      "teamAbbreviation": "POR",
       "stats": {
         "gamesPlayed": 46,
         "minutesPerGame": 34.39,
@@ -4435,7 +4435,7 @@
       "draftYear": 2014,
       "draftRound": 1,
       "draftPick": 6,
-      "teamAbbreviation": "HOU",
+      "teamAbbreviation": "MEM",
       "stats": {
         "gamesPlayed": 20,
         "minutesPerGame": 30.24,
@@ -4460,7 +4460,7 @@
       "draftYear": 2017,
       "draftRound": 1,
       "draftPick": 9,
-      "teamAbbreviation": "DAL",
+      "teamAbbreviation": "BKN",
       "stats": {
         "gamesPlayed": 56,
         "minutesPerGame": 18.91,
@@ -4560,7 +4560,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "NOP",
+      "teamAbbreviation": "LAC",
       "stats": {
         "gamesPlayed": 60,
         "minutesPerGame": 16.91,
@@ -4585,7 +4585,7 @@
       "draftYear": 2011,
       "draftRound": 1,
       "draftPick": 11,
-      "teamAbbreviation": "DAL",
+      "teamAbbreviation": "GSW",
       "stats": {
         "gamesPlayed": 77,
         "minutesPerGame": 29.66,
@@ -4635,7 +4635,7 @@
       "draftYear": 2015,
       "draftRound": 1,
       "draftPick": 1,
-      "teamAbbreviation": "NYK",
+      "teamAbbreviation": "MIN",
       "stats": {
         "gamesPlayed": 62,
         "minutesPerGame": 32.67,
@@ -4660,7 +4660,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "POR",
+      "teamAbbreviation": "TOR",
       "stats": {
         "gamesPlayed": 71,
         "minutesPerGame": 28.08,
@@ -4685,7 +4685,7 @@
       "draftYear": 2006,
       "draftRound": 2,
       "draftPick": 35,
-      "teamAbbreviation": "NYK",
+      "teamAbbreviation": "LAC",
       "stats": {
         "gamesPlayed": 31,
         "minutesPerGame": 15.69,
@@ -4710,7 +4710,7 @@
       "draftYear": 2015,
       "draftRound": 1,
       "draftPick": 11,
-      "teamAbbreviation": "MIL",
+      "teamAbbreviation": "IND",
       "stats": {
         "gamesPlayed": 77,
         "minutesPerGame": 26.97,
@@ -4735,7 +4735,7 @@
       "draftYear": 2011,
       "draftRound": 1,
       "draftPick": 5,
-      "teamAbbreviation": "DEN",
+      "teamAbbreviation": "NOP",
       "stats": {
         "gamesPlayed": 82,
         "minutesPerGame": 23.47,
@@ -4810,7 +4810,7 @@
       "draftYear": 2011,
       "draftRound": 1,
       "draftPick": 16,
-      "teamAbbreviation": "ORL",
+      "teamAbbreviation": "CHI",
       "stats": {
         "gamesPlayed": 76,
         "minutesPerGame": 34.34,
@@ -4860,7 +4860,7 @@
       "draftYear": 2018,
       "draftRound": 1,
       "draftPick": 18,
-      "teamAbbreviation": "PHI",
+      "teamAbbreviation": "BKN",
       "stats": {
         "gamesPlayed": 58,
         "minutesPerGame": 17.43,
@@ -4885,7 +4885,7 @@
       "draftYear": 2014,
       "draftRound": 1,
       "draftPick": 14,
-      "teamAbbreviation": "NYK",
+      "teamAbbreviation": "MIN",
       "stats": {
         "gamesPlayed": 11,
         "minutesPerGame": 11.33,
@@ -4910,7 +4910,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "MEM",
+      "teamAbbreviation": "PHX",
       "stats": {
         "gamesPlayed": 34,
         "minutesPerGame": 13.66,
@@ -4935,7 +4935,7 @@
       "draftYear": 2008,
       "draftRound": 1,
       "draftPick": 4,
-      "teamAbbreviation": "SAC",
+      "teamAbbreviation": "LAC",
       "stats": {
         "gamesPlayed": 68,
         "minutesPerGame": 22.48,
@@ -4985,7 +4985,7 @@
       "draftYear": 2014,
       "draftRound": 1,
       "draftPick": 1,
-      "teamAbbreviation": "MIA",
+      "teamAbbreviation": "GSW",
       "stats": {
         "gamesPlayed": 71,
         "minutesPerGame": 27.05,
@@ -5060,7 +5060,7 @@
       "draftYear": 2015,
       "draftRound": 1,
       "draftPick": 20,
-      "teamAbbreviation": "IND",
+      "teamAbbreviation": "WAS",
       "stats": {
         "gamesPlayed": 47,
         "minutesPerGame": 15.78,
@@ -5085,7 +5085,7 @@
       "draftYear": 2007,
       "draftRound": 1,
       "draftPick": 12,
-      "teamAbbreviation": "PHX",
+      "teamAbbreviation": "TOR",
       "stats": {
         "gamesPlayed": 33,
         "minutesPerGame": 13.32,
@@ -5110,7 +5110,7 @@
       "draftYear": 2018,
       "draftRound": 1,
       "draftPick": 5,
-      "teamAbbreviation": "WAS",
+      "teamAbbreviation": "ATL",
       "stats": {
         "gamesPlayed": 54,
         "minutesPerGame": 35.96,
@@ -5160,7 +5160,7 @@
       "draftYear": 2016,
       "draftRound": 2,
       "draftPick": 32,
-      "teamAbbreviation": "IND",
+      "teamAbbreviation": "LAC",
       "stats": {
         "gamesPlayed": 68,
         "minutesPerGame": 26.39,
@@ -5185,7 +5185,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "GSW",
+      "teamAbbreviation": "DAL",
       "stats": {
         "gamesPlayed": 17,
         "minutesPerGame": 6.64,
@@ -5210,7 +5210,7 @@
       "draftYear": 2000,
       "draftRound": 1,
       "draftPick": 1,
-      "teamAbbreviation": "DEN",
+      "teamAbbreviation": "PHI",
       "stats": {
         "gamesPlayed": 60,
         "minutesPerGame": 12.44,
@@ -5235,7 +5235,7 @@
       "draftYear": 2000,
       "draftRound": 2,
       "draftPick": 45,
-      "teamAbbreviation": "SAC",
+      "teamAbbreviation": "HOU",
       "stats": {
         "gamesPlayed": 76,
         "minutesPerGame": 31.89,
@@ -5332,10 +5332,10 @@
       "position": "SF",
       "heightInches": 74,
       "weightLbs": 170,
-      "draftYear": null,
-      "draftRound": null,
-      "draftPick": null,
-      "teamAbbreviation": "IND",
+      "draftYear": 1976,
+      "draftRound": 2,
+      "draftPick": 22,
+      "teamAbbreviation": "WAS",
       "stats": {
         "gamesPlayed": 50,
         "minutesPerGame": 12.27,
@@ -5360,7 +5360,7 @@
       "draftYear": 2018,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "PHX",
+      "teamAbbreviation": "MIA",
       "stats": {
         "gamesPlayed": 66,
         "minutesPerGame": 20.69,
@@ -5385,7 +5385,7 @@
       "draftYear": 2019,
       "draftRound": 1,
       "draftPick": 17,
-      "teamAbbreviation": "ATL",
+      "teamAbbreviation": "MIN",
       "stats": {
         "gamesPlayed": 82,
         "minutesPerGame": 23.43,
@@ -5485,7 +5485,7 @@
       "draftYear": 2019,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "GSW",
+      "teamAbbreviation": "CHA",
       "stats": {
         "gamesPlayed": 11,
         "minutesPerGame": 11.03,
@@ -5510,7 +5510,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "PHI",
+      "teamAbbreviation": "BOS",
       "stats": {
         "gamesPlayed": 55,
         "minutesPerGame": 11.46,
@@ -5535,7 +5535,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "DEN",
+      "teamAbbreviation": "POR",
       "stats": {
         "gamesPlayed": 22,
         "minutesPerGame": 9.09,
@@ -5560,7 +5560,7 @@
       "draftYear": 2019,
       "draftRound": 2,
       "draftPick": 31,
-      "teamAbbreviation": "CHI",
+      "teamAbbreviation": "BKN",
       "stats": {
         "gamesPlayed": 71,
         "minutesPerGame": 29.8,
@@ -5585,7 +5585,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "PHX",
+      "teamAbbreviation": "LAC",
       "stats": {
         "gamesPlayed": 70,
         "minutesPerGame": 20.87,
@@ -5635,7 +5635,7 @@
       "draftYear": 2019,
       "draftRound": 2,
       "draftPick": 34,
-      "teamAbbreviation": "TOR",
+      "teamAbbreviation": "ATL",
       "stats": {
         "gamesPlayed": 45,
         "minutesPerGame": 15.16,
@@ -5660,7 +5660,7 @@
       "draftYear": 2019,
       "draftRound": 2,
       "draftPick": 38,
-      "teamAbbreviation": "DAL",
+      "teamAbbreviation": "WAS",
       "stats": {
         "gamesPlayed": 74,
         "minutesPerGame": 24.52,
@@ -5685,7 +5685,7 @@
       "draftYear": 2019,
       "draftRound": 1,
       "draftPick": 5,
-      "teamAbbreviation": "LAC",
+      "teamAbbreviation": "CLE",
       "stats": {
         "gamesPlayed": 57,
         "minutesPerGame": 33.34,
@@ -5710,7 +5710,7 @@
       "draftYear": 2019,
       "draftRound": 1,
       "draftPick": 9,
-      "teamAbbreviation": "LAC",
+      "teamAbbreviation": "LAL",
       "stats": {
         "gamesPlayed": 68,
         "minutesPerGame": 26.85,
@@ -5735,7 +5735,7 @@
       "draftYear": 2019,
       "draftRound": 1,
       "draftPick": 8,
-      "teamAbbreviation": "UTA",
+      "teamAbbreviation": "LAL",
       "stats": {
         "gamesPlayed": 70,
         "minutesPerGame": 12.53,
@@ -5760,7 +5760,7 @@
       "draftYear": 2019,
       "draftRound": 1,
       "draftPick": 13,
-      "teamAbbreviation": "MIL",
+      "teamAbbreviation": "MIA",
       "stats": {
         "gamesPlayed": 42,
         "minutesPerGame": 33.5,
@@ -5785,7 +5785,7 @@
       "draftYear": 2019,
       "draftRound": 2,
       "draftPick": 46,
-      "teamAbbreviation": "CHI",
+      "teamAbbreviation": "UTA",
       "stats": {
         "gamesPlayed": 51,
         "minutesPerGame": 19.78,
@@ -5810,7 +5810,7 @@
       "draftYear": 2019,
       "draftRound": 1,
       "draftPick": 4,
-      "teamAbbreviation": "SAC",
+      "teamAbbreviation": "ATL",
       "stats": {
         "gamesPlayed": 57,
         "minutesPerGame": 29.49,
@@ -5835,7 +5835,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "SAC",
+      "teamAbbreviation": "NYK",
       "stats": {
         "gamesPlayed": 17,
         "minutesPerGame": 2.7,
@@ -5860,7 +5860,7 @@
       "draftYear": 2019,
       "draftRound": 1,
       "draftPick": 11,
-      "teamAbbreviation": "DEN",
+      "teamAbbreviation": "BKN",
       "stats": {
         "gamesPlayed": 58,
         "minutesPerGame": 27.57,
@@ -5910,7 +5910,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "UTA",
+      "teamAbbreviation": "MEM",
       "stats": {
         "gamesPlayed": 55,
         "minutesPerGame": 21.34,
@@ -5935,7 +5935,7 @@
       "draftYear": 2019,
       "draftRound": 1,
       "draftPick": 25,
-      "teamAbbreviation": "MIA",
+      "teamAbbreviation": "PHX",
       "stats": {
         "gamesPlayed": 45,
         "minutesPerGame": 10.18,
@@ -5960,7 +5960,7 @@
       "draftYear": 2019,
       "draftRound": 2,
       "draftPick": 48,
-      "teamAbbreviation": "BKN",
+      "teamAbbreviation": "LAC",
       "stats": {
         "gamesPlayed": 75,
         "minutesPerGame": 24.97,
@@ -5985,7 +5985,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "DAL",
+      "teamAbbreviation": "MIA",
       "stats": {
         "gamesPlayed": 64,
         "minutesPerGame": 27.45,
@@ -6010,7 +6010,7 @@
       "draftYear": 2019,
       "draftRound": 2,
       "draftPick": 36,
-      "teamAbbreviation": "IND",
+      "teamAbbreviation": "CHA",
       "stats": {
         "gamesPlayed": 28,
         "minutesPerGame": 26.89,
@@ -6035,7 +6035,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "IND",
+      "teamAbbreviation": "ATL",
       "stats": {
         "gamesPlayed": 66,
         "minutesPerGame": 15.03,
@@ -6060,7 +6060,7 @@
       "draftYear": 2019,
       "draftRound": 2,
       "draftPick": 52,
-      "teamAbbreviation": "NOP",
+      "teamAbbreviation": "TOR",
       "stats": {
         "gamesPlayed": 50,
         "minutesPerGame": 10.76,
@@ -6085,7 +6085,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "SAS",
+      "teamAbbreviation": "MIN",
       "stats": {
         "gamesPlayed": 56,
         "minutesPerGame": 11.18,
@@ -6110,7 +6110,7 @@
       "draftYear": 2019,
       "draftRound": 2,
       "draftPick": 43,
-      "teamAbbreviation": "WAS",
+      "teamAbbreviation": "MEM",
       "stats": {
         "gamesPlayed": 13,
         "minutesPerGame": 16.44,
@@ -6135,7 +6135,7 @@
       "draftYear": 2019,
       "draftRound": 1,
       "draftPick": 16,
-      "teamAbbreviation": "CLE",
+      "teamAbbreviation": "ORL",
       "stats": {
         "gamesPlayed": 47,
         "minutesPerGame": 9.19,
@@ -6160,7 +6160,7 @@
       "draftYear": 2019,
       "draftRound": 1,
       "draftPick": 28,
-      "teamAbbreviation": "NOP",
+      "teamAbbreviation": "WAS",
       "stats": {
         "gamesPlayed": 78,
         "minutesPerGame": 30.07,
@@ -6335,7 +6335,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "PHI",
+      "teamAbbreviation": "CLE",
       "stats": {
         "gamesPlayed": 54,
         "minutesPerGame": 20.52,
@@ -6360,7 +6360,7 @@
       "draftYear": 2019,
       "draftRound": 1,
       "draftPick": 12,
-      "teamAbbreviation": "DAL",
+      "teamAbbreviation": "CHA",
       "stats": {
         "gamesPlayed": 73,
         "minutesPerGame": 30.42,
@@ -6385,7 +6385,7 @@
       "draftYear": 2019,
       "draftRound": 1,
       "draftPick": 7,
-      "teamAbbreviation": "CHA",
+      "teamAbbreviation": "CHI",
       "stats": {
         "gamesPlayed": 79,
         "minutesPerGame": 36.47,
@@ -6410,7 +6410,7 @@
       "draftYear": 2019,
       "draftRound": 1,
       "draftPick": 22,
-      "teamAbbreviation": "CHA",
+      "teamAbbreviation": "DAL",
       "stats": {
         "gamesPlayed": 76,
         "minutesPerGame": 28.02,
@@ -6460,7 +6460,7 @@
       "draftYear": 2019,
       "draftRound": 1,
       "draftPick": 26,
-      "teamAbbreviation": "ATL",
+      "teamAbbreviation": "LAL",
       "stats": {
         "gamesPlayed": 17,
         "minutesPerGame": 6.38,
@@ -6485,7 +6485,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "CHA",
+      "teamAbbreviation": "MIN",
       "stats": {
         "gamesPlayed": 81,
         "minutesPerGame": 24.24,
@@ -6510,7 +6510,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "ATL",
+      "teamAbbreviation": "LAL",
       "stats": {
         "gamesPlayed": 11,
         "minutesPerGame": 19.79,
@@ -6535,7 +6535,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "DET",
+      "teamAbbreviation": "TOR",
       "stats": {
         "gamesPlayed": 26,
         "minutesPerGame": 13.84,
@@ -6635,7 +6635,7 @@
       "draftYear": 2020,
       "draftRound": 1,
       "draftPick": 3,
-      "teamAbbreviation": "MIN",
+      "teamAbbreviation": "CHA",
       "stats": {
         "gamesPlayed": 22,
         "minutesPerGame": 32.33,
@@ -6660,7 +6660,7 @@
       "draftYear": 2020,
       "draftRound": 1,
       "draftPick": 2,
-      "teamAbbreviation": "IND",
+      "teamAbbreviation": "DET",
       "stats": {
         "gamesPlayed": 63,
         "minutesPerGame": 17.32,
@@ -6685,7 +6685,7 @@
       "draftYear": 2020,
       "draftRound": 1,
       "draftPick": 7,
-      "teamAbbreviation": "SAC",
+      "teamAbbreviation": "DET",
       "stats": {
         "gamesPlayed": 42,
         "minutesPerGame": 23.99,
@@ -6710,7 +6710,7 @@
       "draftYear": 2020,
       "draftRound": 1,
       "draftPick": 9,
-      "teamAbbreviation": "POR",
+      "teamAbbreviation": "WAS",
       "stats": {
         "gamesPlayed": 75,
         "minutesPerGame": 30.09,
@@ -6835,7 +6835,7 @@
       "draftYear": 2020,
       "draftRound": 1,
       "draftPick": 5,
-      "teamAbbreviation": "CHI",
+      "teamAbbreviation": "CLE",
       "stats": {
         "gamesPlayed": 69,
         "minutesPerGame": 27.35,
@@ -6885,7 +6885,7 @@
       "draftYear": 2020,
       "draftRound": 1,
       "draftPick": 20,
-      "teamAbbreviation": "SAC",
+      "teamAbbreviation": "NYK",
       "stats": {
         "gamesPlayed": 74,
         "minutesPerGame": 21.94,
@@ -6935,7 +6935,7 @@
       "draftYear": 2020,
       "draftRound": 1,
       "draftPick": 15,
-      "teamAbbreviation": "MIL",
+      "teamAbbreviation": "ORL",
       "stats": {
         "gamesPlayed": 81,
         "minutesPerGame": 22.44,
@@ -6960,7 +6960,7 @@
       "draftYear": 2020,
       "draftRound": 2,
       "draftPick": 34,
-      "teamAbbreviation": "PHX",
+      "teamAbbreviation": "CHA",
       "stats": {
         "gamesPlayed": 17,
         "minutesPerGame": 12.54,
@@ -7010,7 +7010,7 @@
       "draftYear": 2020,
       "draftRound": 1,
       "draftPick": 19,
-      "teamAbbreviation": "NOP",
+      "teamAbbreviation": "ATL",
       "stats": {
         "gamesPlayed": 63,
         "minutesPerGame": 32.72,
@@ -7035,7 +7035,7 @@
       "draftYear": 2020,
       "draftRound": 1,
       "draftPick": 18,
-      "teamAbbreviation": "MIN",
+      "teamAbbreviation": "DAL",
       "stats": {
         "gamesPlayed": 57,
         "minutesPerGame": 26.4,
@@ -7085,7 +7085,7 @@
       "draftYear": 2020,
       "draftRound": 1,
       "draftPick": 13,
-      "teamAbbreviation": "WAS",
+      "teamAbbreviation": "NOP",
       "stats": {
         "gamesPlayed": 28,
         "minutesPerGame": 9.44,
@@ -7110,7 +7110,7 @@
       "draftYear": 2020,
       "draftRound": 1,
       "draftPick": 10,
-      "teamAbbreviation": "CHI",
+      "teamAbbreviation": "IND",
       "stats": {
         "gamesPlayed": 61,
         "minutesPerGame": 17.16,
@@ -7135,7 +7135,7 @@
       "draftYear": 2020,
       "draftRound": 1,
       "draftPick": 16,
-      "teamAbbreviation": "MEM",
+      "teamAbbreviation": "DET",
       "stats": {
         "gamesPlayed": 46,
         "minutesPerGame": 30.93,
@@ -7210,7 +7210,7 @@
       "draftYear": 2020,
       "draftRound": 2,
       "draftPick": 58,
-      "teamAbbreviation": "DET",
+      "teamAbbreviation": "PHI",
       "stats": {
         "gamesPlayed": 82,
         "minutesPerGame": 19.38,
@@ -7260,7 +7260,7 @@
       "draftYear": 2020,
       "draftRound": 2,
       "draftPick": 49,
-      "teamAbbreviation": "DET",
+      "teamAbbreviation": "OKC",
       "stats": {
         "gamesPlayed": 78,
         "minutesPerGame": 18.52,
@@ -7285,7 +7285,7 @@
       "draftYear": 2020,
       "draftRound": 2,
       "draftPick": 41,
-      "teamAbbreviation": "CHI",
+      "teamAbbreviation": "SAS",
       "stats": {
         "gamesPlayed": 77,
         "minutesPerGame": 27.77,
@@ -7310,7 +7310,7 @@
       "draftYear": 2020,
       "draftRound": 1,
       "draftPick": 29,
-      "teamAbbreviation": "SAS",
+      "teamAbbreviation": "TOR",
       "stats": {
         "gamesPlayed": 69,
         "minutesPerGame": 12.71,
@@ -7385,7 +7385,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "MEM",
+      "teamAbbreviation": "BOS",
       "stats": {
         "gamesPlayed": 38,
         "minutesPerGame": 14.71,
@@ -7410,7 +7410,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "MEM",
+      "teamAbbreviation": "HOU",
       "stats": {
         "gamesPlayed": 15,
         "minutesPerGame": 4.97,
@@ -7435,7 +7435,7 @@
       "draftYear": 2020,
       "draftRound": 2,
       "draftPick": 42,
-      "teamAbbreviation": "CHI",
+      "teamAbbreviation": "CHA",
       "stats": {
         "gamesPlayed": 67,
         "minutesPerGame": 26.25,
@@ -7460,7 +7460,7 @@
       "draftYear": 2020,
       "draftRound": 2,
       "draftPick": 35,
-      "teamAbbreviation": "CHA",
+      "teamAbbreviation": "MEM",
       "stats": {
         "gamesPlayed": 54,
         "minutesPerGame": 18.05,
@@ -7485,7 +7485,7 @@
       "draftYear": 2020,
       "draftRound": 1,
       "draftPick": 30,
-      "teamAbbreviation": "ORL",
+      "teamAbbreviation": "MEM",
       "stats": {
         "gamesPlayed": 42,
         "minutesPerGame": 34.35,
@@ -7510,7 +7510,7 @@
       "draftYear": 2020,
       "draftRound": 2,
       "draftPick": 50,
-      "teamAbbreviation": "LAL",
+      "teamAbbreviation": "POR",
       "stats": {
         "gamesPlayed": 38,
         "minutesPerGame": 11.4,
@@ -7535,7 +7535,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "DAL",
+      "teamAbbreviation": "NOP",
       "stats": {
         "gamesPlayed": 66,
         "minutesPerGame": 19.05,
@@ -7685,7 +7685,7 @@
       "draftYear": 2014,
       "draftRound": 2,
       "draftPick": 52,
-      "teamAbbreviation": "PHX",
+      "teamAbbreviation": "CHA",
       "stats": {
         "gamesPlayed": 60,
         "minutesPerGame": 19.6,
@@ -7735,7 +7735,7 @@
       "draftYear": 2020,
       "draftRound": 2,
       "draftPick": 37,
-      "teamAbbreviation": "POR",
+      "teamAbbreviation": "ATL",
       "stats": {
         "gamesPlayed": 22,
         "minutesPerGame": 24.61,
@@ -7785,7 +7785,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "GSW",
+      "teamAbbreviation": "UTA",
       "stats": {
         "gamesPlayed": 48,
         "minutesPerGame": 11.36,
@@ -7810,7 +7810,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "MIA",
+      "teamAbbreviation": "UTA",
       "stats": {
         "gamesPlayed": 16,
         "minutesPerGame": 11.63,
@@ -7860,7 +7860,7 @@
       "draftYear": 2021,
       "draftRound": 1,
       "draftPick": 7,
-      "teamAbbreviation": "ATL",
+      "teamAbbreviation": "GSW",
       "stats": {
         "gamesPlayed": 74,
         "minutesPerGame": 26.34,
@@ -7960,7 +7960,7 @@
       "draftYear": 2021,
       "draftRound": 1,
       "draftPick": 9,
-      "teamAbbreviation": "MIA",
+      "teamAbbreviation": "SAC",
       "stats": {
         "gamesPlayed": 72,
         "minutesPerGame": 15.29,
@@ -8010,7 +8010,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "TOR",
+      "teamAbbreviation": "DAL",
       "stats": {
         "gamesPlayed": 42,
         "minutesPerGame": 7.4,
@@ -8035,7 +8035,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "MEM",
+      "teamAbbreviation": "OKC",
       "stats": {
         "gamesPlayed": 15,
         "minutesPerGame": 6.55,
@@ -8060,7 +8060,7 @@
       "draftYear": 2021,
       "draftRound": 2,
       "draftPick": 53,
-      "teamAbbreviation": "GSW",
+      "teamAbbreviation": "SAS",
       "stats": {
         "gamesPlayed": 19,
         "minutesPerGame": 10.8,
@@ -8085,7 +8085,7 @@
       "draftYear": 2021,
       "draftRound": 1,
       "draftPick": 25,
-      "teamAbbreviation": "LAL",
+      "teamAbbreviation": "NYK",
       "stats": {
         "gamesPlayed": 51,
         "minutesPerGame": 20.1,
@@ -8110,7 +8110,7 @@
       "draftYear": 2021,
       "draftRound": 1,
       "draftPick": 2,
-      "teamAbbreviation": "PHX",
+      "teamAbbreviation": "HOU",
       "stats": {
         "gamesPlayed": 82,
         "minutesPerGame": 31.73,
@@ -8160,7 +8160,7 @@
       "draftYear": 2021,
       "draftRound": 2,
       "draftPick": 38,
-      "teamAbbreviation": "MIN",
+      "teamAbbreviation": "CHI",
       "stats": {
         "gamesPlayed": 76,
         "minutesPerGame": 29.11,
@@ -8185,7 +8185,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "MEM",
+      "teamAbbreviation": "DEN",
       "stats": {
         "gamesPlayed": 20,
         "minutesPerGame": 3,
@@ -8210,7 +8210,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "NYK",
+      "teamAbbreviation": "NOP",
       "stats": {
         "gamesPlayed": 28,
         "minutesPerGame": 13.94,
@@ -8235,7 +8235,7 @@
       "draftYear": 2021,
       "draftRound": 2,
       "draftPick": 32,
-      "teamAbbreviation": "DAL",
+      "teamAbbreviation": "NOP",
       "stats": {
         "gamesPlayed": 39,
         "minutesPerGame": 8.57,
@@ -8260,7 +8260,7 @@
       "draftYear": 2021,
       "draftRound": 2,
       "draftPick": 51,
-      "teamAbbreviation": "NOP",
+      "teamAbbreviation": "LAC",
       "stats": {
         "gamesPlayed": 32,
         "minutesPerGame": 10.79,
@@ -8310,7 +8310,7 @@
       "draftYear": 2021,
       "draftRound": 1,
       "draftPick": 28,
-      "teamAbbreviation": "NOP",
+      "teamAbbreviation": "PHI",
       "stats": {
         "gamesPlayed": 49,
         "minutesPerGame": 10.35,
@@ -8360,7 +8360,7 @@
       "draftYear": 2021,
       "draftRound": 1,
       "draftPick": 10,
-      "teamAbbreviation": "BKN",
+      "teamAbbreviation": "MEM",
       "stats": {
         "gamesPlayed": 51,
         "minutesPerGame": 20.35,
@@ -8385,7 +8385,7 @@
       "draftYear": 2021,
       "draftRound": 1,
       "draftPick": 13,
-      "teamAbbreviation": "CHI",
+      "teamAbbreviation": "SAC",
       "stats": {
         "gamesPlayed": 59,
         "minutesPerGame": 12.2,
@@ -8410,7 +8410,7 @@
       "draftYear": 2021,
       "draftRound": 1,
       "draftPick": 26,
-      "teamAbbreviation": "MIN",
+      "teamAbbreviation": "LAC",
       "stats": {
         "gamesPlayed": 37,
         "minutesPerGame": 14.6,
@@ -8460,7 +8460,7 @@
       "draftYear": 2021,
       "draftRound": 1,
       "draftPick": 22,
-      "teamAbbreviation": "LAC",
+      "teamAbbreviation": "IND",
       "stats": {
         "gamesPlayed": 60,
         "minutesPerGame": 12.85,
@@ -8610,7 +8610,7 @@
       "draftYear": 2021,
       "draftRound": 2,
       "draftPick": 44,
-      "teamAbbreviation": "DEN",
+      "teamAbbreviation": "SAC",
       "stats": {
         "gamesPlayed": 54,
         "minutesPerGame": 5.09,
@@ -8635,7 +8635,7 @@
       "draftYear": 2021,
       "draftRound": 1,
       "draftPick": 15,
-      "teamAbbreviation": "ATL",
+      "teamAbbreviation": "WAS",
       "stats": {
         "gamesPlayed": 80,
         "minutesPerGame": 25.84,
@@ -8660,7 +8660,7 @@
       "draftYear": 2021,
       "draftRound": 1,
       "draftPick": 27,
-      "teamAbbreviation": "MIL",
+      "teamAbbreviation": "BKN",
       "stats": {
         "gamesPlayed": 66,
         "minutesPerGame": 31.44,
@@ -8710,7 +8710,7 @@
       "draftYear": 2021,
       "draftRound": 2,
       "draftPick": 52,
-      "teamAbbreviation": "BOS",
+      "teamAbbreviation": "MIN",
       "stats": {
         "gamesPlayed": 25,
         "minutesPerGame": 4.87,
@@ -8735,7 +8735,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "PHI",
+      "teamAbbreviation": "BKN",
       "stats": {
         "gamesPlayed": 63,
         "minutesPerGame": 13.6,
@@ -8760,7 +8760,7 @@
       "draftYear": 2021,
       "draftRound": 2,
       "draftPick": 54,
-      "teamAbbreviation": "LAL",
+      "teamAbbreviation": "SAS",
       "stats": {
         "gamesPlayed": 46,
         "minutesPerGame": 9.8,
@@ -8835,7 +8835,7 @@
       "draftYear": 2021,
       "draftRound": 2,
       "draftPick": 58,
-      "teamAbbreviation": "MIL",
+      "teamAbbreviation": "NYK",
       "stats": {
         "gamesPlayed": 45,
         "minutesPerGame": 13,
@@ -8860,7 +8860,7 @@
       "draftYear": 2021,
       "draftRound": 1,
       "draftPick": 6,
-      "teamAbbreviation": "CHI",
+      "teamAbbreviation": "OKC",
       "stats": {
         "gamesPlayed": 80,
         "minutesPerGame": 25.14,
@@ -8885,7 +8885,7 @@
       "draftYear": 2021,
       "draftRound": 1,
       "draftPick": 30,
-      "teamAbbreviation": "DAL",
+      "teamAbbreviation": "MEM",
       "stats": {
         "gamesPlayed": 61,
         "minutesPerGame": 26.53,
@@ -8910,7 +8910,7 @@
       "draftYear": 2021,
       "draftRound": 2,
       "draftPick": 42,
-      "teamAbbreviation": "PHX",
+      "teamAbbreviation": "DET",
       "stats": {
         "gamesPlayed": 23,
         "minutesPerGame": 20.41,
@@ -9010,7 +9010,7 @@
       "draftYear": 2021,
       "draftRound": 2,
       "draftPick": 55,
-      "teamAbbreviation": "ATL",
+      "teamAbbreviation": "OKC",
       "stats": {
         "gamesPlayed": 78,
         "minutesPerGame": 15.74,
@@ -9035,7 +9035,7 @@
       "draftYear": 2021,
       "draftRound": 2,
       "draftPick": 46,
-      "teamAbbreviation": "BOS",
+      "teamAbbreviation": "POR",
       "stats": {
         "gamesPlayed": 54,
         "minutesPerGame": 19.39,
@@ -9060,7 +9060,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "NYK",
+      "teamAbbreviation": "NOP",
       "stats": {
         "gamesPlayed": 56,
         "minutesPerGame": 18.36,
@@ -9085,7 +9085,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "IND",
+      "teamAbbreviation": "DEN",
       "stats": {
         "gamesPlayed": 20,
         "minutesPerGame": 2.47,
@@ -9110,7 +9110,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "MIN",
+      "teamAbbreviation": "WAS",
       "stats": {
         "gamesPlayed": 43,
         "minutesPerGame": 9.15,
@@ -9135,7 +9135,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "SAC",
+      "teamAbbreviation": "CHI",
       "stats": {
         "gamesPlayed": 31,
         "minutesPerGame": 6.05,
@@ -9160,7 +9160,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "PHX",
+      "teamAbbreviation": "POR",
       "stats": {
         "gamesPlayed": 11,
         "minutesPerGame": 5.67,
@@ -9235,7 +9235,7 @@
       "draftYear": 2021,
       "draftRound": 2,
       "draftPick": 40,
-      "teamAbbreviation": "PHX",
+      "teamAbbreviation": "WAS",
       "stats": {
         "gamesPlayed": 40,
         "minutesPerGame": 14.14,
@@ -9285,7 +9285,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "ATL",
+      "teamAbbreviation": "HOU",
       "stats": {
         "gamesPlayed": 56,
         "minutesPerGame": 13.63,
@@ -9335,7 +9335,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "SAS",
+      "teamAbbreviation": "OKC",
       "stats": {
         "gamesPlayed": 38,
         "minutesPerGame": 7.37,
@@ -9385,7 +9385,7 @@
       "draftYear": 2022,
       "draftRound": 1,
       "draftPick": 14,
-      "teamAbbreviation": "BKN",
+      "teamAbbreviation": "UTA",
       "stats": {
         "gamesPlayed": 78,
         "minutesPerGame": 21.05,
@@ -9410,7 +9410,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "MIN",
+      "teamAbbreviation": "UTA",
       "stats": {
         "gamesPlayed": 20,
         "minutesPerGame": 18.59,
@@ -9485,7 +9485,7 @@
       "draftYear": 2022,
       "draftRound": 2,
       "draftPick": 49,
-      "teamAbbreviation": "PHI",
+      "teamAbbreviation": "CLE",
       "stats": {
         "gamesPlayed": 10,
         "minutesPerGame": 7.19,
@@ -9510,7 +9510,7 @@
       "draftYear": 2022,
       "draftRound": 1,
       "draftPick": 24,
-      "teamAbbreviation": "PHI",
+      "teamAbbreviation": "MIL",
       "stats": {
         "gamesPlayed": 48,
         "minutesPerGame": 12.66,
@@ -9535,7 +9535,7 @@
       "draftYear": 2022,
       "draftRound": 1,
       "draftPick": 8,
-      "teamAbbreviation": "ATL",
+      "teamAbbreviation": "NOP",
       "stats": {
         "gamesPlayed": 61,
         "minutesPerGame": 22.27,
@@ -9560,7 +9560,7 @@
       "draftYear": 2022,
       "draftRound": 2,
       "draftPick": 37,
-      "teamAbbreviation": "LAL",
+      "teamAbbreviation": "DAL",
       "stats": {
         "gamesPlayed": 73,
         "minutesPerGame": 13.55,
@@ -9585,7 +9585,7 @@
       "draftYear": 2022,
       "draftRound": 1,
       "draftPick": 5,
-      "teamAbbreviation": "CHI",
+      "teamAbbreviation": "DET",
       "stats": {
         "gamesPlayed": 77,
         "minutesPerGame": 28.8,
@@ -9660,7 +9660,7 @@
       "draftYear": 2022,
       "draftRound": 1,
       "draftPick": 6,
-      "teamAbbreviation": "LAC",
+      "teamAbbreviation": "IND",
       "stats": {
         "gamesPlayed": 59,
         "minutesPerGame": 26.07,
@@ -9760,7 +9760,7 @@
       "draftYear": 2022,
       "draftRound": 1,
       "draftPick": 29,
-      "teamAbbreviation": "LAC",
+      "teamAbbreviation": "MIL",
       "stats": {
         "gamesPlayed": 11,
         "minutesPerGame": 5.08,
@@ -9785,7 +9785,7 @@
       "draftYear": 2022,
       "draftRound": 1,
       "draftPick": 20,
-      "teamAbbreviation": "WAS",
+      "teamAbbreviation": "SAS",
       "stats": {
         "gamesPlayed": 75,
         "minutesPerGame": 21.26,
@@ -9810,7 +9810,7 @@
       "draftYear": 2022,
       "draftRound": 1,
       "draftPick": 25,
-      "teamAbbreviation": "POR",
+      "teamAbbreviation": "SAS",
       "stats": {
         "gamesPlayed": 61,
         "minutesPerGame": 14.36,
@@ -9910,7 +9910,7 @@
       "draftYear": 2022,
       "draftRound": 2,
       "draftPick": 35,
-      "teamAbbreviation": "DAL",
+      "teamAbbreviation": "LAL",
       "stats": {
         "gamesPlayed": 67,
         "minutesPerGame": 14.09,
@@ -9935,7 +9935,7 @@
       "draftYear": 2022,
       "draftRound": 1,
       "draftPick": 15,
-      "teamAbbreviation": "PHX",
+      "teamAbbreviation": "CHA",
       "stats": {
         "gamesPlayed": 19,
         "minutesPerGame": 26.76,
@@ -9960,7 +9960,7 @@
       "draftYear": 2022,
       "draftRound": 1,
       "draftPick": 9,
-      "teamAbbreviation": "NYK",
+      "teamAbbreviation": "SAS",
       "stats": {
         "gamesPlayed": 74,
         "minutesPerGame": 29.64,
@@ -9985,7 +9985,7 @@
       "draftYear": 2022,
       "draftRound": 1,
       "draftPick": 26,
-      "teamAbbreviation": "DET",
+      "teamAbbreviation": "MIN",
       "stats": {
         "gamesPlayed": 25,
         "minutesPerGame": 3.01,
@@ -10010,7 +10010,7 @@
       "draftYear": 2022,
       "draftRound": 2,
       "draftPick": 48,
-      "teamAbbreviation": "BOS",
+      "teamAbbreviation": "IND",
       "stats": {
         "gamesPlayed": 15,
         "minutesPerGame": 4.17,
@@ -10060,7 +10060,7 @@
       "draftYear": 2022,
       "draftRound": 1,
       "draftPick": 28,
-      "teamAbbreviation": "SAC",
+      "teamAbbreviation": "WAS",
       "stats": {
         "gamesPlayed": 38,
         "minutesPerGame": 12.99,
@@ -10085,7 +10085,7 @@
       "draftYear": 2022,
       "draftRound": 1,
       "draftPick": 22,
-      "teamAbbreviation": "LAL",
+      "teamAbbreviation": "UTA",
       "stats": {
         "gamesPlayed": 64,
         "minutesPerGame": 23.33,
@@ -10135,7 +10135,7 @@
       "draftYear": 2022,
       "draftRound": 2,
       "draftPick": 40,
-      "teamAbbreviation": "NOP",
+      "teamAbbreviation": "CHA",
       "stats": {
         "gamesPlayed": 59,
         "minutesPerGame": 14.94,
@@ -10185,7 +10185,7 @@
       "draftYear": 2022,
       "draftRound": 2,
       "draftPick": 57,
-      "teamAbbreviation": "PHI",
+      "teamAbbreviation": "POR",
       "stats": {
         "gamesPlayed": 72,
         "minutesPerGame": 23.62,
@@ -10210,7 +10210,7 @@
       "draftYear": 2022,
       "draftRound": 2,
       "draftPick": 44,
-      "teamAbbreviation": "MIL",
+      "teamAbbreviation": "WAS",
       "stats": {
         "gamesPlayed": 13,
         "minutesPerGame": 5.99,
@@ -10235,7 +10235,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "BKN",
+      "teamAbbreviation": "SAC",
       "stats": {
         "gamesPlayed": 57,
         "minutesPerGame": 17.17,
@@ -10260,7 +10260,7 @@
       "draftYear": 2022,
       "draftRound": 2,
       "draftPick": 45,
-      "teamAbbreviation": "BKN",
+      "teamAbbreviation": "MIN",
       "stats": {
         "gamesPlayed": 32,
         "minutesPerGame": 2.86,
@@ -10285,7 +10285,7 @@
       "draftYear": 2022,
       "draftRound": 1,
       "draftPick": 11,
-      "teamAbbreviation": "MIL",
+      "teamAbbreviation": "OKC",
       "stats": {
         "gamesPlayed": 33,
         "minutesPerGame": 11.06,
@@ -10310,7 +10310,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "OKC",
+      "teamAbbreviation": "DET",
       "stats": {
         "gamesPlayed": 10,
         "minutesPerGame": 8.4,
@@ -10335,7 +10335,7 @@
       "draftYear": 2022,
       "draftRound": 1,
       "draftPick": 18,
-      "teamAbbreviation": "PHI",
+      "teamAbbreviation": "CHI",
       "stats": {
         "gamesPlayed": 59,
         "minutesPerGame": 11.54,
@@ -10385,7 +10385,7 @@
       "draftYear": 2022,
       "draftRound": 2,
       "draftPick": 32,
-      "teamAbbreviation": "ATL",
+      "teamAbbreviation": "ORL",
       "stats": {
         "gamesPlayed": 59,
         "minutesPerGame": 13.82,
@@ -10410,7 +10410,7 @@
       "draftYear": 2022,
       "draftRound": 2,
       "draftPick": 43,
-      "teamAbbreviation": "CHA",
+      "teamAbbreviation": "LAC",
       "stats": {
         "gamesPlayed": 11,
         "minutesPerGame": 5.84,
@@ -10435,7 +10435,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "PHX",
+      "teamAbbreviation": "DEN",
       "stats": {
         "gamesPlayed": 24,
         "minutesPerGame": 9.39,
@@ -10460,7 +10460,7 @@
       "draftYear": 2022,
       "draftRound": 1,
       "draftPick": 19,
-      "teamAbbreviation": "LAL",
+      "teamAbbreviation": "MEM",
       "stats": {
         "gamesPlayed": 35,
         "minutesPerGame": 23.02,
@@ -10485,7 +10485,7 @@
       "draftYear": 2022,
       "draftRound": 1,
       "draftPick": 23,
-      "teamAbbreviation": "DEN",
+      "teamAbbreviation": "MEM",
       "stats": {
         "gamesPlayed": 65,
         "minutesPerGame": 18.11,
@@ -10510,7 +10510,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "PHI",
+      "teamAbbreviation": "SAS",
       "stats": {
         "gamesPlayed": 33,
         "minutesPerGame": 12.71,
@@ -10535,7 +10535,7 @@
       "draftYear": 2022,
       "draftRound": 2,
       "draftPick": 47,
-      "teamAbbreviation": "UTA",
+      "teamAbbreviation": "MEM",
       "stats": {
         "gamesPlayed": 52,
         "minutesPerGame": 27.63,
@@ -10560,7 +10560,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "CHI",
+      "teamAbbreviation": "MEM",
       "stats": {
         "gamesPlayed": 21,
         "minutesPerGame": 9.44,
@@ -10610,7 +10610,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "ORL",
+      "teamAbbreviation": "MIA",
       "stats": {
         "gamesPlayed": 26,
         "minutesPerGame": 9.96,
@@ -10635,7 +10635,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "IND",
+      "teamAbbreviation": "MIA",
       "stats": {
         "gamesPlayed": 18,
         "minutesPerGame": 4.82,
@@ -10660,7 +10660,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "MIA",
+      "teamAbbreviation": "UTA",
       "stats": {
         "gamesPlayed": 66,
         "minutesPerGame": 24.91,
@@ -10685,7 +10685,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "ORL",
+      "teamAbbreviation": "MIA",
       "stats": {
         "gamesPlayed": 36,
         "minutesPerGame": 8.44,
@@ -10710,7 +10710,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "CHA",
+      "teamAbbreviation": "POR",
       "stats": {
         "gamesPlayed": 22,
         "minutesPerGame": 10.26,
@@ -10735,7 +10735,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "TOR",
+      "teamAbbreviation": "DET",
       "stats": {
         "gamesPlayed": 17,
         "minutesPerGame": 14.41,
@@ -10760,7 +10760,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "SAS",
+      "teamAbbreviation": "DET",
       "stats": {
         "gamesPlayed": 24,
         "minutesPerGame": 12.8,
@@ -10785,7 +10785,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "ORL",
+      "teamAbbreviation": "GSW",
       "stats": {
         "gamesPlayed": 37,
         "minutesPerGame": 10.66,
@@ -10807,10 +10807,10 @@
       "position": "SF",
       "heightInches": 76,
       "weightLbs": 215,
-      "draftYear": null,
-      "draftRound": null,
-      "draftPick": null,
-      "teamAbbreviation": "SAC",
+      "draftYear": 1976,
+      "draftRound": 5,
+      "draftPick": 69,
+      "teamAbbreviation": "HOU",
       "stats": {
         "gamesPlayed": 22,
         "minutesPerGame": 5.88,
@@ -10860,7 +10860,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "CLE",
+      "teamAbbreviation": "MEM",
       "stats": {
         "gamesPlayed": 41,
         "minutesPerGame": 17.03,
@@ -10935,7 +10935,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "ORL",
+      "teamAbbreviation": "LAL",
       "stats": {
         "gamesPlayed": 16,
         "minutesPerGame": 3.69,
@@ -11010,7 +11010,7 @@
       "draftYear": 2023,
       "draftRound": 2,
       "draftPick": 33,
-      "teamAbbreviation": "CHI",
+      "teamAbbreviation": "MIN",
       "stats": {
         "gamesPlayed": 17,
         "minutesPerGame": 3.08,
@@ -11035,7 +11035,7 @@
       "draftYear": 2023,
       "draftRound": 1,
       "draftPick": 18,
-      "teamAbbreviation": "MIL",
+      "teamAbbreviation": "MIA",
       "stats": {
         "gamesPlayed": 75,
         "minutesPerGame": 28.18,
@@ -11085,7 +11085,7 @@
       "draftYear": 2023,
       "draftRound": 1,
       "draftPick": 23,
-      "teamAbbreviation": "MEM",
+      "teamAbbreviation": "POR",
       "stats": {
         "gamesPlayed": 62,
         "minutesPerGame": 21.75,
@@ -11110,7 +11110,7 @@
       "draftYear": 2023,
       "draftRound": 1,
       "draftPick": 25,
-      "teamAbbreviation": "DAL",
+      "teamAbbreviation": "DET",
       "stats": {
         "gamesPlayed": 71,
         "minutesPerGame": 19.03,
@@ -11135,7 +11135,7 @@
       "draftYear": 2023,
       "draftRound": 2,
       "draftPick": 57,
-      "teamAbbreviation": "TOR",
+      "teamAbbreviation": "GSW",
       "stats": {
         "gamesPlayed": 68,
         "minutesPerGame": 16.62,
@@ -11210,7 +11210,7 @@
       "draftYear": 2023,
       "draftRound": 2,
       "draftPick": 44,
-      "teamAbbreviation": "POR",
+      "teamAbbreviation": "SAS",
       "stats": {
         "gamesPlayed": 12,
         "minutesPerGame": 11.74,
@@ -11285,7 +11285,7 @@
       "draftYear": 2023,
       "draftRound": 1,
       "draftPick": 9,
-      "teamAbbreviation": "MEM",
+      "teamAbbreviation": "UTA",
       "stats": {
         "gamesPlayed": 40,
         "minutesPerGame": 21.41,
@@ -11410,7 +11410,7 @@
       "draftYear": 2023,
       "draftRound": 2,
       "draftPick": 43,
-      "teamAbbreviation": "PHI",
+      "teamAbbreviation": "POR",
       "stats": {
         "gamesPlayed": 39,
         "minutesPerGame": 16.24,
@@ -11460,7 +11460,7 @@
       "draftYear": 2023,
       "draftRound": 1,
       "draftPick": 20,
-      "teamAbbreviation": "WAS",
+      "teamAbbreviation": "HOU",
       "stats": {
         "gamesPlayed": 47,
         "minutesPerGame": 18.73,
@@ -11560,7 +11560,7 @@
       "draftYear": 2023,
       "draftRound": 1,
       "draftPick": 17,
-      "teamAbbreviation": "PHI",
+      "teamAbbreviation": "LAL",
       "stats": {
         "gamesPlayed": 21,
         "minutesPerGame": 5.19,
@@ -11585,7 +11585,7 @@
       "draftYear": 2023,
       "draftRound": 2,
       "draftPick": 40,
-      "teamAbbreviation": "BKN",
+      "teamAbbreviation": "LAL",
       "stats": {
         "gamesPlayed": 34,
         "minutesPerGame": 3.02,
@@ -11635,7 +11635,7 @@
       "draftYear": 2023,
       "draftRound": 1,
       "draftPick": 15,
-      "teamAbbreviation": "LAL",
+      "teamAbbreviation": "ATL",
       "stats": {
         "gamesPlayed": 17,
         "minutesPerGame": 11.53,
@@ -11785,7 +11785,7 @@
       "draftYear": 2023,
       "draftRound": 2,
       "draftPick": 34,
-      "teamAbbreviation": "DET",
+      "teamAbbreviation": "SAC",
       "stats": {
         "gamesPlayed": 30,
         "minutesPerGame": 6.39,
@@ -11810,7 +11810,7 @@
       "draftYear": 2023,
       "draftRound": 1,
       "draftPick": 27,
-      "teamAbbreviation": "LAL",
+      "teamAbbreviation": "CHA",
       "stats": {
         "gamesPlayed": 51,
         "minutesPerGame": 14.29,
@@ -11835,7 +11835,7 @@
       "draftYear": 2023,
       "draftRound": 2,
       "draftPick": 49,
-      "teamAbbreviation": "PHI",
+      "teamAbbreviation": "CLE",
       "stats": {
         "gamesPlayed": 15,
         "minutesPerGame": 8.85,
@@ -11860,7 +11860,7 @@
       "draftYear": 2023,
       "draftRound": 2,
       "draftPick": 41,
-      "teamAbbreviation": "BKN",
+      "teamAbbreviation": "CHA",
       "stats": {
         "gamesPlayed": 10,
         "minutesPerGame": 6.46,
@@ -11885,7 +11885,7 @@
       "draftYear": 2023,
       "draftRound": 1,
       "draftPick": 30,
-      "teamAbbreviation": "IND",
+      "teamAbbreviation": "LAC",
       "stats": {
         "gamesPlayed": 44,
         "minutesPerGame": 8.95,
@@ -11960,7 +11960,7 @@
       "draftYear": 2023,
       "draftRound": 2,
       "draftPick": 58,
-      "teamAbbreviation": "CLE",
+      "teamAbbreviation": "MIL",
       "stats": {
         "gamesPlayed": 21,
         "minutesPerGame": 4.31,
@@ -11985,7 +11985,7 @@
       "draftYear": 2023,
       "draftRound": 2,
       "draftPick": 35,
-      "teamAbbreviation": "MIN",
+      "teamAbbreviation": "CHI",
       "stats": {
         "gamesPlayed": 40,
         "minutesPerGame": 8.06,
@@ -12035,7 +12035,7 @@
       "draftYear": 2023,
       "draftRound": 1,
       "draftPick": 24,
-      "teamAbbreviation": "MEM",
+      "teamAbbreviation": "DAL",
       "stats": {
         "gamesPlayed": 40,
         "minutesPerGame": 8.41,
@@ -12085,7 +12085,7 @@
       "draftYear": 2023,
       "draftRound": 2,
       "draftPick": 54,
-      "teamAbbreviation": "IND",
+      "teamAbbreviation": "SAC",
       "stats": {
         "gamesPlayed": 12,
         "minutesPerGame": 3.08,
@@ -12110,7 +12110,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "WAS",
+      "teamAbbreviation": "CHA",
       "stats": {
         "gamesPlayed": 26,
         "minutesPerGame": 10.93,
@@ -12285,7 +12285,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "MIN",
+      "teamAbbreviation": "WAS",
       "stats": {
         "gamesPlayed": 19,
         "minutesPerGame": 7.86,
@@ -12310,7 +12310,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "CHA",
+      "teamAbbreviation": "DET",
       "stats": {
         "gamesPlayed": 17,
         "minutesPerGame": 21.56,
@@ -12335,7 +12335,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "NYK",
+      "teamAbbreviation": "MEM",
       "stats": {
         "gamesPlayed": 25,
         "minutesPerGame": 22.96,
@@ -12360,7 +12360,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "SAS",
+      "teamAbbreviation": "CHA",
       "stats": {
         "gamesPlayed": 25,
         "minutesPerGame": 12.27,
@@ -12385,7 +12385,7 @@
       "draftYear": null,
       "draftRound": null,
       "draftPick": null,
-      "teamAbbreviation": "CHA",
+      "teamAbbreviation": "TOR",
       "stats": {
         "gamesPlayed": 11,
         "minutesPerGame": 10.9,

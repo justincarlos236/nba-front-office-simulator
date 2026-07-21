@@ -126,7 +126,13 @@ async function main() {
       draftYear: bio.draft_year,
       draftRound: bio.draft_round,
       draftPick: bio.draft_number,
-      teamAbbreviation: bio.team?.abbreviation ?? stats.team,
+      // Season-accurate team, not balldontlie's current (real-world-today)
+      // team - `bio.team` reflects whatever team a player is on as of
+      // whenever this import last ran, which drifts out of sync with the
+      // 2023-24 stat line as real trades happen in the years since. Using
+      // `stats.team` keeps every player's roster placement consistent with
+      // the actual season this whole simulator is built on.
+      teamAbbreviation: stats.team ?? bio.team?.abbreviation,
       stats: {
         gamesPlayed: stats.gamesPlayed,
         minutesPerGame: stats.minutesPerGame,

@@ -29,13 +29,16 @@ describe("players fixture", () => {
     expect(jokic?.position).toBe("C");
   });
 
-  it("can have a current team that differs from the 2023-24 stats-season team (real trades since then)", () => {
+  it("attributes a player to their actual 2023-24 season team, not a later real trade", () => {
     // Luka Doncic played the 2023-24 season with Dallas but was traded to
-    // the Lakers in a real Feb 2025 blockbuster - teamAbbreviation here
-    // reflects his real current team, while his season stat line below is
-    // still correctly attributed to Dallas for that season.
+    // the Lakers in a real Feb 2025 blockbuster. teamAbbreviation here must
+    // stay season-accurate (DAL) rather than reflecting his current
+    // real-world team - it directly determines which team a new league
+    // starts him on (see createLeagueAction/seed.ts), so using his current
+    // team would scramble every league's opening-day rosters against the
+    // 2023-24 stats/cap rules the whole simulator is built on.
     const doncic = players.players.find((p) => p.fullName === "Luka Doncic");
-    expect(doncic?.teamAbbreviation).toBe("LAL");
+    expect(doncic?.teamAbbreviation).toBe("DAL");
   });
 
   it("has no duplicate players", () => {

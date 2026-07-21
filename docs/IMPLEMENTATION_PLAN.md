@@ -1170,3 +1170,32 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   complete** - all four sub-phases (11a-11d) shipped. Phase 12 (GM Career
   Mode) remains unstarted by design; no other phase is currently in
   progress.
+- **2026-07-21 (later)**: Fixed a real data bug found by the user starting
+  a new Jazz franchise and seeing only 6 rostered players. Root cause:
+  `scripts/import-players.ts` preferred balldontlie's _current_ (real-world,
+  as-of-import-time) team over the season-stats fixture's own team field
+  when building `players.json`'s `teamAbbreviation` - fine for a bio
+  display, but this field is exactly what `createLeagueAction`/`seed.ts`
+  use to decide which team a new league starts a player on. Several
+  players traded in real life since the 2023-24 season (e.g. Luka Dončić
+  to the Lakers) were showing up on their current team instead of their
+  actual 2023-24 team, scrambling roster composition league-wide - some
+  teams (Jazz, Miami) ended up thin because half their real 2023-24 roster
+  got misattributed elsewhere while players who were never really on that
+  2023-24 team got attributed to it instead. Fixed by preferring the stats
+  fixture's season-accurate team; re-ran the (already-cached, no new API
+  calls needed) balldontlie checkpoint to regenerate `players.json` (still
+  497/497 matched, 0 skipped on reseed) and updated
+  `prisma/data/players.test.ts`'s Dončić case, which had encoded the buggy
+  behavior as an intentional design decision. Only affects the _reference_
+  `Player` table (shared, not per-league state), so one reseed fixes every
+  future new league automatically - no per-league backfill needed or
+  attempted; an already-created league (like the user's original Jazz
+  franchise) keeps whatever roster it was created with, and can simply be
+  deleted and recreated (using the delete-league feature from earlier this
+  session) to pick up the fix. All 334 unit tests, `tsc`, `eslint` passing.
+  Separately noted but explicitly deferred at the user's own direction:
+  even with correct team assignment, a meaningful fraction of a real
+  team's roster (e.g. Jazz 8/17, Miami 9/16) still starts as free agents
+  at league creation because of `FREE_AGENT_RATING_CUTOFF` (65) - worth a
+  closer look as a possible future follow-up, but out of scope for this fix.
