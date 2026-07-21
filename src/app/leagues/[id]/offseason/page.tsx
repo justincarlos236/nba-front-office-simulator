@@ -45,6 +45,7 @@ export default async function OffseasonPage({ params }: PageProps) {
     pendingDraftPicks,
     lastSeasonAwards,
     retirees,
+    ownershipMessages,
   ] = await Promise.all([
     prisma.game.count({
       where: { leagueId: league.id, season, type: "REGULAR_SEASON", playedAt: null },
@@ -64,6 +65,10 @@ export default async function OffseasonPage({ params }: PageProps) {
       where: { leagueId: league.id, retiredSeason: previousSeason },
       include: { player: true },
       orderBy: { overallRating: "desc" },
+    }),
+    prisma.leagueTransaction.findMany({
+      where: { leagueId: league.id, season, type: "OWNERSHIP_MESSAGE" },
+      orderBy: { createdAt: "asc" },
     }),
   ]);
 
@@ -126,6 +131,28 @@ export default async function OffseasonPage({ params }: PageProps) {
           nextSeasonLabel={seasonLabel(season + 1)}
         />
       </div>
+
+      {ownershipMessages.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-lg font-semibold text-foreground">Ownership</h2>
+          <div className="mt-3 space-y-3">
+            {ownershipMessages.map((msg) => (
+              <div
+                key={msg.id}
+                className="rounded-lg border border-purple-500/30 bg-purple-500/5 p-4 text-sm text-foreground"
+              >
+                {msg.description}
+              </div>
+            ))}
+          </div>
+          <Link
+            href="/guide/finances#owner-confidence"
+            className="mt-2 inline-block text-xs text-muted underline hover:text-foreground"
+          >
+            How does this work?
+          </Link>
+        </section>
+      )}
 
       {lastSeasonAwards.length > 0 && (
         <section className="mt-10">

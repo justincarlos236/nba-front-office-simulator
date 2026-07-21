@@ -13,6 +13,13 @@ import { computeFinancialFlexibilityGrade } from "@/lib/cap/financialFlexibility
 import { formatCentsCompact } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 import { getPlayerValueTier, PLAYER_VALUE_TIER_LABEL } from "@/lib/valuation/playerValueTier";
+import {
+  getJobSecurityLevel,
+  JOB_SECURITY_LABEL,
+  JOB_SECURITY_DESCRIPTION,
+  type JobSecurityLevel,
+} from "@/lib/gm/jobSecurity";
+import { EXPECTATION_LEVEL_LABEL } from "@/lib/gm/expectationLevel";
 
 const PROJECTION_YEARS_AHEAD = 4;
 
@@ -22,6 +29,15 @@ const GRADE_BADGE_CLASS: Record<string, string> = {
   C: "bg-purple-500/15 text-purple-400",
   D: "bg-orange-500/15 text-orange-400",
   F: "bg-red-500/15 text-red-400",
+};
+
+const JOB_SECURITY_BADGE_CLASS: Record<JobSecurityLevel, string> = {
+  VERY_SECURE: "bg-emerald-500/15 text-emerald-400",
+  SECURE: "bg-sky-500/15 text-sky-400",
+  STABLE: "bg-purple-500/15 text-purple-400",
+  UNDER_PRESSURE: "bg-orange-500/15 text-orange-400",
+  HOT_SEAT: "bg-red-500/15 text-red-400",
+  CRITICAL: "bg-red-600/20 text-red-500",
 };
 
 interface PageProps {
@@ -157,6 +173,10 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
       where: { leagueId: league.id, round: 4, winnerTeamId: userLeagueTeam.id },
     }),
   ]);
+
+  const currentExpectation = await prisma.seasonExpectation.findUnique({
+    where: { leagueId_season: { leagueId: league.id, season } },
+  });
 
   const futureContractYears = await prisma.contractYear.findMany({
     where: {
@@ -367,6 +387,46 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
         </div>
         <Link
           href="/guide/finances#financial-flexibility"
+          className="mt-3 inline-block text-xs text-muted underline hover:text-foreground"
+        >
+          How does this work?
+        </Link>
+      </div>
+
+      <div className="mt-6 rounded-xl border border-border bg-surface p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="font-semibold text-foreground">GM Job Security</h2>
+            <p className="mt-1 text-sm text-muted">
+              {JOB_SECURITY_DESCRIPTION[getJobSecurityLevel(league.ownerConfidence)]}
+            </p>
+          </div>
+          <span
+            className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-bold ${
+              JOB_SECURITY_BADGE_CLASS[getJobSecurityLevel(league.ownerConfidence)]
+            }`}
+          >
+            {JOB_SECURITY_LABEL[getJobSecurityLevel(league.ownerConfidence)]}
+          </span>
+        </div>
+        {currentExpectation && (
+          <p className="mt-3 text-sm text-muted">
+            This season&apos;s expectation:{" "}
+            <span className="text-foreground">
+              {EXPECTATION_LEVEL_LABEL[currentExpectation.expectationLevel]}
+            </span>
+          </p>
+        )}
+        {league.payrollReductionTargetCents != null && league.payrollDirectiveSeason != null && (
+          <p className="mt-2 text-sm text-orange-400">
+            Ownership directive: reduce payroll below{" "}
+            {formatCentsCompact(league.payrollReductionTargetCents)} before the{" "}
+            {league.payrollDirectiveSeason}-
+            {(league.payrollDirectiveSeason + 1).toString().slice(-2)} season.
+          </p>
+        )}
+        <Link
+          href="/guide/finances#owner-confidence"
           className="mt-3 inline-block text-xs text-muted underline hover:text-foreground"
         >
           How does this work?

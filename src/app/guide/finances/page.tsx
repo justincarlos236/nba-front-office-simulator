@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { CAP_STATUS_LABEL, CAP_STATUS_DESCRIPTION } from "@/lib/cap/capStatusLabel";
 import { PLAYER_VALUE_TIER_LABEL } from "@/lib/valuation/playerValueTier";
+import { JOB_SECURITY_LABEL, JOB_SECURITY_DESCRIPTION } from "@/lib/gm/jobSecurity";
+import { PAYROLL_TIER_LABEL } from "@/lib/gm/payrollTier";
 
 export const metadata = {
   title: "How the Finances Work | NBA Front Office Simulator",
@@ -13,6 +15,13 @@ const TIER_DESCRIPTIONS: Record<keyof typeof PLAYER_VALUE_TIER_LABEL, string> = 
   STARTER: "A quality, reliable starter.",
   ROTATION: "A solid bench piece who plays real minutes.",
   MINIMUM: "Replacement-level. Almost always signable to a Minimum Contract.",
+};
+
+const PAYROLL_TIER_BASELINE_EXPECTATION: Record<keyof typeof PAYROLL_TIER_LABEL, string> = {
+  MODEST: "baseline expectation is just to develop young players",
+  MODERATE: "baseline expectation is to make the playoffs",
+  SIGNIFICANT: "baseline expectation is to win a playoff series",
+  EXTREME: "baseline expectation is a deep playoff run",
 };
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
@@ -40,6 +49,7 @@ export default function FinancialGuidePage() {
           ["#re-signing-rights", "Re-Signing Rights"],
           ["#signing-exception", "Signing Exception"],
           ["#financial-flexibility", "Financial Flexibility Grade"],
+          ["#owner-confidence", "Owner Confidence & Job Security"],
         ].map(([href, label]) => (
           <a
             key={href}
@@ -170,6 +180,46 @@ export default function FinancialGuidePage() {
           into the future with little room to maneuver. It&apos;s a snapshot of what&apos;s
           <span className="text-foreground"> already committed</span> from decisions you&apos;ve
           already made - not a prediction of what you&apos;ll do next.
+        </p>
+      </Section>
+
+      <Section id="owner-confidence" title="Owner Confidence & Job Security">
+        <p>
+          Ownership sets an expectation for your team at the start of every season, based on your
+          payroll and roster quality:
+        </p>
+        <div className="space-y-1">
+          {(Object.keys(PAYROLL_TIER_LABEL) as (keyof typeof PAYROLL_TIER_LABEL)[]).map((tier) => (
+            <p key={tier}>
+              <span className="text-foreground">{PAYROLL_TIER_LABEL[tier]}:</span>{" "}
+              {PAYROLL_TIER_BASELINE_EXPECTATION[tier]}.
+            </p>
+          ))}
+        </div>
+        <p>
+          A genuinely elite roster raises that bar a level; a weak roster on an expensive payroll
+          (bad contracts) lowers it a level - payroll sets the baseline, not the whole picture. When
+          the season ends, ownership compares what actually happened against that expectation.
+          Exceeding it builds confidence; falling short costs it - and both effects are bigger for
+          teams spending heavily, since more money on the roster means less patience for
+          underperformance. That confidence (0-100) is what your{" "}
+          <span className="text-foreground">GM Job Security</span> level is based on:
+        </p>
+        <div className="space-y-3">
+          {(Object.keys(JOB_SECURITY_LABEL) as (keyof typeof JOB_SECURITY_LABEL)[]).map((level) => (
+            <div key={level} className="rounded-lg border border-border bg-surface p-4">
+              <p className="font-semibold text-foreground">{JOB_SECURITY_LABEL[level]}</p>
+              <p className="mt-1">{JOB_SECURITY_DESCRIPTION[level]}</p>
+            </div>
+          ))}
+        </div>
+        <p>
+          If your confidence drops low enough while payroll is still high, ownership may issue a{" "}
+          <span className="text-foreground">payroll directive</span>: a specific dollar target you
+          need to get your total salary below before a given season. Meeting it repairs some
+          confidence; ignoring it costs you more. Every evaluation, expectation, and directive is
+          posted to your league&apos;s News feed as it happens, so you&apos;re never caught off
+          guard.
         </p>
       </Section>
 

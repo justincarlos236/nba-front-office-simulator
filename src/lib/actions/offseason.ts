@@ -16,6 +16,30 @@ import {
 import { createSeededRandom } from "@/lib/contracts/seededRandom";
 import { generateRoundRobinSchedule } from "@/lib/simulation/generateSchedule";
 import { describeRetirement } from "@/lib/transactions/describeTransaction";
+import { computeCapSheet } from "@/lib/cap/capSheet";
+import { computeTeamStrength } from "@/lib/simulation/teamStrength";
+import { computePayrollTier } from "@/lib/gm/payrollTier";
+import { computeExpectationLevel } from "@/lib/gm/expectationLevel";
+import {
+  computeActualOutcome,
+  computeConfidenceDelta,
+  evaluateSeason,
+} from "@/lib/gm/seasonEvaluation";
+import {
+  describeDirectiveCompliance,
+  describeNewExpectation,
+  describePayrollDirective,
+  describeSeasonEvaluation,
+} from "@/lib/gm/ownershipMessages";
+
+const MIN_OWNER_CONFIDENCE = 0;
+const MAX_OWNER_CONFIDENCE = 100;
+// A new payroll-reduction directive is only issued when ownership is
+// already unhappy and the team is still spending heavily - otherwise
+// every offseason for an expensive-but-successful team would nag the
+// user for no reason.
+const DIRECTIVE_CONFIDENCE_THRESHOLD = 35;
+const DIRECTIVE_PAYROLL_REDUCTION_FRACTION = 0.85;
 
 // Bulk player-development writes are batched (not one giant Promise.all)
 // for the same reason simulateGamesAction batches game writes - see
@@ -74,6 +98,23 @@ export async function advanceSeasonAction(leagueId: string) {
     include: { player: true, contract: true },
   });
   const teamById = new Map(league.teams.map((t) => [t.id, t]));
+
+  // GM accountability (Phase 10d): the outgoing season's expectation and
+  // payroll must be captured now, before the contract-expiry cleanup below
+  // deletes the very ContractYear rows a payroll snapshot for `season`
+  // would depend on.
+  const userLeagueTeamId = league.userControlledTeamId;
+  const priorExpectation = userLeagueTeamId
+    ? await prisma.seasonExpectation.findUnique({
+        where: { leagueId_season: { leagueId, season } },
+      })
+    : null;
+  const oldSeasonContractYears = userLeagueTeamId
+    ? await prisma.contractYear.findMany({
+        where: { season, contract: { leagueTeamId: userLeagueTeamId } },
+        select: { salaryCents: true, contract: { select: { leaguePlayerId: true } } },
+      })
+    : [];
 
   const rosteredSnapshots: PlayerSeasonSnapshot[] = [];
   const developmentSnapshots: PlayerSeasonSnapshot[] = [];
@@ -228,7 +269,137 @@ export async function advanceSeasonAction(leagueId: string) {
     })),
   });
 
-  await prisma.league.update({ where: { id: leagueId }, data: { currentSeason: newSeason } });
+  let ownerConfidence = league.ownerConfidence;
+  let payrollReductionTargetCents: bigint | null = null;
+  let payrollDirectiveSeason: number | null = null;
+  const ownershipMessages: string[] = [];
+
+  if (userLeagueTeamId && priorExpectation) {
+    const [series, playInGame] = await Promise.all([
+      prisma.playoffSeries.findMany({
+        where: {
+          leagueId,
+          season,
+          OR: [{ higherSeedTeamId: userLeagueTeamId }, { lowerSeedTeamId: userLeagueTeamId }],
+        },
+      }),
+      prisma.game.findFirst({
+        where: {
+          leagueId,
+          season,
+          type: "PLAY_IN",
+          OR: [{ homeLeagueTeamId: userLeagueTeamId }, { awayLeagueTeamId: userLeagueTeamId }],
+        },
+      }),
+    ]);
+
+    const actualOutcome = computeActualOutcome(userLeagueTeamId, !!playInGame, series);
+    const verdict = evaluateSeason(priorExpectation.expectationLevel, actualOutcome);
+
+    const oldCapSheet = computeCapSheet({
+      season,
+      contracts: oldSeasonContractYears.map((cy) => ({
+        playerId: cy.contract.leaguePlayerId,
+        salaryCents: cy.salaryCents,
+      })),
+    });
+    const oldPayrollTier = computePayrollTier(oldCapSheet.apronLevel);
+    const confidenceDelta = computeConfidenceDelta(verdict, oldPayrollTier);
+    ownerConfidence = ownerConfidence + confidenceDelta;
+
+    ownershipMessages.push(
+      describeSeasonEvaluation(
+        verdict,
+        priorExpectation.expectationLevel,
+        actualOutcome.label,
+        oldPayrollTier,
+      ),
+    );
+
+    await prisma.seasonExpectation.update({
+      where: { id: priorExpectation.id },
+      data: {
+        actualResultLabel: actualOutcome.label,
+        verdict,
+        ownerConfidenceDelta: confidenceDelta,
+      },
+    });
+
+    // Resolve a directive that targeted this season, whether it was met or
+    // ignored - a directive is a one-time check, not something that lingers
+    // once its deadline season arrives.
+    if (league.payrollReductionTargetCents != null && league.payrollDirectiveSeason === season) {
+      const complied = oldCapSheet.totalSalaryCents <= league.payrollReductionTargetCents;
+      ownerConfidence = ownerConfidence + (complied ? 5 : -15);
+      ownershipMessages.push(describeDirectiveCompliance(complied));
+    }
+
+    ownerConfidence = Math.max(
+      MIN_OWNER_CONFIDENCE,
+      Math.min(MAX_OWNER_CONFIDENCE, ownerConfidence),
+    );
+
+    // The new season's expectation is set from the post-rollover roster
+    // (after development/retirement/contract-expiry above), not the
+    // roster as it stood before the offseason - it should reflect what the
+    // user is actually starting the new season with.
+    const newSeasonRoster = playerUpdates.filter(
+      (u) => u.leagueTeamId === userLeagueTeamId && u.retiredSeason === null,
+    );
+    const newSeasonContractYears = await prisma.contractYear.findMany({
+      where: { season: newSeason, contract: { leagueTeamId: userLeagueTeamId } },
+      select: { salaryCents: true, contract: { select: { leaguePlayerId: true } } },
+    });
+    const newCapSheet = computeCapSheet({
+      season: newSeason,
+      contracts: newSeasonContractYears.map((cy) => ({
+        playerId: cy.contract.leaguePlayerId,
+        salaryCents: cy.salaryCents,
+      })),
+    });
+    const newPayrollTier = computePayrollTier(newCapSheet.apronLevel);
+    const newTeamStrength = computeTeamStrength(newSeasonRoster.map((u) => u.overallRating));
+    const newExpectationLevel = computeExpectationLevel(newPayrollTier, newTeamStrength);
+
+    await prisma.seasonExpectation.create({
+      data: { leagueId, season: newSeason, expectationLevel: newExpectationLevel },
+    });
+    ownershipMessages.push(describeNewExpectation(newExpectationLevel));
+
+    // A fresh directive only fires when ownership is already unhappy and
+    // the team is still spending heavily - see the constants' comments.
+    const stillHeavySpend = newPayrollTier === "SIGNIFICANT" || newPayrollTier === "EXTREME";
+    if (ownerConfidence < DIRECTIVE_CONFIDENCE_THRESHOLD && stillHeavySpend) {
+      payrollReductionTargetCents = BigInt(
+        Math.round(Number(newCapSheet.totalSalaryCents) * DIRECTIVE_PAYROLL_REDUCTION_FRACTION),
+      );
+      payrollDirectiveSeason = newSeason + 1;
+      ownershipMessages.push(
+        describePayrollDirective(payrollReductionTargetCents, payrollDirectiveSeason),
+      );
+    }
+  }
+
+  await prisma.league.update({
+    where: { id: leagueId },
+    data: {
+      currentSeason: newSeason,
+      ownerConfidence,
+      payrollReductionTargetCents,
+      payrollDirectiveSeason,
+    },
+  });
+
+  if (ownershipMessages.length > 0) {
+    await prisma.leagueTransaction.createMany({
+      data: ownershipMessages.map((description) => ({
+        leagueId,
+        season: newSeason,
+        type: "OWNERSHIP_MESSAGE" as const,
+        description,
+      })),
+    });
+  }
 
   revalidatePath(`/leagues/${leagueId}`);
   revalidatePath(`/leagues/${leagueId}/standings`);

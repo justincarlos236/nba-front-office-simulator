@@ -14,6 +14,7 @@ const TYPE_LABEL: Record<string, string> = {
   SIGNING: "Signing",
   RETIREMENT: "Retirement",
   INJURY: "Injury",
+  OWNERSHIP_MESSAGE: "Ownership",
 };
 
 const TYPE_BADGE_CLASS: Record<string, string> = {
@@ -21,6 +22,7 @@ const TYPE_BADGE_CLASS: Record<string, string> = {
   SIGNING: "bg-emerald-500/15 text-emerald-400",
   RETIREMENT: "bg-muted/20 text-muted",
   INJURY: "bg-red-500/15 text-red-400",
+  OWNERSHIP_MESSAGE: "bg-purple-500/15 text-purple-400",
 };
 
 export default async function TransactionsPage({ params }: PageProps) {

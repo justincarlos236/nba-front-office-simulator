@@ -177,19 +177,29 @@ model League {
   salaryCapOverrideCents BigInt? // null = use the league-wide default for currentSeason
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
+  // GM accountability (Phase 10d) - 0-100, see src/lib/gm/jobSecurity.ts.
+  // Starts at a neutral "Stable" footing rather than 50/50, since a brand
+  // new GM hasn't done anything to lose ownership's trust yet.
+  ownerConfidence      Int       @default(65)
+  // An active "reduce payroll below $X by season Y" directive, if
+  // ownership has issued one - null when there's no outstanding
+  // directive. Checked once, at the start of the season it targets.
+  payrollReductionTargetCents BigInt?
+  payrollDirectiveSeason      Int?
 
-  owner            User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  teams            LeagueTeam[]
-  players          LeaguePlayer[]
-  draftPicks       DraftPick[]
-  draftProspects   DraftProspect[]
-  trades           Trade[]
-  tradeExceptions  TradeException[]
-  assistantThreads AssistantThread[]
-  games            Game[]
-  playoffSeries    PlayoffSeries[]
-  seasonAwards     SeasonAward[]
-  transactions     LeagueTransaction[]
+  owner              User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  teams              LeagueTeam[]
+  players            LeaguePlayer[]
+  draftPicks         DraftPick[]
+  draftProspects     DraftProspect[]
+  trades             Trade[]
+  tradeExceptions    TradeException[]
+  assistantThreads   AssistantThread[]
+  games              Game[]
+  playoffSeries      PlayoffSeries[]
+  seasonAwards       SeasonAward[]
+  transactions       LeagueTransaction[]
+  seasonExpectations SeasonExpectation[]
 
   @@index([ownerId])
   @@map("leagues")
@@ -200,6 +210,46 @@ enum TransactionType {
   SIGNING
   RETIREMENT
   INJURY
+  OWNERSHIP_MESSAGE
+}
+
+enum ExpectationLevel {
+  DEVELOP_YOUNG_PLAYERS
+  COMPETE_FOR_PLAY_IN
+  MAKE_PLAYOFFS
+  WIN_PLAYOFF_SERIES
+  DEEP_PLAYOFF_RUN
+  CHAMPIONSHIP_CONTENTION
+}
+
+enum EvaluationVerdict {
+  EXCEEDED
+  MET
+  FELL_SHORT
+  DRASTICALLY_FELL_SHORT
+}
+
+// One row per league+season, capturing the preseason expectation set for
+// the user's team from that season's payroll tier + roster quality at the
+// moment the season begins - then updated with what actually happened, so
+// the eventual evaluation always compares against what was expected at
+// the time, not a standard re-computed from a roster that's since changed
+// via trades/signings. See src/lib/gm/expectationLevel.ts.
+model SeasonExpectation {
+  id                   String             @id @default(cuid())
+  leagueId             String
+  season               Int
+  expectationLevel     ExpectationLevel
+  // Both null until the season concludes and advanceSeasonAction evaluates it.
+  actualResultLabel    String?
+  verdict              EvaluationVerdict?
+  ownerConfidenceDelta Int?
+  createdAt            DateTime           @default(now())
+
+  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, season])
+  @@map("season_expectations")
 }
 
 // A denormalized, human-readable log entry for the transaction wire / news

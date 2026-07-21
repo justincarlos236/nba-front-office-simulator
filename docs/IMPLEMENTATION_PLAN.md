@@ -335,12 +335,30 @@ Cap`/`Luxury Tax` status replacing raw apron enums, plain-English
       projection, and a check for single large long-term ("albatross")
       contracts. See `docs/ARCHITECTURE.md`'s "Simplified financial
       presentation layer".
-- [ ] **10d - Owner Confidence, expectations, directives & firing**: the
-      big new GM-accountability meta-system - preseason expectations set
-      from payroll tier + roster quality, end-of-season evaluation,
-      confidence/job-security tracking, ownership directives, and a
-      firing _trigger_. Scoped deliberately narrow - what actually
-      happens to the save once fired is Phase 11's job.
+- [x] **10d - Owner Confidence, expectations, directives & firing trigger**
+      ✅ DONE (2026-07-21): `League.ownerConfidence` (0-100, starts at 65)
+      plus a locked-in `SeasonExpectation` row per league+season (payroll
+      tier + roster strength → one of six expectation levels, set at
+      league creation and at the start of every `advanceSeasonAction`).
+      When a season ends, its expectation is evaluated against the actual
+      playoff outcome (a 0-6 scale derived from `PlayoffSeries`/play-in
+      `Game` rows, aligned 1-for-1 with the 0-5 expectation scale) into a
+      verdict, which moves Owner Confidence by an amount that scales with
+      payroll tier (heavier spending amplifies both reward and penalty).
+      Confidence buckets into six `JobSecurityLevel`s from Very Secure down
+      to Critical - Critical _is_ the firing trigger's scope for this
+      phase (a clearly surfaced "your job is at risk" state); the actual
+      firing event/consequences are Phase 11's job, per the split above.
+      Low confidence + still-heavy payroll can also trigger a one-time
+      "reduce payroll below $X by season Y" ownership directive, resolved
+      (met/ignored) the next time it's checked. Every evaluation, new
+      expectation, and directive is posted to the existing
+      `LeagueTransaction` feed as a new `OWNERSHIP_MESSAGE` type - reusing
+      the Phase 5 news feed rather than a separate messaging system. UI:
+      a "GM Job Security" card on the team dashboard, an "Ownership"
+      section on the offseason page after advancing, and a new
+      `#owner-confidence` section on `/guide/finances`. See
+      `docs/ARCHITECTURE.md`'s "GM accountability" section.
 
 ### Phase 11 — GM Career Mode
 
@@ -787,3 +805,36 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
     (Owner Confidence, expectations, directives & firing)** - the big new
     GM-accountability system, deliberately saved for last since it builds
     on the tier/status/grade concepts from 10a-10c.
+- **2026-07-21 (later)**: Phase 10d completed - the last piece of Phase 10. Five new pure modules under `src/lib/gm/` (`payrollTier`,
+  `expectationLevel`, `seasonEvaluation`, `jobSecurity`,
+  `ownershipMessages`; 26 new unit tests) plus a `League.ownerConfidence`/
+  `payrollReductionTargetCents`/`payrollDirectiveSeason` schema addition and
+  a new `SeasonExpectation` model (one row per league+season, locked in at
+  the start of that season so evaluation always compares against what was
+  actually expected at the time, not a standard re-derived from a roster
+  that's since changed via trades). `createLeagueAction` sets season 1's
+  expectation directly so `advanceSeasonAction` can always assume a prior
+  row exists - no special-cased bootstrap branch. `advanceSeasonAction` now:
+  evaluates the just-completed season (actual playoff outcome vs. locked-in
+  expectation → verdict → confidence delta, scaled by that season's payroll
+  tier captured _before_ the existing expired-contract cleanup deletes the
+  `ContractYear` rows it depends on), resolves any directive targeting that
+  season, sets the new season's expectation from the post-rollover roster,
+  and - if confidence is low and payroll is still heavy - issues a fresh
+  directive. All of it logs plain-English `OWNERSHIP_MESSAGE` transactions
+  into the existing news feed rather than a new messaging system. UI: a
+  "GM Job Security" card on the team dashboard (confidence bucketed into
+  six levels, Very Secure through Critical - Critical is this phase's
+  firing _trigger_; the actual firing event is Phase 11's job), an
+  "Ownership" section on the offseason page showing that advance's
+  messages, `OWNERSHIP_MESSAGE` added to both transaction-feed type-label
+  maps, and a new `#owner-confidence` section on `/guide/finances`.
+  Verified end-to-end with a throwaway Playwright script that played a full
+  season through the real UI (playoffs → draft → advance) and confirmed
+  the evaluation message, new expectation, updated Job Security badge, and
+  the news-feed entries all rendered correctly with real data - not just
+  that the unit tests passed. All 10 e2e tests and all 282 unit tests
+  passing against a real production build. Phase 10 (Simplified Financial
+  System & GM Accountability) is now fully complete; Phase 11 (GM Career
+  Mode - persistent reputation, job market, firing consequences,
+  retirement) remains unstarted by design.

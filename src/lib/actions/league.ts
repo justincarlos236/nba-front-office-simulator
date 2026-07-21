@@ -8,6 +8,10 @@ import { planLeaguePlayer } from "@/lib/league/planLeaguePlayer";
 import { generateRoundRobinSchedule } from "@/lib/simulation/generateSchedule";
 import { estimateAge, estimateExperience } from "@/lib/players/age";
 import { MAX_LEAGUES_PER_USER } from "@/lib/league/constants";
+import { computeCapSheet } from "@/lib/cap/capSheet";
+import { computeTeamStrength } from "@/lib/simulation/teamStrength";
+import { computePayrollTier } from "@/lib/gm/payrollTier";
+import { computeExpectationLevel } from "@/lib/gm/expectationLevel";
 
 const SEASON = 2023;
 const FREE_AGENT_RATING_CUTOFF = 25;
@@ -131,6 +135,33 @@ export async function createLeagueAction(formData: FormData) {
     }));
   });
   await prisma.contractYear.createMany({ data: contractYearInputs });
+
+  // GM accountability (Phase 10d) starts from day one, not just from the
+  // first offseason - otherwise advanceSeasonAction would need a special
+  // "no expectation exists yet" bootstrap case every league would hit
+  // exactly once. Setting it here means there's only ever one place that
+  // creates a SeasonExpectation for a season that hasn't been evaluated
+  // yet: here for season 1, advanceSeasonAction for every season after.
+  const userLeagueTeamId = teamIdToLeagueTeamId.get(teamId)!;
+  const userRosteredPlans = rosteredPlans.filter((p) => p.leagueTeamId === userLeagueTeamId);
+  const userCapSheet = computeCapSheet({
+    season: SEASON,
+    contracts: userRosteredPlans.map((p) => ({
+      playerId: p.player.id,
+      salaryCents: p.plan!.contract.years.find((y) => y.season === SEASON)!.salaryCents,
+    })),
+  });
+  const userTeamStrength = computeTeamStrength(userRosteredPlans.map((p) => p.plan!.overallRating));
+  await prisma.seasonExpectation.create({
+    data: {
+      leagueId: league.id,
+      season: SEASON,
+      expectationLevel: computeExpectationLevel(
+        computePayrollTier(userCapSheet.apronLevel),
+        userTeamStrength,
+      ),
+    },
+  });
 
   revalidatePath("/leagues");
   redirect(`/leagues/${league.id}`);

@@ -177,28 +177,26 @@ plain language, without touching how legality is actually decided:
 - **`/guide/finances`** - a standalone reference page (not nested under
   `/leagues/[id]`, since the content is the same for every league) walking
   through Financial Status, Player Value Tiers, the Trade Financial
-  Check, Re-Signing Rights, the Signing Exception, and the Financial
-  Flexibility Grade in plain language, each in its own anchored section.
-  Linked contextually from exactly where a user would actually wonder
-  "why," rather than buried in a nav menu: the team dashboard's
-  financial-status line and Future Financial Flexibility card, the trade
-  builder's feasibility result (deep-links to `#trades`), and the
-  sign-offer form (deep-links to `#re-signing-rights` or
-  `#signing-exception` depending on which one is actually relevant to
-  that offer). The trade builder/sign-offer links open in a new tab
-  deliberately - both are client-side forms with in-progress selections
-  that navigating away would otherwise discard.
+  Check, Re-Signing Rights, the Signing Exception, the Financial
+  Flexibility Grade, and Owner Confidence & Job Security in plain
+  language, each in its own anchored section. Linked contextually from
+  exactly where a user would actually wonder "why," rather than buried in
+  a nav menu: the team dashboard's financial-status line, Future Financial
+  Flexibility card, and GM Job Security card, the trade builder's
+  feasibility result (deep-links to `#trades`), the sign-offer form
+  (deep-links to `#re-signing-rights` or `#signing-exception` depending on
+  which one is actually relevant to that offer), and the offseason page's
+  Ownership section (deep-links to `#owner-confidence`). The trade
+  builder/sign-offer links open in a new tab deliberately - both are
+  client-side forms with in-progress selections that navigating away
+  would otherwise discard.
 
-**Still real CBA concepts, not yet simplified in the UI** (tracked as
-follow-up work, not overlooked): Bird/Early-Bird/Non-Bird re-signing
-rights don't exist as a mechanic yet at all (a team currently has no
-priority to re-sign its own expiring free agents over an outside team -
-see "Not yet built" below); the Signing Exception isn't tracked
-cumulatively across multiple signings in a season; there's no multi-year
-cap projection or Financial Flexibility Grade; and there's no Owner
-Confidence/GM Job Security/firing system. These are follow-on phases
-building on top of the tier/status concepts introduced here, not part of
-this pass.
+**Still a real CBA concept, not yet simplified in the UI**: Re-Signing
+Rights is one flat "your own player" concept, not the real three-tiered
+Bird/Early-Bird/Non-Bird distinction (different tiers unlock different
+things in the real CBA - full Bird after 3 years, Early Bird after 2 at
+a lower ceiling, Non-Bird after 1). Not modeled since the brief only
+needs "can I afford to keep my own star," not precise CBA mechanics.
 
 ## Free agency
 
@@ -245,6 +243,72 @@ is already the single source of truth for how a signing was made.
 `validateSigning` checks new offers against the _remaining_ room, not the
 full per-season ceiling, so a team can no longer sign multiple players
 each using the exception's full amount.
+
+## GM accountability
+
+`src/lib/gm/` layers a season-to-season accountability system on top of
+the financial concepts above - the design brief's "realistic
+consequences without complicated rules" applied to _how the user is
+judged_, not just what they can afford:
+
+- **`payrollTier.ts`** - collapses the 5 real `ApronLevel` values into 4
+  named payroll tiers (Modest/Moderate/Significant Luxury Tax/Extreme),
+  a coarser cut than `capStatusLabel`'s 3 states since expectation-setting
+  needs to tell "paying some tax" apart from "hard-capped at the second
+  apron."
+- **`expectationLevel.ts`** - sets a preseason expectation (one of six
+  levels, Develop Young Players through Championship Contention) from
+  payroll tier + roster strength: payroll sets the baseline, then an
+  elite roster raises the bar a level and a weak roster (bad contracts on
+  an expensive team) lowers it a level. Ordered on a 0-5 scale that lines
+  up 1-for-1 with `seasonEvaluation.ts`'s 0-6 actual-outcome scale.
+- **`seasonEvaluation.ts`** - `computeActualOutcome` derives how far a
+  team actually got (0-6: missed the playoffs, up through won the
+  championship) from that season's `PlayoffSeries` rows plus whether the
+  team appears in a play-in `Game` (play-in eliminees never get a
+  `PlayoffSeries` row, since round 1 is the first round series are
+  created for - see `startPlayoffsAction`). `evaluateSeason` compares the
+  outcome index against the expectation's own index into a 4-tier verdict
+  (Exceeded/Met/Fell Short/Drastically Fell Short); `computeConfidenceDelta`
+  scales the resulting Owner Confidence change by payroll tier, since
+  spending heavily amplifies both the reward for justifying it and the
+  penalty for wasting it.
+- **`jobSecurity.ts`** - buckets the 0-100 `League.ownerConfidence` score
+  into 6 named levels (Very Secure through Critical) with a one-line
+  description - "Confidence: 42" means nothing on its own, "Under
+  Pressure" does. Critical is this phase's firing _trigger_: a clearly
+  surfaced "your job is at risk" state. What actually happens once a GM
+  is fired (a recap screen, a job market, choosing a new team) is Phase
+  11's job, not this one's - see `docs/FEATURE_ROADMAP.md`/
+  `docs/IMPLEMENTATION_PLAN.md` for that split.
+- **`ownershipMessages.ts`** - plain-English string builders (season
+  evaluation, new expectation, payroll directive, directive compliance),
+  same pattern as `src/lib/transactions/describeTransaction.ts`. Reuses
+  the existing `LeagueTransaction` news feed as the delivery mechanism (a
+  new `OWNERSHIP_MESSAGE` type) instead of a separate messaging system.
+
+**One `SeasonExpectation` row per league+season** is the mechanism that
+keeps evaluation honest across a season where the roster changes via
+trades/signings: it's locked in once, at the moment the season begins
+(`createLeagueAction` for season 1, the end of `advanceSeasonAction` for
+every season after using the post-rollover roster), and only ever
+updated afterward with what actually happened. Evaluation always compares
+against what was expected _at the time_, never a standard re-derived from
+a roster that's since changed. This also means `advanceSeasonAction`
+never needs a special "no expectation exists yet" bootstrap branch - by
+construction, a prior row always exists by the time a season is advanced.
+
+The outgoing season's payroll (used to pick the confidence-delta
+multiplier) has to be captured _before_ `advanceSeasonAction`'s existing
+expired-contract cleanup runs, since that cleanup deletes the very
+`ContractYear` rows a payroll snapshot for the just-completed season would
+depend on - captured early in the function alongside the prior
+`SeasonExpectation` fetch, well before any mutation happens.
+
+A payroll-reduction directive is deliberately only issued when ownership
+is _already_ unhappy (confidence below a threshold) and the team is
+_still_ spending heavily - otherwise every offseason for an expensive but
+successful team would nag the user for no reason it could ever resolve.
 
 ## Season simulation & standings
 
