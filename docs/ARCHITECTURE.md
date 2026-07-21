@@ -916,6 +916,44 @@ trade-AI valuation) reads or recalibrates against.
   prospects (no real stat line to recompute from). Same backfill
   discipline established after Phase 11a/10d/11c - see
   `docs/IMPLEMENTATION_PLAN.md`.
+- **Minutes-normalization fix** (found via a user bug report - a fresh
+  Jazz franchise started with only 6 rostered players): `computePerformanceScore`
+  originally compared _raw per-game_ counting stats against a baseline
+  anchored at 24 minutes, and separately penalized low minutes via a
+  standalone linear term - double-penalizing any real bench player who
+  simply played fewer minutes than a starter, regardless of real
+  per-minute quality. Measured against the full 497-player reference
+  dataset, this crushed 41.6% of all real players to the exact rating
+  floor (60) - nearly the entire league's bench, not the "bottom ~15%"
+  `FREE_AGENT_RATING_CUTOFF` was designed around. Fixed by partially
+  normalizing counting stats toward a per-36-minutes rate
+  (`MINUTES_NORMALIZATION_BLEND = 0.7` - pure per-36 was tried first and
+  overcorrected, stripping out too much of the real signal in a star
+  playing heavy minutes) with a confidence-shrinkage blend toward a
+  `REPLACEMENT_LEVEL_SCORE` (65, not the average 72) for players below
+  `CONFIDENCE_MINUTES` (16) - small-sample garbage-time stats are noisy
+  and shouldn't be trusted outright. This alone was found (by hand-testing
+  real anchor players) to under-rate high-usage scoring wings (Tatum,
+  Curry) relative to shot-blocking bigs (Jokić, Embiid) - an imbalance the
+  old formula also had but hid, since both extremes used to simply clamp
+  to the same ceiling. Category weights were re-tuned against a broader
+  real-anchor set spanning archetypes (playmaking/two-way bigs, scoring
+  wings/guards, real rotation players, deep bench) rather than the ~5
+  top-scorer examples the original rescale checked - see
+  `playerValue.test.ts`'s anchor-player test block for the verified
+  set. Result: floor-pileup dropped to 13.1% (close to the original
+  design intent), tier distribution spread healthily across all five
+  tiers, and per-team roster sizes at the _unchanged_ `FREE_AGENT_RATING_CUTOFF`
+  now range 9-16 (avg ~12.7) instead of some real teams bottoming out at
+  6-8. Existing leagues were backfilled per-player-delta (not a flat
+  shift, since this fix changes the _shape_ of the stats-to-rating
+  mapping, not just its scale) - see `docs/IMPLEMENTATION_PLAN.md`'s
+  status log for the exact backfill approach. This remains a hand-tuned
+  box-score-only heuristic (see "Season stats" below) - a handful of
+  real, valuable-but-low-volume/low-efficiency role players (e.g. a true
+  3-and-D wing with modest per-36 counting stats) still land near the
+  floor, a limitation no amount of weight-tuning on this input set can
+  fully resolve without real advanced metrics.
 
 ## Data sourcing
 

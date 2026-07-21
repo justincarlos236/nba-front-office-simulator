@@ -1199,3 +1199,59 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   team's roster (e.g. Jazz 8/17, Miami 9/16) still starts as free agents
   at league creation because of `FREE_AGENT_RATING_CUTOFF` (65) - worth a
   closer look as a possible future follow-up, but out of scope for this fix.
+- **2026-07-22**: Fixed the actual root cause of the thin-roster complaint
+  above - `computePerformanceScore` was double-penalizing low-minutes
+  bench players (raw per-game stats compared against a 24-minute
+  baseline, _plus_ a standalone minutes penalty term), crushing 41.6% of
+  all 497 real players to the exact rating floor (60), not the intended
+  "bottom ~15%". Fixed via partial per-36-minutes normalization
+  (`MINUTES_NORMALIZATION_BLEND = 0.7`) with confidence-shrinkage toward a
+  `REPLACEMENT_LEVEL_SCORE` (65) for players under `CONFIDENCE_MINUTES`
+  (16) - see `docs/ARCHITECTURE.md`'s "Player rating scale" section for
+  the full writeup, including why a naive full per-36 conversion
+  overcorrected (it under-rated scoring wings like Tatum/Curry relative to
+  shot-blocking bigs like Jokić/Embiid, an imbalance the old formula also
+  had but hid behind ceiling-clamping) and how weights were re-tuned
+  against a broader real-anchor set spanning archetypes rather than just
+  top scorers. Floor-pileup dropped to 13.1%; a fresh Jazz franchise now
+  rosters 14 real players (was 6) with a realistic 66-92 rating spread
+  across all five tiers - verified visually via a throwaway Playwright
+  script (screenshot, then deleted). No downstream threshold actually
+  needed to change (tier boundaries, `FREE_AGENT_RATING_CUTOFF`, cap-value
+  curve, trade-AI thresholds were all re-checked against the new
+  distribution and found still correct) - unlike the original NBA-2K
+  rescale, this fix only changed the _input mapping_, not the output
+  scale. Existing leagues backfilled per-player-delta (not a flat shift):
+  for every real `LeaguePlayer`, recomputed their stat-derived rating
+  under both the old and new formula and applied the _difference_ to
+  their current (possibly already-developed) rating, preserving in-league
+  progression - `scripts/backfill-rating-formula-fix.ts`, run once then
+  deleted. Two e2e tests broke as a direct, expected consequence of real
+  roster/salary data actually being correct now: `free-agency.spec.ts`'s
+  "$2,000,000 is always legal" assumption only ever worked because a
+  wrongly-thin Boston Celtics roster happened to have free cap space -
+  fixed to use the real always-legal minimum-contract threshold
+  ($1,157,000, `emptyRosterChargeCents` for season 2023) instead;
+  `trade-execution.spec.ts`'s Tatum-for-Julius-Randle trade (Randle was
+  never really on the Nets - the same team-misattribution bug fixed
+  above) needed a new pairing, which turned out to require checking both
+  real salary-matching AND the Phase 11c/11d trade-AI's acceptance
+  verdict across multiple randomly-assigned GM personalities (probed live
+  via a throwaway script across several fresh random leagues before
+  settling on Payton Pritchard for Lonnie Walker IV, verified to pass 5/5
+  repeat runs). Also fixed an unrelated flake during verification: a
+  stray `npm run dev` process left running from manual data-probing was
+  being reused by Playwright's `reuseExistingServer` webServer config
+  instead of a clean production build, causing a real (but
+  environment-specific) navigation-timing failure - killing it and
+  re-running against a fresh production build resolved it immediately.
+  All 342 unit tests, `tsc`, `eslint`, a clean production build, and all
+  10 e2e tests passing. **Separately found during verification, and
+  explicitly deferred at the user's own direction (not fixed this pass)**:
+  ~11,344 `LeaguePlayer` rows (about half of all real-league data, all
+  fictional draft-generated prospects from draft year 2024 specifically,
+  across all 6 real leagues) are stuck at a broken flat 50/50 rating,
+  including actual top-5 picks - other draft years look correctly rated.
+  Root cause not yet investigated; likely the original NBA-2K rescale's
+  backfill missed fictional draft-generated players. Flagged as a known
+  follow-up task, not silently dropped.

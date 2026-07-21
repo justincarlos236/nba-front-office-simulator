@@ -50,8 +50,13 @@ test("sign a free agent to a minimum deal, and reject an offer bigger than any e
   await page.locator('input[type="number"]').fill("80000000");
   await expect(page.getByText("Sign player")).toBeDisabled();
 
-  // A minimum-salary offer is always legal, regardless of cap situation.
-  await page.locator('input[type="number"]').fill("2000000");
+  // A true minimum-salary offer (at or below the 2023-24 empty-roster-charge
+  // threshold, $1,157,000 - src/lib/cap/constants.ts) is always legal
+  // regardless of cap situation. $2M was previously used here, but that
+  // only ever cleared via ordinary cap space, not the minimum-contract
+  // carve-out - a real, correctly-rostered team (post roster-assignment
+  // fix) isn't guaranteed to have that much free cap room.
+  await page.locator('input[type="number"]').fill("1100000");
   await expect(page.getByText(/Legal via/)).toBeVisible();
   await expect(page.getByText("Sign player")).toBeEnabled();
 
