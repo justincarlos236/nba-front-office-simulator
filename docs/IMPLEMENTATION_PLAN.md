@@ -386,11 +386,24 @@ same pattern as Phase 10; only the first is done so far.
       "placeholder row, filled in on draft day" mechanism and the several
       pre-existing `RESTRICT` (not cascade) foreign keys into `LeagueTeam`
       this surfaced.
-- [ ] **11b - Team Identity & Team Needs**: `computeTeamIdentity`
-      (Contender/Playoff/Play-In/Rebuilding/Tanking from win%-or-strength +
-      roster age) and `computeTeamNeeds` (positional gaps from roster
-      composition) - pure modules under `src/lib/gm/`, the foundation the
-      acceptance-score engine builds on.
+- [x] **11b - Team Identity & Team Needs** ✅ DONE (2026-07-21):
+      `computeTeamIdentity` (Contender/Playoff Team/Play-In Team/
+      Rebuilding/Tanking from a competitiveness percentile - actual win%
+      once 20+ games are played, team strength before that - plus average
+      roster age to split Rebuilding vs. Tanking at the bottom) and
+      `computeTeamNeeds` (positional gaps + bench depth from roster
+      composition; "Shooting" from the brief's original list was
+      deliberately dropped - no shot-profile stat exists anywhere in this
+      data model to detect it from, so faking it would be noise, not a
+      documented simplification) - pure modules under `src/lib/gm/`, the
+      foundation the acceptance-score engine (11c) builds on. Both are
+      computed on demand from data every league already has (roster
+      ratings/positions, win-loss records) - no schema change, and no
+      backfill needed for existing leagues, unlike 11a. Surfaced on the
+      team dashboard as a "Team identity" card. All 10 e2e tests and all
+      295 unit tests (10 new) passing against a real production build.
+      Next up: **11c (Trade Value Engine + GM Personality + Acceptance
+      Score)**.
 - [ ] **11c - Trade Value Engine + GM Personality + Acceptance Score**:
       objective player/pick trade values, a 7-value `GmPersonality` enum
       assigned once per team at bootstrap, and `evaluateTradeOffer`
@@ -951,3 +964,40 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
     `buildFuturePickRows`) passing against a real production build, run
     clean multiple times in a row after the DB cleanup and timing fixes.
     Next up: **11b (Team Identity & Team Needs)**.
+  - **Important gap found right after shipping**: the user tested 11a on
+    their own existing (real, pre-dating-this-phase) league and saw no
+    "Draft picks" section at all - the future-pick inventory generation
+    was only wired into `createLeagueAction`, so leagues created before
+    today never got it. The same root cause turned out to also apply to
+    Phase 10d's `SeasonExpectation`: `advanceSeasonAction` only ever
+    _continues_ an existing chain, it never bootstraps a missing one, so
+    old leagues silently never got GM Job Security data either. Fixed
+    with a one-time backfill script across every real (non-test) league.
+    **Standing rule going forward**: any new schema-backed feature must
+    be backfilled onto existing leagues as part of finishing that phase,
+    not left for the user to discover missing in their own save (11b
+    itself needed no backfill, since identity/needs are computed on
+    demand from data every league already has - only features that
+    _persist_ new state, like 11a's `DraftPick` rows or 10d's
+    `SeasonExpectation` rows, are at risk of this).
+- **2026-07-21 (later)**: Phase 11b completed. `computeTeamIdentity`
+  (`src/lib/gm/teamIdentity.ts`) and `computeTeamNeeds`
+  (`src/lib/gm/teamNeeds.ts`), 10 new unit tests. Both pure, computed on
+  demand - no schema change, no backfill risk. Identity uses actual win%
+  once 20+ games are played this season, team strength (`computeLeagueTeamStrengths`,
+  already existed for game simulation) before that, ranked against all 30
+  teams via percentile; needs are positional-count + quality-threshold
+  based, reusing `playerValueTier.ts`'s own STARTER/ROTATION cutoffs
+  rather than inventing new ones. Deliberately dropped "Shooting" from the
+  brief's original need list - no shot-profile stat exists anywhere in
+  this data model to detect it from. Surfaced as a new "Team identity"
+  card on the team dashboard (identity headline + needs summary),
+  reusing the existing `OverviewCard` component. Verified visually against
+  a genuinely bad team (Detroit Pistons, preseason): correctly classified
+  "Tanking" with "Star scorer, Starting-caliber point guard" needs, and
+  confirmed a strong center (Jalen Duren, 66) correctly did _not_ trigger
+  a false rim-protector need - judged by a position's best player, not its
+  average. All 10 e2e tests and all 295 unit tests passing against a real
+  production build. Next up: **11c (Trade Value Engine + GM Personality +
+  Acceptance Score)** - the core evaluation logic everything so far has
+  been building toward.

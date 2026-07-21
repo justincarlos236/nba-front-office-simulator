@@ -311,6 +311,47 @@ is _already_ unhappy (confidence below a threshold) and the team is
 _still_ spending heavily - otherwise every offseason for an expensive but
 successful team would nag the user for no reason it could ever resolve.
 
+## Trade AI foundations: team identity & needs
+
+Phase 11's eventual "does this team actually want this trade" evaluation
+(11c) needs two inputs about the _other_ side of a deal, built in 11b as
+small, pure, on-demand-computed modules under `src/lib/gm/` - deliberately
+not persisted state, unlike `SeasonExpectation`/`DraftPick`, so there's no
+backfill risk for existing leagues (see the Phase 11a/10d incident logged
+in `docs/IMPLEMENTATION_PLAN.md` - anything that instead _persists_ new
+state has to be explicitly backfilled onto every existing league, not
+just wired into `createLeagueAction`).
+
+- **`teamIdentity.ts`** (`computeTeamIdentity`) - buckets a team into
+  Contender/Playoff Team/Play-In Team/Rebuilding/Tanking from a
+  `competitivenessPercentile` (how the team ranks against the other 29,
+  0 = worst, 1 = best) plus average roster age to split Rebuilding from
+  Tanking at the bottom (a bad-but-young team is still developing, not
+  necessarily playing for next year's lottery on purpose). The percentile
+  itself is deliberately an opaque input the pure function doesn't derive
+  itself - the caller (team dashboard) uses actual win percentage once
+  20+ games have been played this season, or falls back to
+  `computeLeagueTeamStrengths` (the same team-strength function actual
+  game simulation already uses) before that, since win% means little
+  early in a season. Percentile thresholds are calibrated against the
+  real playoff structure (top ~20% Contender-ish, top ~40% direct
+  qualifiers, top ~67% including the play-in field).
+- **`teamNeeds.ts`** (`computeTeamNeeds`) - positional gaps (judged by a
+  position's _best_ rostered player, not its average - a great starter
+  with a weak backup isn't "thin" there in the way that matters for trade
+  value) plus a bench-depth check, reusing `playerValueTier.ts`'s own
+  STARTER/ROTATION rating cutoffs rather than inventing new thresholds.
+  Deliberately narrower than the design brief's original six needs -
+  "Shooting" has no detectable signal anywhere in this data model (no
+  3PT/shot-profile stat exists on `LeaguePlayer` or generated draft
+  prospects, only `overallRating`/`potentialRating`/`position`/age), so
+  faking a "shooting need" would be noise rather than a documented
+  simplification like everything else in this layer.
+- Surfaced today as a "Team identity" card on the team dashboard (headline
+  - needs summary); the trade builder itself doesn't use these yet - that
+    wiring is 11c's job, once there's an actual acceptance-score engine to
+    feed them into.
+
 ## Season simulation & standings
 
 `src/lib/simulation/` is the same "plain, dependency-free, unit-tested
