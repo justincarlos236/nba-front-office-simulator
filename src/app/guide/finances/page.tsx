@@ -4,6 +4,8 @@ import { CAP_STATUS_LABEL, CAP_STATUS_DESCRIPTION } from "@/lib/cap/capStatusLab
 import { PLAYER_VALUE_TIER_LABEL } from "@/lib/valuation/playerValueTier";
 import { JOB_SECURITY_LABEL, JOB_SECURITY_DESCRIPTION } from "@/lib/gm/jobSecurity";
 import { PAYROLL_TIER_LABEL } from "@/lib/gm/payrollTier";
+import { TEAM_IDENTITY_LABEL, TEAM_IDENTITY_DESCRIPTION } from "@/lib/gm/teamIdentity";
+import { GM_PERSONALITY_LABEL, GM_PERSONALITY_DESCRIPTION } from "@/lib/gm/gmPersonality";
 
 export const metadata = {
   title: "How the Finances Work | NBA Front Office Simulator",
@@ -46,6 +48,7 @@ export default function FinancialGuidePage() {
           ["#financial-status", "Financial Status"],
           ["#value-tiers", "Player Value Tiers"],
           ["#trades", "Trade Financial Check"],
+          ["#cpu-trade-decisions", "CPU Trade Decisions"],
           ["#re-signing-rights", "Re-Signing Rights"],
           ["#signing-exception", "Signing Exception"],
           ["#financial-flexibility", "Financial Flexibility Grade"],
@@ -126,6 +129,81 @@ export default function FinancialGuidePage() {
           If a trade is invalid because of salary matching, the message tells you approximately how
           much more salary you need to send out - you&apos;ll never have to do that math yourself.
         </p>
+      </Section>
+
+      <Section id="cpu-trade-decisions" title="CPU Trade Decisions">
+        <p>
+          Passing the Trade Financial Check only means a trade is <em>legal</em>. The other team
+          still has to actually want it - every CPU team genuinely evaluates a proposed trade before
+          accepting, the same way a real front office would, based on who they are and what they
+          need.
+        </p>
+        <div>
+          <p className="font-semibold text-foreground">Team identity</p>
+          <p className="mt-1">
+            Every team reads its own competitive situation and reacts accordingly - a contender
+            weighs a proven veteran much higher than a rebuilding team would, and vice versa for
+            youth and picks.
+          </p>
+          <div className="mt-2 space-y-2">
+            {(Object.keys(TEAM_IDENTITY_LABEL) as (keyof typeof TEAM_IDENTITY_LABEL)[]).map(
+              (identity) => (
+                <div key={identity} className="rounded-lg border border-border bg-surface p-4">
+                  <p className="font-semibold text-foreground">{TEAM_IDENTITY_LABEL[identity]}</p>
+                  <p className="mt-1">{TEAM_IDENTITY_DESCRIPTION[identity]}</p>
+                </div>
+              ),
+            )}
+          </div>
+        </div>
+        <div>
+          <p className="font-semibold text-foreground">Roster needs</p>
+          <p className="mt-1">
+            Every team also recognizes real gaps in its own roster (a missing starting-caliber point
+            guard, no rim protector, thin bench depth, no star scorer) from its actual players - not
+            a fixed wish list. A player or pick that fills a genuine need is worth more to that
+            specific team than the same asset would be to a team that doesn&apos;t need it.
+          </p>
+        </div>
+        <div>
+          <p className="font-semibold text-foreground">GM personality</p>
+          <p className="mt-1">
+            Every team also has a persistent front-office philosophy that nudges <em>how much</em>{" "}
+            it leans toward certain kinds of value - it never overrides whether a trade is
+            objectively fair. A genuinely lopsided trade gets rejected by every personality; these
+            only make a real difference on trades that are already close to fair.
+          </p>
+          <div className="mt-2 space-y-2">
+            {(Object.keys(GM_PERSONALITY_LABEL) as (keyof typeof GM_PERSONALITY_LABEL)[]).map(
+              (personality) => (
+                <div key={personality} className="rounded-lg border border-border bg-surface p-4">
+                  <p className="font-semibold text-foreground">
+                    {GM_PERSONALITY_LABEL[personality]}
+                  </p>
+                  <p className="mt-1">{GM_PERSONALITY_DESCRIPTION[personality]}</p>
+                </div>
+              ),
+            )}
+          </div>
+        </div>
+        <div>
+          <p className="font-semibold text-foreground">Untouchable players</p>
+          <p className="mt-1">
+            A genuine superstar is off the table for anything less than a serious overpay, no matter
+            how the rest of the numbers add up - real front offices don&apos;t casually move their
+            best player just because a package of good-but-lesser pieces technically matches its
+            value.
+          </p>
+        </div>
+        <div>
+          <p className="font-semibold text-foreground">Counter-offer suggestions</p>
+          <p className="mt-1">
+            When a team wouldn&apos;t accept your offer, the Trade Builder suggests a concrete fix
+            from your team&apos;s actual available players and picks - either something to add that
+            would close the gap, or (if their answer is really about a specific untouchable player)
+            a note that you should build the offer around someone else instead.
+          </p>
+        </div>
       </Section>
 
       <Section id="re-signing-rights" title="Re-Signing Rights">

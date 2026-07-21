@@ -12,6 +12,8 @@ import {
 } from "@/lib/trade/describeTradeFeasibility";
 import { getPlayerValueTier, PLAYER_VALUE_TIER_LABEL } from "@/lib/valuation/playerValueTier";
 import { evaluateTradeOffer, type TradeAssetForEvaluation } from "@/lib/trade/evaluateTradeOffer";
+import { describeTradeReasons } from "@/lib/trade/tradeReasonMessages";
+import { suggestCounterOffer, type IdentifiedTradeAsset } from "@/lib/trade/suggestCounterOffer";
 import { TEAM_IDENTITY_LABEL, type TeamIdentity } from "@/lib/gm/teamIdentity";
 import { TEAM_NEED_LABEL, type TeamNeed } from "@/lib/gm/teamNeeds";
 import { GM_PERSONALITY_LABEL, type GmPersonality } from "@/lib/gm/gmPersonality";
@@ -55,17 +57,41 @@ interface TeamSideDTO {
   roster: { overallRating: number; age: number }[];
 }
 
-const REASON_CODE_LABEL: Record<string, string> = {
-  UNTOUCHABLE_PLAYER: "They won't move that player for this",
-  BELOW_FAIR_VALUE: "This doesn't meet their value bar",
-  FILLS_A_NEED: "This fills one of their roster needs",
-  FAIR_VALUE: "They see this as fair value",
-};
-
 function pickLabel(pick: DraftPickDTO): string {
   const roundLabel = pick.round === 1 ? "1st" : "2nd";
   const base = `${pick.season} ${roundLabel} Round Pick`;
   return pick.originalTeamLabel ? `${base} (via ${pick.originalTeamLabel})` : base;
+}
+
+function toPlayerAsset(p: RosterPlayerDTO): TradeAssetForEvaluation {
+  return {
+    type: "PLAYER",
+    overallRating: p.overallRating,
+    potentialRating: p.potentialRating,
+    age: p.age,
+    position: p.position,
+    currentSalaryCents: BigInt(p.salaryCents),
+    injuryStatus: p.injuryStatus,
+    careerGamesMissedToInjury: p.careerGamesMissedToInjury,
+  };
+}
+
+function toPickAsset(p: DraftPickDTO): TradeAssetForEvaluation {
+  return {
+    type: "DRAFT_PICK",
+    pickSeason: p.season,
+    round: p.round as 1 | 2,
+    overallPickNumber: p.overallPickNumber,
+    originalTeamCompetitivenessPercentile: p.originalTeamCompetitivenessPercentile,
+  };
+}
+
+function identifiedPlayer(p: RosterPlayerDTO): IdentifiedTradeAsset {
+  return { id: p.leaguePlayerId, label: p.fullName, asset: toPlayerAsset(p) };
+}
+
+function identifiedPick(p: DraftPickDTO): IdentifiedTradeAsset {
+  return { id: p.draftPickId, label: pickLabel(p), asset: toPickAsset(p) };
 }
 
 export function TradeBuilder({
@@ -196,24 +222,6 @@ export function TradeBuilder({
     if (result === null || !result.isValid) return null;
     if (mySelected.size === 0 && mySelectedPicks.size === 0) return null;
 
-    const toPlayerAsset = (p: RosterPlayerDTO): TradeAssetForEvaluation => ({
-      type: "PLAYER",
-      overallRating: p.overallRating,
-      potentialRating: p.potentialRating,
-      age: p.age,
-      position: p.position,
-      currentSalaryCents: BigInt(p.salaryCents),
-      injuryStatus: p.injuryStatus,
-      careerGamesMissedToInjury: p.careerGamesMissedToInjury,
-    });
-    const toPickAsset = (p: DraftPickDTO): TradeAssetForEvaluation => ({
-      type: "DRAFT_PICK",
-      pickSeason: p.season,
-      round: p.round as 1 | 2,
-      overallPickNumber: p.overallPickNumber,
-      originalTeamCompetitivenessPercentile: p.originalTeamCompetitivenessPercentile,
-    });
-
     return evaluateTradeOffer({
       respondingTeam: {
         identity: theirTeam.identity,
@@ -242,7 +250,60 @@ export function TradeBuilder({
     season,
   ]);
 
+  // Counter-offer suggestion (Phase 11d) - only worth computing once we
+  // already know the deal isn't an accept as proposed.
+  const counterSuggestion = useMemo(() => {
+    if (!aiPreview || aiPreview.decision === "ACCEPT") return null;
+
+    return suggestCounterOffer({
+      respondingTeam: {
+        identity: theirTeam.identity,
+        needs: theirTeam.needs,
+        personality: theirTeam.personality,
+        roster: theirTeam.roster,
+      },
+      currentSeason: season,
+      incoming: [
+        ...myTeam.players.filter((p) => mySelected.has(p.leaguePlayerId)).map(identifiedPlayer),
+        ...myTeam.picks.filter((p) => mySelectedPicks.has(p.draftPickId)).map(identifiedPick),
+      ],
+      outgoing: [
+        ...theirTeam.players
+          .filter((p) => theirSelected.has(p.leaguePlayerId))
+          .map(identifiedPlayer),
+        ...theirTeam.picks.filter((p) => theirSelectedPicks.has(p.draftPickId)).map(identifiedPick),
+      ],
+      availableToAdd: [
+        ...myTeam.players.filter((p) => !mySelected.has(p.leaguePlayerId)).map(identifiedPlayer),
+        ...myTeam.picks.filter((p) => !mySelectedPicks.has(p.draftPickId)).map(identifiedPick),
+      ],
+    });
+  }, [
+    aiPreview,
+    mySelected,
+    theirSelected,
+    mySelectedPicks,
+    theirSelectedPicks,
+    myTeam,
+    theirTeam,
+    season,
+  ]);
+
   const canSubmit = result !== null && result.isValid && !isPending;
+
+  function applyCounterSuggestion() {
+    if (!counterSuggestion || counterSuggestion.action === "NONE") return;
+    const id = counterSuggestion.asset.id;
+    if (counterSuggestion.action === "ADD_ASSET") {
+      if (myTeam.players.some((p) => p.leaguePlayerId === id)) {
+        toggle(mySelected, setMySelected, id);
+      } else {
+        toggle(mySelectedPicks, setMySelectedPicks, id);
+      }
+    } else {
+      toggle(theirSelected, setTheirSelected, id);
+    }
+  }
 
   function toggle(set: Set<string>, setSet: (s: Set<string>) => void, id: string) {
     const next = new Set(set);
@@ -333,16 +394,55 @@ export function TradeBuilder({
                   ? "Wants a better offer"
                   : "Likely to reject"}
             </p>
-            {aiPreview.reasons[0] && (
-              <p className="mt-1 text-sm text-muted">{REASON_CODE_LABEL[aiPreview.reasons[0]]}</p>
+            {describeTradeReasons(
+              aiPreview.reasons,
+              `${theirTeam.leagueTeamId}-${aiPreview.decision}-${aiPreview.reasons.join(",")}-${Math.round(aiPreview.score * 1000)}`,
+            ).map((message, i) => (
+              <p key={i} className="mt-1 text-sm text-muted">
+                {message}
+              </p>
+            ))}
+
+            {counterSuggestion && counterSuggestion.action !== "NONE" && (
+              <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2 p-3">
+                <p className="text-sm text-foreground">
+                  {counterSuggestion.action === "ADD_ASSET" ? (
+                    <>
+                      Try sweetening the deal with{" "}
+                      <span className="font-semibold">{counterSuggestion.asset.label}</span>.
+                    </>
+                  ) : (
+                    <>
+                      They probably won&apos;t give up{" "}
+                      <span className="font-semibold">{counterSuggestion.asset.label}</span> in this
+                      deal - try building around someone else.
+                    </>
+                  )}
+                </p>
+                <button
+                  type="button"
+                  onClick={applyCounterSuggestion}
+                  className="rounded-lg border border-accent/40 px-3 py-1 text-xs font-semibold text-accent transition hover:bg-accent/10"
+                >
+                  {counterSuggestion.action === "ADD_ASSET" ? "Add it" : "Remove it"}
+                </button>
+              </div>
             )}
+
+            <Link
+              href="/guide/finances#cpu-trade-decisions"
+              target="_blank"
+              className="mt-2 block w-fit text-xs text-muted underline hover:text-foreground"
+            >
+              How do CPU trade decisions work?
+            </Link>
           </div>
         )}
 
         <Link
           href="/guide/finances#trades"
           target="_blank"
-          className="mt-2 inline-block text-xs text-muted underline hover:text-foreground"
+          className="mt-2 block w-fit text-xs text-muted underline hover:text-foreground"
         >
           How does this work?
         </Link>

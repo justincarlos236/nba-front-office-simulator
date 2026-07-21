@@ -92,14 +92,14 @@ unbounded extra work over it).
 | 45  | Championship History                  | ✅     | P2       | 5       | 18           | Past champions shown per-season on `/leagues/[id]/history`                                                                                                                      |
 | 46  | AI General Managers                   | 🟡     | P1       | 11      | 21,22        | CPU teams now genuinely evaluate user-proposed trades (Phase 11c); CPU-CPU trades and free-agent signings are still random-but-cap-legal, not run through the new evaluation    |
 | 47  | GM Personalities                      | ✅     | P2       | 11      | 46           | ✅ DONE (Phase 11c) - `GmPersonality`, 7 values, randomized per team at bootstrap                                                                                               |
-| 48  | AI Trade Negotiations                 | ⬜     | P2       | 11      | 46           | Scoped as Phase 11d                                                                                                                                                             |
+| 48  | AI Trade Negotiations                 | ✅     | P2       | 11      | 46           | ✅ DONE (Phase 11d) - `suggestCounterOffer` proposes a real modification from the user's own available assets when a team wouldn't accept, one-click apply                      |
 | 49  | AI GM Chat                            | ⬜     | P1       | paused  | —            | The explicitly-paused conversational assistant                                                                                                                                  |
 | 50  | Natural-Language Player Search        | ⬜     | P2       | —       | 86           | LLM-flavored - hold pending user re-opening the AI thread                                                                                                                       |
 | 51  | AI Roster Analysis                    | ⬜     | P2       | —       | 6,49         | —                                                                                                                                                                               |
 | 52  | AI Offseason Plan                     | ⬜     | P3       | —       | 49           | —                                                                                                                                                                               |
 | 53  | AI Trade Suggestions                  | ⬜     | P2       | —       | 6,49         | —                                                                                                                                                                               |
-| 54  | AI Trade Explanations                 | ⬜     | P2       | 11      | —            | The CPU-side rejection-reason bank scoped as Phase 11d is a rule-based (not LLM) version of this; doesn't need #49                                                              |
-| 55  | AI Counteroffers                      | ⬜     | P3       | 11      | 48           | Scoped as Phase 11d                                                                                                                                                             |
+| 54  | AI Trade Explanations                 | ✅     | P2       | 11      | —            | ✅ DONE (Phase 11d) - `tradeReasonMessages.ts`'s plain-English, varied rejection/acceptance bank; a rule-based (not LLM) version of this, doesn't need #49                      |
+| 55  | AI Counteroffers                      | ✅     | P3       | 11      | 48           | ✅ DONE (Phase 11d) - see #48; `suggestCounterOffer` also identifies when the real blocker is a specific untouchable player, not just a value gap                               |
 | 56  | Trade Value Visualization             | ⬜     | P2       | 7       | 6            | Values shown as numbers/tables today, no chart                                                                                                                                  |
 | 57  | Championship Probability              | ⬜     | P3       | —       | 15,16        | —                                                                                                                                                                               |
 | 58  | Playoff Probability                   | ⬜     | P2       | —       | 15,16,17     | —                                                                                                                                                                               |
@@ -360,7 +360,7 @@ Cap`/`Luxury Tax` status replacing raw apron enums, plain-English
       `#owner-confidence` section on `/guide/finances`. See
       `docs/ARCHITECTURE.md`'s "GM accountability" section.
 
-### Phase 11 — AI Trade Evaluation & GM Personalities
+### Phase 11 — AI Trade Evaluation & GM Personalities ✅ DONE (2026-07-21)
 
 Not one of the original 100 roadmap items on its own, but directly closes
 several that were: #7 "AI Trade Evaluation", #14 "Draft Pick Trading", #21
@@ -440,11 +440,39 @@ same pattern as Phase 10; only the first is done so far.
       repeat runs of the trade-execution test, since GM personality is
       randomized per league) and 315 unit tests passing against a real
       production build.
-- [ ] **11d - Counter-Offers, Rejection Messaging & Guide**: intelligent
-      counter-offer suggestions (add a pick, swap in a better player, add
-      salary filler, drop an unwanted contract), a bank of plain-English
-      rejection reasons, and a guide section explaining how CPU trade
-      decisions work.
+- [x] **11d - Counter-Offers, Rejection Messaging & Guide** ✅ DONE
+      (2026-07-21): the last piece of Phase 11. `tradeReasonMessages.ts`
+      wraps `evaluateTradeOffer`'s structured reason codes in 2-3 varied
+      plain-English sentences each (deterministically seeded per trade
+      context, so a message doesn't flicker on re-render but does vary
+      across different trades/teams) - closes #54 "AI Trade Explanations".
+      `suggestCounterOffer.ts` closes #48/#55 "AI Trade Negotiations"/
+      "Counteroffers" by reusing `evaluateTradeOffer` itself as the judge
+      rather than a second hand-tuned heuristic: it simulates adding each
+      of the proposing team's own remaining available players/picks one at
+      a time and surfaces the cheapest one that actually flips the
+      decision to ACCEPT, or - if the real blocker is a specific
+      untouchable player - simulates dropping each outgoing player instead
+      and suggests building the offer around someone else. Wired into
+      `TradeBuilder.tsx` as a suggestion box with a one-click "Add it"/
+      "Remove it" button that directly toggles the suggested asset's
+      selection. New `#cpu-trade-decisions` section on `/guide/finances`
+      covering team identity, roster needs, GM personality, the
+      untouchable-player rule, and counter-offer suggestions, reusing the
+      existing `TEAM_IDENTITY_DESCRIPTION`/`GM_PERSONALITY_DESCRIPTION`
+      label maps rather than writing new copy. Also fixed an incidental,
+      pre-existing layout bug surfaced while screenshotting: the "How does
+      this work?" link and the "Execute trade" button crowded onto the
+      same line, since Playwright's/the browser's default `inline-block`
+      display for both elements let them share a line - the link is now
+      `block w-fit` so it stacks cleanly above the button. All 9 new unit
+      tests (325 total), `tsc`, `eslint`, a clean production build, and all
+      10 e2e tests passing; visually verified end-to-end via a throwaway
+      Playwright script (a deliberately lopsided offer correctly showed
+      "Likely to reject" plus a "Try sweetening the deal with Neemias
+      Queta" suggestion; clicking "Add it" applied it and the decision
+      flipped to "Likely to accept" with fresh reason text). **Phase 11
+      (AI Trade Evaluation & GM Personalities) is now fully complete.**
 
 ### Phase 12 — GM Career Mode
 
@@ -1115,3 +1143,30 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   passing; visually verified via a throwaway Playwright script (create a
   league, hover to reveal the delete button, confirm, verify it
   disappears from the hub) - screenshots checked then the script deleted.
+- **2026-07-21 (later)**: Phase 11d completed - the last piece of the
+  trade-AI overhaul. `tradeReasonMessages.ts` (2-3 deterministically-varied
+  plain-English messages per `evaluateTradeOffer` reason code) closes #54
+  "AI Trade Explanations"; `suggestCounterOffer.ts` closes #48/#55 "AI
+  Trade Negotiations"/"AI Counteroffers" by reusing `evaluateTradeOffer`
+  itself as the judge - simulating each of the proposing team's own
+  remaining available assets one at a time to find the cheapest real
+  addition that flips a decision to ACCEPT, or (when the actual blocker is
+  a specific untouchable player) simulating dropping each outgoing player
+  to find which one clears the block. Wired into `TradeBuilder.tsx` as a
+  suggestion box with a one-click "Add it"/"Remove it" button. New
+  `#cpu-trade-decisions` section on `/guide/finances` explaining team
+  identity, roster needs, GM personality, the untouchable-player rule, and
+  counter-offer suggestions - reusing existing label/description maps
+  rather than new copy. Also fixed an incidental pre-existing layout bug
+  (the "How does this work?" link and "Execute trade" button crowding
+  onto one line due to both defaulting to `inline-block`) found while
+  screenshotting. 9 new unit tests (325 total), all passing along with
+  `tsc`, `eslint`, a clean production build, and all 10 e2e tests;
+  visually verified end-to-end via a throwaway Playwright script (a
+  lopsided offer correctly read "Likely to reject" with a "Try sweetening
+  the deal with Neemias Queta" suggestion; clicking "Add it" applied it
+  and the decision flipped to "Likely to accept" with fresh reason text).
+  **Phase 11 (AI Trade Evaluation & GM Personalities) is now fully
+  complete** - all four sub-phases (11a-11d) shipped. Phase 12 (GM Career
+  Mode) remains unstarted by design; no other phase is currently in
+  progress.
