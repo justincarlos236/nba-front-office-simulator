@@ -29,8 +29,11 @@ export default async function DraftPage({ params }: PageProps) {
       where: { leagueId: league.id, season, type: "REGULAR_SEASON", playedAt: null },
     }),
     prisma.playoffSeries.findFirst({ where: { leagueId: league.id, season, round: 4 } }),
+    // A future-pick placeholder always exists by now (Phase 11a); filter to
+    // only this season's actually-started picks, which is what
+    // `DraftExperience` uses to decide whether the draft has begun.
     prisma.draftPick.findMany({
-      where: { leagueId: league.id, season },
+      where: { leagueId: league.id, season, overallPickNumber: { not: null } },
       orderBy: { overallPickNumber: "asc" },
     }),
     prisma.draftProspect.findMany({ where: { leagueId: league.id, season } }),

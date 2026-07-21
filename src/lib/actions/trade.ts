@@ -15,6 +15,29 @@ export interface ExecuteTradeInput {
   myPlayerIds: string[];
   /** LeaguePlayer ids being sent away by toTeamId (i.e. received by fromTeamId). */
   theirPlayerIds: string[];
+  /** DraftPick ids being sent away by fromTeamId. */
+  myPickIds: string[];
+  /** DraftPick ids being sent away by toTeamId (i.e. received by fromTeamId). */
+  theirPickIds: string[];
+}
+
+function pickLabel(pick: { season: number; round: number }): string {
+  return `${pick.season} ${pick.round === 1 ? "1st" : "2nd"} Round Pick`;
+}
+
+/** Future seasons this team currently owns its OWN round-1 pick for - the Stepien-rule input. */
+async function loadOwnedFutureFirstRoundSeasons(leagueTeamId: string, currentSeason: number) {
+  const picks = await prisma.draftPick.findMany({
+    where: {
+      originalTeamId: leagueTeamId,
+      currentOwnerId: leagueTeamId,
+      round: 1,
+      selectedProspectId: null,
+      season: { gte: currentSeason },
+    },
+    select: { season: true },
+  });
+  return picks.map((p) => p.season);
 }
 
 async function loadCapState(leagueTeamId: string, season: number) {
@@ -49,39 +72,71 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
     throw new Error("You can only trade away players from your own team");
   }
 
-  const [myPlayers, theirPlayers, myCapSheet, theirCapSheet, fromLeagueTeam, toLeagueTeam] =
-    await Promise.all([
-      prisma.leaguePlayer.findMany({
-        where: { id: { in: input.myPlayerIds }, leagueTeamId: input.fromTeamId },
-        include: {
-          player: true,
-          contract: { include: { years: { where: { season: league.currentSeason } } } },
-        },
-      }),
-      prisma.leaguePlayer.findMany({
-        where: { id: { in: input.theirPlayerIds }, leagueTeamId: input.toTeamId },
-        include: {
-          player: true,
-          contract: { include: { years: { where: { season: league.currentSeason } } } },
-        },
-      }),
-      loadCapState(input.fromTeamId, league.currentSeason),
-      loadCapState(input.toTeamId, league.currentSeason),
-      prisma.leagueTeam.findUniqueOrThrow({
-        where: { id: input.fromTeamId },
-        include: { team: true },
-      }),
-      prisma.leagueTeam.findUniqueOrThrow({
-        where: { id: input.toTeamId },
-        include: { team: true },
-      }),
-    ]);
+  const [
+    myPlayers,
+    theirPlayers,
+    myPicks,
+    theirPicks,
+    myCapSheet,
+    theirCapSheet,
+    myOwnedFirstRoundSeasons,
+    theirOwnedFirstRoundSeasons,
+    fromLeagueTeam,
+    toLeagueTeam,
+  ] = await Promise.all([
+    prisma.leaguePlayer.findMany({
+      where: { id: { in: input.myPlayerIds }, leagueTeamId: input.fromTeamId },
+      include: {
+        player: true,
+        contract: { include: { years: { where: { season: league.currentSeason } } } },
+      },
+    }),
+    prisma.leaguePlayer.findMany({
+      where: { id: { in: input.theirPlayerIds }, leagueTeamId: input.toTeamId },
+      include: {
+        player: true,
+        contract: { include: { years: { where: { season: league.currentSeason } } } },
+      },
+    }),
+    prisma.draftPick.findMany({
+      where: {
+        id: { in: input.myPickIds },
+        currentOwnerId: input.fromTeamId,
+        selectedProspectId: null,
+      },
+    }),
+    prisma.draftPick.findMany({
+      where: {
+        id: { in: input.theirPickIds },
+        currentOwnerId: input.toTeamId,
+        selectedProspectId: null,
+      },
+    }),
+    loadCapState(input.fromTeamId, league.currentSeason),
+    loadCapState(input.toTeamId, league.currentSeason),
+    loadOwnedFutureFirstRoundSeasons(input.fromTeamId, league.currentSeason),
+    loadOwnedFutureFirstRoundSeasons(input.toTeamId, league.currentSeason),
+    prisma.leagueTeam.findUniqueOrThrow({
+      where: { id: input.fromTeamId },
+      include: { team: true },
+    }),
+    prisma.leagueTeam.findUniqueOrThrow({
+      where: { id: input.toTeamId },
+      include: { team: true },
+    }),
+  ]);
 
   if (myPlayers.length !== input.myPlayerIds.length) {
     throw new Error("One or more of your selected players is no longer on your roster");
   }
   if (theirPlayers.length !== input.theirPlayerIds.length) {
     throw new Error("One or more of the other team's selected players is no longer available");
+  }
+  if (myPicks.length !== input.myPickIds.length) {
+    throw new Error("One or more of your selected picks is no longer available to trade");
+  }
+  if (theirPicks.length !== input.theirPickIds.length) {
+    throw new Error("One or more of the other team's selected picks is no longer available");
   }
 
   const assets: TradeAssetInput[] = [
@@ -101,6 +156,22 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
       salaryCents: lp.contract!.years[0].salaryCents,
       noTradeClause: lp.contract!.noTradeClause,
     })),
+    ...myPicks.map((p): TradeAssetInput => ({
+      type: "DRAFT_PICK",
+      fromTeamId: input.fromTeamId,
+      toTeamId: input.toTeamId,
+      pickId: p.id,
+      season: p.season,
+      round: p.round as 1 | 2,
+    })),
+    ...theirPicks.map((p): TradeAssetInput => ({
+      type: "DRAFT_PICK",
+      fromTeamId: input.toTeamId,
+      toTeamId: input.fromTeamId,
+      pickId: p.id,
+      season: p.season,
+      round: p.round as 1 | 2,
+    })),
   ];
 
   const validation = validateTrade({
@@ -110,12 +181,12 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
       [input.fromTeamId]: {
         apronLevel: myCapSheet.apronLevel,
         capSpaceCents: myCapSheet.capSpaceCents,
-        ownedFutureFirstRoundPickSeasons: [],
+        ownedFutureFirstRoundPickSeasons: myOwnedFirstRoundSeasons,
       },
       [input.toTeamId]: {
         apronLevel: theirCapSheet.apronLevel,
         capSpaceCents: theirCapSheet.capSpaceCents,
-        ownedFutureFirstRoundPickSeasons: [],
+        ownedFutureFirstRoundPickSeasons: theirOwnedFirstRoundSeasons,
       },
     },
   });
@@ -142,6 +213,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
         fromLeagueTeamId: asset.fromTeamId,
         toLeagueTeamId: asset.toTeamId,
         leaguePlayerId: asset.type === "PLAYER" ? asset.playerId : null,
+        draftPickId: asset.type === "DRAFT_PICK" ? asset.pickId : null,
       })),
     });
 
@@ -166,6 +238,16 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
       });
     }
 
+    for (const p of myPicks) {
+      await tx.draftPick.update({ where: { id: p.id }, data: { currentOwnerId: input.toTeamId } });
+    }
+    for (const p of theirPicks) {
+      await tx.draftPick.update({
+        where: { id: p.id },
+        data: { currentOwnerId: input.fromTeamId },
+      });
+    }
+
     await tx.leagueTransaction.create({
       data: {
         leagueId: league.id,
@@ -174,11 +256,17 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
         description: describeTrade(
           {
             teamLabel: `${fromLeagueTeam.team.city} ${fromLeagueTeam.team.name}`,
-            sentPlayerNames: myPlayers.map((lp) => lp.player.fullName),
+            sentAssetNames: [
+              ...myPlayers.map((lp) => lp.player.fullName),
+              ...myPicks.map(pickLabel),
+            ],
           },
           {
             teamLabel: `${toLeagueTeam.team.city} ${toLeagueTeam.team.name}`,
-            sentPlayerNames: theirPlayers.map((lp) => lp.player.fullName),
+            sentAssetNames: [
+              ...theirPlayers.map((lp) => lp.player.fullName),
+              ...theirPicks.map(pickLabel),
+            ],
           },
         ),
       },

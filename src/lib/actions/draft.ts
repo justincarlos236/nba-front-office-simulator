@@ -162,8 +162,10 @@ export async function startDraftAction(leagueId: string) {
     throw new Error("Crown a champion in the playoffs before the draft.");
   }
 
-  const existingPick = await prisma.draftPick.findFirst({ where: { leagueId, season } });
-  if (existingPick) {
+  const existingStartedPick = await prisma.draftPick.findFirst({
+    where: { leagueId, season, overallPickNumber: { not: null } },
+  });
+  if (existingStartedPick) {
     throw new Error("The draft has already started for this season.");
   }
 
@@ -198,16 +200,33 @@ export async function startDraftAction(leagueId: string) {
     })),
   });
 
-  const createdPicks = await prisma.draftPick.createManyAndReturn({
-    data: pickOrder.map((leagueTeamId, index) => ({
-      leagueId,
-      season,
-      round: index < 30 ? 1 : 2,
-      originalTeamId: leagueTeamId,
-      currentOwnerId: leagueTeamId,
-      overallPickNumber: index + 1,
-    })),
-  });
+  // Every pick for this season already exists as a placeholder row (Phase
+  // 11a - see `buildFuturePickRows`), keyed by which team's own record
+  // earned the slot (`originalTeamId`), possibly already re-owned by a
+  // different team via a pre-draft trade. Starting the draft only fills in
+  // `overallPickNumber` on those existing rows - it must never recreate
+  // them with `currentOwnerId: leagueTeamId`, or any pre-draft pick trade
+  // would silently revert on draft day.
+  const placeholderPicks = await prisma.draftPick.findMany({ where: { leagueId, season } });
+  const placeholderByKey = new Map(
+    placeholderPicks.map((p) => [`${p.round}-${p.originalTeamId}`, p]),
+  );
+
+  const createdPicks = await Promise.all(
+    pickOrder.map((leagueTeamId, index) => {
+      const round = index < 30 ? 1 : 2;
+      const placeholder = placeholderByKey.get(`${round}-${leagueTeamId}`);
+      if (!placeholder) {
+        throw new Error(
+          `Missing pre-generated draft pick for team ${leagueTeamId}, round ${round}, season ${season}`,
+        );
+      }
+      return prisma.draftPick.update({
+        where: { id: placeholder.id },
+        data: { overallPickNumber: index + 1 },
+      });
+    }),
+  );
 
   revalidatePath(`/leagues/${leagueId}/draft`);
 
@@ -256,7 +275,7 @@ export async function advanceDraftAction(leagueId: string) {
 
   const [allPicks, allProspects] = await Promise.all([
     prisma.draftPick.findMany({
-      where: { leagueId, season },
+      where: { leagueId, season, overallPickNumber: { not: null } },
       orderBy: { overallPickNumber: "asc" },
     }),
     prisma.draftProspect.findMany({ where: { leagueId, season } }),
@@ -330,7 +349,7 @@ export async function makeDraftPickAction(leagueId: string, prospectId: string) 
   if (!userTeamId) throw new Error("You don't control a team in this league");
 
   const nextPick = await prisma.draftPick.findFirst({
-    where: { leagueId, season, selectedProspectId: null },
+    where: { leagueId, season, overallPickNumber: { not: null }, selectedProspectId: null },
     orderBy: { overallPickNumber: "asc" },
   });
   if (!nextPick) throw new Error("There are no picks remaining in this draft.");

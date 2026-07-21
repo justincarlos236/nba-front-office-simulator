@@ -30,8 +30,16 @@ test("sign a free agent to a minimum deal, and reject an offer bigger than any e
     .first()
     .textContent();
 
-  await page.getByText("Offer contract").first().click();
-  await expect(page.getByText("First-year salary")).toBeVisible();
+  // Target the link role directly rather than a bare text match - hundreds
+  // of free agents means `getByText("Offer contract")` resolves against a
+  // huge match set (every ancestor element containing that text, not just
+  // the link itself), which is slower to resolve than necessary.
+  await page.getByRole("link", { name: "Offer contract" }).first().click();
+  // A real page navigation to a freshly server-rendered page (cap sheet,
+  // signing exception usage) - the default 5s assertion timeout is tight
+  // for that against a remote database, same reasoning as the season-advance
+  // timeout above.
+  await expect(page.getByText("First-year salary")).toBeVisible({ timeout: 15_000 });
 
   // An offer far beyond any exception should be rejected.
   await page.locator('input[type="number"]').fill("80000000");

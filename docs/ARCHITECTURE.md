@@ -114,11 +114,12 @@ Not yet built:
 - The bi-annual exception. A simplified Re-Signing Rights mechanic (a
   casual stand-in for real Bird/Early-Bird/Non-Bird rights) exists now -
   see "Free agency" below.
-- Trading draft picks - the Stepien-lite check exists in `validateTrade`,
-  but no `DraftPick` inventory is generated during league bootstrap yet, so
-  the trade builder is player-only for now.
 - Trade exceptions (created when a team takes back less than it sends out)
   aren't banked/spendable yet, even though the `TradeException` model exists.
+
+Trading draft picks now works (Phase 11a) - see "Draft pick trading" under
+"Draft system" below for the future-pick inventory and the Stepien-rule
+wiring that unblocked it.
 
 ## Simplified financial presentation layer
 
@@ -630,13 +631,59 @@ through development/retirement/free agency like anyone else.
   necessarily match the age they're treated as in all future development
   math - the same simplification every real player in the sim already
   has, just newly visible at the moment they're drafted.
-- **Pick inventory**: `DraftPick` rows for a season are created lazily by
-  `startDraftAction` (60 rows: 2 rounds x 30 teams) rather than generated
-  upfront at league bootstrap for many future years - simpler, and
-  sidesteps needing to backfill existing leagues that bootstrapped before
-  this phase existed. Pick trading (extending `validateTrade`'s existing
-  but unused Stepien-lite check) is deferred - see
-  `docs/IMPLEMENTATION_PLAN.md`.
+
+### Draft pick trading
+
+Building the trade-AI overhaul (Phase 11) surfaced that draft picks
+weren't tradeable at all: `DraftPick` rows for a season only came into
+existence the moment that season's own draft actually started
+(`startDraftAction`, 60 rows: 2 rounds x 30 teams), so there was no
+inventory of "next year's 1st" or "picks 3 years out" for anything to
+trade. Phase 11a fixed this:
+
+- **Future pick inventory** (`src/lib/draft/futurePicks.ts`,
+  `buildFuturePickRows`): every team owns a rolling window of its own
+  round-1 and round-2 picks for `[currentSeason, currentSeason +
+FUTURE_PICK_WINDOW_YEARS]` (5 seasons ahead), with `overallPickNumber:
+null` until that season's draft actually happens. Generated once at
+  league bootstrap for the full initial window, then extended by exactly
+  one new far-edge season every `advanceSeasonAction` call - the same
+  "rolling window" shape as the 4-year cap projection in the simplified
+  financial layer.
+- **Placeholders are updated in place, never recreated**: `startDraftAction`
+  used to `createMany` 60 fresh `DraftPick` rows keyed by
+  `originalTeamId`. Now that those rows already exist as placeholders
+  (possibly already re-owned by a different team via a pre-draft trade),
+  it looks each one up by `{round, originalTeamId}` and updates only
+  `overallPickNumber` - critical, since recreating the row with
+  `currentOwnerId: originalTeamId` would silently revert any trade that
+  happened before that season's draft. The "has the draft started"
+  signal changed accordingly, from "does any `DraftPick` row exist for
+  this season" (now always true) to "does one exist with a non-null
+  `overallPickNumber`" - updated everywhere that check was made:
+  `startDraftAction`, `advanceDraftAction`, `makeDraftPickAction`,
+  `advanceSeasonAction`'s advance-guard, and three page components
+  (`offseason`, team dashboard, draft board).
+- **Trading a pick**: `TradeBuilder.tsx` lists each side's currently-owned,
+  not-yet-selected picks (`currentOwnerId: teamId, selectedProspectId:
+null`) alongside players; `executeTradeAction` reassigns
+  `DraftPick.currentOwnerId` inside the same transaction that moves
+  players, and populates `validateTrade`'s `ownedFutureFirstRoundPickSeasons`
+  input with real data (previously always `[]`) so the existing but
+  never-exercised Stepien-rule check actually does something.
+- **Foreign keys into `LeagueTeam` are `RESTRICT`, not cascade**: this
+  only matters for bulk data cleanup (deleting a `User` cascades to their
+  `League`s, which should cascade to `LeagueTeam`), not normal gameplay,
+  but `Contract.leagueTeamId`, `DraftPick.originalTeamId`/`currentOwnerId`,
+  `TradeException.leagueTeamId`, and `TradeAsset.fromLeagueTeamId`/
+  `toLeagueTeamId` all default to `ON DELETE RESTRICT` from the original
+  migration. A full cascade delete has to clear those four tables
+  explicitly, in dependency order, before the `LeagueTeam` rows they
+  point to can go - discovered while cleaning up accumulated e2e test
+  data (see `docs/IMPLEMENTATION_PLAN.md`'s Phase 11a log entry).
+- **Draft pick trade _value_** (projected slot for a not-yet-drafted pick,
+  years-away discount, round discount) is Phase 11c's job, not 11a's -
+  this phase only makes picks a real, legally-tradeable asset.
 
 ## Transactions, news feed & league history
 

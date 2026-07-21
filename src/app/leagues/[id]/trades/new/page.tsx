@@ -43,6 +43,36 @@ async function loadRoster(leagueTeamId: string, season: number) {
   return { players, capSheet };
 }
 
+/** Every pick this team currently owns and hasn't used yet - tradeable regardless of whether that season's own draft has happened. */
+async function loadTradeablePicks(leagueTeamId: string) {
+  const picks = await prisma.draftPick.findMany({
+    where: { currentOwnerId: leagueTeamId, selectedProspectId: null },
+    orderBy: [{ season: "asc" }, { round: "asc" }],
+  });
+  return picks;
+}
+
+/**
+ * Future seasons this team currently owns its OWN round-1 pick for - the
+ * Stepien-rule input `validateTrade` needs. Deliberately scoped to the
+ * team's own original pick (not others it holds via trade), since the rule
+ * is about not leaving a team without a first-rounder of its own in
+ * back-to-back years.
+ */
+async function loadOwnedFutureFirstRoundSeasons(leagueTeamId: string, currentSeason: number) {
+  const picks = await prisma.draftPick.findMany({
+    where: {
+      originalTeamId: leagueTeamId,
+      currentOwnerId: leagueTeamId,
+      round: 1,
+      selectedProspectId: null,
+      season: { gte: currentSeason },
+    },
+    select: { season: true },
+  });
+  return picks.map((p) => p.season);
+}
+
 export default async function NewTradePage({ params, searchParams }: PageProps) {
   const { id } = await params;
   const { with: otherLeagueTeamId } = await searchParams;
@@ -81,8 +111,7 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
           Propose a trade with...
         </h1>
         <p className="mt-2 text-muted">
-          Player-only trades for now - draft pick trading needs a pick inventory that isn&apos;t
-          generated yet (see docs/ROADMAP.md).
+          Trade players and future draft picks with any other team in the league.
         </p>
         <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {otherTeams.map((lt) => (
@@ -106,10 +135,36 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
   const otherLeagueTeam = league.teams.find((lt) => lt.id === otherLeagueTeamId);
   if (!otherLeagueTeam) notFound();
 
-  const [mine, theirs] = await Promise.all([
+  const teamLabelById = new Map(
+    league.teams.map((lt) => [lt.id, `${lt.team.city} ${lt.team.name}`]),
+  );
+
+  const [
+    mine,
+    theirs,
+    minePicks,
+    theirPicks,
+    mineOwnedFirstRoundSeasons,
+    theirOwnedFirstRoundSeasons,
+  ] = await Promise.all([
     loadRoster(myLeagueTeam.id, league.currentSeason),
     loadRoster(otherLeagueTeam.id, league.currentSeason),
+    loadTradeablePicks(myLeagueTeam.id),
+    loadTradeablePicks(otherLeagueTeam.id),
+    loadOwnedFutureFirstRoundSeasons(myLeagueTeam.id, league.currentSeason),
+    loadOwnedFutureFirstRoundSeasons(otherLeagueTeam.id, league.currentSeason),
   ]);
+
+  const toPickDTO = (picks: Awaited<ReturnType<typeof loadTradeablePicks>>) =>
+    picks.map((p) => ({
+      draftPickId: p.id,
+      season: p.season,
+      round: p.round,
+      originalTeamLabel:
+        p.originalTeamId === p.currentOwnerId
+          ? null
+          : (teamLabelById.get(p.originalTeamId) ?? null),
+    }));
 
   return (
     <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
@@ -123,8 +178,8 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
         {myLeagueTeam.team.name} &harr; {otherLeagueTeam.team.name}
       </h1>
       <p className="mt-2 text-muted">
-        Select players on each side. Legality is checked live against real 2023 CBA salary matching,
-        apron, and no-trade-clause rules.
+        Select players and draft picks on each side. Legality is checked live against real 2023 CBA
+        salary matching, apron, no-trade-clause, and Stepien-rule draft-pick rules.
       </p>
 
       <div className="mt-10">
@@ -137,6 +192,8 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
             apronLevel: mine.capSheet.apronLevel,
             capSpaceCents: mine.capSheet.capSpaceCents.toString(),
             players: mine.players,
+            picks: toPickDTO(minePicks),
+            ownedFutureFirstRoundPickSeasons: mineOwnedFirstRoundSeasons,
           }}
           theirTeam={{
             leagueTeamId: otherLeagueTeam.id,
@@ -144,6 +201,8 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
             apronLevel: theirs.capSheet.apronLevel,
             capSpaceCents: theirs.capSheet.capSpaceCents.toString(),
             players: theirs.players,
+            picks: toPickDTO(theirPicks),
+            ownedFutureFirstRoundPickSeasons: theirOwnedFirstRoundSeasons,
           }}
         />
       </div>

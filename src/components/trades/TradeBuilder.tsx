@@ -21,12 +21,29 @@ interface RosterPlayerDTO {
   noTradeClause: boolean;
 }
 
+interface DraftPickDTO {
+  draftPickId: string;
+  season: number;
+  round: number;
+  /** Set when this isn't the team's own original pick (acquired via an earlier trade). */
+  originalTeamLabel: string | null;
+}
+
 interface TeamSideDTO {
   leagueTeamId: string;
   name: string;
   apronLevel: string;
   capSpaceCents: string;
   players: RosterPlayerDTO[];
+  picks: DraftPickDTO[];
+  /** Future seasons this team currently owns its own round-1 pick for - the Stepien-rule input. */
+  ownedFutureFirstRoundPickSeasons: number[];
+}
+
+function pickLabel(pick: DraftPickDTO): string {
+  const roundLabel = pick.round === 1 ? "1st" : "2nd";
+  const base = `${pick.season} ${roundLabel} Round Pick`;
+  return pick.originalTeamLabel ? `${base} (via ${pick.originalTeamLabel})` : base;
 }
 
 export function TradeBuilder({
@@ -42,11 +59,19 @@ export function TradeBuilder({
 }) {
   const [mySelected, setMySelected] = useState<Set<string>>(new Set());
   const [theirSelected, setTheirSelected] = useState<Set<string>>(new Set());
+  const [mySelectedPicks, setMySelectedPicks] = useState<Set<string>>(new Set());
+  const [theirSelectedPicks, setTheirSelectedPicks] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const result = useMemo(() => {
-    if (mySelected.size === 0 && theirSelected.size === 0) return null;
+    if (
+      mySelected.size === 0 &&
+      theirSelected.size === 0 &&
+      mySelectedPicks.size === 0 &&
+      theirSelectedPicks.size === 0
+    )
+      return null;
 
     const assets: TradeAssetInput[] = [
       ...myTeam.players
@@ -69,6 +94,26 @@ export function TradeBuilder({
           salaryCents: BigInt(p.salaryCents),
           noTradeClause: p.noTradeClause,
         })),
+      ...myTeam.picks
+        .filter((p) => mySelectedPicks.has(p.draftPickId))
+        .map((p): TradeAssetInput => ({
+          type: "DRAFT_PICK",
+          fromTeamId: myTeam.leagueTeamId,
+          toTeamId: theirTeam.leagueTeamId,
+          pickId: p.draftPickId,
+          season: p.season,
+          round: p.round as 1 | 2,
+        })),
+      ...theirTeam.picks
+        .filter((p) => theirSelectedPicks.has(p.draftPickId))
+        .map((p): TradeAssetInput => ({
+          type: "DRAFT_PICK",
+          fromTeamId: theirTeam.leagueTeamId,
+          toTeamId: myTeam.leagueTeamId,
+          pickId: p.draftPickId,
+          season: p.season,
+          round: p.round as 1 | 2,
+        })),
     ];
 
     return validateTrade({
@@ -80,16 +125,16 @@ export function TradeBuilder({
           // the server/client boundary is already a valid member value.
           apronLevel: myTeam.apronLevel as ApronLevel,
           capSpaceCents: BigInt(myTeam.capSpaceCents),
-          ownedFutureFirstRoundPickSeasons: [],
+          ownedFutureFirstRoundPickSeasons: myTeam.ownedFutureFirstRoundPickSeasons,
         },
         [theirTeam.leagueTeamId]: {
           apronLevel: theirTeam.apronLevel as ApronLevel,
           capSpaceCents: BigInt(theirTeam.capSpaceCents),
-          ownedFutureFirstRoundPickSeasons: [],
+          ownedFutureFirstRoundPickSeasons: theirTeam.ownedFutureFirstRoundPickSeasons,
         },
       },
     });
-  }, [mySelected, theirSelected, myTeam, theirTeam, season]);
+  }, [mySelected, theirSelected, mySelectedPicks, theirSelectedPicks, myTeam, theirTeam, season]);
 
   const feasibility = useMemo(() => {
     if (result === null) return null;
@@ -140,6 +185,8 @@ export function TradeBuilder({
           toTeamId: theirTeam.leagueTeamId,
           myPlayerIds: [...mySelected],
           theirPlayerIds: [...theirSelected],
+          myPickIds: [...mySelectedPicks],
+          theirPickIds: [...theirSelectedPicks],
         });
       } catch (error) {
         // redirect() throws internally on success - only real errors land here
@@ -158,18 +205,24 @@ export function TradeBuilder({
           players={myTeam.players}
           selected={mySelected}
           onToggle={(id) => toggle(mySelected, setMySelected, id)}
+          picks={myTeam.picks}
+          selectedPicks={mySelectedPicks}
+          onTogglePick={(id) => toggle(mySelectedPicks, setMySelectedPicks, id)}
         />
         <RosterColumn
           title={`Receive from ${theirTeam.name}`}
           players={theirTeam.players}
           selected={theirSelected}
           onToggle={(id) => toggle(theirSelected, setTheirSelected, id)}
+          picks={theirTeam.picks}
+          selectedPicks={theirSelectedPicks}
+          onTogglePick={(id) => toggle(theirSelectedPicks, setTheirSelectedPicks, id)}
         />
       </div>
 
       <div className="mt-6 rounded-xl border border-border bg-surface p-6">
         {feasibility === null ? (
-          <p className="text-sm text-muted">Select at least one player on either side.</p>
+          <p className="text-sm text-muted">Select at least one player or pick on either side.</p>
         ) : (
           <div>
             <p
@@ -208,11 +261,17 @@ function RosterColumn({
   players,
   selected,
   onToggle,
+  picks,
+  selectedPicks,
+  onTogglePick,
 }: {
   title: string;
   players: RosterPlayerDTO[];
   selected: Set<string>;
   onToggle: (id: string) => void;
+  picks: DraftPickDTO[];
+  selectedPicks: Set<string>;
+  onTogglePick: (id: string) => void;
 }) {
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
@@ -243,6 +302,28 @@ function RosterColumn({
           </label>
         ))}
       </div>
+
+      {picks.length > 0 && (
+        <div className="mt-3 border-t border-border pt-3">
+          <h3 className="mb-2 text-xs tracking-wide text-muted uppercase">Draft picks</h3>
+          <div className="max-h-[240px] space-y-1 overflow-y-auto">
+            {picks.map((p) => (
+              <label
+                key={p.draftPickId}
+                className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-surface-2"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedPicks.has(p.draftPickId)}
+                  onChange={() => onTogglePick(p.draftPickId)}
+                  className="accent-orange-500"
+                />
+                <span className="text-foreground">{pickLabel(p)}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

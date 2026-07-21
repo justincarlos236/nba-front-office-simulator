@@ -109,7 +109,11 @@ test("play through the playoffs, then advance to the next season", async ({ page
   const advanceButton = page.getByRole("button", { name: /Advance to the 2024-25 season/ });
   await expect(advanceButton).toBeVisible();
   await advanceButton.click();
-  await expect(page.getByText(/Welcome to the 2024-25 season/)).toBeVisible({ timeout: 30_000 });
+  // advanceSeasonAction is the single heaviest server action in the app
+  // (player development for the whole league, retirements, awards, GM
+  // accountability evaluation - see docs/ARCHITECTURE.md) - a generous
+  // timeout here isn't masking a bug, it's matching the real cost.
+  await expect(page.getByText(/Welcome to the 2024-25 season/)).toBeVisible({ timeout: 60_000 });
   await expect(page.getByRole("heading", { name: /2024-25 Offseason/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: "2023-24 Season Awards" })).toBeVisible();
   await expect(page.getByText("Most Valuable Player")).toBeVisible();

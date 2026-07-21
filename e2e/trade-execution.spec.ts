@@ -27,7 +27,7 @@ test("propose and execute a legal trade, and the rosters actually swap", async (
   // Knicks; this test just needs a specific, reproducible roster to trade
   // against, not real-world team accuracy.
   await page.locator("a[href*='trades/new?with=']", { hasText: "Brooklyn Nets" }).click();
-  await expect(page.getByText("Select players on each side")).toBeVisible();
+  await expect(page.getByText("Select players and draft picks on each side")).toBeVisible();
 
   // Click the player name labels directly, as a real user would - clicking
   // a container div near (but not on) the checkbox doesn't toggle it.

@@ -255,8 +255,8 @@ async function maybeExecuteCpuTrade(
   transactions.push({
     type: "TRADE",
     description: describeTrade(
-      { teamLabel: result.teamA.teamLabel, sentPlayerNames: [result.teamA.player.playerName] },
-      { teamLabel: result.teamB.teamLabel, sentPlayerNames: [result.teamB.player.playerName] },
+      { teamLabel: result.teamA.teamLabel, sentAssetNames: [result.teamA.player.playerName] },
+      { teamLabel: result.teamB.teamLabel, sentAssetNames: [result.teamB.player.playerName] },
     ),
   });
 }

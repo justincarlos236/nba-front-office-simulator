@@ -37,8 +37,12 @@ async function describeStatus(leagueId: string, season: number): Promise<string>
     prisma.playoffSeries.findFirst({
       where: { leagueId, season, round: 4, winnerTeamId: { not: null } },
     }),
-    prisma.draftPick.count({ where: { leagueId, season, selectedProspectId: null } }),
-    prisma.draftPick.count({ where: { leagueId, season } }),
+    // A future-pick placeholder always exists by now (Phase 11a);
+    // `overallPickNumber` is the real "draft started" signal.
+    prisma.draftPick.count({
+      where: { leagueId, season, overallPickNumber: { not: null }, selectedProspectId: null },
+    }),
+    prisma.draftPick.count({ where: { leagueId, season, overallPickNumber: { not: null } } }),
   ]);
 
   if (gamesRemaining > 0) return "Regular season in progress";

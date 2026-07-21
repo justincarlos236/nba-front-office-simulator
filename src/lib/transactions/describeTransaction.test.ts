@@ -4,40 +4,40 @@ import { describeRetirement, describeSigning, describeTrade } from "./describeTr
 describe("describeTrade", () => {
   it("names both sides when it's a player-for-player trade", () => {
     const result = describeTrade(
-      { teamLabel: "Chicago Bulls", sentPlayerNames: ["X"] },
-      { teamLabel: "Los Angeles Lakers", sentPlayerNames: ["Y"] },
+      { teamLabel: "Chicago Bulls", sentAssetNames: ["X"] },
+      { teamLabel: "Los Angeles Lakers", sentAssetNames: ["Y"] },
     );
     expect(result).toBe("Chicago Bulls traded X to the Los Angeles Lakers for Y");
   });
 
   it("joins multiple players with an oxford comma", () => {
     const result = describeTrade(
-      { teamLabel: "Chicago Bulls", sentPlayerNames: ["X", "Y", "Z"] },
-      { teamLabel: "Los Angeles Lakers", sentPlayerNames: ["W"] },
+      { teamLabel: "Chicago Bulls", sentAssetNames: ["X", "Y", "Z"] },
+      { teamLabel: "Los Angeles Lakers", sentAssetNames: ["W"] },
     );
     expect(result).toBe("Chicago Bulls traded X, Y, and Z to the Los Angeles Lakers for W");
   });
 
   it("joins exactly two players with 'and', no comma", () => {
     const result = describeTrade(
-      { teamLabel: "Chicago Bulls", sentPlayerNames: ["X", "Y"] },
-      { teamLabel: "Los Angeles Lakers", sentPlayerNames: ["W"] },
+      { teamLabel: "Chicago Bulls", sentAssetNames: ["X", "Y"] },
+      { teamLabel: "Los Angeles Lakers", sentAssetNames: ["W"] },
     );
     expect(result).toBe("Chicago Bulls traded X and Y to the Los Angeles Lakers for W");
   });
 
   it("omits 'for' when the other side sent nothing back", () => {
     const result = describeTrade(
-      { teamLabel: "Chicago Bulls", sentPlayerNames: ["X"] },
-      { teamLabel: "Los Angeles Lakers", sentPlayerNames: [] },
+      { teamLabel: "Chicago Bulls", sentAssetNames: ["X"] },
+      { teamLabel: "Los Angeles Lakers", sentAssetNames: [] },
     );
     expect(result).toBe("Chicago Bulls traded X to the Los Angeles Lakers");
   });
 
   it("phrases from the other side's perspective when only they sent players", () => {
     const result = describeTrade(
-      { teamLabel: "Chicago Bulls", sentPlayerNames: [] },
-      { teamLabel: "Los Angeles Lakers", sentPlayerNames: ["Y"] },
+      { teamLabel: "Chicago Bulls", sentAssetNames: [] },
+      { teamLabel: "Los Angeles Lakers", sentAssetNames: ["Y"] },
     );
     expect(result).toBe("Los Angeles Lakers traded Y to the Chicago Bulls");
   });

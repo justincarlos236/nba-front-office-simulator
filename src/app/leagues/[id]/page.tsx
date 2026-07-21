@@ -153,13 +153,23 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
       where: { leagueId: league.id, season, type: "REGULAR_SEASON", playedAt: null },
     }),
     prisma.playoffSeries.findMany({ where: { leagueId: league.id, season } }),
+    // A future-pick placeholder always exists by now (Phase 11a);
+    // `overallPickNumber` is the real "draft started" signal, so this
+    // keeps showing only this season's actual draft picks, not the
+    // multi-year future-pick inventory.
     prisma.draftPick.count({
-      where: { leagueId: league.id, season, currentOwnerId: userLeagueTeam.id },
+      where: {
+        leagueId: league.id,
+        season,
+        overallPickNumber: { not: null },
+        currentOwnerId: userLeagueTeam.id,
+      },
     }),
     prisma.draftPick.count({
       where: {
         leagueId: league.id,
         season,
+        overallPickNumber: { not: null },
         currentOwnerId: userLeagueTeam.id,
         selectedProspectId: null,
       },

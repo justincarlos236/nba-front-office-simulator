@@ -45,28 +45,28 @@ unbounded extra work over it).
 
 | #   | Feature                               | Status | Priority | Phase   | Depends on   | Notes                                                                                                                                                                           |
 | --- | ------------------------------------- | ------ | -------- | ------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | NBA Trade Machine                     | ✅     | P0       | done    | —            | `/leagues/[id]/trades/new`, 2-team only, players only (no picks)                                                                                                                |
+| 1   | NBA Trade Machine                     | ✅     | P0       | done    | —            | `/leagues/[id]/trades/new`, 2-team only, players and draft picks both tradeable (Phase 11a)                                                                                     |
 | 2   | Realistic Salary Cap Engine           | ✅     | P0       | done    | —            | `src/lib/cap/*`, 39 unit tests, real 2023 CBA aprons/MLE                                                                                                                        |
 | 3   | Full Roster Management                | 🟡     | P0       | done*   | —            | View is complete; no waive/release/lineup management yet                                                                                                                        |
 | 4   | Real NBA Teams and Players            | ✅     | P0       | done    | —            | 30 real teams, 497 real players + 2023-24 stats                                                                                                                                 |
 | 5   | AI GM Assistant                       | ⬜     | P1       | paused  | —            | Started, then user explicitly said skip for now — **do not resume unprompted**                                                                                                  |
 | 6   | Player Valuation Model                | ✅     | P0       | done    | —            | `src/lib/valuation/*`, rating + age curve + market value + surplus                                                                                                              |
-| 7   | AI Trade Evaluation                   | ⬜     | P1       | 6       | 21, 22       | Any legal trade currently auto-succeeds regardless of counterparty benefit                                                                                                      |
+| 7   | AI Trade Evaluation                   | ⬜     | P1       | 11      | 21, 22       | Any legal trade currently auto-succeeds regardless of counterparty benefit - scoped as Phase 11c                                                                                |
 | 8   | Franchise / GM Mode                   | ✅     | P0       | 1,2,3,4 | —            | Cap/roster/standings/playoffs/draft/multi-season progression (aging, retirement, awards) all work now                                                                           |
 | 9   | Team Dashboard                        | ✅     | P0       | done    | —            | Cap sheet + roster + a "Franchise overview" card row (conference rank, playoff status, draft picks, recent activity, all-time record, free agency)                              |
 | 10  | Save and Load Franchises              | ✅     | P0       | done    | —            | Continuous DB persistence; "load" = sign back in                                                                                                                                |
 | 11  | Free Agency                           | ✅     | P0       | done    | —            | `/leagues/[id]/free-agents`, real signing-mechanism validation                                                                                                                  |
 | 12  | Contract Negotiations                 | 🟡     | P2       | —       | 31           | User sets terms + system validates; no back-and-forth or player preference                                                                                                      |
 | 13  | NBA Draft                             | ✅     | P1       | 4       | 66,67        | Interactive `/leagues/[id]/draft` - lottery, 60-pick order, generated class, real rookie contracts                                                                              |
-| 14  | Draft Pick Trading                    | ⬜     | P2       | 4       | 62           | Deliberately deferred - pick inventory now exists (Phase 4), but trading it needs `TradeBuilder` UI work not yet done                                                           |
+| 14  | Draft Pick Trading                    | ✅     | P2       | 11      | 62           | ✅ DONE (Phase 11a, 2026-07-21) - rolling 5-season future-pick inventory, `TradeBuilder` pick selection, ownership transfer on execution                                        |
 | 15  | Season Simulation                     | ✅     | P0       | 1       | —            | Batch-simulate 1/10/50 games from `/leagues/[id]/standings`                                                                                                                     |
 | 16  | Game Simulation Engine                | ✅     | P0       | 1       | —            | `src/lib/simulation/simulateGame.ts` — strength-based, not possession-level (documented)                                                                                        |
 | 17  | League Standings                      | ✅     | P0       | 1       | —            | `/leagues/[id]/standings`, conference-sorted, live games-back                                                                                                                   |
 | 18  | NBA Playoffs                          | ✅     | P1       | 2       | 15,16,17     | Play-in + fixed single-elim bracket, `/leagues/[id]/playoffs` (real visual bracket, East/West/Finals), real 2-2-1-1-1 home pattern                                              |
 | 19  | Player Development                    | ✅     | P1       | 3       | 15           | `developPlayerRating.ts` - age-based growth/decline, applied by `advanceSeasonAction`                                                                                           |
 | 20  | Dynamic Player Ratings                | ✅     | P1       | 3       | 19           | Ratings now actually change season-over-season (see #19)                                                                                                                        |
-| 21  | Team Direction System                 | ⬜     | P1       | 6       | —            | —                                                                                                                                                                               |
-| 22  | Team Needs System                     | ⬜     | P1       | 6       | —            | —                                                                                                                                                                               |
+| 21  | Team Direction System                 | ⬜     | P1       | 11      | —            | Scoped as Phase 11b (`computeTeamIdentity`)                                                                                                                                     |
+| 22  | Team Needs System                     | ⬜     | P1       | 11      | —            | Scoped as Phase 11b (`computeTeamNeeds`)                                                                                                                                        |
 | 23  | Trade Finder                          | ⬜     | P2       | 6       | 6,21,22      | —                                                                                                                                                                               |
 | 24  | Three/Multi-Team Trades               | 🟡     | P2       | —       | —            | `validateTrade` supports N teams (tested); `TradeBuilder` UI is 2-team only                                                                                                     |
 | 25  | Trade Grades                          | ⬜     | P2       | 6       | 6            | Legality validation exists; a quality "grade" doesn't                                                                                                                           |
@@ -90,16 +90,16 @@ unbounded extra work over it).
 | 43  | League History                        | ✅     | P2       | 5       | 15,18,39     | `/leagues/[id]/history` - season-by-season champions, awards, retirees                                                                                                          |
 | 44  | League Records                        | ⬜     | P3       | —       | 43           | —                                                                                                                                                                               |
 | 45  | Championship History                  | ✅     | P2       | 5       | 18           | Past champions shown per-season on `/leagues/[id]/history`                                                                                                                      |
-| 46  | AI General Managers                   | 🟡     | P1       | 6       | 21,22        | CPU teams now trade with each other and sign free agents (random-but-cap-legal, fast-tracked - see #30's note); real evaluation logic (#21/#22/#7) still unstarted              |
-| 47  | GM Personalities                      | ⬜     | P2       | 6       | 46           | —                                                                                                                                                                               |
-| 48  | AI Trade Negotiations                 | ⬜     | P2       | —       | 46           | —                                                                                                                                                                               |
+| 46  | AI General Managers                   | 🟡     | P1       | 11      | 21,22        | CPU teams now trade with each other and sign free agents (random-but-cap-legal, fast-tracked - see #30's note); real evaluation logic (#21/#22/#7) scoped as Phase 11c          |
+| 47  | GM Personalities                      | ⬜     | P2       | 11      | 46           | Scoped as Phase 11c                                                                                                                                                             |
+| 48  | AI Trade Negotiations                 | ⬜     | P2       | 11      | 46           | Scoped as Phase 11d                                                                                                                                                             |
 | 49  | AI GM Chat                            | ⬜     | P1       | paused  | —            | The explicitly-paused conversational assistant                                                                                                                                  |
 | 50  | Natural-Language Player Search        | ⬜     | P2       | —       | 86           | LLM-flavored - hold pending user re-opening the AI thread                                                                                                                       |
 | 51  | AI Roster Analysis                    | ⬜     | P2       | —       | 6,49         | —                                                                                                                                                                               |
 | 52  | AI Offseason Plan                     | ⬜     | P3       | —       | 49           | —                                                                                                                                                                               |
 | 53  | AI Trade Suggestions                  | ⬜     | P2       | —       | 6,49         | —                                                                                                                                                                               |
-| 54  | AI Trade Explanations                 | ⬜     | P2       | —       | 49           | —                                                                                                                                                                               |
-| 55  | AI Counteroffers                      | ⬜     | P3       | —       | 48           | —                                                                                                                                                                               |
+| 54  | AI Trade Explanations                 | ⬜     | P2       | 11      | —            | The CPU-side rejection-reason bank scoped as Phase 11d is a rule-based (not LLM) version of this; doesn't need #49                                                              |
+| 55  | AI Counteroffers                      | ⬜     | P3       | 11      | 48           | Scoped as Phase 11d                                                                                                                                                             |
 | 56  | Trade Value Visualization             | ⬜     | P2       | 7       | 6            | Values shown as numbers/tables today, no chart                                                                                                                                  |
 | 57  | Championship Probability              | ⬜     | P3       | —       | 15,16        | —                                                                                                                                                                               |
 | 58  | Playoff Probability                   | ⬜     | P2       | —       | 15,16,17     | —                                                                                                                                                                               |
@@ -348,7 +348,7 @@ Cap`/`Luxury Tax` status replacing raw apron enums, plain-English
       Confidence buckets into six `JobSecurityLevel`s from Very Secure down
       to Critical - Critical _is_ the firing trigger's scope for this
       phase (a clearly surfaced "your job is at risk" state); the actual
-      firing event/consequences are Phase 11's job, per the split above.
+      firing event/consequences are Phase 12's job, per the split above.
       Low confidence + still-heavy payroll can also trigger a one-time
       "reduce payroll below $X by season Y" ownership directive, resolved
       (met/ignored) the next time it's checked. Every evaluation, new
@@ -360,7 +360,54 @@ Cap`/`Luxury Tax` status replacing raw apron enums, plain-English
       `#owner-confidence` section on `/guide/finances`. See
       `docs/ARCHITECTURE.md`'s "GM accountability" section.
 
-### Phase 11 — GM Career Mode
+### Phase 11 — AI Trade Evaluation & GM Personalities
+
+Not one of the original 100 roadmap items on its own, but directly closes
+several that were: #7 "AI Trade Evaluation", #14 "Draft Pick Trading", #21
+"Team Direction System", #22 "Team Needs System", #46 "AI General
+Managers" (the trade-decision portion only, not full autonomous
+management), #47 "GM Personalities", #48 "AI Trade Negotiations", #55 "AI
+Counteroffers". Today, any trade a user proposes to a CPU team succeeds as
+long as it's financially legal - the CPU side never evaluates whether the
+deal is actually good for it. This phase makes every CPU team behave like
+a real front office: an identity (contender/rebuilding/etc.), dynamically
+recognized needs, a personality, and a genuine accept/reject/counter
+decision with a believable reason. Split into four sub-phases (11a-11d),
+same pattern as Phase 10; only the first is done so far.
+
+- [x] **11a - Future Draft Pick Inventory & Pick Trading** ✅ DONE
+      (2026-07-21): the mechanical prerequisite - draft-pick trading didn't
+      exist at all before this (no future-pick inventory, Trade Builder
+      was player-only). Every team now owns a rolling 5-season-ahead
+      window of both rounds' own picks from league creation onward (kept
+      sliding forward one season every `advanceSeasonAction`), tradeable
+      through the Trade Builder alongside players. See
+      `docs/ARCHITECTURE.md`'s "Draft pick trading" section for the
+      "placeholder row, filled in on draft day" mechanism and the several
+      pre-existing `RESTRICT` (not cascade) foreign keys into `LeagueTeam`
+      this surfaced.
+- [ ] **11b - Team Identity & Team Needs**: `computeTeamIdentity`
+      (Contender/Playoff/Play-In/Rebuilding/Tanking from win%-or-strength +
+      roster age) and `computeTeamNeeds` (positional gaps from roster
+      composition) - pure modules under `src/lib/gm/`, the foundation the
+      acceptance-score engine builds on.
+- [ ] **11c - Trade Value Engine + GM Personality + Acceptance Score**:
+      objective player/pick trade values, a 7-value `GmPersonality` enum
+      assigned once per team at bootstrap, and `evaluateTradeOffer`
+      combining identity/needs/personality/untouchable-player checks into
+      an Accept/Reject/Counter decision - wired into `executeTradeAction`
+      as a real gate. Personality reweights _how much_ a team leans toward
+      certain factors; it never overrides the objective "is this fair"
+      floor, the untouchable-player gate, or `validateTrade`'s legality
+      check - a specific test throws one lopsided trade at all 7
+      personalities and asserts every one rejects it.
+- [ ] **11d - Counter-Offers, Rejection Messaging & Guide**: intelligent
+      counter-offer suggestions (add a pick, swap in a better player, add
+      salary filler, drop an unwanted contract), a bank of plain-English
+      rejection reasons, and a guide section explaining how CPU trade
+      decisions work.
+
+### Phase 12 — GM Career Mode
 
 Not yet started; design captured here so it isn't lost, per the user's
 own detailed brief (2026-07-21). Deliberately kept separate from 10d -
@@ -398,10 +445,14 @@ just "what happens when you're fired":
 
 ### Not scheduled / deferred pending user
 
-- **AI GM Assistant (#5, #49)** and the rest of the LLM-flavored cluster
-  (#7 is CPU logic, not chat, and stays in Phase 6; #46–48, #50–55 are
-  conversational/LLM-dependent and stay deferred) — explicitly paused by
-  the user; do not resume without them bringing it back up.
+- **AI GM Assistant (#5, #49)** and the genuinely conversational/
+  LLM-dependent cluster around it (#50 Natural-Language Player Search, #51
+  AI Roster Analysis, #52 AI Offseason Plan, #53 AI Trade Suggestions) —
+  explicitly paused by the user; do not resume without them bringing it
+  back up. Note this is narrower than it used to look: #7/#14/#21/#22/#46–
+  48/#54/#55 all turned out to be rule-based CPU decision logic, not
+  chat/LLM features, and are now scheduled into Phase 11 instead of stuck
+  behind the paused assistant.
 - Expansion teams/draft (#77/#78), custom team creation (#79), what-if
   mode (#81), custom rosters (#82) — low priority, large lift, revisit
   only if the user asks.
@@ -825,7 +876,7 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   into the existing news feed rather than a new messaging system. UI: a
   "GM Job Security" card on the team dashboard (confidence bucketed into
   six levels, Very Secure through Critical - Critical is this phase's
-  firing _trigger_; the actual firing event is Phase 11's job), an
+  firing _trigger_; the actual firing event is Phase 12's job), an
   "Ownership" section on the offseason page showing that advance's
   messages, `OWNERSHIP_MESSAGE` added to both transaction-feed type-label
   maps, and a new `#owner-confidence` section on `/guide/finances`.
@@ -835,6 +886,68 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   the news-feed entries all rendered correctly with real data - not just
   that the unit tests passed. All 10 e2e tests and all 282 unit tests
   passing against a real production build. Phase 10 (Simplified Financial
-  System & GM Accountability) is now fully complete; Phase 11 (GM Career
+  System & GM Accountability) is now fully complete; Phase 12 (GM Career
   Mode - persistent reputation, job market, firing consequences,
   retirement) remains unstarted by design.
+- **2026-07-21 (later)**: User asked for a full overhaul of trade AI so
+  CPU teams behave like real front offices (identity, needs, personality,
+  a genuine accept/reject/counter decision) instead of auto-accepting any
+  financially-legal trade. Scoped into **Phase 11**, four sub-phases
+  (11a-11d) - only 11a done this pass. Planning surfaced a real
+  prerequisite gap: draft picks weren't tradeable at all (no future-pick
+  inventory existed; `TradeBuilder` was player-only), so the user directed
+  building that first. **11a (Future Draft Pick Inventory & Pick Trading)
+  completed**: `buildFuturePickRows` (`src/lib/draft/futurePicks.ts`)
+  generates a rolling 5-season-ahead window of both rounds' own picks per
+  team, seeded at league creation and extended by one season every
+  `advanceSeasonAction`; `overallPickNumber` stays null until that
+  season's own `startDraftAction` runs, which now _updates_ the
+  pre-existing placeholder row (keyed by `round`+`originalTeamId`) instead
+  of creating a fresh one - critical, since creating fresh rows would
+  silently revert any pre-draft pick trade back to the original owner.
+  Pre-generating placeholders broke the implicit "row exists = draft
+  started" assumption baked into 8 call sites across
+  `draft.ts`/`offseason.ts`/3 page components - all fixed to check
+  `overallPickNumber: { not: null }` instead. `TradeBuilder.tsx` and
+  `executeTradeAction` both extended to handle `DRAFT_PICK` assets
+  alongside players, reusing `validateTrade`'s existing (previously
+  unexercised) Stepien-rule support now that `ownedFutureFirstRoundPickSeasons`
+  is populated with real data instead of `[]`. `describeTransaction.ts`'s
+  `TradeSide.sentPlayerNames` renamed to `sentAssetNames` since it now
+  carries pick labels too.
+  - **Notable incident during verification**: e2e runs intermittently
+    failed in ways that looked like flaky tests but traced back to the
+    Neon Postgres database hitting its 512MB free-tier storage cap - 370
+    disposable `@example.com` test accounts (from many e2e runs across
+    this and the prior session) had accumulated 386 leagues' worth of
+    data, and 11a's extra per-league rows tipped it over. Cleaned up via
+    a script deleting all `@example.com` users (cascades through
+    everything they own) - surfaced that `Contract`/`DraftPick`/
+    `TradeException`/`TradeAsset`'s foreign keys into `LeagueTeam` are
+    `RESTRICT`, not cascade, requiring those four tables to be cleared
+    explicitly before the user delete, in dependency order. A `DELETE`
+    alone doesn't shrink Postgres's on-disk file size (MVCC dead tuples
+    need `VACUUM` to reclaim), so a `VACUUM FULL` pass followed the
+    cleanup: 490MB → 16MB. Only the 3 real (non-test) users' 5 leagues
+    were preserved throughout. Separately, `advanceSeasonAction`'s
+    cumulative round-trip count (already large from Phase 10d, one more
+    added by 11a) was shown to occasionally exceed e2e's assertion
+    timeouts under full-suite sequential load - fixed by parallelizing
+    two pairs of independently-fetchable queries that were needlessly
+    sequential (net zero new round trips vs. pre-11a) and giving the
+    e2e assertion realistic headroom (30s → 60s) to match what the
+    heaviest action in the app actually costs. A second, unrelated e2e
+    flake (`free-agency.spec.ts`) traced to a `getByText` locator
+    resolving against thousands of matching ancestor elements plus a
+    tight default 5s assertion timeout on a real page navigation - fixed
+    with a more specific `getByRole("link", ...)` locator and a 15s
+    timeout, matching the file's own precedent elsewhere.
+  - Verified end-to-end with a throwaway Playwright script: built a trade
+    including a future pick from each side, confirmed the Trade Financial
+    Check validates it, executed it, and confirmed both the news feed
+    description ("...traded Jayson Tatum and 2023 1st Round Pick...for
+    Julius Randle and 2028 2nd Round Pick") and pick ownership were
+    correct. All 10 e2e tests and all 285 unit tests (3 new, for
+    `buildFuturePickRows`) passing against a real production build, run
+    clean multiple times in a row after the DB cleanup and timing fixes.
+    Next up: **11b (Team Identity & Team Needs)**.

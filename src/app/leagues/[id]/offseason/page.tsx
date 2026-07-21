@@ -51,9 +51,18 @@ export default async function OffseasonPage({ params }: PageProps) {
       where: { leagueId: league.id, season, type: "REGULAR_SEASON", playedAt: null },
     }),
     prisma.playoffSeries.findFirst({ where: { leagueId: league.id, season, round: 4 } }),
-    prisma.draftPick.count({ where: { leagueId: league.id, season } }),
+    // A future-pick placeholder for `season` always exists by now (Phase
+    // 11a); `overallPickNumber` is the real "draft started" signal.
     prisma.draftPick.count({
-      where: { leagueId: league.id, season, selectedProspectId: null },
+      where: { leagueId: league.id, season, overallPickNumber: { not: null } },
+    }),
+    prisma.draftPick.count({
+      where: {
+        leagueId: league.id,
+        season,
+        overallPickNumber: { not: null },
+        selectedProspectId: null,
+      },
     }),
     prisma.seasonAward.findMany({
       where: { leagueId: league.id, season: previousSeason },

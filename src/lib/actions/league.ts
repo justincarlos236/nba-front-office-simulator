@@ -12,6 +12,7 @@ import { computeCapSheet } from "@/lib/cap/capSheet";
 import { computeTeamStrength } from "@/lib/simulation/teamStrength";
 import { computePayrollTier } from "@/lib/gm/payrollTier";
 import { computeExpectationLevel } from "@/lib/gm/expectationLevel";
+import { buildFuturePickRows, FUTURE_PICK_WINDOW_YEARS } from "@/lib/draft/futurePicks";
 
 const SEASON = 2023;
 const FREE_AGENT_RATING_CUTOFF = 25;
@@ -74,6 +75,21 @@ export async function createLeagueAction(formData: FormData) {
       homeLeagueTeamId: game.homeLeagueTeamId,
       awayLeagueTeamId: game.awayLeagueTeamId,
     })),
+  });
+
+  // Every team owns its own future picks from day one (Phase 11a) - a
+  // rolling window of [SEASON, SEASON + FUTURE_PICK_WINDOW_YEARS], kept
+  // one season further out each time `advanceSeasonAction` runs.
+  // `overallPickNumber` stays null until that season's own draft actually
+  // starts (`startDraftAction`), which updates these same rows in place
+  // rather than creating new ones - so a pick traded before its draft
+  // happens keeps whichever `currentOwnerId` the trade left it with.
+  await prisma.draftPick.createMany({
+    data: buildFuturePickRows(
+      league.id,
+      leagueTeams.map((lt) => lt.id),
+      Array.from({ length: FUTURE_PICK_WINDOW_YEARS + 1 }, (_, i) => SEASON + i),
+    ).map((row) => ({ ...row, overallPickNumber: null })),
   });
 
   const plans = players.map((player) => {

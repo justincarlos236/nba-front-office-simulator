@@ -31,6 +31,7 @@ import {
   describePayrollDirective,
   describeSeasonEvaluation,
 } from "@/lib/gm/ownershipMessages";
+import { buildFuturePickRows, FUTURE_PICK_WINDOW_YEARS } from "@/lib/draft/futurePicks";
 
 const MIN_OWNER_CONFIDENCE = 0;
 const MAX_OWNER_CONFIDENCE = 100;
@@ -80,9 +81,15 @@ export async function advanceSeasonAction(leagueId: string) {
     throw new Error("Crown a champion in the playoffs before advancing to the next season.");
   }
 
+  // Future seasons' pick placeholders (Phase 11a) already exist for `season`
+  // by this point regardless of whether that season's draft has actually
+  // started - `overallPickNumber` is the real "draft started" signal, not
+  // row existence.
   const [totalDraftPicks, pendingDraftPicks] = await Promise.all([
-    prisma.draftPick.count({ where: { leagueId, season } }),
-    prisma.draftPick.count({ where: { leagueId, season, selectedProspectId: null } }),
+    prisma.draftPick.count({ where: { leagueId, season, overallPickNumber: { not: null } } }),
+    prisma.draftPick.count({
+      where: { leagueId, season, overallPickNumber: { not: null }, selectedProspectId: null },
+    }),
   ]);
   if (totalDraftPicks === 0 || pendingDraftPicks > 0) {
     throw new Error("Finish the draft before advancing to the next season.");
@@ -104,17 +111,17 @@ export async function advanceSeasonAction(leagueId: string) {
   // deletes the very ContractYear rows a payroll snapshot for `season`
   // would depend on.
   const userLeagueTeamId = league.userControlledTeamId;
-  const priorExpectation = userLeagueTeamId
-    ? await prisma.seasonExpectation.findUnique({
-        where: { leagueId_season: { leagueId, season } },
-      })
-    : null;
-  const oldSeasonContractYears = userLeagueTeamId
-    ? await prisma.contractYear.findMany({
-        where: { season, contract: { leagueTeamId: userLeagueTeamId } },
-        select: { salaryCents: true, contract: { select: { leaguePlayerId: true } } },
-      })
-    : [];
+  const [priorExpectation, oldSeasonContractYears] = userLeagueTeamId
+    ? await Promise.all([
+        prisma.seasonExpectation.findUnique({
+          where: { leagueId_season: { leagueId, season } },
+        }),
+        prisma.contractYear.findMany({
+          where: { season, contract: { leagueTeamId: userLeagueTeamId } },
+          select: { salaryCents: true, contract: { select: { leaguePlayerId: true } } },
+        }),
+      ])
+    : [null, []];
 
   const rosteredSnapshots: PlayerSeasonSnapshot[] = [];
   const developmentSnapshots: PlayerSeasonSnapshot[] = [];
@@ -269,13 +276,28 @@ export async function advanceSeasonAction(leagueId: string) {
     })),
   });
 
+  // Keep the rolling future-pick window (Phase 11a) sliding forward: the
+  // window through `newSeason + FUTURE_PICK_WINDOW_YEARS` already exists
+  // except for this one new far-edge season.
+  await prisma.draftPick.createMany({
+    data: buildFuturePickRows(
+      leagueId,
+      league.teams.map((t) => t.id),
+      [newSeason + FUTURE_PICK_WINDOW_YEARS],
+    ).map((row) => ({ ...row, overallPickNumber: null })),
+  });
+
   let ownerConfidence = league.ownerConfidence;
   let payrollReductionTargetCents: bigint | null = null;
   let payrollDirectiveSeason: number | null = null;
   const ownershipMessages: string[] = [];
 
   if (userLeagueTeamId && priorExpectation) {
-    const [series, playInGame] = await Promise.all([
+    // `newSeasonContractYears` doesn't depend on anything computed below (only
+    // on `newSeason`/`userLeagueTeamId`, both already known) - fetched here
+    // alongside the other independent queries rather than later in its own
+    // round trip.
+    const [series, playInGame, newSeasonContractYears] = await Promise.all([
       prisma.playoffSeries.findMany({
         where: {
           leagueId,
@@ -290,6 +312,10 @@ export async function advanceSeasonAction(leagueId: string) {
           type: "PLAY_IN",
           OR: [{ homeLeagueTeamId: userLeagueTeamId }, { awayLeagueTeamId: userLeagueTeamId }],
         },
+      }),
+      prisma.contractYear.findMany({
+        where: { season: newSeason, contract: { leagueTeamId: userLeagueTeamId } },
+        select: { salaryCents: true, contract: { select: { leaguePlayerId: true } } },
       }),
     ]);
 
@@ -346,10 +372,6 @@ export async function advanceSeasonAction(leagueId: string) {
     const newSeasonRoster = playerUpdates.filter(
       (u) => u.leagueTeamId === userLeagueTeamId && u.retiredSeason === null,
     );
-    const newSeasonContractYears = await prisma.contractYear.findMany({
-      where: { season: newSeason, contract: { leagueTeamId: userLeagueTeamId } },
-      select: { salaryCents: true, contract: { select: { leaguePlayerId: true } } },
-    });
     const newCapSheet = computeCapSheet({
       season: newSeason,
       contracts: newSeasonContractYears.map((cy) => ({

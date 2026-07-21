@@ -1,9 +1,9 @@
 import { formatCentsCompact } from "@/lib/money";
 
-/** A single side's identity for a trade headline: a team label and the players it sent away. */
+/** A single side's identity for a trade headline: a team label and the players/picks it sent away. */
 export interface TradeSide {
   teamLabel: string;
-  sentPlayerNames: string[];
+  sentAssetNames: string[];
 }
 
 /**
@@ -12,13 +12,13 @@ export interface TradeSide {
  * nothing to name on the other side.
  */
 export function describeTrade(a: TradeSide, b: TradeSide): string {
-  const aSent = joinNames(a.sentPlayerNames);
-  const bSent = joinNames(b.sentPlayerNames);
+  const aSent = joinNames(a.sentAssetNames);
+  const bSent = joinNames(b.sentAssetNames);
 
-  if (a.sentPlayerNames.length > 0 && b.sentPlayerNames.length > 0) {
+  if (a.sentAssetNames.length > 0 && b.sentAssetNames.length > 0) {
     return `${a.teamLabel} traded ${aSent} to the ${b.teamLabel} for ${bSent}`;
   }
-  if (a.sentPlayerNames.length > 0) {
+  if (a.sentAssetNames.length > 0) {
     return `${a.teamLabel} traded ${aSent} to the ${b.teamLabel}`;
   }
   return `${b.teamLabel} traded ${bSent} to the ${a.teamLabel}`;
