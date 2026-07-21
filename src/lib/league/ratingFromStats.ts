@@ -15,10 +15,13 @@ export function deriveOverallRating(stats: PlayerValuationStats): number {
  * Potential ceiling above (or below) the current rating, driven by age:
  * young players get real development headroom, players past their prime
  * have essentially no upside left (their "potential" is their current
- * rating, since further change is more likely decline than growth).
+ * rating, since further change is more likely decline than growth). The
+ * headroom cap is proportional to the 60-99 rating scale's width (39
+ * points) - the same ~27% of the scale a 20-point cap represented on the
+ * old, wider 0-100 scale.
  */
 export function derivePotentialRating(overallRating: number, age: number): number {
   const yearsOfUpside = Math.max(0, 26 - age);
-  const headroom = Math.min(20, yearsOfUpside * 3);
+  const headroom = Math.min(10, yearsOfUpside * 2);
   return Math.min(99, overallRating + headroom);
 }

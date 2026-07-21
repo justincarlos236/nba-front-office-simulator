@@ -77,14 +77,13 @@ const REBUILDING_YOUTH_PICK_BONUS = 1.15;
 const NEED_FIT_BONUS_MULTIPLIER = 1.25;
 
 const UNTOUCHABLE_COUNT = 2;
-const YOUNG_SUPERSTAR_AGE_CEILING = 25;
 const UNTOUCHABLE_IDENTITIES: TeamIdentity[] = ["CONTENDER", "PLAYOFF_TEAM"];
 // How large an overpay has to be, relative to the untouchable player's own
 // objective value, before a team will even consider moving them.
 const UNTOUCHABLE_OVERPAY_MULTIPLIER = 1.75;
 
-const STARTER_THRESHOLD = 55;
-const ROTATION_THRESHOLD = 40;
+const STARTER_THRESHOLD = 72;
+const ROTATION_THRESHOLD = 65;
 
 function scaleCents(cents: bigint, multiplier: number): bigint {
   return BigInt(Math.round(Number(cents) * multiplier));
@@ -95,10 +94,13 @@ function isUntouchable(
   rosterRatingsDesc: number[],
   identity: TeamIdentity,
 ): boolean {
-  const isYoungSuperstar =
-    player.age <= YOUNG_SUPERSTAR_AGE_CEILING &&
-    getPlayerValueTier(player.overallRating) === "SUPERSTAR";
-  if (isYoungSuperstar) return true;
+  // A genuinely superstar-caliber player is untouchable regardless of age
+  // or team record - real front offices don't casually move a top-tier
+  // talent for "a package of good players" just because they're
+  // rebuilding. Age only matters for the softer "top players on a
+  // currently-winning team" rule below, which covers merely-very-good
+  // players who aren't quite superstar-tier by raw rating.
+  if (getPlayerValueTier(player.overallRating) === "SUPERSTAR") return true;
 
   if (!UNTOUCHABLE_IDENTITIES.includes(identity)) return false;
   const topThreshold = rosterRatingsDesc[Math.min(UNTOUCHABLE_COUNT, rosterRatingsDesc.length) - 1];

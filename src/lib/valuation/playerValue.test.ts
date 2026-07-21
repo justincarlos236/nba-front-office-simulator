@@ -24,15 +24,15 @@ const ELITE_STATLINE = {
 };
 
 describe("computePerformanceScore", () => {
-  it("scores a league-average statline near 50", () => {
-    expect(computePerformanceScore(AVERAGE_STATLINE)).toBeCloseTo(50, 0);
+  it("scores a league-average statline near the 72 baseline", () => {
+    expect(computePerformanceScore(AVERAGE_STATLINE)).toBeCloseTo(72, 0);
   });
 
   it("scores an elite statline well above average", () => {
-    expect(computePerformanceScore(ELITE_STATLINE)).toBeGreaterThan(80);
+    expect(computePerformanceScore(ELITE_STATLINE)).toBeGreaterThan(90);
   });
 
-  it("clamps to the 0-100 range for extreme inputs", () => {
+  it("clamps to the 60-99 NBA-2K-style range for extreme inputs", () => {
     expect(
       computePerformanceScore({
         pointsPerGame: 0,
@@ -44,7 +44,7 @@ describe("computePerformanceScore", () => {
         minutesPerGame: 0,
         trueShootingPct: 0,
       }),
-    ).toBe(0);
+    ).toBe(60);
     expect(
       computePerformanceScore({
         pointsPerGame: 60,
@@ -56,7 +56,7 @@ describe("computePerformanceScore", () => {
         minutesPerGame: 48,
         trueShootingPct: 0.75,
       }),
-    ).toBe(100);
+    ).toBe(99);
   });
 });
 

@@ -138,12 +138,11 @@ plain language, without touching how legality is actually decided:
   a team can and can't do. Replaces the team dashboard's old raw
   `apronLevel.replaceAll("_", " ")` display (e.g. "BETWEEN CAP AND TAX").
 - **`src/lib/valuation/playerValueTier.ts`** - buckets `overallRating`
-  (the same 0-100 scale used everywhere - team strength, contract
-  generation, development) into five casual tiers (Superstar/Star/
-  Starter/Rotation Player/Minimum-Level Player), calibrated against this
-  simulator's actual rating distribution rather than a theoretical 0-100
-  spread. Shown wherever players are listed: the roster table, the
-  free-agent board, and the trade builder.
+  (the same 60-99 NBA-2K-style scale used everywhere - see "Player rating
+  scale" below) into five casual tiers (Superstar/Star/Starter/Rotation
+  Player/Minimum-Level Player), calibrated against real NBA 2K ratings
+  rather than an arbitrary spread. Shown wherever players are listed: the
+  roster table, the free-agent board, and the trade builder.
 - **`src/lib/trade/describeTradeFeasibility.ts`** - turns `validateTrade`'s
   real violations into "Trade Financial Check: Valid/Invalid" plus a
   plain-English detail line ("You're taking on too much additional
@@ -862,6 +861,59 @@ Quantitative player valuation is a separate, independently useful model
 (surplus value = projected on-court production value minus cap hit,
 age-curve adjusted) that both feeds the assistant and powers standalone UI
 (trade grades, "best value contracts" leaderboards) without any LLM call.
+
+## Player rating scale
+
+`overallRating`/`potentialRating` run 60-99, matching real NBA 2K ratings
+(rostered players almost never dip below 60, true superstars cluster
+90-99) rather than a theoretical 0-100 spread - the scale every other
+system in this app (contract generation, team strength, player tiers,
+draft class generation, development/retirement curves, GM accountability,
+trade-AI valuation) reads or recalibrates against.
+
+- **Calibrated against real anchor points**, not invented from scratch:
+  `computePerformanceScore` (`src/lib/valuation/playerValue.ts`) is a
+  single real-stat-derived score that both `deriveOverallRating`
+  (`src/lib/league/ratingFromStats.ts`, real players at league bootstrap)
+  and contract generation's `ageAdjustedScore` are built from - one
+  scoring function, not two divergent rating systems. Its formula is
+  unchanged from the original per-stat weights (points/rebounds/assists/
+  etc., anchored around a real ~15ppg/5reb/3ast/24mpg/56%TS statline);
+  only its baseline constant (`50` → `72`) and clamp (`[0,100]` →
+  `[60,99]`) moved, verified against real 2K24 ratings looked up as
+  anchors: Jokić 98; Giannis/LeBron/Embiid/Durant/Curry 96; Dončić/Tatum/
+  Butler 95; solid real starters ~77-78; deep bench ~60-71. The exact
+  statline that formula treats as its zero point now lands at exactly 72
+  (a real low-70s role player in 2K); the same real players' old raw
+  scores (Embiid ~88, Tatum ~72 under the old system) land at 99
+  (clamped) and ~94 respectively under the new one - both a close match
+  to their real ratings, from moving two constants, not rewriting the
+  formula's relative judgments.
+- **Every other rating-scale-dependent constant moved in lockstep**:
+  `scoreToCapFraction`'s `MIDPOINT`/`STEEPNESS` (re-derived, not just
+  carried over, so the ceiling/floor still hit the same fraction-of-cap
+  targets against the new, narrower input range), `playerValueTier.ts`'s
+  five tier boundaries, `generateDraftClass.ts`'s pick-1/pick-60 rating
+  anchors, `developPlayerRating.ts`'s clamp bounds, `retirement.ts`'s
+  rating-risk cutoffs (re-tied to the ROTATION/STARTER tier boundaries,
+  same relationship the old cutoffs had), `expectationLevel.ts`'s
+  elite/weak roster-strength thresholds and `teamNeeds.ts`'s/
+  `evaluateTradeOffer.ts`'s starter/rotation thresholds (both already
+  mirrored `playerValueTier.ts`, kept mirroring it), and
+  `FREE_AGENT_RATING_CUTOFF` (`src/lib/actions/league.ts`, now tied to
+  the ROTATION/MINIMUM boundary - same "bottom ~15%" intent). None of the
+  trade-AI weight _ratios_ (0.4, 0.5, 1.25, 1.75, personality
+  multipliers) needed to change - only absolute rating numbers.
+- **Existing leagues were backfilled**, not left on the old scale: a
+  one-time script rescaled every `LeaguePlayer.overallRating`/
+  `potentialRating` in every real (non-test) league using the exact same
+  linear transform (`+22`, reclamped to `[60,99]`) rather than
+  recomputing from scratch - recomputing would have erased whatever
+  development/aging progression a league had already made since
+  bootstrap, and can't work at all for fictional draft-generated
+  prospects (no real stat line to recompute from). Same backfill
+  discipline established after Phase 11a/10d/11c - see
+  `docs/IMPLEMENTATION_PLAN.md`.
 
 ## Data sourcing
 

@@ -7,7 +7,7 @@
  */
 const YOUNG_DEVELOPMENT_AGE_CEILING = 26;
 const DECLINE_START_AGE = 30;
-const MIN_RATING = 25;
+const MIN_RATING = 60;
 const MAX_RATING = 99;
 
 function randomIntInclusive(rng: () => number, min: number, max: number): number {

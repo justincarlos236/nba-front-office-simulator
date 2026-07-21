@@ -3,19 +3,19 @@ import { computeExpectationLevel, EXPECTATION_LEVEL_ORDER } from "./expectationL
 
 describe("computeExpectationLevel", () => {
   it("gives a modest-payroll, average-quality roster the lowest expectation", () => {
-    expect(computeExpectationLevel("MODEST", 55)).toBe("DEVELOP_YOUNG_PLAYERS");
+    expect(computeExpectationLevel("MODEST", 72)).toBe("DEVELOP_YOUNG_PLAYERS");
   });
 
   it("bumps a modest-payroll team up a level if the roster is elite", () => {
-    expect(computeExpectationLevel("MODEST", 70)).toBe("COMPETE_FOR_PLAY_IN");
+    expect(computeExpectationLevel("MODEST", 82)).toBe("COMPETE_FOR_PLAY_IN");
   });
 
   it("gives an extreme-payroll, elite roster the highest expectation", () => {
-    expect(computeExpectationLevel("EXTREME", 75)).toBe("CHAMPIONSHIP_CONTENTION");
+    expect(computeExpectationLevel("EXTREME", 85)).toBe("CHAMPIONSHIP_CONTENTION");
   });
 
   it("gives an extreme-payroll but weak roster some benefit of the doubt", () => {
-    expect(computeExpectationLevel("EXTREME", 40)).toBe("WIN_PLAYOFF_SERIES");
+    expect(computeExpectationLevel("EXTREME", 60)).toBe("WIN_PLAYOFF_SERIES");
   });
 
   it("never goes below the lowest or above the highest expectation level", () => {
@@ -26,8 +26,8 @@ describe("computeExpectationLevel", () => {
   });
 
   it("orders significant-tax teams above moderate-payroll teams at equal roster quality", () => {
-    const moderate = EXPECTATION_LEVEL_ORDER.indexOf(computeExpectationLevel("MODERATE", 55));
-    const significant = EXPECTATION_LEVEL_ORDER.indexOf(computeExpectationLevel("SIGNIFICANT", 55));
+    const moderate = EXPECTATION_LEVEL_ORDER.indexOf(computeExpectationLevel("MODERATE", 72));
+    const significant = EXPECTATION_LEVEL_ORDER.indexOf(computeExpectationLevel("SIGNIFICANT", 72));
     expect(significant).toBeGreaterThan(moderate);
   });
 });

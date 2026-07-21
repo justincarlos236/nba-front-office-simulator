@@ -1027,3 +1027,70 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   production build. Next up: **11c (Trade Value Engine + GM Personality +
   Acceptance Score)** - the core evaluation logic everything so far has
   been building toward.
+- **2026-07-21 (later)**: Phase 11c completed - the core of the whole
+  trade-AI overhaul. `computePlayerTradeValue`/`computeDraftPickTradeValue`
+  (`src/lib/gm/`) give every player/pick an objective cents-denominated
+  trade value; `GmPersonality` (7 values, `LeagueTeam.gmPersonality`, new
+  migration, randomized per team at bootstrap) reweights how much a team
+  leans toward certain factors via bounded 0.7-1.3 multipliers;
+  `evaluateTradeOffer` (`src/lib/trade/`) combines identity + needs +
+  personality + an untouchable-player gate into an Accept/Reject/Counter
+  decision, wired into `executeTradeAction` as the real gate and into
+  `TradeBuilder.tsx` as a live preview showing both sides' identity/needs/
+  personality (a scope addition made while testing 11b). **Fairness
+  safeguard verified**: a test throws one blatantly lopsided trade at all
+  7 personalities and confirms every one rejects it. Backfilled existing
+  leagues' `gmPersonality` (the new column would have otherwise defaulted
+  all 30 teams on every existing save to identical "Balanced" front
+  offices) and added `LeaguePlayer.careerGamesMissedToInjury` as a real
+  injury-history signal. All 10 e2e tests (including 5 repeat runs of
+  `trade-execution.spec.ts`, since personality is randomized per league)
+  and 315 unit tests passing against a real production build.
+  - **Follow-up polish, same day**: the user tested a real trade (OG
+    Anunoby + Paul George for Joel Embiid + Kyle Lowry) and flagged it as
+    unrealistic - Embiid shouldn't be that easy to acquire. Root cause:
+    the untouchable-player gate only protected a "young (≤25) superstar"
+    or a "top-2 rated player on a currently Contender/Playoff-Team
+    identity," so an older superstar (Embiid-age) on a team that wasn't
+    currently a Contender/Playoff Team by record fell through both
+    branches entirely. Fixed: any player at `SUPERSTAR` tier
+    (`getPlayerValueTier`) is now untouchable regardless of age or team
+    identity - real front offices don't casually move a top-tier talent
+    just because they're rebuilding. Added a test for exactly this case
+    (an older superstar on a Rebuilding team). All 316 unit tests passing.
+- **2026-07-21 (later)**: Player ratings recalibrated to a 60-99
+  NBA-2K-style scale (was ~0-100, real players landing 25-88). The user -
+  who plays real 2K - flagged Jayson Tatum showing as 72 and bench players
+  dipping to 25-30 as unrealistic. Looked up real 2K24 ratings as anchor
+  points (Jokić 98; Giannis/LeBron/Embiid/Durant/Curry 96; Dončić/Tatum/
+  Butler 95; real starters ~77-78; deep bench ~60-71). Rather than bolt on
+  a second rescaling function, shifted `computePerformanceScore`'s own
+  baseline (`50`→`72`) and clamp (`[0,100]`→`[60,99]`) - the per-stat
+  weights didn't need to change, only the anchor/ceiling/floor. Verified
+  against the real anchors using the formula's own math before touching
+  any code (Embiid's old raw score ~88 → 99 clamped; Tatum's old ~72 → 94
+  - both close to their real 2K ratings). Every other rating-scale
+    constant across the app moved in lockstep - `scoreToCapFraction`'s
+    midpoint/steepness (re-derived, not carried over, so contract-dollar
+    generation still produces sensible salaries against the new scale),
+    `playerValueTier.ts`'s five tier boundaries, `generateDraftClass.ts`'s
+    pick-1/pick-60 anchors, `developPlayerRating.ts`'s clamps,
+    `retirement.ts`'s rating-risk cutoffs, `expectationLevel.ts`'s/
+    `teamNeeds.ts`'s/`evaluateTradeOffer.ts`'s thresholds (all already
+    mirrored `playerValueTier.ts`, kept mirroring it), and
+    `FREE_AGENT_RATING_CUTOFF` - see `docs/ARCHITECTURE.md`'s new "Player
+    rating scale" section for the full list. None of the trade-AI weight
+    ratios needed to change, only absolute rating numbers. Backfilled every
+    existing real league's `LeaguePlayer.overallRating`/`potentialRating`
+    with the same linear transform (`+22`, reclamped) rather than
+    recomputing from scratch, which would have erased in-league development
+    progress and can't work for fictional draft-generated prospects anyway.
+    Surfaced (and fixed) one real regression along the way: recalibrated
+    contracts shifted a test team's cap status, exposing a pre-existing
+    `getByText("Free agents")` nav-link collision with the Under-the-Cap
+    description text ("...can freely sign available free agents.") -
+    same class of issue as the Phase 5 dashboard-card collision, fixed the
+    same way (a more specific `getByRole("link", ...)` locator). All 10
+    e2e tests and all 316 unit tests passing against a real production
+    build; visually confirmed Tatum at 94 and Embiid clamped to 99 on a
+    real roster.

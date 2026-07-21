@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { deriveOverallRating, derivePotentialRating } from "./ratingFromStats";
 
 describe("deriveOverallRating", () => {
-  it("rates a league-average statline near 50", () => {
+  it("rates a league-average statline near the 72 baseline", () => {
     expect(
       deriveOverallRating({
         pointsPerGame: 15,
@@ -14,7 +14,7 @@ describe("deriveOverallRating", () => {
         minutesPerGame: 24,
         trueShootingPct: 0.56,
       }),
-    ).toBeCloseTo(50, 0);
+    ).toBeCloseTo(72, 0);
   });
 
   it("rates an elite statline highly", () => {

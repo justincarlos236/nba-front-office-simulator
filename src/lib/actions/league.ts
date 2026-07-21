@@ -17,7 +17,10 @@ import { pickRandomGmPersonality } from "@/lib/gm/gmPersonality";
 import { createSeededRandom } from "@/lib/contracts/seededRandom";
 
 const SEASON = 2023;
-const FREE_AGENT_RATING_CUTOFF = 25;
+// Tied to the ROTATION/MINIMUM tier boundary (playerValueTier.ts) on the
+// 60-99 NBA-2K-style rating scale - the same "bottom ~15%" intent the old
+// cutoff of 25 had on the old 0-100 scale.
+const FREE_AGENT_RATING_CUTOFF = 65;
 
 /**
  * Bootstraps a brand-new League from the reference snapshot: clones all 30

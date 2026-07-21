@@ -18,7 +18,10 @@ export function retirementProbability(age: number, overallRating: number): numbe
   if (age < RETIREMENT_RISK_START_AGE) return 0;
 
   const ageFactor = (age - RETIREMENT_RISK_START_AGE) * AGE_RISK_PER_YEAR;
-  const ratingFactor = overallRating < 60 ? 0.15 : overallRating < 70 ? 0.05 : 0;
+  // Cutoffs re-tied to the ROTATION/STARTER tier boundaries (playerValueTier.ts)
+  // on the 60-99 rating scale, same relationship the old 60/70 cutoffs had
+  // to the old scale's tier boundaries.
+  const ratingFactor = overallRating < 65 ? 0.15 : overallRating < 72 ? 0.05 : 0;
   return Math.min(MAX_PROBABILITY, ageFactor + ratingFactor);
 }
 

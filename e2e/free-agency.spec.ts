@@ -20,7 +20,12 @@ test("sign a free agent to a minimum deal, and reject an offer bigger than any e
   await page.getByText("Boston Celtics").click();
   await expect(page.getByText("Committed salary")).toBeVisible({ timeout: 30_000 });
 
-  await page.getByText("Free agents").click();
+  // The nav link's text ("Free agents") can collide with the dashboard's
+  // Under-the-Cap description ("...can freely sign available free
+  // agents.") depending on the team's cap situation - target the link
+  // role directly rather than a bare text match, same pattern used below
+  // for "Offer contract".
+  await page.getByRole("link", { name: "Free agents" }).click();
   await expect(page.getByText(/unsigned players/)).toBeVisible();
 
   const signedPlayerName = await page

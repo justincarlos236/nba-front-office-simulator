@@ -39,7 +39,7 @@ const POSITION_BIAS: Record<string, Partial<ScoutingAttributes>> = {
 };
 
 function clampAttribute(value: number): number {
-  return Math.max(25, Math.min(99, Math.round(value)));
+  return Math.max(60, Math.min(99, Math.round(value)));
 }
 
 export interface ScoutableProspect {

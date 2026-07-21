@@ -33,8 +33,8 @@ export interface TeamNeedRosterPlayer {
 // inventing new thresholds - "does this team have a starting-caliber
 // player here" and "is this player tier already means the same thing
 // everywhere else in the app.
-const STARTER_THRESHOLD = 55;
-const ROTATION_THRESHOLD = 40;
+const STARTER_THRESHOLD = 72;
+const ROTATION_THRESHOLD = 65;
 
 // Beyond a 5-man starting unit, a team needs at least this many more
 // rotation-caliber (not just replacement-level) players to be considered

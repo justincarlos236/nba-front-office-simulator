@@ -21,11 +21,11 @@ export const CLASS_SIZE = 60;
 // `src/lib/gm/draftPickTradeValue.ts`, which projects a not-yet-drafted
 // future pick's expected rating off this exact same curve, rather than a
 // second hand-tuned scale that could drift out of sync with it.
-export const OVERALL_AT_PICK_1 = 68;
-export const OVERALL_AT_PICK_60 = 45;
-export const POTENTIAL_AT_PICK_1 = 92;
-export const POTENTIAL_AT_PICK_60 = 65;
-const RATING_VARIANCE = 8; // +/- swing so pick order isn't perfectly predictive
+export const OVERALL_AT_PICK_1 = 72;
+export const OVERALL_AT_PICK_60 = 62;
+export const POTENTIAL_AT_PICK_1 = 97;
+export const POTENTIAL_AT_PICK_60 = 70;
+const RATING_VARIANCE = 6; // +/- swing so pick order isn't perfectly predictive
 
 function randomIntInclusive(rng: () => number, min: number, max: number): number {
   return min + Math.floor(rng() * (max - min + 1));
@@ -55,7 +55,7 @@ export function generateDraftClass(rng: () => number = Math.random): GeneratedPr
     const overallVariance = randomIntInclusive(rng, -RATING_VARIANCE, RATING_VARIANCE);
     const potentialVariance = randomIntInclusive(rng, -RATING_VARIANCE, RATING_VARIANCE);
 
-    const overallRating = Math.max(25, Math.min(99, Math.round(baseOverall + overallVariance)));
+    const overallRating = Math.max(60, Math.min(99, Math.round(baseOverall + overallVariance)));
     const potentialRating = Math.max(
       overallRating,
       Math.min(99, Math.round(basePotential + potentialVariance)),

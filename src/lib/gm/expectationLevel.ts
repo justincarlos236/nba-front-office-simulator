@@ -42,10 +42,10 @@ const BASE_INDEX_BY_TIER: Record<PayrollTier, number> = {
 };
 
 // Ratings above/below these move the expectation a level in either
-// direction - calibrated against this simulator's actual rating spread
-// (see playerValueTier.ts), same as the rest of the simplified layer.
-const ELITE_ROSTER_STRENGTH_THRESHOLD = 68;
-const WEAK_ROSTER_STRENGTH_THRESHOLD = 45;
+// direction - mirrors playerValueTier.ts's STAR/ROTATION tier boundaries
+// on the 60-99 NBA-2K-style scale, same as the rest of the simplified layer.
+const ELITE_ROSTER_STRENGTH_THRESHOLD = 80;
+const WEAK_ROSTER_STRENGTH_THRESHOLD = 65;
 
 /**
  * Sets a preseason expectation from payroll tier + roster quality - an
