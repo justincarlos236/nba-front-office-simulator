@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { MAX_LEAGUES_PER_USER } from "@/lib/league/constants";
+import { DeleteLeagueButton } from "@/components/leagues/DeleteLeagueButton";
 
 export const dynamic = "force-dynamic";
 
@@ -130,50 +131,57 @@ export default async function DashboardPage() {
               </span>
             </h2>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {leagueSummaries.map(({ league, userTeam, status }) => (
-                <Link
-                  key={league.id}
-                  href={`/leagues/${league.id}`}
-                  className="group rounded-xl border border-border bg-surface p-5 transition hover:border-accent/40"
-                  style={
-                    userTeam
-                      ? { borderLeftColor: userTeam.team.primaryColor, borderLeftWidth: "4px" }
-                      : undefined
-                  }
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      {userTeam?.team.logoUrl && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={userTeam.team.logoUrl}
-                          alt=""
-                          width={40}
-                          height={40}
-                          className="shrink-0"
-                        />
-                      )}
-                      <div>
-                        <h3 className="font-semibold text-foreground transition group-hover:text-accent">
-                          {userTeam ? `${userTeam.team.city} ${userTeam.team.name}` : league.name}
-                        </h3>
-                        <p className="text-xs text-muted">
-                          {league.currentSeason}-{(league.currentSeason + 1).toString().slice(-2)}{" "}
-                          season
-                          {userTeam ? ` · ${userTeam.wins}-${userTeam.losses}` : ""}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <span
-                    className={`mt-4 inline-block rounded-full px-2 py-0.5 text-xs font-semibold tracking-wide uppercase ${
-                      STATUS_BADGE_CLASS[status] ?? "bg-muted/20 text-muted"
-                    }`}
+              {leagueSummaries.map(({ league, userTeam, status }) => {
+                const franchiseName = userTeam
+                  ? `${userTeam.team.city} ${userTeam.team.name}`
+                  : league.name;
+                return (
+                  <div
+                    key={league.id}
+                    className="group relative rounded-xl border border-border bg-surface p-5 transition hover:border-accent/40"
+                    style={
+                      userTeam
+                        ? { borderLeftColor: userTeam.team.primaryColor, borderLeftWidth: "4px" }
+                        : undefined
+                    }
                   >
-                    {status}
-                  </span>
-                </Link>
-              ))}
+                    <DeleteLeagueButton leagueId={league.id} franchiseName={franchiseName} />
+                    <Link href={`/leagues/${league.id}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          {userTeam?.team.logoUrl && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={userTeam.team.logoUrl}
+                              alt=""
+                              width={40}
+                              height={40}
+                              className="shrink-0"
+                            />
+                          )}
+                          <div>
+                            <h3 className="font-semibold text-foreground transition group-hover:text-accent">
+                              {franchiseName}
+                            </h3>
+                            <p className="text-xs text-muted">
+                              {league.currentSeason}-
+                              {(league.currentSeason + 1).toString().slice(-2)} season
+                              {userTeam ? ` · ${userTeam.wins}-${userTeam.losses}` : ""}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <span
+                        className={`mt-4 inline-block rounded-full px-2 py-0.5 text-xs font-semibold tracking-wide uppercase ${
+                          STATUS_BADGE_CLASS[status] ?? "bg-muted/20 text-muted"
+                        }`}
+                      >
+                        {status}
+                      </span>
+                    </Link>
+                  </div>
+                );
+              })}
             </div>
           </section>
 

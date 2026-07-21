@@ -1094,3 +1094,24 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
     e2e tests and all 316 unit tests passing against a real production
     build; visually confirmed Tatum at 94 and Embiid clamped to 99 on a
     real roster.
+- **2026-07-21 (later)**: Added a delete-league action - the user hit the
+  `MAX_LEAGUES_PER_USER` (5) cap with no way to remove old franchises.
+  Standalone utility feature, not part of the numbered Phase 11 roadmap.
+  `deleteLeagueAction` (`src/lib/actions/league.ts`) checks league
+  ownership, then deletes in dependency order ahead of the `League` row
+  itself: `TradeAsset` → `Contract` → `DraftPick` → `TradeException`,
+  since those four have a `RESTRICT` (not cascade) FK into `LeagueTeam` -
+  the exact ordering learned earlier this session cleaning up accumulated
+  e2e test data. Everything else cascades cleanly. `DeleteLeagueButton`
+  (new client component) renders a hover-revealed trash icon on each
+  `/leagues` card that expands into an inline "Delete {franchise}? [Yes,
+  delete] [Cancel]" confirmation rather than a native `window.confirm()`,
+  matching the app's existing custom-UI language. Required restructuring
+  each league card from "whole card is a `<Link>`" to an outer
+  `group relative` `<div>` with the delete button as an absolutely
+  positioned sibling and the original clickable content wrapped in an
+  inner `<Link>` (a `<button>` can't nest inside an `<a>`). All 316 unit
+  tests, `tsc`, `eslint`, a clean production build, and all 10 e2e tests
+  passing; visually verified via a throwaway Playwright script (create a
+  league, hover to reveal the delete button, confirm, verify it
+  disappears from the hub) - screenshots checked then the script deleted.

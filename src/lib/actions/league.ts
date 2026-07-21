@@ -196,3 +196,33 @@ export async function createLeagueAction(formData: FormData) {
   revalidatePath("/leagues");
   redirect(`/leagues/${league.id}`);
 }
+
+/**
+ * Permanently deletes a league and everything in it. `Contract`,
+ * `DraftPick`, `TradeException`, and `TradeAsset` all have a `RESTRICT`
+ * (not cascade) foreign key into `LeagueTeam` - a plain `league.delete()`
+ * fails with a constraint violation unless those four are cleared first,
+ * in dependency order (discovered the hard way cleaning up accumulated
+ * e2e test data - see docs/IMPLEMENTATION_PLAN.md's Phase 11a log entry).
+ * Everything else (`LeagueTeam`, `LeaguePlayer`, `Game`, `PlayoffSeries`,
+ * `Trade`, `SeasonAward`, `LeagueTransaction`, `SeasonExpectation`,
+ * `DraftProspect`, `AssistantThread`/`AssistantMessage`) cascades cleanly
+ * once those four are gone.
+ */
+export async function deleteLeagueAction(leagueId: string) {
+  const session = await auth();
+  if (!session?.user) redirect("/sign-in");
+
+  const league = await prisma.league.findUnique({ where: { id: leagueId } });
+  if (!league || league.ownerId !== session.user.id) {
+    throw new Error("League not found");
+  }
+
+  await prisma.tradeAsset.deleteMany({ where: { trade: { leagueId } } });
+  await prisma.contract.deleteMany({ where: { leagueTeam: { leagueId } } });
+  await prisma.draftPick.deleteMany({ where: { leagueId } });
+  await prisma.tradeException.deleteMany({ where: { leagueId } });
+  await prisma.league.delete({ where: { id: leagueId } });
+
+  revalidatePath("/leagues");
+}
