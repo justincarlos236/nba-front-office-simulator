@@ -1592,3 +1592,25 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   against `GmPersonality` first), a Coach of the Year award, real-world
   coach/executive names, and CPU-vs-CPU competitive bidding for a specific
   candidate.
+- **2026-07-22 (Phase 15b)**: Coach of the Year award - the one item from
+  Phase 15a's deferred list picked up immediately after, per a short
+  overlap check: `SeasonAward.leaguePlayerId` is a required, non-nullable
+  FK to `LeaguePlayer`, so a coach winner can't be represented there
+  without turning every existing award query/render/news site into a
+  "check which FK is set" branch. Added a separate `StaffAward` model/
+  `StaffAwardCategory` enum instead - the same separate-model precedent
+  Phase 15a set for `Staff`/`StaffContract` vs. `LeaguePlayer`/`Contract`.
+  New `src/lib/staff/coachOfTheYear.ts` (`computeCoachOfTheYear`, a pure
+  function mirroring `computeMVP`'s shape) determines the winner from
+  team win% (ties broken by coach quality) - the only universal,
+  all-30-teams signal available, since `SeasonExpectation` is
+  user-team-only. Wired into `advanceSeasonAction` reusing the
+  already-computed `teamWinPctById` and already-fetched `allStaff` (no new
+  queries); persisted via `prisma.staffAward.create` and announced through
+  the existing generic `AWARD` transaction type (not a new `STAFF_`-
+  prefixed one, since this is thematically an award, not a roster move).
+  Displayed on both the Offseason page and League History alongside the
+  player awards, using `PlayerAvatar` with `photoUrl={null}` instead of
+  `PlayerChip` since coaches aren't `LeaguePlayer`s. All 431 unit tests (3
+  new), `tsc`, `eslint`, a clean production build, and all 10 e2e tests
+  passing.

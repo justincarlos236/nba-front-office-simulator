@@ -40,6 +40,7 @@ import {
 import { buildFuturePickRows, FUTURE_PICK_WINDOW_YEARS } from "@/lib/draft/futurePicks";
 import { shouldStaffRetire } from "@/lib/staff/staffRetirement";
 import { computeStaffSalary } from "@/lib/staff/generateStaff";
+import { computeCoachOfTheYear } from "@/lib/staff/coachOfTheYear";
 import { STAFF_ROLE_LABEL } from "@/lib/staff/labels";
 import type { StaffRole } from "@/generated/prisma/client";
 
@@ -388,6 +389,22 @@ export async function advanceSeasonAction(leagueId: string) {
   const dpoy = computeDefensivePlayerOfTheYear(defensiveSnapshots);
   const sixthMan = computeSixthManOfTheYear(benchSnapshots);
 
+  // Coach of the Year (Phase 15b) - eligibility uses each coach's original
+  // leagueTeamId from the allStaff fetch (not the staffUpdates value above),
+  // so a coach whose contract expires this same offseason still gets credit
+  // for the season they actually coached.
+  const headCoachSnapshots = allStaff
+    .filter(
+      (s) =>
+        s.role === "HEAD_COACH" && s.leagueTeamId !== null && teamWinPctById.has(s.leagueTeamId),
+    )
+    .map((s) => ({
+      staffId: s.id,
+      teamWinPct: teamWinPctById.get(s.leagueTeamId!)!,
+      quality: s.quality,
+    }));
+  const coachOfTheYear = computeCoachOfTheYear(headCoachSnapshots);
+
   for (let i = 0; i < playerUpdates.length; i += UPDATE_BATCH_SIZE) {
     const batch = playerUpdates.slice(i, i + UPDATE_BATCH_SIZE);
     await Promise.all(
@@ -572,6 +589,37 @@ export async function advanceSeasonAction(leagueId: string) {
 
   if (awardNewsRows.length > 0) {
     await prisma.leagueTransaction.createMany({ data: awardNewsRows });
+  }
+
+  // Coach of the Year (Phase 15b) - separate StaffAward model/table, not a
+  // branch on SeasonAward (see coachOfTheYear.ts / docs/ARCHITECTURE.md for
+  // why), so it gets its own createMany + news block parallel to the player
+  // award ones above rather than reusing awardRows/awardNewsRows.
+  if (coachOfTheYear) {
+    await prisma.staffAward.create({
+      data: {
+        leagueId,
+        season,
+        category: "COACH_OF_THE_YEAR",
+        staffId: coachOfTheYear.staffId,
+        value: coachOfTheYear.value,
+      },
+    });
+
+    const staffById = new Map(allStaff.map((s) => [s.id, s]));
+    const winner = staffById.get(coachOfTheYear.staffId);
+    if (winner) {
+      await prisma.leagueTransaction.create({
+        data: {
+          leagueId,
+          season,
+          type: "AWARD",
+          description: `${winner.fullName} wins Coach of the Year`,
+          importance: importanceForRating(winner.quality),
+          teamIds: winner.leagueTeamId ? [winner.leagueTeamId] : [],
+        },
+      });
+    }
   }
 
   if (retirementEvents.length > 0) {

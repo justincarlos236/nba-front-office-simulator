@@ -202,6 +202,7 @@ model League {
   seasonExpectations SeasonExpectation[]
   playerGameStats    PlayerGameStat[]
   staff              Staff[]
+  staffAwards        StaffAward[]
 
   @@index([ownerId])
   @@map("leagues")
@@ -647,9 +648,10 @@ model Staff {
   reputation   Int         @default(50)
   style        CoachStyle? // Head Coach only, null for the other two roles
 
-  league     League         @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  leagueTeam LeagueTeam?    @relation(fields: [leagueTeamId], references: [id])
-  contract   StaffContract?
+  league      League          @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueTeam  LeagueTeam?     @relation(fields: [leagueTeamId], references: [id])
+  contract    StaffContract?
+  staffAwards StaffAward[]
 
   @@index([leagueId, leagueTeamId])
   @@index([leagueId, role])
@@ -676,6 +678,32 @@ model StaffContract {
   leagueTeam LeagueTeam @relation(fields: [leagueTeamId], references: [id])
 
   @@map("staff_contracts")
+}
+
+enum StaffAwardCategory {
+  COACH_OF_THE_YEAR
+}
+
+// Separate from SeasonAward (not a nullable/generalized version of it) for
+// the same reason Staff/StaffContract are separate from LeaguePlayer/Contract
+// - SeasonAward.leaguePlayerId is required with no discriminator column, and
+// every existing call site assumes the winner is always a LeaguePlayer.
+model StaffAward {
+  id       String             @id @default(cuid())
+  leagueId String
+  season   Int
+  category StaffAwardCategory
+  staffId  String
+  // The stat the award was decided on - that season's team win% - same
+  // "keep the why" intent as SeasonAward.value.
+  value    Float
+
+  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  staff  Staff  @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, season, category])
+  @@index([leagueId, season])
+  @@map("staff_awards")
 }
 
 model DraftPick {

@@ -954,10 +954,46 @@ philosophy" concepts.
 
 **Deliberately not in this phase**: Scouts/Analytics/Cap Specialist,
 scouting-accuracy uncertainty (`deriveScoutingProfile` stays fully
-accurate), a Coach of the Year award, real-world coach/executive names,
-and CPU-vs-CPU competitive bidding for a specific candidate (CPU teams
-only fill vacancies from the pool, they don't yet compete with the user in
-real time for the same hire).
+accurate), real-world coach/executive names, and CPU-vs-CPU competitive
+bidding for a specific candidate (CPU teams only fill vacancies from the
+pool, they don't yet compete with the user in real time for the same
+hire). A Coach of the Year award followed immediately after as Phase 15b -
+see below.
+
+### Coach of the Year award (Phase 15b)
+
+`SeasonAward.leaguePlayerId` (used by MVP/ROY/MIP/DPOY/6MOY) is a
+required, non-nullable FK straight to `LeaguePlayer` - every existing
+award, both the offseason and history pages' render code, and
+`advanceSeasonAction`'s `awardNewsRows` news-writing all assume the winner
+is a player. Rather than making that field nullable and bolting on an
+optional `staffId` (turning every existing award query/render/news site
+into a "check which FK is set" branch for the sake of one new category),
+this phase adds a **separate `StaffAward` model** - the same precedent
+Phase 15a already set for `Staff`/`StaffContract` versus
+`LeaguePlayer`/`Contract`.
+
+- **`src/lib/staff/coachOfTheYear.ts`** - `computeCoachOfTheYear`, a pure
+  function mirroring `computeMVP`'s shape exactly (small snapshot array
+  in, winner-or-null out). Determined purely from team win% - the only
+  universal, all-30-teams performance signal available, since
+  `SeasonExpectation` (used for the user's own GM accountability) is
+  user-team-only. Ties break on coach `quality`.
+- Wired into `advanceSeasonAction` alongside the existing award computes,
+  reusing `teamWinPctById` (already built for Head Coach reputation
+  drift) and `allStaff` (already fetched for the staff loop) - no new
+  queries. Eligibility uses each coach's **original** `leagueTeamId` from
+  the `allStaff` fetch, not the post-loop `staffUpdates` value, so a coach
+  whose contract happens to expire this same offseason still gets credit
+  for the season they actually coached.
+- Persisted via `prisma.staffAward.create` and announced via the existing
+  generic `AWARD` `LeagueTransaction` type (not a new `STAFF_`-prefixed
+  type - this is thematically an award, not a roster move), reusing
+  `importanceForRating`.
+- Displayed alongside the player awards on both the Offseason page and
+  League History, using `PlayerAvatar` with `photoUrl={null}` (the same
+  convention the Staff page established for coach headshots) instead of
+  `PlayerChip`, since coaches aren't `LeaguePlayer`s.
 
 ## Playoffs
 

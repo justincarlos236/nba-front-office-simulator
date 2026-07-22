@@ -7,6 +7,7 @@ import { formatCentsCompact } from "@/lib/money";
 import { estimateAge } from "@/lib/players/age";
 import { OffseasonControls } from "@/components/offseason/OffseasonControls";
 import { PlayerChip } from "@/components/players/PlayerChip";
+import { PlayerAvatar } from "@/components/players/PlayerAvatar";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,10 @@ const AWARD_LABELS: Record<string, string> = {
   MOST_IMPROVED_PLAYER: "Most Improved Player",
   DEFENSIVE_PLAYER_OF_THE_YEAR: "Defensive Player of the Year",
   SIXTH_MAN_OF_THE_YEAR: "Sixth Man of the Year",
+};
+
+const STAFF_AWARD_LABELS: Record<string, string> = {
+  COACH_OF_THE_YEAR: "Coach of the Year",
 };
 
 export default async function OffseasonPage({ params }: PageProps) {
@@ -47,6 +52,7 @@ export default async function OffseasonPage({ params }: PageProps) {
     totalDraftPicks,
     pendingDraftPicks,
     lastSeasonAwards,
+    lastSeasonStaffAwards,
     retirees,
     ownershipMessages,
   ] = await Promise.all([
@@ -72,6 +78,10 @@ export default async function OffseasonPage({ params }: PageProps) {
       include: {
         leaguePlayer: { include: { player: true, leagueTeam: { include: { team: true } } } },
       },
+    }),
+    prisma.staffAward.findMany({
+      where: { leagueId: league.id, season: previousSeason },
+      include: { staff: { include: { leagueTeam: { include: { team: true } } } } },
     }),
     prisma.leaguePlayer.findMany({
       where: { leagueId: league.id, retiredSeason: previousSeason },
@@ -166,7 +176,7 @@ export default async function OffseasonPage({ params }: PageProps) {
         </section>
       )}
 
-      {lastSeasonAwards.length > 0 && (
+      {(lastSeasonAwards.length > 0 || lastSeasonStaffAwards.length > 0) && (
         <section className="mt-10">
           <h2 className="text-lg font-semibold text-foreground">
             {seasonLabel(previousSeason)} Season Awards
@@ -200,6 +210,30 @@ export default async function OffseasonPage({ params }: PageProps) {
                     {award.leaguePlayer.leagueTeam
                       ? `${award.leaguePlayer.leagueTeam.team.city} ${award.leaguePlayer.leagueTeam.team.name}`
                       : "Free agent"}
+                  </p>
+                </div>
+              );
+            })}
+            {lastSeasonStaffAwards.map((award) => {
+              const isUserTeam = award.staff.leagueTeam?.id === userTeamId;
+              return (
+                <div
+                  key={award.id}
+                  className={`rounded-lg border p-4 text-sm ${
+                    isUserTeam ? "border-accent bg-accent/5" : "border-border bg-surface"
+                  }`}
+                >
+                  <p className="text-xs tracking-wide text-muted uppercase">
+                    {STAFF_AWARD_LABELS[award.category] ?? award.category}
+                  </p>
+                  <p className="mt-1 flex items-center gap-2 font-semibold text-foreground">
+                    <PlayerAvatar photoUrl={null} fullName={award.staff.fullName} size="xs" />
+                    {award.staff.fullName}
+                  </p>
+                  <p className="text-xs text-muted">
+                    {award.staff.leagueTeam
+                      ? `${award.staff.leagueTeam.team.city} ${award.staff.leagueTeam.team.name}`
+                      : "Unemployed"}
                   </p>
                 </div>
               );

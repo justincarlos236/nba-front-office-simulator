@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { estimateAge } from "@/lib/players/age";
 import { PlayerChip } from "@/components/players/PlayerChip";
+import { PlayerAvatar } from "@/components/players/PlayerAvatar";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,10 @@ const AWARD_LABELS: Record<string, string> = {
   SIXTH_MAN_OF_THE_YEAR: "Sixth Man of the Year",
 };
 
+const STAFF_AWARD_LABELS: Record<string, string> = {
+  COACH_OF_THE_YEAR: "Coach of the Year",
+};
+
 export default async function HistoryPage({ params }: PageProps) {
   const { id } = await params;
   const session = await auth();
@@ -31,7 +36,7 @@ export default async function HistoryPage({ params }: PageProps) {
   const league = await prisma.league.findUnique({ where: { id } });
   if (!league || league.ownerId !== session.user.id) notFound();
 
-  const [champions, awards, retirees] = await Promise.all([
+  const [champions, awards, staffAwards, retirees] = await Promise.all([
     prisma.playoffSeries.findMany({
       where: { leagueId: id, round: 4, winnerTeamId: { not: null } },
       include: { winnerTeam: { include: { team: true } } },
@@ -40,6 +45,10 @@ export default async function HistoryPage({ params }: PageProps) {
     prisma.seasonAward.findMany({
       where: { leagueId: id },
       include: { leaguePlayer: { include: { player: true } } },
+    }),
+    prisma.staffAward.findMany({
+      where: { leagueId: id },
+      include: { staff: true },
     }),
     prisma.leaguePlayer.findMany({
       where: { leagueId: id, retiredSeason: { not: null } },
@@ -52,6 +61,12 @@ export default async function HistoryPage({ params }: PageProps) {
     const list = awardsBySeason.get(award.season) ?? [];
     list.push(award);
     awardsBySeason.set(award.season, list);
+  }
+  const staffAwardsBySeason = new Map<number, typeof staffAwards>();
+  for (const award of staffAwards) {
+    const list = staffAwardsBySeason.get(award.season) ?? [];
+    list.push(award);
+    staffAwardsBySeason.set(award.season, list);
   }
   const retireesBySeason = new Map<number, typeof retirees>();
   for (const r of retirees) {
@@ -92,6 +107,7 @@ export default async function HistoryPage({ params }: PageProps) {
           {champions.map((series) => {
             const season = series.season;
             const seasonAwards = awardsBySeason.get(season) ?? [];
+            const seasonStaffAwards = staffAwardsBySeason.get(season) ?? [];
             const seasonRetirees = retireesBySeason.get(season) ?? [];
             return (
               <section key={series.id} className="rounded-xl border border-border bg-surface p-5">
@@ -117,7 +133,7 @@ export default async function HistoryPage({ params }: PageProps) {
                   </div>
                 </div>
 
-                {seasonAwards.length > 0 && (
+                {(seasonAwards.length > 0 || seasonStaffAwards.length > 0) && (
                   <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
                     {seasonAwards.map((award) => (
                       <div key={award.id} className="rounded-lg border border-border p-3 text-sm">
@@ -134,6 +150,17 @@ export default async function HistoryPage({ params }: PageProps) {
                             fullName={award.leaguePlayer.player.fullName}
                             photoUrl={award.leaguePlayer.player.photoUrl}
                           />
+                        </p>
+                      </div>
+                    ))}
+                    {seasonStaffAwards.map((award) => (
+                      <div key={award.id} className="rounded-lg border border-border p-3 text-sm">
+                        <p className="text-xs tracking-wide text-muted uppercase">
+                          {STAFF_AWARD_LABELS[award.category] ?? award.category}
+                        </p>
+                        <p className="mt-1 flex items-center gap-2 font-semibold text-foreground">
+                          <PlayerAvatar photoUrl={null} fullName={award.staff.fullName} size="xs" />
+                          {award.staff.fullName}
                         </p>
                       </div>
                     ))}
