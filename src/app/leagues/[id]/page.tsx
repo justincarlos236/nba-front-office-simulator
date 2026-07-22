@@ -24,7 +24,7 @@ import { computeCompetitivenessPercentiles } from "@/lib/actions/competitiveness
 import { computeTeamIdentity, TEAM_IDENTITY_LABEL } from "@/lib/gm/teamIdentity";
 import { computeTeamNeeds, TEAM_NEED_LABEL } from "@/lib/gm/teamNeeds";
 import { estimateAge } from "@/lib/players/age";
-import { PlayerAvatar } from "@/components/players/PlayerAvatar";
+import { PlayerChip } from "@/components/players/PlayerChip";
 
 const PROJECTION_YEARS_AHEAD = 4;
 
@@ -500,18 +500,13 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
               return (
                 <tr key={lp.id} className="border-t border-border hover:bg-surface/60">
                   <td className="px-4 py-3">
-                    <Link
-                      href={`/players/${lp.playerId}`}
-                      className="flex items-center gap-3 font-medium text-foreground hover:text-accent"
-                    >
-                      <PlayerAvatar
-                        photoUrl={lp.player.photoUrl}
-                        fullName={lp.player.fullName}
-                        size="sm"
-                        teamPrimaryColor={userLeagueTeam.team.primaryColor}
-                      />
-                      {lp.player.fullName}
-                    </Link>
+                    <PlayerChip
+                      identity={{ kind: "league", leagueId: league.id, leaguePlayerId: lp.id }}
+                      fullName={lp.player.fullName}
+                      photoUrl={lp.player.photoUrl}
+                      teamPrimaryColor={userLeagueTeam.team.primaryColor}
+                      className="font-medium text-foreground"
+                    />
                   </td>
                   <td className="px-4 py-3 text-muted">{lp.player.position}</td>
                   <td className="px-4 py-3 text-right font-mono text-accent">{lp.overallRating}</td>

@@ -1310,3 +1310,38 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   build, and all 10 e2e tests passing; visually re-verified a fresh
   league now shows a plausible free-agent count (115) with real
   headshots still rendering correctly.
+- **2026-07-22 (later)**: Phase 13b completed - the clickable player
+  profile drawer. `PlayerProfileProvider` (mounted once in the root
+  layout) holds which player is open and renders a slide-out drawer via
+  `createPortal`, overlaying whatever page is mounted without ever
+  unmounting it - a profile can open mid-trade-build without losing any
+  in-progress selection, with no Next.js parallel/intercepting routes
+  needed. `PlayerChip` (avatar + name, replacing the plain `PlayerAvatar`
+  from 13a) is the one reusable clickable element, wired into all 5
+  read-only display surfaces (dashboard roster, free-agent board,
+  offseason awards/retirements, league history awards/retirees,
+  team-browse). `src/lib/players/profileData.ts`'s two loaders
+  (`loadLeaguePlayerProfile`/`loadReferencePlayerProfile`) produce one
+  shared `PlayerProfileData` shape regardless of identity, rendered by a
+  single tabbed `PlayerProfileContent` (Overview/Ratings/Stats/Contract/
+  Career/Awards/Injuries, reusing `DraftExperience`'s pill-tab visual
+  language). `/players/[id]` was rebuilt on the exact same loader/content
+  as a plain fallback for direct links - nothing in the app links to it
+  anymore, since every in-app click now opens the drawer instead.
+  `getPlayerProfileAction` never redirects on failure (unlike most actions
+  here), since it's called from an overlay that might sit on top of
+  in-progress work. Found and fixed a real `react-hooks/set-state-in-effect`
+  lint violation while building the data-fetching effect (synchronous
+  `setState` calls at the top of an effect on identity change) - fixed by
+  keying an inner `PlayerProfileDrawerBody` on the player identity so a
+  fresh mount naturally starts at `loading`, rather than manually
+  resetting state inside the effect. Updated `teams-navigation.spec.ts`
+  for the new drawer-based interaction (clicking a player no longer
+  navigates to a new page - a real, intentional UX change, not a test
+  artifact). All 348 unit tests, `tsc`, `eslint`, a clean production
+  build, and all 10 e2e tests passing; visually verified the drawer opens
+  identically from 3 different origin pages (dashboard roster, free
+  agents, team-browse) with real data, tab-switching works, and all three
+  close mechanisms (Escape, backdrop click, X button) work. Next up:
+  **13c (TradeBuilder integration, draft-board avatar polish, docs)** -
+  the last piece of Phase 13.

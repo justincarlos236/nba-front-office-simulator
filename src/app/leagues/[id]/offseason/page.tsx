@@ -6,7 +6,7 @@ import { getSeasonCapRules } from "@/lib/cap/constants";
 import { formatCentsCompact } from "@/lib/money";
 import { estimateAge } from "@/lib/players/age";
 import { OffseasonControls } from "@/components/offseason/OffseasonControls";
-import { PlayerAvatar } from "@/components/players/PlayerAvatar";
+import { PlayerChip } from "@/components/players/PlayerChip";
 
 export const dynamic = "force-dynamic";
 
@@ -182,14 +182,17 @@ export default async function OffseasonPage({ params }: PageProps) {
                   <p className="text-xs tracking-wide text-muted uppercase">
                     {AWARD_LABELS[award.category] ?? award.category}
                   </p>
-                  <p className="mt-1 flex items-center gap-2 font-semibold text-foreground">
-                    <PlayerAvatar
-                      photoUrl={award.leaguePlayer.player.photoUrl}
+                  <p className="mt-1 font-semibold text-foreground">
+                    <PlayerChip
+                      identity={{
+                        kind: "league",
+                        leagueId: league.id,
+                        leaguePlayerId: award.leaguePlayerId,
+                      }}
                       fullName={award.leaguePlayer.player.fullName}
-                      size="sm"
+                      photoUrl={award.leaguePlayer.player.photoUrl}
                       teamPrimaryColor={award.leaguePlayer.leagueTeam?.team.primaryColor}
                     />
-                    {award.leaguePlayer.player.fullName}
                   </p>
                   <p className="text-xs text-muted">
                     {award.leaguePlayer.leagueTeam
@@ -212,13 +215,12 @@ export default async function OffseasonPage({ params }: PageProps) {
                 key={r.id}
                 className="flex items-center justify-between rounded-lg border border-border bg-surface p-4 text-sm"
               >
-                <span className="flex items-center gap-3 font-medium text-foreground">
-                  <PlayerAvatar
-                    photoUrl={r.player.photoUrl}
+                <span className="font-medium text-foreground">
+                  <PlayerChip
+                    identity={{ kind: "league", leagueId: league.id, leaguePlayerId: r.id }}
                     fullName={r.player.fullName}
-                    size="sm"
+                    photoUrl={r.player.photoUrl}
                   />
-                  {r.player.fullName}
                 </span>
                 <span className="text-muted">
                   Retired at {estimateAge(r.player.draftYear, previousSeason)} &middot; final rating{" "}

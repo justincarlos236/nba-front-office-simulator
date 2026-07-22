@@ -971,6 +971,62 @@ trade-AI valuation) reads or recalibrates against.
   floor, a limitation no amount of weight-tuning on this input set can
   fully resolve without real advanced metrics.
 
+## Player profile
+
+Every player anywhere in the app (`PlayerChip`, `src/components/players/PlayerChip.tsx`)
+is clickable and opens the same profile - a slide-out drawer, not a
+separate page per surface, so the experience is identical regardless of
+where a player was clicked (the dashboard roster, the free-agent board, a
+team-browse page, awards/retirements, etc.).
+
+- **A global client-state drawer, not routes or per-page modals**:
+  `PlayerProfileProvider` (`src/components/players/PlayerProfileProvider.tsx`)
+  is mounted once in the root layout, holds which player (if any) is open,
+  and renders the drawer via `createPortal` into `document.body` as a
+  sibling of whatever page is currently mounted - it never unmounts the
+  page underneath. This is what lets a profile open on top of, say, an
+  in-progress trade build without losing any selection state, without
+  needing Next.js parallel/intercepting routes (a heavier mechanism with
+  real edge cases around static generation - `/teams/[abbreviation]` is
+  statically generated - that wasn't worth the risk for this). No
+  URL/query-param syncing - this is a UI overlay, not a navigable route.
+  `/players/[id]` remains as a plain, directly-linkable fallback for
+  anyone who lands there another way (a bookmark, a shared link), built on
+  the exact same loader and content-rendering component so there's only
+  one implementation of "what a profile looks like."
+- **One data shape, two identities**: `src/lib/players/profileData.ts`
+  exports a single `PlayerProfileData` shape with two loaders -
+  `loadLeaguePlayerProfile` (the rich case: rating, contract, injuries,
+  awards, all scoped to one league save) and `loadReferencePlayerProfile`
+  (team-browse pages with no league context - bio, real stats, and the
+  same live valuation `/players/[id]` always showed, with
+  `leagueContext`/`contract`/`awards` simply empty rather than a
+  different component tree). Fictional draft-generated prospects are
+  deliberately not routed through this at all - no real-world identity to
+  show a profile for, and their existing inline scouting-report accordion
+  in `DraftExperience` already serves that role for a context with no
+  contract/awards/injury history to show anyway.
+- **`getPlayerProfileAction`** (`src/lib/actions/players.ts`) is the one
+  Server Action the client-side provider calls to fetch a profile - unlike
+  most actions in this app, it never `redirect()`s on failure, since it's
+  invoked from an overlay that might be open on top of in-progress work;
+  callers show an inline error instead.
+- **Tabs, not a single scrolling page or an accordion**: `PlayerProfileContent`
+  renders Overview/Ratings/Stats/Contract/Career/Awards/Injuries as a tab
+  bar (reusing `DraftExperience`'s existing pill-filter visual language) -
+  a user reopening a card mid-trade-negotiation wants one specific thing
+  fast, repeatedly, not a document to scroll through once.
+- **A real React Compiler lint catch during this work**: the natural first
+  draft of the data-fetching effect (`useState` for loading/error/data,
+  reset via `setState` calls at the top of the effect body on every
+  identity change) tripped `react-hooks/set-state-in-effect` - synchronous
+  `setState` in an effect body causes an extra cascading render before the
+  async work even starts. Fixed by keying an inner
+  `PlayerProfileDrawerBody` component on the player identity instead - a
+  fresh mount always starts at its initial `loading` state for free, so
+  the effect only ever calls `setState` from inside the async
+  `.then`/`.catch` callbacks, never synchronously in the effect body.
+
 ## Data sourcing
 
 - **Teams**: hardcoded as a static fixture (`prisma/data/teams.ts`) rather

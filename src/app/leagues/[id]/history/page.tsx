@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { estimateAge } from "@/lib/players/age";
-import { PlayerAvatar } from "@/components/players/PlayerAvatar";
+import { PlayerChip } from "@/components/players/PlayerChip";
 
 export const dynamic = "force-dynamic";
 
@@ -122,13 +122,16 @@ export default async function HistoryPage({ params }: PageProps) {
                         <p className="text-xs tracking-wide text-muted uppercase">
                           {AWARD_LABELS[award.category] ?? award.category}
                         </p>
-                        <p className="mt-1 flex items-center gap-2 font-semibold text-foreground">
-                          <PlayerAvatar
-                            photoUrl={award.leaguePlayer.player.photoUrl}
+                        <p className="mt-1 font-semibold text-foreground">
+                          <PlayerChip
+                            identity={{
+                              kind: "league",
+                              leagueId: league.id,
+                              leaguePlayerId: award.leaguePlayerId,
+                            }}
                             fullName={award.leaguePlayer.player.fullName}
-                            size="sm"
+                            photoUrl={award.leaguePlayer.player.photoUrl}
                           />
-                          {award.leaguePlayer.player.fullName}
                         </p>
                       </div>
                     ))}
@@ -143,13 +146,17 @@ export default async function HistoryPage({ params }: PageProps) {
                     <div className="mt-2 space-y-1">
                       {seasonRetirees.map((r) => (
                         <div key={r.id} className="flex items-center justify-between text-sm">
-                          <span className="flex items-center gap-2 text-foreground">
-                            <PlayerAvatar
-                              photoUrl={r.player.photoUrl}
+                          <span className="text-foreground">
+                            <PlayerChip
+                              identity={{
+                                kind: "league",
+                                leagueId: league.id,
+                                leaguePlayerId: r.id,
+                              }}
                               fullName={r.player.fullName}
+                              photoUrl={r.player.photoUrl}
                               size="xs"
                             />
-                            {r.player.fullName}
                           </span>
                           <span className="text-muted">
                             Retired at {estimateAge(r.player.draftYear, season + 1)} &middot; final

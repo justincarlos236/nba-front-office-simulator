@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { deriveOverallRating } from "@/lib/league/ratingFromStats";
 import { RosterScatterChart } from "@/components/teams/RosterScatterChart";
-import { PlayerAvatar } from "@/components/players/PlayerAvatar";
+import { PlayerChip } from "@/components/players/PlayerChip";
 
 interface PageProps {
   params: Promise<{ abbreviation: string }>;
@@ -101,18 +101,13 @@ export default async function TeamDetailPage({ params }: PageProps) {
             {roster.map(({ player, stat, rating }) => (
               <tr key={player.id} className="border-t border-border hover:bg-surface/60">
                 <td className="px-4 py-3">
-                  <Link
-                    href={`/players/${player.id}`}
-                    className="flex items-center gap-3 font-medium text-foreground hover:text-accent"
-                  >
-                    <PlayerAvatar
-                      photoUrl={player.photoUrl}
-                      fullName={player.fullName}
-                      size="sm"
-                      teamPrimaryColor={team.primaryColor}
-                    />
-                    {player.fullName}
-                  </Link>
+                  <PlayerChip
+                    identity={{ kind: "reference", playerId: player.id }}
+                    fullName={player.fullName}
+                    photoUrl={player.photoUrl}
+                    teamPrimaryColor={team.primaryColor}
+                    className="font-medium text-foreground"
+                  />
                 </td>
                 <td className="px-4 py-3 text-muted">{player.position}</td>
                 <td className="px-4 py-3 text-right font-mono text-accent">{rating ?? "-"}</td>
