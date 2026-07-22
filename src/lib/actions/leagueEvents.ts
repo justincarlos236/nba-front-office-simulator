@@ -74,6 +74,7 @@ export async function applyLeagueEvents(
     type: "INJURY" | "TRADE" | "SIGNING";
     description: string;
     importance: NewsImportance;
+    teamIds: string[];
   }[] = [];
 
   const returningPlayerIds = injuredPlayers
@@ -89,6 +90,7 @@ export async function applyLeagueEvents(
         type: "INJURY",
         description: `${lp.player.fullName} has been cleared to return from injury.`,
         importance: "MINOR",
+        teamIds: lp.leagueTeamId ? [lp.leagueTeamId] : [],
       });
     }
   }
@@ -137,6 +139,7 @@ export async function applyLeagueEvents(
         // it happened to.
         importance:
           result.durationGames >= 20 ? "MAJOR" : result.durationGames >= 8 ? "STANDARD" : "MINOR",
+        teamIds: [teamId],
       });
     }
   }
@@ -173,6 +176,7 @@ export async function applyLeagueEvents(
         type: t.type,
         description: t.description,
         importance: t.importance,
+        teamIds: t.teamIds,
       })),
     });
   }
@@ -186,6 +190,7 @@ async function maybeExecuteCpuTrade(
     type: "INJURY" | "TRADE" | "SIGNING";
     description: string;
     importance: NewsImportance;
+    teamIds: string[];
   }[],
 ): Promise<void> {
   const cpuLeagueTeams = await prisma.leagueTeam.findMany({
@@ -291,6 +296,7 @@ async function maybeExecuteCpuTrade(
       importanceForRating(result.teamA.player.rating),
       importanceForRating(result.teamB.player.rating),
     ]),
+    teamIds: [result.teamA.leagueTeamId, result.teamB.leagueTeamId],
   });
 }
 
@@ -302,6 +308,7 @@ async function maybeExecuteCpuSigning(
     type: "INJURY" | "TRADE" | "SIGNING";
     description: string;
     importance: NewsImportance;
+    teamIds: string[];
   }[],
 ): Promise<void> {
   const [cpuLeagueTeams, freeAgents] = await Promise.all([
@@ -364,5 +371,6 @@ async function maybeExecuteCpuSigning(
       offerSalaryCents,
     ),
     importance: importanceForRating(freeAgent.overallRating),
+    teamIds: [team.id],
   });
 }

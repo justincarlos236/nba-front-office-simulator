@@ -39,6 +39,17 @@ import {
 } from "@/lib/gm/ownershipMessages";
 import { buildFuturePickRows, FUTURE_PICK_WINDOW_YEARS } from "@/lib/draft/futurePicks";
 
+// Local, server-side copy of the award-category label (small duplication
+// of the UI's own AWARD_LABELS constants, same established pattern as
+// elsewhere in this codebase - this one drives news-story text, not display).
+const AWARD_NEWS_LABEL: Record<string, string> = {
+  MVP: "Most Valuable Player",
+  ROOKIE_OF_THE_YEAR: "Rookie of the Year",
+  MOST_IMPROVED_PLAYER: "Most Improved Player",
+  DEFENSIVE_PLAYER_OF_THE_YEAR: "Defensive Player of the Year",
+  SIXTH_MAN_OF_THE_YEAR: "Sixth Man of the Year",
+};
+
 const MIN_OWNER_CONFIDENCE = 0;
 const MAX_OWNER_CONFIDENCE = 100;
 // A new payroll-reduction directive is only issued when ownership is
@@ -164,7 +175,11 @@ export async function advanceSeasonAction(leagueId: string) {
     retiredSeason: number | null;
   }[] = [];
   const contractIdsToDelete: string[] = [];
-  const retirementEvents: { description: string; importance: NewsImportance }[] = [];
+  const retirementEvents: {
+    description: string;
+    importance: NewsImportance;
+    teamIds: string[];
+  }[] = [];
 
   const rng = createSeededRandom(`${leagueId}-${season}-offseason`);
 
@@ -248,6 +263,7 @@ export async function advanceSeasonAction(leagueId: string) {
       retirementEvents.push({
         description: describeRetirement(lp.player.fullName, teamLabel),
         importance: importanceForRating(oldRating),
+        teamIds: lp.leagueTeamId ? [lp.leagueTeamId] : [],
       });
     }
 
@@ -328,6 +344,29 @@ export async function advanceSeasonAction(leagueId: string) {
     await prisma.seasonAward.createMany({ data: awardRows });
   }
 
+  // Real news, not a new source of truth - announces the exact SeasonAward
+  // rows just written above, using data already fetched (leaguePlayers)
+  // rather than a second query.
+  const leaguePlayerById = new Map(leaguePlayers.map((lp) => [lp.id, lp]));
+  const awardNewsRows = awardRows
+    .map((a) => {
+      const winner = leaguePlayerById.get(a.leaguePlayerId);
+      if (!winner) return null;
+      return {
+        leagueId,
+        season,
+        type: "AWARD" as const,
+        description: `${winner.player.fullName} wins ${AWARD_NEWS_LABEL[a.category]}`,
+        importance: importanceForRating(winner.overallRating),
+        teamIds: winner.leagueTeamId ? [winner.leagueTeamId] : [],
+      };
+    })
+    .filter((row) => row !== null);
+
+  if (awardNewsRows.length > 0) {
+    await prisma.leagueTransaction.createMany({ data: awardNewsRows });
+  }
+
   if (retirementEvents.length > 0) {
     await prisma.leagueTransaction.createMany({
       data: retirementEvents.map((event) => ({
@@ -336,6 +375,7 @@ export async function advanceSeasonAction(leagueId: string) {
         type: "RETIREMENT" as const,
         description: event.description,
         importance: event.importance,
+        teamIds: event.teamIds,
       })),
     });
   }
@@ -500,6 +540,7 @@ export async function advanceSeasonAction(leagueId: string) {
         // No player rating attached to a season-recap message - STANDARD
         // is an honest flat default here, not a placeholder to revisit.
         importance: "STANDARD" as const,
+        teamIds: userLeagueTeamId ? [userLeagueTeamId] : [],
       })),
     });
   }

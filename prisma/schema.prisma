@@ -218,6 +218,10 @@ enum TransactionType {
   GAME_MILESTONE
   WIN_STREAK
   GAME_RESULT
+  // Real season-end awards (Phase 14e) - announced once computed in
+  // advanceSeasonAction, using the same SeasonAward rows already shown
+  // elsewhere, not a new source of truth.
+  AWARD
 }
 
 // Lets the UI prioritize significant events over routine ones. Existing
@@ -285,6 +289,13 @@ model LeagueTransaction {
   type        TransactionType
   description String
   importance  NewsImportance  @default(STANDARD)
+  // Every LeagueTeam id substantively involved (1 for a signing/injury/
+  // award, 2 for a trade/game) - powers "My Team" filtering. Defaults to
+  // empty for rows written before this field existed (Phase 14e) - there's
+  // no reliable way to reconstruct team involvement from free-text
+  // descriptions alone, so old rows just won't match a team filter,
+  // consistent with this project's forward-only backfill precedent.
+  teamIds     String[]        @default([])
   createdAt   DateTime        @default(now())
 
   league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)

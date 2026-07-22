@@ -1518,3 +1518,35 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   each with correct importance-based styling. Last step of Phase 14:
   **14e** (News page filtering/search redesign - category/team/search UI
   on top of the real feed this phase built).
+- **2026-07-22 (Phase 14e)**: News page filtering/search - the last piece
+  of the original ask. Added `LeagueTransaction.teamIds` (a Postgres
+  `String[]`, populated at every write site across `trade.ts`,
+  `freeagency.ts`, `leagueEvents.ts`, `offseason.ts`, `simulation.ts` -
+  existing rows default to empty, same forward-only backfill precedent as
+  the rest of Phase 14), which is what makes a real "My Team" filter
+  possible for the first time - team association previously only existed
+  as unstructured text inside `description`. Added a real `AWARD`
+  category: `advanceSeasonAction` now announces each season-end award
+  (MVP/ROY/MIP/DPOY/6MOY) as a `LeagueTransaction`, built from the exact
+  `awardRows` already computed and persisted in Phase 14c - not a new
+  computation. New `NewsFeed` client component
+  (`src/components/news/NewsFeed.tsx`) filters the server-fetched,
+  already-capped list entirely in memory - category pills (All, My Team,
+  Trades, Free Agency, Retirements, Injuries, Awards, Milestones,
+  Streaks, Games, Ownership), all combined with AND logic, same
+  "filter a preloaded list" convention `DraftExperience` already
+  established. The category set deliberately reflects only what has real
+  backing - Coaching, Contracts-as-a-mechanic, Rumors, Draft, and
+  Standings/Records-as-distinct-story-types stay absent, consistent with
+  the "no fictional events" instruction this whole Phase 14 arc has
+  followed. All 397 unit tests (unchanged - this phase is UI/wiring, no
+  new pure logic requiring its own tests beyond what 14b-14d already
+  covers), `tsc`, `eslint`, a clean production build, and all 10 e2e tests
+  passing; visually verified category filtering (pill active-state
+  toggling confirmed via direct class assertion, not just eyeballing
+  screenshots, after an early throwaway script gave a misleading result
+  from its own locator mistake), "My Team" correctly isolating only
+  Celtics-involving stories, and live text search correctly narrowing to
+  matching descriptions. **Phase 14 (the full "living league" arc - real
+  player box scores, league leaders, real award races, and a real,
+  filterable news feed) is now complete.**

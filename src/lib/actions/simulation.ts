@@ -18,6 +18,7 @@ import type { NewsImportance } from "@/generated/prisma/client";
 
 interface RankedEvent {
   event: DescribedEvent;
+  teamIds: string[];
   rank: number;
 }
 
@@ -27,11 +28,14 @@ interface RankedEvent {
 // handful, not literally every one that technically qualifies. `limit`
 // scales with batch size so a single-game click isn't starved and a
 // 50-game click isn't flooded.
-function topRanked(candidates: RankedEvent[], limit: number): DescribedEvent[] {
+function topRanked(
+  candidates: RankedEvent[],
+  limit: number,
+): { event: DescribedEvent; teamIds: string[] }[] {
   return [...candidates]
     .sort((a, b) => b.rank - a.rank)
     .slice(0, limit)
-    .map((c) => c.event);
+    .map((c) => ({ event: c.event, teamIds: c.teamIds }));
 }
 
 export type SimulateBatchSize = 1 | 10 | 50;
@@ -89,7 +93,12 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
   const lossIncrements = new Map<string, number>();
   const gameUpdates: { id: string; homeScore: number; awayScore: number }[] = [];
   const boxScoreRows: (PlayerBoxScoreLine & { gameId: string })[] = [];
-  const newsRows: { type: string; description: string; importance: NewsImportance }[] = [];
+  const newsRows: {
+    type: string;
+    description: string;
+    importance: NewsImportance;
+    teamIds: string[];
+  }[] = [];
   const gameResultCandidates: RankedEvent[] = [];
   const milestoneCandidates: RankedEvent[] = [];
 
@@ -121,9 +130,13 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
     const loserLabel = teamLabelById.get(loserId) ?? "Team";
 
     const winnerStreakEvent = describeWinStreak(winnerLabel, winnerNewStreak);
-    if (winnerStreakEvent) newsRows.push({ type: "WIN_STREAK", ...winnerStreakEvent });
+    if (winnerStreakEvent) {
+      newsRows.push({ type: "WIN_STREAK", ...winnerStreakEvent, teamIds: [winnerId] });
+    }
     const loserStreakEvent = describeWinStreak(loserLabel, loserNewStreak);
-    if (loserStreakEvent) newsRows.push({ type: "WIN_STREAK", ...loserStreakEvent });
+    if (loserStreakEvent) {
+      newsRows.push({ type: "WIN_STREAK", ...loserStreakEvent, teamIds: [loserId] });
+    }
 
     const margin = Math.abs(result.homeScore - result.awayScore);
     const winnerWinProbability = result.homeWon
@@ -141,6 +154,7 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
       // most extreme few per batch actually get reported.
       gameResultCandidates.push({
         event: gameResultEvent,
+        teamIds: [winnerId, loserId],
         rank: (1 - winnerWinProbability) * 100 + margin,
       });
     }
@@ -174,7 +188,11 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
         blocks: line.blocks,
       });
       if (milestoneEvent) {
-        milestoneCandidates.push({ event: milestoneEvent, rank: line.points });
+        milestoneCandidates.push({
+          event: milestoneEvent,
+          teamIds: [line.leagueTeamId],
+          rank: line.points,
+        });
       }
     }
   }
@@ -183,17 +201,17 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
   // topRanked) - scales with batch size so a single-game click isn't
   // starved and a 50-game click isn't flooded with every game that
   // technically cleared a threshold.
-  for (const event of topRanked(
+  for (const { event, teamIds } of topRanked(
     gameResultCandidates,
     Math.max(1, Math.ceil(unplayedGames.length / 20)),
   )) {
-    newsRows.push({ type: "GAME_RESULT", ...event });
+    newsRows.push({ type: "GAME_RESULT", ...event, teamIds });
   }
-  for (const event of topRanked(
+  for (const { event, teamIds } of topRanked(
     milestoneCandidates,
     Math.max(2, Math.ceil(unplayedGames.length / 10)),
   )) {
-    newsRows.push({ type: "GAME_MILESTONE", ...event });
+    newsRows.push({ type: "GAME_MILESTONE", ...event, teamIds });
   }
 
   // Each game/team update is independent of the others (this batch doesn't
@@ -240,6 +258,7 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
             type: row.type as "GAME_MILESTONE" | "WIN_STREAK" | "GAME_RESULT",
             description: row.description,
             importance: row.importance,
+            teamIds: row.teamIds,
           })),
         })
       : Promise.resolve(),

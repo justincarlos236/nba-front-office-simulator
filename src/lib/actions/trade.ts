@@ -357,6 +357,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
         importance: highestImportance(
           [...myPlayers, ...theirPlayers].map((lp) => importanceForRating(lp.overallRating)),
         ),
+        teamIds: [fromLeagueTeam.id, toLeagueTeam.id],
       },
     });
   });

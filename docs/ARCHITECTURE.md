@@ -755,6 +755,50 @@ new categories activate only once their underlying mechanic is real.
   identical to the plain feed this always was, so the genuinely
   significant stuff is what actually stands out.
 
+## News page: filtering, search, and real awards (Phase 14e)
+
+The last piece of the original ask - category/team/search filtering on
+top of the real feed the earlier 14b-14d phases built.
+
+- **`LeagueTransaction.teamIds`** (a Postgres `String[]`, not a join
+  table - no need for referential integrity on these, only cheap
+  `includes` filtering): every team substantively involved in a story (2
+  for a trade/game, 1 for a signing/injury/award/streak). Populated at
+  every write site across `trade.ts`, `freeagency.ts`, `leagueEvents.ts`,
+  `offseason.ts`, and `simulation.ts` - existing rows default to an empty
+  array, since there's no reliable way to reconstruct team involvement
+  from a free-text description alone (same forward-only precedent as
+  every other backfill-averse migration in this project). This is what
+  makes a real "My Team" filter possible for the first time - before this,
+  team association only existed as unstructured text inside `description`.
+- **A real `AWARD` category, not a new source of truth**: season-end
+  awards (MVP/ROY/MIP/DPOY/6MOY) were already computed and stored in
+  `SeasonAward` since Phase 14c, but never announced as news. Now
+  `advanceSeasonAction` also writes a `LeagueTransaction` per award,
+  built directly from the same `awardRows` just persisted (no second
+  computation) and the already-fetched `leaguePlayers` list (no second
+  query) - reusing `importanceForRating` for consistency with every
+  other category.
+- **`NewsFeed`** (`src/components/news/NewsFeed.tsx`): a client component
+  receiving the server-fetched, already-capped-at-200 list as a prop and
+  filtering entirely in memory - category pills, a "My Team" toggle, and
+  a live text search, all combined with AND logic, no server round-trip
+  per keystroke or click. This is the same "filter a preloaded list"
+  convention `DraftExperience` already established, chosen over a
+  `searchParams`-driven server refetch since the underlying dataset is
+  already small and bounded - there was no reason to introduce a second,
+  heavier filtering pattern for what's fundamentally the same shape of
+  problem.
+- **Category set reflects exactly what has real backing** - Trades, Free
+  Agency, Retirements, Injuries, Awards, Milestones, Streaks, Games,
+  Ownership, plus All and My Team. Categories the original request asked
+  for that still have no real mechanic behind them (Coaching, Contracts-
+  as-a-distinct-mechanic, Rumors, Draft, Standings-as-its-own-story-type,
+  Records-beyond-what-Milestones-already-covers) are deliberately absent
+  - consistent with the standing "no fictional events" instruction this
+    entire Phase 14 arc has followed. Nothing architecturally blocks adding
+    them later if their underlying mechanic ever becomes real.
+
 ## Around-the-league activity: injuries, CPU trades & CPU signings
 
 Without this, the only news in a league would ever be things the user

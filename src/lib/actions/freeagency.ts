@@ -139,6 +139,7 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
           totalSalaryCents,
         ),
         importance: importanceForRating(freeAgent.overallRating),
+        teamIds: [myLeagueTeamId],
       },
     });
   });
