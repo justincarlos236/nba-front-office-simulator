@@ -83,6 +83,15 @@ enum Conference {
   WEST
 }
 
+// Real, sourced classification (metro-area size) - same category of
+// fixture data as city/conference/colors, not fabricated. Drives fan
+// engagement's attendance/franchise-popularity baselines.
+enum MarketSize {
+  LARGE
+  MID
+  SMALL
+}
+
 model Team {
   id             String     @id @default(cuid())
   externalId     String?    @unique
@@ -94,6 +103,10 @@ model Team {
   primaryColor   String
   secondaryColor String
   logoUrl        String?
+  // Defaulted (not left nullable) so the migration doesn't fail against
+  // the 30 real Team rows that already exist - seedTeams() immediately
+  // overwrites every row with its real per-team value right after.
+  marketSize     MarketSize @default(MID)
 
   players     Player[]
   leagueTeams LeagueTeam[]
@@ -203,6 +216,7 @@ model League {
   playerGameStats    PlayerGameStat[]
   staff              Staff[]
   staffAwards        StaffAward[]
+  fanHappinessSnapshots FanHappinessSnapshot[]
 
   @@index([ownerId])
   @@map("leagues")
@@ -337,6 +351,11 @@ model LeagueTeam {
   // news (src/lib/transactions/describeGameEvents.ts) - not derived by
   // scanning Game history on read.
   currentStreak Int           @default(0)
+  // Fan engagement - 0-100, same neutral-start convention as
+  // League.ownerConfidence. Recomputed every season for all 30 teams
+  // (src/lib/fans/), not just the user's - franchisePopularity needs a
+  // full-league comparison to mean anything.
+  fanHappiness  Int           @default(65)
 
   league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   team   Team   @relation(fields: [teamId], references: [id])
@@ -357,10 +376,35 @@ model LeagueTeam {
   playerGameStats        PlayerGameStat[]
   staff                  Staff[]
   staffContracts         StaffContract[]
+  fanHappinessSnapshots  FanHappinessSnapshot[]
 
   @@unique([leagueId, teamId])
   @@index([leagueId])
   @@map("league_teams")
+}
+
+// One row per league+team+season - powers a multi-season trend graph the
+// same way SeasonAward/SeasonExpectation persist once rather than
+// recompute on every read. attendancePct/franchisePopularity are derived,
+// presentational numbers (see src/lib/fans/fanHappiness.ts) - deliberately
+// no separate merchandise/ticket-demand/buzz columns, since those are
+// UI-side tier labels read off these two numbers + marketSize, not
+// independently tracked state.
+model FanHappinessSnapshot {
+  id                  String @id @default(cuid())
+  leagueId            String
+  leagueTeamId        String
+  season              Int
+  fanHappiness        Int
+  attendancePct       Float
+  franchisePopularity Int
+
+  league     League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueTeam LeagueTeam @relation(fields: [leagueTeamId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, leagueTeamId, season])
+  @@index([leagueId, leagueTeamId])
+  @@map("fan_happiness_snapshots")
 }
 
 enum GameType {

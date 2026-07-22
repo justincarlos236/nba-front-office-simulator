@@ -42,6 +42,15 @@ import { shouldStaffRetire } from "@/lib/staff/staffRetirement";
 import { computeStaffSalary } from "@/lib/staff/generateStaff";
 import { computeCoachOfTheYear } from "@/lib/staff/coachOfTheYear";
 import { STAFF_ROLE_LABEL } from "@/lib/staff/labels";
+import { getPlayerValueTier } from "@/lib/valuation/playerValueTier";
+import { computeTransactionSentiment } from "@/lib/fans/transactionSentiment";
+import {
+  computeFanHappinessDelta,
+  computeFranchisePopularity,
+  computeAttendancePct,
+  type FanHappinessInputs,
+} from "@/lib/fans/fanHappiness";
+import type { EvaluationVerdict } from "@/lib/gm/seasonEvaluation";
 import type { StaffRole } from "@/generated/prisma/client";
 
 // Local, server-side copy of the award-category label (small duplication
@@ -383,6 +392,65 @@ export async function advanceSeasonAction(leagueId: string) {
     });
   }
 
+  // --- Fan engagement setup ---
+  // A consumer of existing simulation events, not a second event pipeline
+  // - reads the exact same LeagueTransaction rows the news feed surfaces,
+  // reuses teamWinPctById (already built above for Head Coach reputation
+  // drift) and allStaff (already fetched) for coach style. Built here, all
+  // 30 teams at once, so both the user's own team (computed inline right
+  // before the owner-confidence nudge below, since it needs `verdict`) and
+  // every CPU team (computed in the persistence loop further down) share
+  // the same inputs without querying twice.
+  const seasonTransactions = await prisma.leagueTransaction.findMany({
+    where: { leagueId, season },
+    select: { type: true, importance: true, teamIds: true, description: true },
+  });
+  const transactionsByTeam = new Map<
+    string,
+    { type: string; importance: string; description: string }[]
+  >();
+  for (const txn of seasonTransactions) {
+    for (const teamId of txn.teamIds) {
+      const list = transactionsByTeam.get(teamId) ?? [];
+      list.push({ type: txn.type, importance: txn.importance, description: txn.description });
+      transactionsByTeam.set(teamId, list);
+    }
+  }
+
+  const bestRatingByTeam = new Map<string, number>();
+  for (const lp of leaguePlayers) {
+    if (!lp.leagueTeamId) continue;
+    const current = bestRatingByTeam.get(lp.leagueTeamId) ?? 0;
+    if (lp.overallRating > current) bestRatingByTeam.set(lp.leagueTeamId, lp.overallRating);
+  }
+  const starPowerTierByTeam = new Map(
+    Array.from(bestRatingByTeam.entries()).map(([teamId, rating]) => [
+      teamId,
+      getPlayerValueTier(rating),
+    ]),
+  );
+
+  const headCoachStyleByTeam = new Map(
+    allStaff
+      .filter((s) => s.role === "HEAD_COACH" && s.leagueTeamId)
+      .map((s) => [s.leagueTeamId as string, s.style]),
+  );
+
+  // Populated inline for the user's own team below (needs `verdict`,
+  // computed inside the owner-accountability block); every other team is
+  // computed fresh in the persistence loop near the end of this function.
+  const fanHappinessByTeam = new Map<string, number>();
+
+  function fallbackFanHappinessInputs(leagueTeamId: string): FanHappinessInputs {
+    return {
+      evaluationVerdict: null,
+      teamWinPct: teamWinPctById.get(leagueTeamId) ?? 0.5,
+      transactionSentiment: computeTransactionSentiment(transactionsByTeam.get(leagueTeamId) ?? []),
+      starPowerTier: starPowerTierByTeam.get(leagueTeamId) ?? null,
+      coachStyle: headCoachStyleByTeam.get(leagueTeamId) ?? null,
+    };
+  }
+
   const mvp = computeMVP(rosteredSnapshots);
   const roy = computeRookieOfTheYear(rosteredSnapshots);
   const mip = computeMostImprovedPlayer(developmentSnapshots);
@@ -703,7 +771,29 @@ export async function advanceSeasonAction(leagueId: string) {
       })),
     });
     const oldPayrollTier = computePayrollTier(oldCapSheet.apronLevel);
-    const confidenceDelta = computeConfidenceDelta(verdict, oldPayrollTier);
+
+    // Fan engagement - computed here (not in the all-30-teams loop further
+    // down) because it needs `verdict`, which only exists for the user's
+    // own team (SeasonExpectation is user-team-only). A thrilled fanbase
+    // modestly softens the owner-confidence hit below; an empty building
+    // modestly sharpens it.
+    const userFanHappinessDelta = computeFanHappinessDelta({
+      evaluationVerdict: verdict,
+      teamWinPct: teamWinPctById.get(userLeagueTeamId) ?? 0.5,
+      transactionSentiment: computeTransactionSentiment(
+        transactionsByTeam.get(userLeagueTeamId) ?? [],
+      ),
+      starPowerTier: starPowerTierByTeam.get(userLeagueTeamId) ?? null,
+      coachStyle: headCoachStyleByTeam.get(userLeagueTeamId) ?? null,
+    });
+    const userTeamFanHappiness = teamById.get(userLeagueTeamId)?.fanHappiness ?? 65;
+    const newUserFanHappiness = Math.max(
+      0,
+      Math.min(100, userTeamFanHappiness + userFanHappinessDelta),
+    );
+    fanHappinessByTeam.set(userLeagueTeamId, newUserFanHappiness);
+
+    const confidenceDelta = computeConfidenceDelta(verdict, oldPayrollTier, newUserFanHappiness);
     ownerConfidence = ownerConfidence + confidenceDelta;
 
     ownershipMessages.push(
@@ -774,6 +864,54 @@ export async function advanceSeasonAction(leagueId: string) {
       );
     }
   }
+
+  // Fan engagement persistence - every team, not just the user's
+  // (franchisePopularity needs a full-league comparison to mean
+  // anything). The user's team may already be in fanHappinessByTeam
+  // (computed above, alongside the owner-confidence nudge); every other
+  // team falls back to the win%-based path, same split already
+  // established for Head Coach reputation drift.
+  const fanHappinessUpdates = league.teams.map((lt) => {
+    const newFanHappiness =
+      fanHappinessByTeam.get(lt.id) ??
+      Math.max(
+        0,
+        Math.min(
+          100,
+          lt.fanHappiness + computeFanHappinessDelta(fallbackFanHappinessInputs(lt.id)),
+        ),
+      );
+    const starPowerTier = starPowerTierByTeam.get(lt.id) ?? null;
+    return {
+      leagueTeamId: lt.id,
+      fanHappiness: newFanHappiness,
+      attendancePct: computeAttendancePct(newFanHappiness, lt.team.marketSize),
+      franchisePopularity: computeFranchisePopularity(
+        newFanHappiness,
+        starPowerTier,
+        lt.team.marketSize,
+      ),
+    };
+  });
+
+  await Promise.all(
+    fanHappinessUpdates.map((u) =>
+      prisma.leagueTeam.update({
+        where: { id: u.leagueTeamId },
+        data: { fanHappiness: u.fanHappiness },
+      }),
+    ),
+  );
+  await prisma.fanHappinessSnapshot.createMany({
+    data: fanHappinessUpdates.map((u) => ({
+      leagueId,
+      leagueTeamId: u.leagueTeamId,
+      season,
+      fanHappiness: u.fanHappiness,
+      attendancePct: u.attendancePct,
+      franchisePopularity: u.franchisePopularity,
+    })),
+  });
 
   await prisma.league.update({
     where: { id: leagueId },

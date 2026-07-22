@@ -1614,3 +1614,34 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   `PlayerChip` since coaches aren't `LeaguePlayer`s. All 431 unit tests (3
   new), `tsc`, `eslint`, a clean production build, and all 10 e2e tests
   passing.
+- **2026-07-22 (Fan Engagement)**: Not a `FEATURE_ROADMAP.md`-tracked item
+  - a fresh, extensive user request (full text preserved in
+    `docs/FEATURE_REQUESTS.md`). Preceded by an architecture-overlap review
+    the user explicitly agreed with: built as a consumer of existing
+    simulation events, not a second event-generation system. New
+    `LeagueTeam.fanHappiness` (0-100, own model, reuses `evaluateSeason`'s
+    verdict for the user's team / plain win% for CPU teams - same split as
+    Head Coach reputation drift - so a rebuilding fanbase reads a modest
+    record as patient while a contender's identical record reads as a
+    letdown, for free, via the existing `ExpectationLevel` system); new
+    `Team.marketSize` (real, sourced classification, all 30 teams); new
+    `FanHappinessSnapshot` (one row per team per season, powers a multi-
+    season trend graph - first use of the already-installed `recharts`
+    dependency for a line chart, following `RosterScatterChart.tsx`'s
+    client-component/literal-hex-color conventions). Fan reactions
+    (`src/lib/fans/transactionSentiment.ts`, `src/lib/fans/fanReactions.ts`)
+    read the exact same `LeagueTransaction` rows `NewsFeed` already
+    surfaces - no new event capture; reaction commentary is deliberately
+    conservative tone-based templates (POSITIVE/NEUTRAL/NEGATIVE), not
+    persistent fan personas, per the user's own explicit scoping. Per the
+    user's instruction that presentational metrics should still exist for
+    immersion without being fabricated: `franchisePopularity`/
+    `attendancePct` are the only two derived numbers actually stored;
+    Merchandise Popularity/Season Ticket Demand/Social Media Buzz are UI-
+    side tier labels off the same underlying number, not independently
+    tracked state. Added an optional `fanHappiness` parameter to
+    `computeConfidenceDelta` (`src/lib/gm/seasonEvaluation.ts`) - a small
+    nudge to owner confidence, not a cap-space mechanic, since real NBA cap
+    rules are uniform league-wide regardless of team revenue. New
+    `/leagues/[id]/fans` Fan Hub page. All 457 unit tests (27 new), `tsc`,
+    `eslint` passing.

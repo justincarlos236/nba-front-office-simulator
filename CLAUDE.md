@@ -28,3 +28,11 @@ free agents, and (eventually) get advice from an AI assistant. See
   tracked** — check it before starting new roadmap-driven work, and update
   it as features move between statuses. Note: the AI GM assistant (#5/#49)
   is explicitly paused at the user's request; don't resume it unprompted.
+- `docs/FEATURE_REQUESTS.md` — verbatim records of extensive, detailed
+  feature-request prompts the user has given (not quick one-liners),
+  each with a status section tracking what was actually built against it.
+  **Add an entry here whenever the user gives a long, detailed feature
+  prompt** — before or alongside planning the implementation — so the
+  original ask survives conversation compaction and session boundaries.
+  Don't edit an entry's original request text once added; only update its
+  status section as phases ship.

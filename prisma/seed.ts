@@ -50,6 +50,7 @@ async function seedTeams() {
         primaryColor: team.primaryColor,
         secondaryColor: team.secondaryColor,
         logoUrl: team.logoUrl,
+        marketSize: team.marketSize,
       },
       create: {
         abbreviation: team.abbreviation,
@@ -60,6 +61,7 @@ async function seedTeams() {
         primaryColor: team.primaryColor,
         secondaryColor: team.secondaryColor,
         logoUrl: team.logoUrl,
+        marketSize: team.marketSize,
       },
     });
   }

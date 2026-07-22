@@ -93,9 +93,24 @@ const PAYROLL_DELTA_MULTIPLIER: Record<PayrollTier, number> = {
   EXTREME: 1.75,
 };
 
+// A modest nudge, not a second driver of confidence - a thrilled fanbase
+// (100) adds roughly +2.8, an empty building (20) subtracts roughly -3.6,
+// small next to the verdict-driven swings above. Omitted entirely (not
+// just neutral) for leagues where fan engagement hasn't been computed yet,
+// so this stays a pure addition with no behavior change for existing
+// call sites that don't pass it.
+const FAN_HAPPINESS_NUDGE_SCALE = 0.08;
+const FAN_HAPPINESS_NEUTRAL = 65;
+
 export function computeConfidenceDelta(
   verdict: EvaluationVerdict,
   payrollTier: PayrollTier,
+  fanHappiness?: number,
 ): number {
-  return Math.round(BASE_CONFIDENCE_DELTA[verdict] * PAYROLL_DELTA_MULTIPLIER[payrollTier]);
+  const base = BASE_CONFIDENCE_DELTA[verdict] * PAYROLL_DELTA_MULTIPLIER[payrollTier];
+  const fanNudge =
+    fanHappiness !== undefined
+      ? (fanHappiness - FAN_HAPPINESS_NEUTRAL) * FAN_HAPPINESS_NUDGE_SCALE
+      : 0;
+  return Math.round(base + fanNudge);
 }

@@ -995,6 +995,83 @@ Phase 15a already set for `Staff`/`StaffContract` versus
   convention the Staff page established for coach headshots) instead of
   `PlayerChip`, since coaches aren't `LeaguePlayer`s.
 
+## Fan engagement
+
+A fresh, out-of-band user request (not from `docs/FEATURE_ROADMAP.md` - see
+`docs/FEATURE_REQUESTS.md`'s Fan Engagement entry for the full original
+ask). Preceded by an architecture-overlap review the user explicitly
+agreed with: built as a **consumer of existing simulation events**, not a
+second event-generation system.
+
+- **`LeagueTeam.fanHappiness`** (0-100, same neutral-start convention as
+  `League.ownerConfidence`) is its own model, not a clone of owner
+  accountability - fans and ownership weigh success differently (fans
+  care about excitement/star power/patience-while-rebuilding, ownership
+  cares about spending discipline vs. results). But it **reuses** the
+  exact same evaluators wherever the underlying question is the same:
+  `src/lib/fans/fanHappiness.ts`'s `computeFanHappinessDelta` takes the
+  user's own team's `EvaluationVerdict` (from `evaluateSeason` -
+  `SeasonExpectation` is user-team-only, so CPU teams fall back to plain
+  team win%, the same split already established for Head Coach reputation
+  drift), a transaction-sentiment component, star power (`getPlayerValueTier`
+  on the roster's best player), and a small "exciting style of play" nudge
+  from the team's Head Coach `CoachStyle`. Reusing `evaluateSeason`'s
+  verdict directly is what makes a rebuilding fanbase patient with a
+  modest record and a championship-expectation fanbase unforgiving of the
+  same record - a low `ExpectationLevel` already reads a modest outcome as
+  `MET`/`EXCEEDED` in the existing system, no separate "patience" model
+  needed.
+- **Fan reactions are a rendering layer over the existing
+  `LeagueTransaction` log, not a second event pipeline.**
+  `src/lib/fans/transactionSentiment.ts`'s `computeTransactionSentiment`
+  reads a team's season transactions (the exact rows `NewsFeed` already
+  surfaces) and sums a per-type sentiment weight scaled by the existing
+  `NewsImportance` enum - no new event capture. The "reaction feed" itself
+  (`src/lib/fans/fanReactions.ts`'s `describeFanReaction`) is generated
+  **at render time** from an existing transaction row - deliberately
+  conservative, tone-based templated commentary (POSITIVE/NEUTRAL/
+  NEGATIVE per transaction type), not persistent individual fan personas;
+  the user explicitly asked to start conservative here and expand later
+  if wanted. A trade's actual direction (good or bad for this team) isn't
+  structured data on a `LeagueTransaction` row, so `TRADE` registers as
+  buzz/excitement rather than approval/disapproval - an honest
+  simplification rather than guessing at outcome quality from a free-text
+  description.
+- **`Team.marketSize`** (`LARGE`/`MID`/`SMALL`) is real, sourced fixture
+  data (`prisma/data/teams.ts`), the same category as city/conference/
+  colors - a qualitative but defensible real-world classification, not
+  fabricated. Drives `computeFranchisePopularity`/`computeAttendancePct`'s
+  baselines (large markets keep a higher attendance floor even when
+  unhappy - tradition/season tickets - but happiness still meaningfully
+  swings the number for every market size).
+- **Presentational metrics, not independently simulated.** The user was
+  explicit that attendance/merchandise/season-ticket-demand/social-buzz
+  should still exist for immersion even without their own independent
+  gameplay effect - but derived honestly from real numbers, not
+  fabricated/decorative. `FanHappinessSnapshot` stores only two real
+  numbers per team per season (`fanHappiness`, `franchisePopularity`,
+  `attendancePct`) - Merchandise Popularity/Season Ticket Demand/Social
+  Media Buzz are UI-side labels derived from `getFranchisePopularityTier`
+  (`src/lib/fans/fanHappiness.ts`), not separately tracked state. One tier
+  drives all three labeled facets, since they're reflections of the same
+  underlying "how hot is this team right now" number, not independently
+  meaningful metrics.
+- **No revenue-buys-cap-space mechanic.** Real NBA salary cap rules are
+  uniform league-wide regardless of team revenue - wiring fan happiness
+  into cap space would misrepresent real NBA economics. The only
+  mechanical hook is a small nudge to `computeConfidenceDelta`
+  (`src/lib/gm/seasonEvaluation.ts`) - a thrilled fanbase modestly softens
+  the owner-confidence hit from a bad season, an empty building modestly
+  sharpens it - via a new optional `fanHappiness` parameter that leaves
+  the function's existing behavior unchanged when omitted.
+- **Fan Hub** (`/leagues/[id]/fans`): Fan Happiness score, Franchise
+  Popularity index, derived attendance/merchandise/ticket-demand tiers, a
+  multi-season trend graph (`FanHappinessTrendChart`, recharts - already a
+  dependency, following the same client-component/`ResponsiveContainer`/
+  literal-hex-color convention `RosterScatterChart.tsx` established, since
+  recharts SVG props can't resolve CSS vars), and a fan reaction feed
+  built from this team's own `LeagueTransaction` rows.
+
 ## Playoffs
 
 Built on top of the season-simulation engine above rather than duplicating

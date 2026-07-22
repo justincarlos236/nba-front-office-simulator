@@ -18,6 +18,10 @@ export interface TeamSeed {
   division: string;
   primaryColor: string;
   secondaryColor: string;
+  // Real, qualitative market-size classification (metro area size / media
+  // market rank) - fan engagement's attendance/popularity baseline, not a
+  // precise/official NBA designation, but a defensible real-world one.
+  marketSize: "LARGE" | "MID" | "SMALL";
 }
 
 export const TEAM_SEEDS: readonly TeamSeed[] = [
@@ -32,6 +36,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Atlantic",
     primaryColor: "#007A33",
     secondaryColor: "#BA9653",
+    marketSize: "LARGE",
   },
   {
     abbreviation: "BKN",
@@ -43,6 +48,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Atlantic",
     primaryColor: "#000000",
     secondaryColor: "#FFFFFF",
+    marketSize: "LARGE",
   },
   {
     abbreviation: "NYK",
@@ -54,6 +60,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Atlantic",
     primaryColor: "#006BB6",
     secondaryColor: "#F58426",
+    marketSize: "LARGE",
   },
   {
     abbreviation: "PHI",
@@ -65,6 +72,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Atlantic",
     primaryColor: "#006BB6",
     secondaryColor: "#ED174C",
+    marketSize: "LARGE",
   },
   {
     abbreviation: "TOR",
@@ -76,6 +84,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Atlantic",
     primaryColor: "#CE1141",
     secondaryColor: "#000000",
+    marketSize: "MID",
   },
 
   // Eastern Conference — Central
@@ -89,6 +98,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Central",
     primaryColor: "#CE1141",
     secondaryColor: "#000000",
+    marketSize: "LARGE",
   },
   {
     abbreviation: "CLE",
@@ -100,6 +110,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Central",
     primaryColor: "#860038",
     secondaryColor: "#FDBB30",
+    marketSize: "MID",
   },
   {
     abbreviation: "DET",
@@ -111,6 +122,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Central",
     primaryColor: "#1D42BA",
     secondaryColor: "#C8102E",
+    marketSize: "MID",
   },
   {
     abbreviation: "IND",
@@ -122,6 +134,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Central",
     primaryColor: "#002D62",
     secondaryColor: "#FDBB30",
+    marketSize: "SMALL",
   },
   {
     abbreviation: "MIL",
@@ -133,6 +146,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Central",
     primaryColor: "#00471B",
     secondaryColor: "#EEE1C6",
+    marketSize: "SMALL",
   },
 
   // Eastern Conference — Southeast
@@ -146,6 +160,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Southeast",
     primaryColor: "#E03A3E",
     secondaryColor: "#C1D32F",
+    marketSize: "MID",
   },
   {
     abbreviation: "CHA",
@@ -157,6 +172,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Southeast",
     primaryColor: "#00788C",
     secondaryColor: "#1D1160",
+    marketSize: "SMALL",
   },
   {
     abbreviation: "MIA",
@@ -168,6 +184,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Southeast",
     primaryColor: "#98002E",
     secondaryColor: "#F9A01B",
+    marketSize: "MID",
   },
   {
     abbreviation: "ORL",
@@ -179,6 +196,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Southeast",
     primaryColor: "#0077C0",
     secondaryColor: "#000000",
+    marketSize: "MID",
   },
   {
     abbreviation: "WAS",
@@ -190,6 +208,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Southeast",
     primaryColor: "#E31837",
     secondaryColor: "#002B5C",
+    marketSize: "MID",
   },
 
   // Western Conference — Northwest
@@ -203,6 +222,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Northwest",
     primaryColor: "#0E2240",
     secondaryColor: "#FEC524",
+    marketSize: "MID",
   },
   {
     abbreviation: "MIN",
@@ -214,6 +234,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Northwest",
     primaryColor: "#0C2340",
     secondaryColor: "#236192",
+    marketSize: "MID",
   },
   {
     abbreviation: "OKC",
@@ -225,6 +246,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Northwest",
     primaryColor: "#007AC1",
     secondaryColor: "#EF3B24",
+    marketSize: "SMALL",
   },
   {
     abbreviation: "POR",
@@ -236,6 +258,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Northwest",
     primaryColor: "#E03A3E",
     secondaryColor: "#000000",
+    marketSize: "MID",
   },
   {
     abbreviation: "UTA",
@@ -247,6 +270,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Northwest",
     primaryColor: "#002B5C",
     secondaryColor: "#F9A01B",
+    marketSize: "SMALL",
   },
 
   // Western Conference — Pacific
@@ -260,6 +284,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Pacific",
     primaryColor: "#1D428A",
     secondaryColor: "#FFC72C",
+    marketSize: "LARGE",
   },
   {
     abbreviation: "LAC",
@@ -271,6 +296,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Pacific",
     primaryColor: "#C8102E",
     secondaryColor: "#1D428A",
+    marketSize: "LARGE",
   },
   {
     abbreviation: "LAL",
@@ -282,6 +308,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Pacific",
     primaryColor: "#552583",
     secondaryColor: "#FDB927",
+    marketSize: "LARGE",
   },
   {
     abbreviation: "PHX",
@@ -293,6 +320,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Pacific",
     primaryColor: "#1D1160",
     secondaryColor: "#E56020",
+    marketSize: "MID",
   },
   {
     abbreviation: "SAC",
@@ -304,6 +332,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Pacific",
     primaryColor: "#5A2D81",
     secondaryColor: "#63727A",
+    marketSize: "MID",
   },
 
   // Western Conference — Southwest
@@ -317,6 +346,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Southwest",
     primaryColor: "#00538C",
     secondaryColor: "#002B5E",
+    marketSize: "LARGE",
   },
   {
     abbreviation: "HOU",
@@ -328,6 +358,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Southwest",
     primaryColor: "#CE1141",
     secondaryColor: "#000000",
+    marketSize: "LARGE",
   },
   {
     abbreviation: "MEM",
@@ -339,6 +370,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Southwest",
     primaryColor: "#5D76A9",
     secondaryColor: "#F5B112",
+    marketSize: "SMALL",
   },
   {
     abbreviation: "NOP",
@@ -350,6 +382,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Southwest",
     primaryColor: "#0C2340",
     secondaryColor: "#C8102E",
+    marketSize: "SMALL",
   },
   {
     abbreviation: "SAS",
@@ -361,5 +394,6 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
     division: "Southwest",
     primaryColor: "#000000",
     secondaryColor: "#C4CED4",
+    marketSize: "SMALL",
   },
 ];

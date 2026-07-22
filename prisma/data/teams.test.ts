@@ -38,4 +38,10 @@ describe("TEAM_SEEDS", () => {
       expect(team.secondaryColor).toMatch(hexPattern);
     }
   });
+
+  it("gives every team a real market-size classification", () => {
+    for (const team of TEAM_SEEDS) {
+      expect(["LARGE", "MID", "SMALL"]).toContain(team.marketSize);
+    }
+  });
 });
