@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { formatCentsCompact } from "@/lib/money";
 import { getPlayerValueTier, PLAYER_VALUE_TIER_LABEL } from "@/lib/valuation/playerValueTier";
 import { STAFF_ROLE_LABEL, COACH_STYLE_LABEL } from "@/lib/staff/labels";
+import { ensureStaffGenerated } from "@/lib/actions/staffGeneration";
 import { PlayerAvatar } from "@/components/players/PlayerAvatar";
 import { FireStaffButton } from "@/components/staff/FireStaffButton";
 import type { StaffRole } from "@/generated/prisma/client";
@@ -33,6 +34,10 @@ export default async function StaffPage({ params }: PageProps) {
 
   const myLeagueTeamId = league.userControlledTeamId;
   if (!myLeagueTeamId) notFound();
+
+  // Leagues created before Phase 15a shipped have no Staff rows at all -
+  // self-heal on first visit rather than staying permanently staff-less.
+  await ensureStaffGenerated(league.id, league.currentSeason);
 
   const staff = await prisma.staff.findMany({
     where: { leagueId: league.id },
