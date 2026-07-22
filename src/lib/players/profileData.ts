@@ -78,9 +78,52 @@ export interface PlayerProfileData {
     estimatedMarketValueCents: string;
   } | null;
   awards: { season: number; category: string }[];
+  /**
+   * Real, simulated per-game performances from this league's own box-score
+   * engine (see src/lib/simulation/boxScore.ts) - only present for a league
+   * identity, and only once this league has actually simulated games with
+   * this player on a roster. Distinct from `seasonStats` above, which is
+   * always the frozen real-world 2023-24 baseline regardless of context.
+   */
+  gameLog: {
+    recentGames: {
+      gameId: string;
+      season: number;
+      opponent: string;
+      minutesPlayed: number;
+      points: number;
+      rebounds: number;
+      assists: number;
+      steals: number;
+      blocks: number;
+      turnovers: number;
+      fgMade: number;
+      fgAttempted: number;
+      fg3Made: number;
+      fg3Attempted: number;
+      ftMade: number;
+      ftAttempted: number;
+    }[];
+    /** This league's current season, aggregated from every game played so far - moves as more games simulate. */
+    currentSeasonAverage: {
+      season: number;
+      gamesPlayed: number;
+      minutesPerGame: number;
+      pointsPerGame: number;
+      reboundsPerGame: number;
+      assistsPerGame: number;
+      stealsPerGame: number;
+      blocksPerGame: number;
+      turnoversPerGame: number;
+      fgPct: number | null;
+      fg3Pct: number | null;
+      ftPct: number | null;
+    } | null;
+  } | null;
 }
 
-const PROFILE_SEASON = 2023;
+/** The fixed real-world season every real player's seeded stat baseline comes from. */
+export const PROFILE_SEASON = 2023;
 
 function teamDTO(
   team: {
@@ -161,6 +204,7 @@ export async function loadReferencePlayerProfile(
     })),
     valuation,
     awards: [],
+    gameLog: null,
   };
 }
 
@@ -185,6 +229,94 @@ export async function loadLeaguePlayerProfile(
     select: { currentSeason: true },
   });
   const season = league?.currentSeason ?? PROFILE_SEASON;
+
+  const [recentGameStats, seasonAgg] = await Promise.all([
+    prisma.playerGameStat.findMany({
+      where: { leaguePlayerId },
+      orderBy: { game: { gameNumber: "desc" } },
+      take: 10,
+      include: {
+        game: {
+          include: {
+            homeTeam: { include: { team: true } },
+            awayTeam: { include: { team: true } },
+          },
+        },
+      },
+    }),
+    prisma.playerGameStat.aggregate({
+      where: { leaguePlayerId, season },
+      _avg: {
+        minutesPlayed: true,
+        points: true,
+        rebounds: true,
+        assists: true,
+        steals: true,
+        blocks: true,
+        turnovers: true,
+      },
+      _sum: {
+        fgMade: true,
+        fgAttempted: true,
+        fg3Made: true,
+        fg3Attempted: true,
+        ftMade: true,
+        ftAttempted: true,
+      },
+      _count: { _all: true },
+    }),
+  ]);
+
+  const gamesPlayed = seasonAgg._count._all;
+  const gameLog = {
+    recentGames: recentGameStats.map((g) => ({
+      gameId: g.gameId,
+      season: g.season,
+      opponent:
+        g.leagueTeamId === g.game.homeLeagueTeamId
+          ? g.game.awayTeam.team.abbreviation
+          : g.game.homeTeam.team.abbreviation,
+      minutesPlayed: g.minutesPlayed,
+      points: g.points,
+      rebounds: g.rebounds,
+      assists: g.assists,
+      steals: g.steals,
+      blocks: g.blocks,
+      turnovers: g.turnovers,
+      fgMade: g.fgMade,
+      fgAttempted: g.fgAttempted,
+      fg3Made: g.fg3Made,
+      fg3Attempted: g.fg3Attempted,
+      ftMade: g.ftMade,
+      ftAttempted: g.ftAttempted,
+    })),
+    currentSeasonAverage:
+      gamesPlayed > 0
+        ? {
+            season,
+            gamesPlayed,
+            minutesPerGame: seasonAgg._avg.minutesPlayed ?? 0,
+            pointsPerGame: seasonAgg._avg.points ?? 0,
+            reboundsPerGame: seasonAgg._avg.rebounds ?? 0,
+            assistsPerGame: seasonAgg._avg.assists ?? 0,
+            stealsPerGame: seasonAgg._avg.steals ?? 0,
+            blocksPerGame: seasonAgg._avg.blocks ?? 0,
+            turnoversPerGame: seasonAgg._avg.turnovers ?? 0,
+            fgPct:
+              seasonAgg._sum.fgAttempted && seasonAgg._sum.fgAttempted > 0
+                ? (seasonAgg._sum.fgMade ?? 0) / seasonAgg._sum.fgAttempted
+                : null,
+            fg3Pct:
+              seasonAgg._sum.fg3Attempted && seasonAgg._sum.fg3Attempted > 0
+                ? (seasonAgg._sum.fg3Made ?? 0) / seasonAgg._sum.fg3Attempted
+                : null,
+            ftPct:
+              seasonAgg._sum.ftAttempted && seasonAgg._sum.ftAttempted > 0
+                ? (seasonAgg._sum.ftMade ?? 0) / seasonAgg._sum.ftAttempted
+                : null,
+          }
+        : null,
+  };
 
   const stat =
     leaguePlayer.player.seasonStats.find((s) => s.season === PROFILE_SEASON) ??
@@ -261,5 +393,6 @@ export async function loadLeaguePlayerProfile(
     })),
     valuation,
     awards: leaguePlayer.seasonAwards.map((a) => ({ season: a.season, category: a.category })),
+    gameLog,
   };
 }

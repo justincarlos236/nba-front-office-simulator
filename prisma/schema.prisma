@@ -168,19 +168,19 @@ model PlayerSeasonStat {
 // ---------------------------------------------------------------------------
 
 model League {
-  id                   String    @id @default(cuid())
-  name                 String
-  ownerId              String
-  userControlledTeamId String? // set once the user picks which franchise to run
-  currentSeason        Int // e.g. 2025 for 2025-26
-  seasonStartedAt      DateTime  @default(now())
-  salaryCapOverrideCents BigInt? // null = use the league-wide default for currentSeason
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  id                          String   @id @default(cuid())
+  name                        String
+  ownerId                     String
+  userControlledTeamId        String? // set once the user picks which franchise to run
+  currentSeason               Int // e.g. 2025 for 2025-26
+  seasonStartedAt             DateTime @default(now())
+  salaryCapOverrideCents      BigInt? // null = use the league-wide default for currentSeason
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
   // GM accountability (Phase 10d) - 0-100, see src/lib/gm/jobSecurity.ts.
   // Starts at a neutral "Stable" footing rather than 50/50, since a brand
   // new GM hasn't done anything to lose ownership's trust yet.
-  ownerConfidence      Int       @default(65)
+  ownerConfidence             Int      @default(65)
   // An active "reduce payroll below $X by season Y" directive, if
   // ownership has issued one - null when there's no outstanding
   // directive. Checked once, at the start of the season it targets.
@@ -293,26 +293,27 @@ model LeagueTeam {
   leagueId String
   teamId   String
 
-  wins   Int @default(0)
-  losses Int @default(0)
+  wins          Int           @default(0)
+  losses        Int           @default(0)
   gmPersonality GmPersonality @default(BALANCED)
 
   league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   team   Team   @relation(fields: [teamId], references: [id])
 
-  players               LeaguePlayer[]
-  reSigningRightsHolders LeaguePlayer[] @relation("ReSigningRights")
-  contracts       Contract[]
-  ownedPicks      DraftPick[]      @relation("CurrentOwner")
-  originalPicks   DraftPick[]      @relation("OriginalTeam")
-  tradeExceptions TradeException[]
-  tradeAssetsFrom TradeAsset[]     @relation("AssetFromTeam")
-  tradeAssetsTo   TradeAsset[]     @relation("AssetToTeam")
-  homeGames       Game[]           @relation("HomeGames")
-  awayGames       Game[]           @relation("AwayGames")
-  higherSeedIn    PlayoffSeries[]  @relation("HigherSeedSeries")
-  lowerSeedIn     PlayoffSeries[]  @relation("LowerSeedSeries")
-  wonSeries       PlayoffSeries[]  @relation("WonSeries")
+  players                LeaguePlayer[]
+  reSigningRightsHolders LeaguePlayer[]   @relation("ReSigningRights")
+  contracts              Contract[]
+  ownedPicks             DraftPick[]      @relation("CurrentOwner")
+  originalPicks          DraftPick[]      @relation("OriginalTeam")
+  tradeExceptions        TradeException[]
+  tradeAssetsFrom        TradeAsset[]     @relation("AssetFromTeam")
+  tradeAssetsTo          TradeAsset[]     @relation("AssetToTeam")
+  homeGames              Game[]           @relation("HomeGames")
+  awayGames              Game[]           @relation("AwayGames")
+  higherSeedIn           PlayoffSeries[]  @relation("HigherSeedSeries")
+  lowerSeedIn            PlayoffSeries[]  @relation("LowerSeedSeries")
+  wonSeries              PlayoffSeries[]  @relation("WonSeries")
+  playerGameStats        PlayerGameStat[]
 
   @@unique([leagueId, teamId])
   @@index([leagueId])
@@ -342,14 +343,54 @@ model Game {
   awayScore        Int?
   playedAt         DateTime?
 
-  league   League         @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  homeTeam LeagueTeam     @relation("HomeGames", fields: [homeLeagueTeamId], references: [id])
-  awayTeam LeagueTeam     @relation("AwayGames", fields: [awayLeagueTeamId], references: [id])
-  series   PlayoffSeries? @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  league          League           @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  homeTeam        LeagueTeam       @relation("HomeGames", fields: [homeLeagueTeamId], references: [id])
+  awayTeam        LeagueTeam       @relation("AwayGames", fields: [awayLeagueTeamId], references: [id])
+  series          PlayoffSeries?   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  playerGameStats PlayerGameStat[]
 
   @@index([leagueId, season])
   @@index([leagueId, playedAt])
   @@map("games")
+}
+
+// One row per player who actually played in a given simulated game -
+// see src/lib/simulation/boxScore.ts for how these are generated.
+// Deliberately no stored fgPct/plusMinus: percentages derive cheaply from
+// made/attempted on read, and plusMinus would need possession-level on/off
+// data this lightweight (not possession-by-possession) engine doesn't
+// produce. A player who didn't play gets no row at all, not a
+// minutesPlayed: 0 row, so "games played" denominators stay clean.
+model PlayerGameStat {
+  id             String   @id @default(cuid())
+  gameId         String
+  leaguePlayerId String
+  leagueTeamId   String // pinned to the team as of this game, survives a later trade
+  season         Int // denormalized from Game, cheap season-aggregate queries
+  gameType       GameType // denormalized from Game, cheap regular-season-vs-playoff filtering
+
+  minutesPlayed Int
+  points        Int
+  rebounds      Int
+  assists       Int
+  steals        Int
+  blocks        Int
+  turnovers     Int
+  fgMade        Int
+  fgAttempted   Int
+  fg3Made       Int
+  fg3Attempted  Int
+  ftMade        Int
+  ftAttempted   Int
+
+  game         Game         @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  leaguePlayer LeaguePlayer @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
+  leagueTeam   LeagueTeam   @relation(fields: [leagueTeamId], references: [id])
+
+  @@unique([gameId, leaguePlayerId])
+  @@index([leaguePlayerId, season])
+  @@index([gameId])
+  @@map("player_game_stats")
 }
 
 // Round 0 = play-in (single elimination, winsNeeded 1); round 1 = first
@@ -373,9 +414,9 @@ model PlayoffSeries {
   lowerSeedWins    Int         @default(0)
   winnerTeamId     String?
 
-  league         League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  higherSeedTeam LeagueTeam @relation("HigherSeedSeries", fields: [higherSeedTeamId], references: [id])
-  lowerSeedTeam  LeagueTeam @relation("LowerSeedSeries", fields: [lowerSeedTeamId], references: [id])
+  league         League      @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  higherSeedTeam LeagueTeam  @relation("HigherSeedSeries", fields: [higherSeedTeamId], references: [id])
+  lowerSeedTeam  LeagueTeam  @relation("LowerSeedSeries", fields: [lowerSeedTeamId], references: [id])
   winnerTeam     LeagueTeam? @relation("WonSeries", fields: [winnerTeamId], references: [id])
   games          Game[]
 
@@ -394,13 +435,13 @@ enum InjuryStatus {
 // development actually operate on. `overallRating` drifts over time (an age
 // curve applied per season) independently in every league.
 model LeaguePlayer {
-  id              String       @id @default(cuid())
-  leagueId        String
-  playerId        String
-  leagueTeamId    String? // null = unsigned free agent within this league
-  overallRating   Int // 0-100 composite used by the valuation model & AI GMs
-  potentialRating Int
-  injuryStatus    InjuryStatus @default(HEALTHY)
+  id                         String       @id @default(cuid())
+  leagueId                   String
+  playerId                   String
+  leagueTeamId               String? // null = unsigned free agent within this league
+  overallRating              Int // 0-100 composite used by the valuation model & AI GMs
+  potentialRating            Int
+  injuryStatus               InjuryStatus @default(HEALTHY)
   // Set only while injuryStatus != HEALTHY: the injured team's own
   // (wins+losses) count at which this player is cleared to return. Compared
   // against the team's regular-season game count, not a calendar date -
@@ -410,24 +451,25 @@ model LeaguePlayer {
   // (incremented alongside the INJURY transaction log in
   // src/lib/actions/leagueEvents.ts) - real injury-history signal for the
   // trade-value model (Phase 11c), not just current health.
-  careerGamesMissedToInjury Int @default(0)
-  isActive        Boolean      @default(true) // false once retired within this league
-  retiredSeason   Int? // the season this player retired after, if any
+  careerGamesMissedToInjury  Int          @default(0)
+  isActive                   Boolean      @default(true) // false once retired within this league
+  retiredSeason              Int? // the season this player retired after, if any
   // The team currently holding this player's simplified "Re-Signing
   // Rights" (a casual stand-in for real Bird/Early-Bird/Non-Bird rights -
   // see src/lib/freeagency/reSigningRights.ts). Kept in sync with
   // leagueTeamId on every signing/trade, but deliberately NOT cleared
   // when a contract expires, so it still points at the player's most
   // recent team while they're a free agent.
-  reSigningTeamId String?
+  reSigningTeamId            String?
 
-  league        League        @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  player        Player        @relation(fields: [playerId], references: [id])
-  leagueTeam    LeagueTeam?   @relation(fields: [leagueTeamId], references: [id])
-  reSigningTeam LeagueTeam?   @relation("ReSigningRights", fields: [reSigningTeamId], references: [id])
-  contract      Contract?
-  tradeAssets   TradeAsset[]
-  seasonAwards  SeasonAward[]
+  league          League           @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  player          Player           @relation(fields: [playerId], references: [id])
+  leagueTeam      LeagueTeam?      @relation(fields: [leagueTeamId], references: [id])
+  reSigningTeam   LeagueTeam?      @relation("ReSigningRights", fields: [reSigningTeamId], references: [id])
+  contract        Contract?
+  tradeAssets     TradeAsset[]
+  seasonAwards    SeasonAward[]
+  playerGameStats PlayerGameStat[]
 
   @@unique([leagueId, playerId])
   @@index([leagueId, leagueTeamId])
@@ -517,16 +559,16 @@ model ContractYear {
 }
 
 model DraftPick {
-  id                String  @id @default(cuid())
-  leagueId          String
-  season            Int
-  round             Int // 1 or 2
-  originalTeamId    String
-  currentOwnerId    String
-  protectionNote    String? // free text, e.g. "Top-4 protected, converts to 2027 2nd if not conveyed"
+  id                 String  @id @default(cuid())
+  leagueId           String
+  season             Int
+  round              Int // 1 or 2
+  originalTeamId     String
+  currentOwnerId     String
+  protectionNote     String? // free text, e.g. "Top-4 protected, converts to 2027 2nd if not conveyed"
   // Set once the lottery/pick order is determined for this season (1-30 for
   // round 1, 31-60 for round 2) - null until `startDraftAction` runs.
-  overallPickNumber Int?
+  overallPickNumber  Int?
   selectedProspectId String? @unique
 
   league           League         @relation(fields: [leagueId], references: [id], onDelete: Cascade)
@@ -548,7 +590,7 @@ model DraftPick {
 model DraftProspect {
   id              String   @id @default(cuid())
   leagueId        String
-  season           Int
+  season          Int
   fullName        String
   position        Position
   age             Int
@@ -579,7 +621,7 @@ model Trade {
   createdAt        DateTime    @default(now())
   resolvedAt       DateTime?
 
-  league League      @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  league League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   assets TradeAsset[]
 
   @@index([leagueId])
@@ -603,9 +645,9 @@ model TradeAsset {
   draftPickId      String?
   cashCents        BigInt?
 
-  trade        Trade        @relation(fields: [tradeId], references: [id], onDelete: Cascade)
-  fromTeam     LeagueTeam   @relation("AssetFromTeam", fields: [fromLeagueTeamId], references: [id])
-  toTeam       LeagueTeam   @relation("AssetToTeam", fields: [toLeagueTeamId], references: [id])
+  trade        Trade         @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  fromTeam     LeagueTeam    @relation("AssetFromTeam", fields: [fromLeagueTeamId], references: [id])
+  toTeam       LeagueTeam    @relation("AssetToTeam", fields: [toLeagueTeamId], references: [id])
   leaguePlayer LeaguePlayer? @relation(fields: [leaguePlayerId], references: [id])
   draftPick    DraftPick?    @relation(fields: [draftPickId], references: [id])
 

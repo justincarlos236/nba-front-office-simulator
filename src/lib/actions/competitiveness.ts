@@ -21,7 +21,7 @@ export async function computeCompetitivenessPercentiles(
 
   const scoreByTeam = useWinPctSignal
     ? new Map(teams.map((t) => [t.id, t.wins + t.losses > 0 ? t.wins / (t.wins + t.losses) : 0]))
-    : await computeLeagueTeamStrengths(teams.map((t) => t.id));
+    : (await computeLeagueTeamStrengths(teams.map((t) => t.id))).strengthByTeam;
 
   const rankedDesc = [...scoreByTeam.entries()].sort((a, b) => b[1] - a[1]);
   const percentileByTeam = new Map<string, number>();

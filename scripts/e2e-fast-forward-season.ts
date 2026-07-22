@@ -44,7 +44,10 @@ async function main() {
     if (games.length === 0) break;
 
     const teamIds = [...new Set(games.flatMap((g) => [g.homeLeagueTeamId, g.awayLeagueTeamId]))];
-    const strengthByTeam = await computeLeagueTeamStrengths(teamIds);
+    // No box-score generation here - this script bypasses simulateGamesAction
+    // entirely to fast-forward e2e test fixtures at DB speed; only the real
+    // action path needs to produce PlayerGameStat rows.
+    const { strengthByTeam } = await computeLeagueTeamStrengths(teamIds);
 
     const winIncrements = new Map<string, number>();
     const lossIncrements = new Map<string, number>();

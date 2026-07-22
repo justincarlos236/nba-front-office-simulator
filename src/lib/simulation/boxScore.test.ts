@@ -1,0 +1,229 @@
+import { describe, expect, it } from "vitest";
+import { allocateMinutes, generateBoxScore, type GameRosters } from "./boxScore";
+import type { RosterPlayerForSimulation } from "@/lib/actions/leagueTeamStrength";
+import type { Position } from "@/generated/prisma/client";
+
+// Matches simulateGame.ts's own AVERAGE_TEAM_SCORE, so reconciliation
+// targets a realistic team total rather than an arbitrary one.
+const AVERAGE_TEAM_SCORE_APPROX = 112;
+
+function fixedRng(values: number[]): () => number {
+  let i = 0;
+  return () => values[i++ % values.length];
+}
+
+function makeRoster(
+  overrides: Partial<RosterPlayerForSimulation> & { position: Position; overallRating: number },
+  id: string,
+): RosterPlayerForSimulation {
+  return {
+    leaguePlayerId: id,
+    realStat: null,
+    ...overrides,
+  };
+}
+
+/** A believable 13-man roster: 5 starters (one per position), 8 bench, mix of real/fictional. */
+function fullRoster(prefix: string): RosterPlayerForSimulation[] {
+  const positions: Position[] = ["PG", "SG", "SF", "PF", "C"];
+  const roster: RosterPlayerForSimulation[] = [];
+  positions.forEach((position, i) => {
+    roster.push(
+      makeRoster({ position, overallRating: 88 - i * 2 }, `${prefix}-starter-${position}`),
+    );
+  });
+  for (let i = 0; i < 8; i++) {
+    roster.push(
+      makeRoster(
+        { position: positions[i % positions.length], overallRating: 70 - i * 2 },
+        `${prefix}-bench-${i}`,
+      ),
+    );
+  }
+  return roster;
+}
+
+function realStatBaseline() {
+  return {
+    minutesPerGame: 34,
+    pointsPerGame: 25,
+    reboundsPerGame: 6,
+    assistsPerGame: 5,
+    stealsPerGame: 1.2,
+    blocksPerGame: 0.5,
+    turnoversPerGame: 3,
+    fgPct: 0.48,
+    fg3Pct: 0.37,
+    ftPct: 0.85,
+    trueShootingPct: 0.6,
+  };
+}
+
+describe("allocateMinutes", () => {
+  it("allocates exactly 240 team-minutes", () => {
+    const roster = fullRoster("home");
+    const minutes = allocateMinutes(roster, 8, () => 0.5);
+    const total = [...minutes.values()].reduce((sum, m) => sum + m, 0);
+    expect(total).toBe(240);
+  });
+
+  it("never allocates more than 40 minutes to any player", () => {
+    const roster = fullRoster("home");
+    for (let i = 0; i < 20; i++) {
+      const minutes = allocateMinutes(roster, 5, Math.random);
+      for (const m of minutes.values()) {
+        expect(m).toBeLessThanOrEqual(40);
+        expect(m).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("gives starters more minutes than deep bench on average", () => {
+    const roster = fullRoster("home");
+    const minutes = allocateMinutes(roster, 8, () => 0.5);
+    const starterMinutes = minutes.get("home-starter-PG") ?? 0;
+    const deepBenchMinutes = minutes.get("home-bench-7") ?? 0;
+    expect(starterMinutes).toBeGreaterThan(deepBenchMinutes);
+  });
+
+  it("shifts minutes from starters to bench in a blowout", () => {
+    const roster = fullRoster("home");
+    const closeGame = allocateMinutes(roster, 3, () => 0.5);
+    const blowout = allocateMinutes(roster, 35, () => 0.5);
+    expect(blowout.get("home-starter-PG") ?? 0).toBeLessThan(closeGame.get("home-starter-PG") ?? 0);
+  });
+
+  it("returns an empty map for an empty roster", () => {
+    expect(allocateMinutes([], 10, Math.random).size).toBe(0);
+  });
+});
+
+describe("generateBoxScore", () => {
+  function rosters(): GameRosters {
+    return {
+      homeTeamId: "home-team",
+      awayTeamId: "away-team",
+      homeRoster: fullRoster("home"),
+      awayRoster: fullRoster("away"),
+      homeStrength: 80,
+      awayStrength: 75,
+    };
+  }
+
+  it("is deterministic for a given rng sequence", () => {
+    const values = Array.from({ length: 500 }, (_, i) => (i % 97) / 97);
+    const a = generateBoxScore(rosters(), 112, 104, fixedRng(values));
+    const b = generateBoxScore(rosters(), 112, 104, fixedRng(values));
+    expect(a).toEqual(b);
+  });
+
+  it("reconciles home and away points to the exact team score", () => {
+    for (let trial = 0; trial < 20; trial++) {
+      const lines = generateBoxScore(rosters(), 118, 101, Math.random);
+      const homePoints = lines
+        .filter((l) => l.leagueTeamId === "home-team")
+        .reduce((sum, l) => sum + l.points, 0);
+      const awayPoints = lines
+        .filter((l) => l.leagueTeamId === "away-team")
+        .reduce((sum, l) => sum + l.points, 0);
+      expect(homePoints).toBe(118);
+      expect(awayPoints).toBe(101);
+    }
+  });
+
+  it("never produces negative or impossible stat lines", () => {
+    for (let trial = 0; trial < 20; trial++) {
+      const lines = generateBoxScore(rosters(), 130, 95, Math.random);
+      for (const line of lines) {
+        expect(line.minutesPlayed).toBeGreaterThan(0);
+        expect(line.points).toBeGreaterThanOrEqual(0);
+        expect(line.rebounds).toBeGreaterThanOrEqual(0);
+        expect(line.assists).toBeGreaterThanOrEqual(0);
+        expect(line.steals).toBeGreaterThanOrEqual(0);
+        expect(line.blocks).toBeGreaterThanOrEqual(0);
+        expect(line.turnovers).toBeGreaterThanOrEqual(0);
+        expect(line.fgMade).toBeGreaterThanOrEqual(0);
+        expect(line.fgMade).toBeLessThanOrEqual(line.fgAttempted);
+        expect(line.fg3Made).toBeLessThanOrEqual(line.fg3Attempted);
+        expect(line.fg3Attempted).toBeLessThanOrEqual(line.fgAttempted);
+        expect(line.ftMade).toBeLessThanOrEqual(line.ftAttempted);
+      }
+    }
+  });
+
+  it("keeps team rebounds/assists within a believable NBA range", () => {
+    for (let trial = 0; trial < 20; trial++) {
+      const lines = generateBoxScore(rosters(), 112, 108, Math.random);
+      for (const teamId of ["home-team", "away-team"]) {
+        const teamLines = lines.filter((l) => l.leagueTeamId === teamId);
+        const totalRebounds = teamLines.reduce((sum, l) => sum + l.rebounds, 0);
+        const totalAssists = teamLines.reduce((sum, l) => sum + l.assists, 0);
+        expect(totalRebounds).toBeGreaterThanOrEqual(28);
+        expect(totalRebounds).toBeLessThanOrEqual(58);
+        expect(totalAssists).toBeGreaterThanOrEqual(8);
+        expect(totalAssists).toBeLessThanOrEqual(38);
+      }
+    }
+  });
+
+  it("never generates a row for a player who wasn't allocated minutes", () => {
+    const lines = generateBoxScore(rosters(), 112, 108, Math.random);
+    // 5 starters + up to 7 real-rotation bench players per team, capped
+    // well under the full 13-man roster (deep bench regularly DNPs).
+    const homeLines = lines.filter((l) => l.leagueTeamId === "home-team");
+    expect(homeLines.length).toBeLessThanOrEqual(12);
+    expect(homeLines.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it("a high-rated player's season-long average stays believable and clearly outpaces deep bench", () => {
+    // Team totals are fixed externally (simulateGame's job, not this
+    // engine's) and every player's points reconcile to that fixed total -
+    // so a star's realized ppg is inherently a share of the team score, not
+    // an independent readout of their own prior in isolation. What this
+    // engine actually owes is: no gross mean drift over a season (no wild
+    // outlier average), and a clear, consistent gap between a star and deep
+    // bench - not an exact reproduction of a hand-picked input number.
+    const star: RosterPlayerForSimulation = {
+      leaguePlayerId: "star",
+      position: "SF",
+      overallRating: 90,
+      realStat: realStatBaseline(),
+    };
+    const homeRoster = [star, ...fullRoster("bench")];
+    const opponent = fullRoster("opp");
+
+    let starPoints = 0;
+    let benchPoints = 0;
+    let games = 0;
+    for (let i = 0; i < 82; i++) {
+      const lines = generateBoxScore(
+        {
+          homeTeamId: "home-team",
+          awayTeamId: "away-team",
+          homeRoster,
+          awayRoster: opponent,
+          homeStrength: 85,
+          awayStrength: 78,
+        },
+        AVERAGE_TEAM_SCORE_APPROX,
+        AVERAGE_TEAM_SCORE_APPROX - 8,
+        Math.random,
+      );
+      const starLine = lines.find((l) => l.leaguePlayerId === "star");
+      // A moderate bench player (not the deepest scratch-prone slot), so it
+      // reliably gets minutes most nights rather than mostly DNPs.
+      const benchLine = lines.find((l) => l.leaguePlayerId === "bench-bench-2");
+      if (starLine) {
+        starPoints += starLine.points;
+        games++;
+      }
+      if (benchLine) benchPoints += benchLine.points;
+    }
+
+    const starPpg = starPoints / games;
+    const benchPpg = benchPoints / games;
+    expect(starPpg).toBeGreaterThan(15);
+    expect(starPpg).toBeLessThan(38);
+    expect(starPpg).toBeGreaterThan(benchPpg * 1.5);
+  });
+});

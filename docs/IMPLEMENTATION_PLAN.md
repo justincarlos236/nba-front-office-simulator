@@ -1373,3 +1373,45 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   (Escape) returns to the exact same trade in progress. Phase 13 (reusable
   player component, profile drawer, consistent access everywhere) is now
   fully complete.
+- **2026-07-22 (Phase 14a)**: Player box-score simulation engine - a new
+  foundation, not a news feature. Added `PlayerGameStat` (new Prisma
+  model) and `src/lib/simulation/boxScore.ts`, generating a lightweight
+  (not possession-by-possession) individual stat line for every player in
+  every simulated regular-season game: minutes allocation (starting five
+  by position with positionless backfill, ranked bench capped at 12,
+  blowout-aware garbage-time minute shifts), per-36 rate priors (real
+  players scaled by how far their current rating has drifted from what
+  `deriveOverallRating` would compute fresh from their frozen real stat
+  line today; fictional players from a hand-authored per-position
+  archetype table anchored at the same rating-72 point `playerValue.ts`
+  uses), asymmetric hot/cold variance (hits shot volume harder than
+  efficiency), and reconciliation of every player's points to the team's
+  already-decided final score (attempts floored during rescale so the
+  residual is almost always solvable via free throws alone). Explicit,
+  documented boundaries for this phase: no fatigue/back-to-back modeling
+  (the schedule has no real calendar concept to hang it on), box scores
+  don't yet feed back into rating/development, and play-in/playoff games
+  don't generate box scores yet (only `simulateGamesAction`'s regular-
+  season pipeline does). `computeLeagueTeamStrengths` was extended to
+  fetch full roster detail in the same query it already ran, avoiding a
+  second round trip; the two other call sites (`competitiveness.ts`,
+  `playoffs.ts`) and a test-fixture script (`e2e-fast-forward-season.ts`)
+  were updated for the new return shape. First visible surface: the
+  player profile drawer's Stats tab now shows a live "This league"
+  season average and recent-game log from real simulated games, sitting
+  above the existing frozen real-2023-24 baseline. All 359 unit tests
+  (11 new for the box-score engine: determinism, exact point
+  reconciliation, no impossible stat lines, believable team rebound/
+  assist bands, minutes summing to exactly 240, a high-rated player
+  clearly outproducing deep bench), `tsc`, `eslint`, a clean production
+  build, and all 10 e2e tests passing (exercising the real engine live,
+  not mocked); visually verified by actually simulating games in a real
+  league and opening both a star's and a bench player's profile - real,
+  differentiated stat lines tied to rating, realistic minutes, a
+  real-world-baseline comparison sitting right below. Next up: **14b**
+  (season aggregation, league leaders, milestone/record detection), then
+  **14c** (real award races - DPOY/6MOY/COY-adjacent categories that were
+  previously excluded for lacking exactly this data), then **14d**
+  (incremental news-system migration onto real events) and **14e** (News
+  page filtering/search redesign) - see the approved Phase 14 plan for
+  the full roadmap.

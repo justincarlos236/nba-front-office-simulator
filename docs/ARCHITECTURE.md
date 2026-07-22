@@ -502,6 +502,101 @@ league bootstrap) is what wires them to the database.
   (expected here, since games are simulated in random schedule order, not
   strict rounds), which real standings never show.
 
+## Player box scores
+
+`simulateGame.ts` decides who wins and the final score - it stays
+authoritative. `src/lib/simulation/boxScore.ts` (Phase 14a) answers a
+different question: given that already-fixed result, what did each
+player's individual stat line plausibly look like? This is the
+foundation everything else asked for (league leaders, real award races,
+milestones, a living news feed) needs, since previously there was no
+player-level game data at all - only a static, frozen real-2023-24 stat
+line per real player, never updated as a league's seasons progress, and
+nonexistent for fictional draft-generated prospects.
+
+- **Still lightweight, not possession-by-possession** - same philosophy
+  as `simulateGame.ts` itself. No shot clock, no play-by-play; a
+  statistical generator that produces a believable box score, not a game
+  engine.
+- **Minutes allocation** (`allocateMinutes`): a starting five (best
+  rated player per position, backfilled positionlessly if a roster lacks
+  one), ranked bench behind them capped at a 12-man rotation (anyone
+  past that is a scratch), per-rank minute weights tapering from starters
+  through a 6th-man bump down to deep bench, with real game-to-game
+  variance and a real chance of a deep-bench DNP-CD. A blowout (margin
+  already known - this runs right after `simulateGame`) shifts real
+  minutes from starters to bench on both teams, same as a real NBA
+  garbage-time substitution pattern.
+- **Two ways to derive a player's per-36 rate priors**: a real player
+  (has a seeded real `PlayerSeasonStat` row) has their real per-36 line
+  scaled by how far their _current_ league-save `overallRating` has
+  drifted from what `deriveOverallRating` would compute fresh from that
+  same frozen real line right now - that function is already exactly how
+  their rating was first derived, so "rating at creation" never needs to
+  be stored, just recomputed on demand. This is what makes a player's
+  simulated production actually move as they develop or decline within a
+  league, instead of staying frozen to their real 2023-24 numbers
+  forever. A fictional player (rating + position only, no real baseline)
+  uses a small hand-authored per-position archetype table anchored at the
+  same rating-72 "average starter" point `playerValue.ts` already uses -
+  same spirit as that model's own hand-tuned-against-real-anchors
+  weights, not a fitted model.
+- **Variance is asymmetric on purpose**: one shared "hot/cold" factor per
+  player per game applies mostly to shot volume, only lightly to shooting
+  efficiency - a big scoring night reads as "took more shots," not "same
+  shots, an implausibly better percentage." Makes are generated as
+  independent per-attempt draws at the player's own (varied) rate, so
+  every made/attempted line is always internally consistent.
+- **Reconciliation to the team's already-decided score**: every player's
+  raw points are generated independently first; attempts (not points
+  directly) are then proportionally rescaled down toward the team target
+  so the makes/attempted identity stays legal, and makes are re-rolled on
+  the rescaled attempts - landing the summed total very close to the real
+  target on its own. Attempts are floored (not rounded) during that
+  rescale specifically so the residual almost always comes out
+  non-negative, since a positive residual is trivially resolved by adding
+  free throws (always available, no upper bound) - the rare case where
+  variance still overshoots falls back to removing a made free throw, or
+  downgrading a made three to a made two. Rebounds/assists are left
+  independently generated (real NBA team totals for these already vary
+  widely game to game) with only a soft guardrail pulling an implausible
+  team total back into a believable band.
+- **A star's realized box score is a share of a fixed team total, not an
+  independent readout of their own prior** - worth calling out explicitly
+  since it's easy to expect otherwise. Team scores are decided externally
+  by `simulateGame` before box scores exist; reconciliation distributes
+  that fixed total across whoever played, so a player's exact final line
+  depends on their generated share relative to their teammates', not
+  purely their own input rate in isolation.
+- **Explicit boundaries for this phase** (documented, not oversights):
+  no fatigue/back-to-back modeling - `Game.gameNumber` is a single
+  shuffled index across the whole season with no calendar/day concept, so
+  there's no real signal today for "did this team just play last night";
+  approximating one onto a schedule never designed for it would be
+  guesswork. Box scores don't yet feed back into `overallRating`/player
+  development - a real future capability, but wiring it touches the
+  already-tuned rating/development engine and deserves its own dedicated
+  pass. Play-in and playoff games (`src/lib/actions/playoffs.ts`) don't
+  generate box scores yet either - only `simulateGamesAction`'s regular-
+  season pipeline does, for now.
+- **Where it plugs in**: `computeLeagueTeamStrengths`
+  (`src/lib/actions/leagueTeamStrength.ts`) was extended to fetch full
+  roster detail (position, rating, real stat baseline) in the same query
+  it already used for team-strength numbers, rather than adding a second
+  round trip. `simulateGamesAction` generates a box score right after
+  each game's `simulateGame` call, using that same pre-batch roster
+  snapshot `applyLeagueEvents` already treats as locked for the whole
+  batch - an injury rolled mid-batch must not affect a box score any more
+  than it already doesn't affect that batch's win probabilities. All of a
+  batch's rows are written in one `prisma.playerGameStat.createMany`
+  alongside the existing `Game`/`LeagueTeam` updates.
+- **Where it's visible today**: the player profile drawer's Stats tab
+  (Phase 13b) now shows a live, real "This league" season average and
+  recent-game log sourced from `PlayerGameStat`, sitting above the
+  existing frozen real-world 2023-24 baseline for comparison - the first
+  visible surface built on this data, with league leaders, milestones,
+  and real award races to follow.
+
 ## Around-the-league activity: injuries, CPU trades & CPU signings
 
 Without this, the only news in a league would ever be things the user

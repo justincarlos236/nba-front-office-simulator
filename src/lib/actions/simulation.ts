@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { computeLeagueTeamStrengths } from "@/lib/actions/leagueTeamStrength";
 import { applyLeagueEvents } from "@/lib/actions/leagueEvents";
 import { simulateGame } from "@/lib/simulation/simulateGame";
+import { generateBoxScore, type PlayerBoxScoreLine } from "@/lib/simulation/boxScore";
 
 export type SimulateBatchSize = 1 | 10 | 50;
 
@@ -44,11 +45,12 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
     teamIds.add(game.awayLeagueTeamId);
   }
 
-  const strengthByTeam = await computeLeagueTeamStrengths([...teamIds]);
+  const { strengthByTeam, rostersByTeam } = await computeLeagueTeamStrengths([...teamIds]);
 
   const winIncrements = new Map<string, number>();
   const lossIncrements = new Map<string, number>();
   const gameUpdates: { id: string; homeScore: number; awayScore: number }[] = [];
+  const boxScoreRows: (PlayerBoxScoreLine & { gameId: string })[] = [];
 
   for (const game of unplayedGames) {
     const homeStrength = strengthByTeam.get(game.homeLeagueTeamId) ?? 0;
@@ -61,6 +63,26 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
     const loserId = result.homeWon ? game.awayLeagueTeamId : game.homeLeagueTeamId;
     winIncrements.set(winnerId, (winIncrements.get(winnerId) ?? 0) + 1);
     lossIncrements.set(loserId, (lossIncrements.get(loserId) ?? 0) + 1);
+
+    // Uses the same pre-batch roster/strength snapshot applyLeagueEvents
+    // already treats as locked for the whole batch - a mid-batch injury
+    // must not affect this game's box score any more than it affects this
+    // batch's win probabilities, which it already doesn't.
+    const lines = generateBoxScore(
+      {
+        homeTeamId: game.homeLeagueTeamId,
+        awayTeamId: game.awayLeagueTeamId,
+        homeRoster: rostersByTeam.get(game.homeLeagueTeamId) ?? [],
+        awayRoster: rostersByTeam.get(game.awayLeagueTeamId) ?? [],
+        homeStrength,
+        awayStrength,
+      },
+      result.homeScore,
+      result.awayScore,
+    );
+    for (const line of lines) {
+      boxScoreRows.push({ ...line, gameId: game.id });
+    }
   }
 
   // Each game/team update is independent of the others (this batch doesn't
@@ -70,6 +92,7 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
   // round trips to a remote DB risked a serverless timeout in production
   // even though it looked fine when tested locally on a lower-latency
   // connection. See docs/ARCHITECTURE.md.
+  const gameTypeById = new Map(unplayedGames.map((g) => [g.id, g.type]));
   const playedAt = new Date();
   await Promise.all([
     ...gameUpdates.map((update) =>
@@ -87,6 +110,13 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
         data: { losses: { increment: losses } },
       }),
     ),
+    prisma.playerGameStat.createMany({
+      data: boxScoreRows.map((row) => ({
+        ...row,
+        season: league.currentSeason,
+        gameType: gameTypeById.get(row.gameId) ?? "REGULAR_SEASON",
+      })),
+    }),
   ]);
 
   await applyLeagueEvents(

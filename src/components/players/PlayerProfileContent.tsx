@@ -38,7 +38,7 @@ function StatBox({ label, value }: { label: string; value: string }) {
 /** Given a `PlayerProfileData` (from either identity - league or reference), renders the tabbed profile body. */
 export function PlayerProfileContent({ data }: { data: PlayerProfileData }) {
   const [tab, setTab] = useState<Tab>("Overview");
-  const { identity, leagueContext, contract, seasonStats, valuation, awards } = data;
+  const { identity, leagueContext, contract, seasonStats, valuation, awards, gameLog } = data;
 
   return (
     <div>
@@ -128,6 +128,69 @@ export function PlayerProfileContent({ data }: { data: PlayerProfileData }) {
 
         {tab === "Stats" && (
           <div className="space-y-3">
+            {gameLog && (
+              <div className="space-y-3">
+                <p className="text-xs tracking-wide text-muted uppercase">This league, live</p>
+                {gameLog.currentSeasonAverage ? (
+                  <div className="rounded-lg border border-accent/30 bg-accent/5 p-4">
+                    <p className="text-xs tracking-wide text-muted uppercase">
+                      {gameLog.currentSeasonAverage.season}-
+                      {(gameLog.currentSeasonAverage.season + 1).toString().slice(-2)} ·{" "}
+                      {gameLog.currentSeasonAverage.gamesPlayed} GP (simulated)
+                    </p>
+                    <div className="mt-2 grid grid-cols-3 gap-3 sm:grid-cols-4">
+                      <StatBox
+                        label="PPG"
+                        value={gameLog.currentSeasonAverage.pointsPerGame.toFixed(1)}
+                      />
+                      <StatBox
+                        label="RPG"
+                        value={gameLog.currentSeasonAverage.reboundsPerGame.toFixed(1)}
+                      />
+                      <StatBox
+                        label="APG"
+                        value={gameLog.currentSeasonAverage.assistsPerGame.toFixed(1)}
+                      />
+                      <StatBox
+                        label="FG%"
+                        value={
+                          gameLog.currentSeasonAverage.fgPct
+                            ? `${(gameLog.currentSeasonAverage.fgPct * 100).toFixed(1)}%`
+                            : "-"
+                        }
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted">
+                    No games simulated yet this season - stats will appear here once this league
+                    plays some games.
+                  </p>
+                )}
+
+                {gameLog.recentGames.length > 0 && (
+                  <div className="space-y-1.5">
+                    <p className="text-xs tracking-wide text-muted uppercase">Recent games</p>
+                    {gameLog.recentGames.map((g) => (
+                      <div
+                        key={g.gameId}
+                        className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                      >
+                        <span className="text-muted">vs {g.opponent}</span>
+                        <span className="font-mono text-xs text-foreground">
+                          {g.points} PTS · {g.rebounds} REB · {g.assists} AST
+                        </span>
+                        <span className="font-mono text-xs text-muted">{g.minutesPlayed} MIN</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <p className="border-t border-border pt-3 text-xs tracking-wide text-muted uppercase">
+                  Real-world baseline (2023-24)
+                </p>
+              </div>
+            )}
             {seasonStats.length === 0 && <p className="text-sm text-muted">No stats on record.</p>}
             {seasonStats.map((s) => (
               <div

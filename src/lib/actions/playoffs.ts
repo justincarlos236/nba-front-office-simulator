@@ -87,7 +87,10 @@ export async function startPlayoffsAction(leagueId: string) {
   const westSeeding = seedConference(standingsByConference.WEST);
 
   const playInTeamIds = [...eastSeeding.playInTeams, ...westSeeding.playInTeams];
-  const strengthByTeam = await computeLeagueTeamStrengths(playInTeamIds);
+  // Play-in/playoff games don't generate player box scores yet - see
+  // docs/ARCHITECTURE.md's "Player box scores" section for why this is a
+  // deliberate, scoped boundary rather than an oversight.
+  const { strengthByTeam } = await computeLeagueTeamStrengths(playInTeamIds);
 
   const eastPlayIn = simulatePlayIn(
     {
@@ -180,7 +183,7 @@ export async function simulateRoundAction(leagueId: string) {
   const roundSeries = undecided.filter((s) => s.round === activeRound);
 
   const teamIds = [...new Set(roundSeries.flatMap((s) => [s.higherSeedTeamId, s.lowerSeedTeamId]))];
-  const strengthByTeam = await computeLeagueTeamStrengths(teamIds);
+  const { strengthByTeam } = await computeLeagueTeamStrengths(teamIds);
 
   const playedAt = new Date();
   const gameRows: {
