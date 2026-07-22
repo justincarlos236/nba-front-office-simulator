@@ -597,6 +597,47 @@ nonexistent for fictional draft-generated prospects.
   visible surface built on this data, with league leaders, milestones,
   and real award races to follow.
 
+## League leaders & milestones (Phase 14b)
+
+Season aggregation and record-keeping built directly on `PlayerGameStat` -
+no separate approximation system, per the plan's stated long-term goal of
+one underlying data source for every stats-driven feature.
+
+- **`PlayerGameStat.leagueId`** was added (denormalized from `Game`,
+  backfilled via a migration joining through `LeaguePlayer` for the rows
+  Phase 14a had already created) once it became clear every league-scoped
+  stats query - leaders, records, and eventually news - needs a direct
+  filter, not a two-step subquery through `LeaguePlayer`. Same
+  denormalize-for-cheap-filtering pattern as the `season`/`gameType`
+  fields Phase 14a already added.
+- **League leaders** (`src/lib/stats/leagueLeaders.ts`,
+  `getLeagueLeaders`): one `groupBy` over `PlayerGameStat` per
+  league-season computes every category's aggregate in a single query,
+  then sorts/slices per category in memory rather than issuing 7 separate
+  top-N queries. Per-game categories (PPG/RPG/APG/SPG/BPG) require a
+  minimum games-played threshold before a player can lead a board - a
+  single 50-point night in game 1 shouldn't crown a scoring champion, the
+  same "small sample is noise" principle the valuation model's own
+  confidence-shrinkage already applies. Shooting-percentage categories
+  similarly require a minimum attempt volume, so a 2-for-2 shooter can't
+  top the FG% leaderboard. Surfaced at `/leagues/[id]/leaders`, added to
+  the dashboard's nav row alongside the other league tabs.
+- **Milestones** (`src/lib/stats/milestones.ts`): pure, unit-tested
+  detection functions decoupled from Prisma's shape - `isDoubleDouble`/
+  `isTripleDouble` (double-digit count across all five box-score
+  categories, not just the classic three), `scoringMilestone` (highest of
+  40/50/60+ points reached), and `computeCareerHighs` (per-category max
+  across a player's full known game log in this league). These are
+  deliberately generic functions over a plain `StatLine` shape, not
+  actions - built to be reused by the news system once it starts
+  generating milestone-triggered stories, not just the profile display
+  that consumes them today.
+- **Where it's visible today**: the player profile drawer's Stats tab
+  now shows a "Career highs (this league)" box, and each recent game in
+  the log gets an inline badge when it was a triple-double or crossed a
+  scoring milestone - real detection against real simulated performances,
+  not flavor text.
+
 ## Around-the-league activity: injuries, CPU trades & CPU signings
 
 Without this, the only news in a league would ever be things the user

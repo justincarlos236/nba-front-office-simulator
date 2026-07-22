@@ -1415,3 +1415,31 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   (incremental news-system migration onto real events) and **14e** (News
   page filtering/search redesign) - see the approved Phase 14 plan for
   the full roadmap.
+- **2026-07-22 (Phase 14b)**: Season aggregation, league leaders, and
+  milestone detection - all built directly on Phase 14a's real box-score
+  data, no separate approximation system. Added `PlayerGameStat.leagueId`
+  (denormalized from `Game`, migrated in with a join-backfill through
+  `LeaguePlayer` for the ~11k rows Phase 14a had already generated) once
+  it was clear every league-scoped stats query needs it directly rather
+  than a subquery through `LeaguePlayer`. `src/lib/stats/leagueLeaders.ts`
+  computes every category (PPG/RPG/APG/SPG/BPG/FG%/3P%) from a single
+  `groupBy` query, with a minimum-games threshold for per-game categories
+  and a minimum-attempts threshold for percentage categories, so small
+  samples can't fluke their way to the top - surfaced at a new
+  `/leagues/[id]/leaders` page, added to the dashboard's nav row.
+  `src/lib/stats/milestones.ts` adds pure, unit-tested detection
+  functions (`isDoubleDouble`/`isTripleDouble`, `scoringMilestone` for
+  40/50/60-point games, `computeCareerHighs`) decoupled from Prisma's
+  shape, deliberately reusable by the news system later rather than
+  display-only helpers. Surfaced today in the player profile drawer: a
+  "Career highs (this league)" box, and a triple-double/scoring-milestone
+  badge inline on any recent game that earned one. All 368 unit tests (9
+  new for milestone detection), `tsc`, `eslint`, a clean production
+  build, and all 10 e2e tests passing; visually verified by simulating a
+  real batch of games and confirming the leaders page shows real,
+  differentiated players per category with real photos, and that a
+  league's actual scoring leader's profile showed a real 45-point game
+  correctly flagged with a "40-point game" badge and reflected in their
+  career highs. Next up: **14c** (real award races, unblocked now that
+  DPOY/6MOY have the box-score/bench-usage data they were previously
+  missing), then **14d** (news) and **14e** (News page redesign).

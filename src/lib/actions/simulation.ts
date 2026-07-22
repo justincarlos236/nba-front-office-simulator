@@ -113,6 +113,7 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
     prisma.playerGameStat.createMany({
       data: boxScoreRows.map((row) => ({
         ...row,
+        leagueId,
         season: league.currentSeason,
         gameType: gameTypeById.get(row.gameId) ?? "REGULAR_SEASON",
       })),

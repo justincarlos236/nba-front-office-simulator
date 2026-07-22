@@ -168,6 +168,21 @@ export function PlayerProfileContent({ data }: { data: PlayerProfileData }) {
                   </p>
                 )}
 
+                {gameLog.careerHighs && (
+                  <div className="rounded-lg border border-border bg-surface p-4">
+                    <p className="text-xs tracking-wide text-muted uppercase">
+                      Career highs (this league)
+                    </p>
+                    <div className="mt-2 grid grid-cols-3 gap-3 sm:grid-cols-5">
+                      <StatBox label="PTS" value={String(gameLog.careerHighs.points)} />
+                      <StatBox label="REB" value={String(gameLog.careerHighs.rebounds)} />
+                      <StatBox label="AST" value={String(gameLog.careerHighs.assists)} />
+                      <StatBox label="STL" value={String(gameLog.careerHighs.steals)} />
+                      <StatBox label="BLK" value={String(gameLog.careerHighs.blocks)} />
+                    </div>
+                  </div>
+                )}
+
                 {gameLog.recentGames.length > 0 && (
                   <div className="space-y-1.5">
                     <p className="text-xs tracking-wide text-muted uppercase">Recent games</p>
@@ -176,7 +191,19 @@ export function PlayerProfileContent({ data }: { data: PlayerProfileData }) {
                         key={g.gameId}
                         className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2 text-sm"
                       >
-                        <span className="text-muted">vs {g.opponent}</span>
+                        <span className="flex items-center gap-2 text-muted">
+                          vs {g.opponent}
+                          {g.isTripleDouble && (
+                            <span className="rounded-full border border-accent/40 px-1.5 py-0.5 text-[10px] font-semibold text-accent">
+                              Triple-double
+                            </span>
+                          )}
+                          {g.scoringMilestone && (
+                            <span className="rounded-full border border-accent/40 px-1.5 py-0.5 text-[10px] font-semibold text-accent">
+                              {g.scoringMilestone}-point game
+                            </span>
+                          )}
+                        </span>
                         <span className="font-mono text-xs text-foreground">
                           {g.points} PTS · {g.rebounds} REB · {g.assists} AST
                         </span>

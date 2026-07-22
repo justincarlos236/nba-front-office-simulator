@@ -200,6 +200,7 @@ model League {
   seasonAwards       SeasonAward[]
   transactions       LeagueTransaction[]
   seasonExpectations SeasonExpectation[]
+  playerGameStats    PlayerGameStat[]
 
   @@index([ownerId])
   @@map("leagues")
@@ -364,6 +365,7 @@ model Game {
 model PlayerGameStat {
   id             String   @id @default(cuid())
   gameId         String
+  leagueId       String // denormalized from Game - every league-scoped query (leaders, records) needs this without a join
   leaguePlayerId String
   leagueTeamId   String // pinned to the team as of this game, survives a later trade
   season         Int // denormalized from Game, cheap season-aggregate queries
@@ -384,11 +386,13 @@ model PlayerGameStat {
   ftAttempted   Int
 
   game         Game         @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  league       League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   leaguePlayer LeaguePlayer @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
   leagueTeam   LeagueTeam   @relation(fields: [leagueTeamId], references: [id])
 
   @@unique([gameId, leaguePlayerId])
   @@index([leaguePlayerId, season])
+  @@index([leagueId, season])
   @@index([gameId])
   @@map("player_game_stats")
 }

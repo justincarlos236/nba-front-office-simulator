@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { estimateAge, estimateExperience } from "@/lib/players/age";
 import { computePerformanceScore, scoreToCapFraction } from "@/lib/valuation/playerValue";
 import { getSeasonCapRules } from "@/lib/cap/constants";
+import { computeCareerHighs, isTripleDouble, scoringMilestone } from "@/lib/stats/milestones";
 import type {
   Position,
   InjuryStatus,
@@ -103,6 +104,8 @@ export interface PlayerProfileData {
       fg3Attempted: number;
       ftMade: number;
       ftAttempted: number;
+      isTripleDouble: boolean;
+      scoringMilestone: 40 | 50 | 60 | null;
     }[];
     /** This league's current season, aggregated from every game played so far - moves as more games simulate. */
     currentSeasonAverage: {
@@ -118,6 +121,14 @@ export interface PlayerProfileData {
       fgPct: number | null;
       fg3Pct: number | null;
       ftPct: number | null;
+    } | null;
+    /** Best single-game value in each category across every game this league has on record for this player. */
+    careerHighs: {
+      points: number;
+      rebounds: number;
+      assists: number;
+      steals: number;
+      blocks: number;
     } | null;
   } | null;
 }
@@ -230,7 +241,7 @@ export async function loadLeaguePlayerProfile(
   });
   const season = league?.currentSeason ?? PROFILE_SEASON;
 
-  const [recentGameStats, seasonAgg] = await Promise.all([
+  const [recentGameStats, allGameStats, seasonAgg] = await Promise.all([
     prisma.playerGameStat.findMany({
       where: { leaguePlayerId },
       orderBy: { game: { gameNumber: "desc" } },
@@ -243,6 +254,10 @@ export async function loadLeaguePlayerProfile(
           },
         },
       },
+    }),
+    prisma.playerGameStat.findMany({
+      where: { leaguePlayerId },
+      select: { points: true, rebounds: true, assists: true, steals: true, blocks: true },
     }),
     prisma.playerGameStat.aggregate({
       where: { leaguePlayerId, season },
@@ -289,7 +304,10 @@ export async function loadLeaguePlayerProfile(
       fg3Attempted: g.fg3Attempted,
       ftMade: g.ftMade,
       ftAttempted: g.ftAttempted,
+      isTripleDouble: isTripleDouble(g),
+      scoringMilestone: scoringMilestone(g.points),
     })),
+    careerHighs: computeCareerHighs(allGameStats),
     currentSeasonAverage:
       gamesPlayed > 0
         ? {
