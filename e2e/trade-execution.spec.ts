@@ -25,10 +25,10 @@ test("propose and execute a legal trade, and the rosters actually swap", async (
   await page.locator("a[href*='trades/new?with=']", { hasText: "Brooklyn Nets" }).click();
   await expect(page.getByText("Select players and draft picks on each side")).toBeVisible();
 
-  // Click the player name labels directly, as a real user would - clicking
-  // a container div near (but not on) the checkbox doesn't toggle it.
-  await page.getByText("Payton Pritchard", { exact: true }).click();
-  await page.getByText("Lonnie Walker IV", { exact: true }).click();
+  // Player names/avatars now open the profile drawer instead (Phase 13c) -
+  // toggle selection via the checkbox itself, which stops that propagation.
+  await page.getByLabel("Select Payton Pritchard for this trade").check();
+  await page.getByLabel("Select Lonnie Walker IV for this trade").check();
   await expect(page.getByText("Trade Financial Check: Valid")).toBeVisible();
   await expect(page.getByText("This trade works financially.")).toBeVisible();
 

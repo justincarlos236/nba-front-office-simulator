@@ -1026,6 +1026,28 @@ team-browse page, awards/retirements, etc.).
   fresh mount always starts at its initial `loading` state for free, so
   the effect only ever calls `setState` from inside the async
   `.then`/`.catch` callbacks, never synchronously in the effect body.
+- **`TradeBuilder` needed a real click-conflict resolution, not just
+  wiring**: its roster rows already had a click target - the row toggles
+  which players/picks are on the table via a checkbox, previously wrapped
+  in a `<label>` so clicking anywhere in the row (including the name)
+  toggled selection. Simply swapping the name for a `PlayerChip` (a nested
+  `<button>`) inside that `<label>` would have made every click both open
+  the profile _and_ toggle the trade selection - two conflicting actions
+  from one click. Fixed by dropping the `<label>` for a plain row `div`
+  whose own `onClick` toggles selection, with `e.stopPropagation()` on
+  both the checkbox and the `PlayerChip` wrapper so each intercepts its own
+  click before it reaches the row: clicking the avatar/name opens the
+  profile only, clicking anywhere else on the row (or the checkbox itself)
+  toggles selection only. Verified visually that opening a profile
+  mid-trade-build leaves every current selection untouched underneath.
+- **Draft-board avatar polish, not a profile**: `DraftExperience`'s
+  picker, live draft board, and scouting board now show a `PlayerAvatar`
+  next to every prospect's name for visual consistency with the rest of
+  the app - but always with `photoUrl={null}` (initials-only), since
+  `DraftProspect` is a fictional, league-generated record with no
+  real-world identity or photo. These prospects deliberately still don't
+  open the profile drawer (see above) - the avatar is cosmetic, not a
+  second, smaller feature.
 
 ## Data sourcing
 

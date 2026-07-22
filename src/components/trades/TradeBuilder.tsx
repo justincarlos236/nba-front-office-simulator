@@ -17,7 +17,7 @@ import { suggestCounterOffer, type IdentifiedTradeAsset } from "@/lib/trade/sugg
 import { TEAM_IDENTITY_LABEL, type TeamIdentity } from "@/lib/gm/teamIdentity";
 import { TEAM_NEED_LABEL, type TeamNeed } from "@/lib/gm/teamNeeds";
 import { GM_PERSONALITY_LABEL, type GmPersonality } from "@/lib/gm/gmPersonality";
-import { PlayerAvatar } from "@/components/players/PlayerAvatar";
+import { PlayerChip } from "@/components/players/PlayerChip";
 
 interface RosterPlayerDTO {
   leaguePlayerId: string;
@@ -347,6 +347,7 @@ export function TradeBuilder({
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <RosterColumn
           title={`Send from ${myTeam.name}`}
+          leagueId={leagueId}
           players={myTeam.players}
           teamPrimaryColor={myTeam.primaryColor}
           selected={mySelected}
@@ -357,6 +358,7 @@ export function TradeBuilder({
         />
         <RosterColumn
           title={`Receive from ${theirTeam.name}`}
+          leagueId={leagueId}
           players={theirTeam.players}
           teamPrimaryColor={theirTeam.primaryColor}
           selected={theirSelected}
@@ -487,6 +489,7 @@ function TeamIdentityCard({ team }: { team: TeamSideDTO }) {
 
 function RosterColumn({
   title,
+  leagueId,
   players,
   teamPrimaryColor,
   selected,
@@ -496,6 +499,7 @@ function RosterColumn({
   onTogglePick,
 }: {
   title: string;
+  leagueId: string;
   players: RosterPlayerDTO[];
   teamPrimaryColor: string;
   selected: Set<string>;
@@ -509,8 +513,13 @@ function RosterColumn({
       <h2 className="mb-3 font-semibold text-foreground">{title}</h2>
       <div className="max-h-[480px] space-y-1 overflow-y-auto">
         {players.map((p) => (
-          <label
+          // A plain row (not <label>) so the PlayerChip (a nested <button>)
+          // can stop its click from also toggling selection - clicking the
+          // avatar/name opens the profile, clicking anywhere else on the row
+          // (or the checkbox itself) toggles this player for the trade.
+          <div
             key={p.leaguePlayerId}
+            onClick={() => onToggle(p.leaguePlayerId)}
             className="flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-surface-2"
           >
             <span className="flex items-center gap-3">
@@ -518,15 +527,19 @@ function RosterColumn({
                 type="checkbox"
                 checked={selected.has(p.leaguePlayerId)}
                 onChange={() => onToggle(p.leaguePlayerId)}
+                onClick={(e) => e.stopPropagation()}
+                aria-label={`Select ${p.fullName} for this trade`}
                 className="accent-orange-500"
               />
-              <PlayerAvatar
-                photoUrl={p.photoUrl}
-                fullName={p.fullName}
-                size="sm"
-                teamPrimaryColor={teamPrimaryColor}
-              />
-              <span className="text-foreground">{p.fullName}</span>
+              <span onClick={(e) => e.stopPropagation()}>
+                <PlayerChip
+                  identity={{ kind: "league", leagueId, leaguePlayerId: p.leaguePlayerId }}
+                  fullName={p.fullName}
+                  photoUrl={p.photoUrl}
+                  teamPrimaryColor={teamPrimaryColor}
+                  size="sm"
+                />
+              </span>
               <span className="text-xs text-muted">{p.position}</span>
               <span className="font-mono text-xs text-accent">{p.overallRating}</span>
               <span className="text-xs text-muted">
@@ -536,7 +549,7 @@ function RosterColumn({
             <span className="font-mono text-xs text-muted">
               {formatCentsCompact(BigInt(p.salaryCents))}
             </span>
-          </label>
+          </div>
         ))}
       </div>
 

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { advanceDraftAction, makeDraftPickAction, startDraftAction } from "@/lib/actions/draft";
 import { deriveScoutingProfile } from "@/lib/draft/scoutingProfile";
+import { PlayerAvatar } from "@/components/players/PlayerAvatar";
 
 interface Pick {
   id: string;
@@ -235,15 +236,18 @@ export function DraftExperience({
                       <button
                         type="button"
                         onClick={() => setExpandedPickerId(expandedPickerId === p.id ? null : p.id)}
-                        className="text-left"
+                        className="flex items-center gap-3 text-left"
                       >
-                        <p className="font-medium text-foreground hover:text-accent">
-                          {p.fullName}
-                        </p>
-                        <p className="text-xs text-muted">
-                          {p.position} &middot; Age {p.age} &middot; Rating {p.overallRating}{" "}
-                          &middot; Potential {p.potentialRating}
-                        </p>
+                        <PlayerAvatar photoUrl={null} fullName={p.fullName} size="sm" />
+                        <span>
+                          <p className="font-medium text-foreground hover:text-accent">
+                            {p.fullName}
+                          </p>
+                          <p className="text-xs text-muted">
+                            {p.position} &middot; Age {p.age} &middot; Rating {p.overallRating}{" "}
+                            &middot; Potential {p.potentialRating}
+                          </p>
+                        </span>
                       </button>
                       <button
                         type="button"
@@ -289,12 +293,15 @@ export function DraftExperience({
                     isUserPick ? "border-accent bg-accent/5" : "border-border bg-surface-2"
                   }`}
                 >
-                  <div>
-                    <p className="text-xs tracking-wide text-muted uppercase">
-                      Pick {pick.overallPickNumber} &middot; {ROUND_LABELS[pick.round]} &middot;{" "}
-                      {teamName(pick.leagueTeamId)}
-                    </p>
-                    <p className="font-medium text-foreground">{prospect?.fullName}</p>
+                  <div className="flex items-center gap-3">
+                    <PlayerAvatar photoUrl={null} fullName={prospect?.fullName ?? ""} size="sm" />
+                    <div>
+                      <p className="text-xs tracking-wide text-muted uppercase">
+                        Pick {pick.overallPickNumber} &middot; {ROUND_LABELS[pick.round]} &middot;{" "}
+                        {teamName(pick.leagueTeamId)}
+                      </p>
+                      <p className="font-medium text-foreground">{prospect?.fullName}</p>
+                    </div>
                   </div>
                   <span className="font-mono text-xs text-muted">
                     {prospect?.position} &middot; OVR {prospect?.overallRating}
@@ -337,18 +344,23 @@ export function DraftExperience({
                   <button
                     type="button"
                     onClick={() => setExpandedScoutId(expandedScoutId === p.id ? null : p.id)}
-                    className="w-full text-left"
+                    className="flex w-full items-center gap-3 text-left"
                   >
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium text-foreground hover:text-accent">{p.fullName}</p>
-                      <span className="font-mono text-xs text-muted">OVR {p.overallRating}</span>
-                    </div>
-                    <p className="text-xs text-muted">
-                      {p.position} &middot; Age {p.age} &middot; Potential {p.potentialRating}
-                      {pick
-                        ? ` · Drafted by ${teamName(pick.leagueTeamId)} (Pick ${pick.overallPickNumber})`
-                        : " · Available"}
-                    </p>
+                    <PlayerAvatar photoUrl={null} fullName={p.fullName} size="sm" />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center justify-between">
+                        <p className="font-medium text-foreground hover:text-accent">
+                          {p.fullName}
+                        </p>
+                        <span className="font-mono text-xs text-muted">OVR {p.overallRating}</span>
+                      </span>
+                      <p className="text-xs text-muted">
+                        {p.position} &middot; Age {p.age} &middot; Potential {p.potentialRating}
+                        {pick
+                          ? ` · Drafted by ${teamName(pick.leagueTeamId)} (Pick ${pick.overallPickNumber})`
+                          : " · Available"}
+                      </p>
+                    </span>
                   </button>
                   {expandedScoutId === p.id && <ScoutingReport prospect={p} />}
                 </div>

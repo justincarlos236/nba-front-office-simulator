@@ -1345,3 +1345,31 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   close mechanisms (Escape, backdrop click, X button) work. Next up:
   **13c (TradeBuilder integration, draft-board avatar polish, docs)** -
   the last piece of Phase 13.
+- **2026-07-22 (later still)**: Phase 13c completed - the last piece of
+  Phase 13. `PlayerChip` is now wired into `TradeBuilder`'s roster rows,
+  which required a real interaction fix rather than just dropping the
+  component in: the row's `<label>` previously forwarded any click
+  (including on the player's name) to the selection checkbox, so a naive
+  swap would have made clicking a name both open the profile drawer and
+  toggle trade selection at once. Fixed by replacing the `<label>` with a
+  plain row `div` whose own `onClick` toggles selection, with
+  `e.stopPropagation()` on the checkbox and the `PlayerChip` wrapper so
+  each consumes its own click first - clicking the avatar/name opens the
+  profile only, clicking anywhere else on the row (or the checkbox)
+  toggles selection only. `teams-navigation.spec.ts`'s sibling,
+  `trade-execution.spec.ts`, was updated to select players via the
+  checkbox's new `aria-label` (`Select {name} for this trade`) instead of
+  clicking the name text, since the name now opens the profile instead.
+  `DraftExperience`'s picker, live draft board, and scouting board all
+  gained a `PlayerAvatar` next to every prospect's name (always
+  `photoUrl={null}`, since `DraftProspect` is a fictional record with no
+  real photo) for visual consistency - deliberately cosmetic only, not a
+  profile link, since fictional prospects have no real-world identity for
+  a profile to describe. All 348 unit tests, `tsc`, `eslint`, a clean
+  production build, and all 10 e2e tests passing (including the updated
+  `trade-execution.spec.ts`); visually verified via a throwaway script
+  that opening a player's profile mid-trade-build leaves every current
+  checkbox selection untouched underneath, and that closing the drawer
+  (Escape) returns to the exact same trade in progress. Phase 13 (reusable
+  player component, profile drawer, consistent access everywhere) is now
+  fully complete.
