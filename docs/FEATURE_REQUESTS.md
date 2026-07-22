@@ -24,6 +24,201 @@ actually asked for.
 
 ---
 
+## All-Star Weekend (requested 2026-07-22)
+
+### Request (verbatim)
+
+> I want to implement a comprehensive NBA All-Star Weekend system that
+> makes the All-Star break feel like one of the major events of every
+> season rather than simply generating a list of All-Stars. Before
+> implementing anything, analyze the existing architecture and determine
+> how this should integrate with the current simulation engine, player
+> statistics, awards systems, league news, fan engagement, player
+> profiles, historical records, calendar/season progression, and any
+> other relevant systems. Reuse existing data and logic wherever
+> appropriate rather than creating duplicate systems. If you identify
+> significant overlap, conflicts, or a better architectural approach,
+> explain it to me before implementation as per our existing
+> overlap-review protocol.
+>
+> The All-Star Weekend should occur naturally at the appropriate point of
+> every NBA season and should feel like a genuine midseason event that
+> temporarily interrupts normal regular-season progression. The user
+> should be able to clearly see that All-Star Weekend is approaching
+> through the existing calendar, dashboard, news, or whatever mechanisms
+> best fit the current application architecture.
+>
+> I want All-Star selections to be determined intelligently from what has
+> actually happened within the simulation. Do not simply select players
+> based on overall rating. Selection logic should primarily consider
+> actual season performance, games played, minutes, team success where
+> appropriate, position/frontcourt-backcourt requirements if applicable to
+> the rules being modeled, and other relevant factors. Elite players
+> having poor seasons should not automatically be selected because of
+> reputation, while breakout players having exceptional simulated seasons
+> should have legitimate opportunities to become first-time All-Stars.
+>
+> Where appropriate, model fan voting, player voting, media voting,
+> starter selection, reserve selection, injury replacements, and All-Star
+> snubs in a way that is believable while remaining manageable for the
+> simulator. Reputation and star popularity can influence fan voting, but
+> actual simulated performance should remain extremely important. Use the
+> NBA All-Star format and rules appropriate to the season being simulated
+> where practical, but prioritize a maintainable system that can evolve if
+> league formats change.
+>
+> Build anticipation before selections are announced. During the weeks
+> leading up to All-Star Weekend, the existing News system should be
+> capable of producing stories about voting leaders, players making
+> strong cases, potential first-time selections, surprising candidates,
+> declining stars potentially missing the event, close races, and other
+> narratives that naturally emerge from real simulation data. These
+> should not be invented independently of the underlying league state.
+>
+> When the All-Star rosters are announced, make the reveal feel
+> significant. Clearly present starters, reserves, first-time All-Stars,
+> returning selections, injury replacements, notable omissions, team
+> representation, and other interesting information. Player profiles
+> should permanently record All-Star selections as career achievements,
+> and historical systems should preserve each season's All-Star rosters
+> so users can look back at them many seasons later.
+>
+> I also want the simulator to recognize All-Star snubs. If a player is
+> having an exceptional statistical season but narrowly misses selection,
+> this can become a legitimate storyline. However, do not manufacture
+> snubs randomly. They should emerge from actual selection results and
+> player performance.
+>
+> Create a dedicated and visually impressive All-Star Weekend experience.
+> Determine the best UI structure based on the existing application, but
+> it should allow users to easily explore the participants, events,
+> results, performances, and major storylines surrounding the weekend.
+> The presentation should feel celebratory and distinct from an ordinary
+> regular-season screen while remaining consistent with the application's
+> overall design language.
+>
+> All-Star Weekend should include the major events that make sense for
+> the simulator, including the Rising Stars event, Three-Point Contest,
+> Slam Dunk Contest, and NBA All-Star Game. If additional events fit the
+> NBA season/format being modeled and can be implemented realistically
+> without unnecessary complexity, use your judgment about including them.
+>
+> For the Rising Stars event, participants should be selected from
+> eligible young players based primarily on their actual simulated
+> performances. This should provide another opportunity for rookies and
+> young players to gain recognition. The system should recognize notable
+> Rising Stars performances and preserve participation/results in league
+> history where appropriate.
+>
+> For the Three-Point Contest, participants should be selected
+> intelligently based on actual three-point shooting performance, volume,
+> efficiency, reputation, and other appropriate criteria. Do not simply
+> choose the highest-overall players. Implement a lightweight contest
+> simulation that produces believable round-by-round results without
+> requiring an unnecessarily complex possession-level system. The user
+> should be able to follow who advances and ultimately wins.
+>
+> For the Slam Dunk Contest, determine participants using appropriate
+> factors available within the existing player model, such as
+> athleticism, dunking ability, age, reputation, star power, or other
+> suitable attributes. If the simulator does not currently contain enough
+> information to evaluate dunking ability properly, identify this rather
+> than inventing an unreliable system and recommend the cleanest approach.
+> Generate a simple but entertaining competition with scores, rounds,
+> eliminations, and a champion.
+>
+> The NBA All-Star Game should use the existing game simulation
+> architecture wherever possible rather than creating an entirely
+> separate basketball simulation. However, account for the unique nature
+> of an All-Star Game where appropriate, such as different rotations, more
+> balanced playing time, star-heavy lineups, higher offensive output, and
+> less emphasis on normal team systems. Generate complete player
+> statistics so the game can produce meaningful performances and an
+> All-Star Game MVP.
+>
+> Present the All-Star Game results in a polished way, including the
+> final score, player statistics, leading performers, notable moments
+> derived from the generated game data, and the All-Star Game MVP. These
+> results should feed naturally into the existing News system, player
+> profiles, career achievements, league history, and any other
+> appropriate systems.
+>
+> All-Star Weekend should also interact with the Fan Engagement system
+> where appropriate. Fans should react to their team's players being
+> selected, first-time All-Stars, controversial snubs, contest winners,
+> memorable performances, and All-Star MVPs. These reactions should
+> consume the same underlying events rather than creating an independent
+> event-detection pipeline.
+>
+> The News system should provide coverage throughout the entire weekend
+> rather than producing only one article. Appropriate stories might
+> include roster announcements, first-time selections, snubs, contest
+> participants, contest winners, Rising Stars performances, All-Star Game
+> results, MVP performances, records, and other notable developments.
+> Again, these stories must be grounded in events that actually occurred
+> within the simulation.
+>
+> All-Star achievements should have long-term historical significance.
+> Player career profiles should record All-Star selections, starts where
+> relevant, contest championships, All-Star Game MVP awards, and other
+> meaningful achievements. League history should allow users to look back
+> at previous All-Star Weekends, participants, winners, rosters, and
+> results many seasons later.
+>
+> The system should also work naturally as the league evolves. Generated
+> players entering the league in future seasons should be fully eligible
+> for All-Star selections and events using exactly the same underlying
+> logic as real players. Nothing about the system should depend on
+> hardcoded names or current NBA stars.
+>
+> Do not make All-Star Weekend unnecessarily tedious for users who
+> primarily want to manage their franchise. Users should be able to enjoy
+> and explore the event, but they should also have appropriate options to
+> progress through it efficiently if they are not interested in watching
+> every stage. Determine the best balance between presentation,
+> interaction, and simulation speed based on the existing UX.
+>
+> Most importantly, All-Star Weekend should not feel like an isolated
+> minigame. It should emerge naturally from everything that has happened
+> during the first half of the season and then create consequences,
+> achievements, narratives, historical records, news coverage, and fan
+> reactions that persist afterward.
+>
+> The overall goal is for users to reach the middle of every season and
+> genuinely look forward to All-Star Weekend. It should provide a
+> temporary celebration of the league's best players, recognize breakout
+> stars and young talent, create memorable moments, contribute to player
+> legacies, and make the wider NBA universe feel significantly more
+> alive. Build it as an integrated part of the existing simulation
+> ecosystem rather than a standalone feature, while making whatever
+> architectural and UX decisions you believe best fit the current
+> codebase. Also you may add whatever improvements you wish.
+
+### Status
+
+Implemented. Selections are driven by real simulated season performance
+(`src/lib/allstar/selection.ts`), blended with a small reputation/team-
+success nudge, using a new `AllStarSelection` model rather than retrofitting
+`SeasonAward`. Rising Stars, the Three-Point Contest, and the Slam Dunk
+Contest each have their own pure selection/simulation modules under
+`src/lib/allstar/`; the Slam Dunk Contest explicitly uses a synthetic,
+non-persisted "dunk appeal" composite since no real dunking-ability
+attribute exists anywhere in the schema. The All-Star Game and Rising Stars
+game both reuse the existing simulation engine (`simulateGame`/
+`generateBoxScore`) via a synthetic "exhibition" `CoachModifier`, not a
+separate basketball simulation. `simulateGamesAction` now has a genuine
+mid-season checkpoint: regular-season simulation stops (even mid-batch)
+once the user's team reaches 41 games played, generates the whole weekend
+synchronously via `generateAllStarWeekend`, and stays blocked until
+`resolveAllStarWeekendAction` is called from the new `/leagues/[id]/all-star`
+page. News (roster reveals, first-timers, snubs, contest results, the ASG
+result/MVP), fan engagement sentiment/reactions, player profile career
+honors, and League History all consume the same real generated data - no
+separate invented signal. See `docs/ARCHITECTURE.md`'s All-Star Weekend
+section for the full design.
+
+---
+
 ## Team-Centric Simulation Flow & Season Calendar (requested 2026-07-22)
 
 ### Request (verbatim)

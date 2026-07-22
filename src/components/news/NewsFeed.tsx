@@ -16,6 +16,7 @@ const CATEGORIES = [
   "TRADE",
   "SIGNING",
   "STAFF",
+  "ALL_STAR",
   "RETIREMENT",
   "INJURY",
   "AWARD",
@@ -30,6 +31,7 @@ const CATEGORY_LABEL: Record<(typeof CATEGORIES)[number], string> = {
   TRADE: "Trades",
   SIGNING: "Free Agency",
   STAFF: "Staff",
+  ALL_STAR: "All-Star",
   RETIREMENT: "Retirements",
   INJURY: "Injuries",
   AWARD: "Awards",
@@ -39,15 +41,16 @@ const CATEGORY_LABEL: Record<(typeof CATEGORIES)[number], string> = {
   OWNERSHIP_MESSAGE: "Ownership",
 };
 
-// Every other category maps 1:1 to a single TransactionType - STAFF is the
-// one exception, grouping both STAFF_HIRE and STAFF_FIRE under one filter
-// pill rather than adding two more pills for what's really one "staff
-// moves" concept to a reader.
+// Every other category maps 1:1 to a single TransactionType - STAFF and
+// ALL_STAR are the exceptions, each grouping several related types under
+// one filter pill rather than adding a pill per type for what's really one
+// concept to a reader.
 const CATEGORY_TYPES: Record<(typeof CATEGORIES)[number], string[] | null> = {
   ALL: null,
   TRADE: ["TRADE"],
   SIGNING: ["SIGNING"],
   STAFF: ["STAFF_HIRE", "STAFF_FIRE"],
+  ALL_STAR: ["ALL_STAR_SELECTION", "ALL_STAR_SNUB", "ALL_STAR_RESULT"],
   RETIREMENT: ["RETIREMENT"],
   INJURY: ["INJURY"],
   AWARD: ["AWARD"],
@@ -62,6 +65,9 @@ const TYPE_LABEL: Record<string, string> = {
   SIGNING: "Signing",
   STAFF_HIRE: "Staff Hire",
   STAFF_FIRE: "Staff Fire",
+  ALL_STAR_SELECTION: "All-Star",
+  ALL_STAR_SNUB: "All-Star Snub",
+  ALL_STAR_RESULT: "All-Star Weekend",
   RETIREMENT: "Retirement",
   INJURY: "Injury",
   OWNERSHIP_MESSAGE: "Ownership",
@@ -76,6 +82,9 @@ const TYPE_BADGE_CLASS: Record<string, string> = {
   SIGNING: "bg-emerald-500/15 text-emerald-400",
   STAFF_HIRE: "bg-emerald-500/15 text-emerald-400",
   STAFF_FIRE: "bg-red-500/15 text-red-400",
+  ALL_STAR_SELECTION: "bg-indigo-500/15 text-indigo-400",
+  ALL_STAR_SNUB: "bg-muted/20 text-muted",
+  ALL_STAR_RESULT: "bg-indigo-500/15 text-indigo-400",
   RETIREMENT: "bg-muted/20 text-muted",
   INJURY: "bg-red-500/15 text-red-400",
   OWNERSHIP_MESSAGE: "bg-purple-500/15 text-purple-400",

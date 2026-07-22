@@ -36,7 +36,7 @@ export default async function HistoryPage({ params }: PageProps) {
   const league = await prisma.league.findUnique({ where: { id } });
   if (!league || league.ownerId !== session.user.id) notFound();
 
-  const [champions, awards, staffAwards, retirees] = await Promise.all([
+  const [champions, awards, staffAwards, retirees, allStarWeekends] = await Promise.all([
     prisma.playoffSeries.findMany({
       where: { leagueId: id, round: 4, winnerTeamId: { not: null } },
       include: { winnerTeam: { include: { team: true } } },
@@ -54,7 +54,30 @@ export default async function HistoryPage({ params }: PageProps) {
       where: { leagueId: id, retiredSeason: { not: null } },
       include: { player: true },
     }),
+    prisma.allStarWeekend.findMany({
+      where: { leagueId: id, status: "RESOLVED" },
+      include: {
+        game: true,
+        participants: { where: { OR: [{ result: "CHAMPION" }, { result: { contains: "MVP" } }] } },
+      },
+      orderBy: { season: "desc" },
+    }),
   ]);
+
+  const allStarPlayerIds = new Set<string>();
+  for (const w of allStarWeekends) {
+    if (w.game) {
+      allStarPlayerIds.add(w.game.teamACaptainId);
+      allStarPlayerIds.add(w.game.teamBCaptainId);
+      allStarPlayerIds.add(w.game.mvpLeaguePlayerId);
+    }
+    for (const p of w.participants) allStarPlayerIds.add(p.leaguePlayerId);
+  }
+  const allStarPlayers = await prisma.leaguePlayer.findMany({
+    where: { id: { in: [...allStarPlayerIds] } },
+    include: { player: true },
+  });
+  const allStarPlayerById = new Map(allStarPlayers.map((p) => [p.id, p]));
 
   const awardsBySeason = new Map<number, typeof awards>();
   for (const award of awards) {
@@ -74,6 +97,14 @@ export default async function HistoryPage({ params }: PageProps) {
     list.push(r);
     retireesBySeason.set(r.retiredSeason!, list);
   }
+  const allStarBySeason = new Map<number, (typeof allStarWeekends)[number]>();
+  for (const w of allStarWeekends) allStarBySeason.set(w.season, w);
+
+  const EVENT_LABEL: Record<string, string> = {
+    RISING_STARS: "Rising Stars MVP",
+    THREE_POINT_CONTEST: "Three-Point Contest Champion",
+    SLAM_DUNK_CONTEST: "Slam Dunk Contest Champion",
+  };
 
   return (
     <main className="mx-auto max-w-4xl flex-1 px-6 py-16">
@@ -109,6 +140,7 @@ export default async function HistoryPage({ params }: PageProps) {
             const seasonAwards = awardsBySeason.get(season) ?? [];
             const seasonStaffAwards = staffAwardsBySeason.get(season) ?? [];
             const seasonRetirees = retireesBySeason.get(season) ?? [];
+            const seasonAllStar = allStarBySeason.get(season);
             return (
               <section key={series.id} className="rounded-xl border border-border bg-surface p-5">
                 <div className="flex items-center justify-between gap-4">
@@ -194,6 +226,42 @@ export default async function HistoryPage({ params }: PageProps) {
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {seasonAllStar && (
+                  <div className="mt-4 rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-3">
+                    <p className="text-xs tracking-wide text-muted uppercase">All-Star Weekend</p>
+                    <div className="mt-2 space-y-1 text-sm">
+                      {seasonAllStar.game && (
+                        <p className="text-foreground">
+                          {allStarPlayerById.get(seasonAllStar.game.teamACaptainId)?.player
+                            .fullName ?? "Team A"}{" "}
+                          {seasonAllStar.game.teamAScore} &ndash; {seasonAllStar.game.teamBScore}{" "}
+                          {allStarPlayerById.get(seasonAllStar.game.teamBCaptainId)?.player
+                            .fullName ?? "Team B"}
+                          <span className="ml-2 text-muted">
+                            MVP:{" "}
+                            {allStarPlayerById.get(seasonAllStar.game.mvpLeaguePlayerId)?.player
+                              .fullName ?? "Unknown"}
+                          </span>
+                        </p>
+                      )}
+                      {seasonAllStar.participants.map((p) => (
+                        <p key={p.id} className="text-muted">
+                          {EVENT_LABEL[p.eventType] ?? p.eventType}:{" "}
+                          <span className="text-foreground">
+                            {allStarPlayerById.get(p.leaguePlayerId)?.player.fullName ?? "Unknown"}
+                          </span>
+                        </p>
+                      ))}
+                    </div>
+                    <Link
+                      href={`/leagues/${league.id}/all-star?season=${season}`}
+                      className="mt-2 inline-block text-xs text-accent hover:underline"
+                    >
+                      View full weekend &rarr;
+                    </Link>
                   </div>
                 )}
               </section>

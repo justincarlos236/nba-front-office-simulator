@@ -1117,6 +1117,140 @@ second event-generation system.
   recharts SVG props can't resolve CSS vars), and a fan reaction feed
   built from this team's own `LeagueTransaction` rows.
 
+## All-Star Weekend
+
+A fresh, out-of-band user request (see `docs/FEATURE_REQUESTS.md`'s
+All-Star Weekend entry for the full original ask). Preceded by an
+architecture-overlap review the user explicitly agreed with: a genuine
+mid-season interruption of regular-season simulation, a new parallel data
+model rather than a retrofit of `SeasonAward`, and no fabricated
+attribute for the Slam Dunk Contest.
+
+- **Selection is driven by real simulated performance, not
+  `overallRating`.** `src/lib/allstar/selection.ts`'s `selectAllStars`
+  aggregates this season's actual `PlayerGameStat` averages through the
+  same `computePerformanceScore` the valuation model uses, and blends in
+  `overallRating` only as a small "reputation/star power" nudge (a
+  defensible existing-data proxy for fan-vote bias, not a new field) -
+  0.7/0.2 performance/reputation for starters, 0.85/0.1 for reserves, plus
+  a team-record bonus. This is what makes an elite player having a poor
+  season miss out while a breakout player having a great one gets in. A
+  minimum-games-played floor (20, mirroring DPOY/6MOY's own eligibility
+  floors) excludes small-sample outliers. Position grouping (`GUARD` =
+  PG/SG, `FRONTCOURT` = SF/PF/C) is new, simple, additive logic - nothing
+  like it existed before. Injury replacements keep the original honoree's
+  own selection row (matches the real NBA - you're still "selected" even
+  if replaced) and add the next-best eligible alternate at the same
+  conference/position group. Snubs are computed at generation time only,
+  by pure performance (not the reputation-blended score), and are never
+  persisted as a selection - there's no career achievement to record for
+  missing out, only a story for news to tell.
+- **`AllStarSelection`/`AllStarEventParticipant`/`AllStarGame`/
+  `AllStarGameStat` are new, separate models, not a `SeasonAward`/`Game`
+  retrofit.** `SeasonAward` assumes exactly one winner per category per
+  season; an All-Star roster is 24+ players. `Game`/`PlayerGameStat`
+  require real `LeagueTeam` FKs; All-Star "sides" are ad-hoc
+  captain-drafted squads that don't correspond to any `LeagueTeam`. One
+  shared `AllStarEventParticipant` model (not three near-identical tables)
+  covers Rising Stars, the Three-Point Contest, and the Slam Dunk Contest,
+  since all three are structurally the same shape (a participant, a
+  round-by-round result, a score) - a short result string (`"CHAMPION"`,
+  `"ELIMINATED_ROUND_1"`, `"<captainId>_MVP"`) stands in for a full
+  narrated sequence, matching "lightweight, not unnecessarily complex."
+  `AllStarWeekend`'s own existence + `status` (`PENDING`/`RESOLVED`) for a
+  `(leagueId, season)` pair is the _sole_ marker of whether the mid-season
+  break is currently blocking simulation - no redundant scalar field on
+  `League`.
+- **Rising Stars, the Three-Point Contest, and the Slam Dunk Contest each
+  get their own pure module under `src/lib/allstar/`.** Rising Stars
+  (`risingStars.ts`) reuses `estimateExperience` (the same function
+  Rookie of the Year uses) extended by one year, ranks the top 14 by
+  performance, and splits them via the shared captain-draft helper
+  (`draftTeams.ts` - also used by the main All-Star Game). The
+  Three-Point Contest (`threePointContest.ts`) selects participants from
+  real season 3PT volume _and_ efficiency blended together - explicitly
+  not "the highest-rated players" - and simulates round-by-round scores
+  (a fixed 25-ball rack scored off real season 3P% plus bounded variance,
+  the field halving each round to a two-player final), not a
+  possession-by-possession sequence. **The Slam Dunk Contest is the one
+  place this feature knowingly fabricates something, and it says so
+  explicitly**: no real "dunking ability" attribute exists anywhere in
+  this schema, and inventing a persisted one would be exactly the kind of
+  unearned fabrication this codebase otherwise avoids (see "Data
+  sourcing"). Instead, `dunkContest.ts` computes a clearly synthetic,
+  **non-persisted** "dunk appeal" composite (younger age + a guard/wing
+  position lean + reputation + a seeded per-player "flair" roll) fresh
+  every time it runs - explicit flavor, never written to the database,
+  never read back as if it were real.
+- **The All-Star Game (and Rising Stars game) reuse the existing
+  simulation engine entirely - they are not a second basketball
+  simulation.** `src/lib/allstar/allStarGame.ts`'s `simulateAllStarGame`
+  calls the same `computeTeamStrength`/`simulateGame`/`generateBoxScore`
+  every regular-season game already uses. The "exhibition" feel (more
+  balanced minutes, no DNP-CDs, higher perimeter-heavy scoring) comes
+  entirely from a synthetic `CoachModifier` object built at the call site
+  - the exact same hook Head Coach effects (Phase 15a) already added to
+    `boxScore.ts` - so zero new code was needed inside `boxScore.ts` itself.
+    A new `getRosterPlayersById` (`src/lib/actions/leagueTeamStrength.ts`,
+    sharing its row-conversion logic with the team-based
+    `computeLeagueTeamStrengths`) fetches an arbitrary hand-picked list of
+    players spanning many different real teams, since an All-Star roster
+    isn't one team's roster. MVP reuses the identical
+    `computePerformanceScore` weighting selection itself uses, applied to
+    the one game's stat line instead of a season average, with a small
+    winning-side bonus.
+- **A genuine mid-season checkpoint, not a cosmetic pause.** The user was
+  explicit that simulation must actually stop - even mid-batch, even
+  before a "Sim Next 10 Games" request finishes - once the break is
+  reached, and stay stopped until the user resolves it.
+  `simulateGamesAction` (`src/lib/actions/simulation.ts`) checks twice:
+  once at the very top (a `PENDING` `AllStarWeekend` for the current
+  season already exists → return immediately, `simulated: 0`, nothing
+  runs), and once after every chunk (the user's own team's `wins+losses`
+  just reached 41 - half of 82 - and no weekend exists yet → generate the
+  whole weekend synchronously via `generateAllStarWeekend`
+  (`src/lib/actions/allStarWeekend.ts`) and break the loop immediately,
+  reporting exactly how many of the requested games actually completed).
+  `resolveAllStarWeekendAction` is the one action that flips the row to
+  `RESOLVED` and unblocks simulation again - called from the "Continue
+  Season" button on `/leagues/[id]/all-star`, which doubles as the
+  efficient skip option the user asked for (every contest/game result is
+  already fully decided at generation time, so there's nothing to step
+  through - resolving is instant).
+- **Pre-selection "buzz" news reuses the exact same selection pool, not a
+  separately invented signal.** Once the user's team is in a believable
+  pre-break window (30-40 games played), `applyLeagueEvents`
+  (`src/lib/actions/leagueEvents.ts`) has a small per-game chance (the
+  same `shouldTriggerEvent` scaling pattern CPU trades/signings already
+  use) to run the shared `buildAllStarPerformancePool` +
+  `selectAllStars` and name the current top starter as "building a strong
+  All-Star case" - a real early read on who selection would pick if the
+  break were today.
+- **News, fan engagement, player profiles, and league history all consume
+  the same real generated data - none of them detect events
+  independently.** `generateAllStarWeekend` writes real
+  `LeagueTransaction` rows (three new `TransactionType`s:
+  `ALL_STAR_SELECTION`, `ALL_STAR_SNUB`, `ALL_STAR_RESULT`) for roster
+  reveals, first-timers, snubs, and every contest/game result, all from
+  data just computed. `NewsFeed.tsx` groups all three under one `ALL_STAR`
+  filter pill, the same way `STAFF` already groups `STAFF_HIRE`/
+  `STAFF_FIRE`. Fan engagement's `transactionSentiment.ts`/
+  `fanReactions.ts` gained table entries for the three new types - zero
+  new fan-engagement code. `profileData.ts` queries `AllStarSelection`/
+  `AllStarEventParticipant`/`AllStarGame` for a player's career honors
+  (All-Star selections, contest championships, Rising Stars/All-Star Game
+  MVP) and renders them in the existing Awards tab. League History gets a
+  per-season "All-Star Weekend" card alongside the existing champion/
+  awards/retirees cards, linking to the full `/leagues/[id]/all-star`
+  page for that season.
+- **Nothing depends on hardcoded names or the current real NBA.** Every
+  selection, contest, and game runs on whatever players/ratings/stats this
+  league's own simulation has generated - a future draft-generated player
+  is fully eligible using identical logic to a real seeded player, since
+  the selection/contest modules only ever see the same
+  `PlayerSeasonPerformanceSnapshot`-shaped data regardless of where a
+  player came from.
+
 ## Playoffs
 
 Built on top of the season-simulation engine above rather than duplicating

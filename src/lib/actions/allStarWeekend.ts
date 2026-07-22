@@ -1,0 +1,548 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import { createSeededRandom } from "@/lib/contracts/seededRandom";
+import {
+  getRosterPlayersById,
+  type RosterPlayerForSimulation,
+} from "@/lib/actions/leagueTeamStrength";
+import { importanceForRating } from "@/lib/transactions/newsImportance";
+import {
+  selectAllStars,
+  type PlayerSeasonPerformanceSnapshot,
+  type AllStarSelectionResult,
+} from "@/lib/allstar/selection";
+import { selectRisingStars, type RisingStarsCandidate } from "@/lib/allstar/risingStars";
+import {
+  selectThreePointParticipants,
+  simulateThreePointContest,
+  type ThreePointCandidate,
+} from "@/lib/allstar/threePointContest";
+import {
+  selectDunkContestParticipants,
+  simulateDunkContest,
+  type DunkContestCandidate,
+} from "@/lib/allstar/dunkContest";
+import { simulateAllStarGame } from "@/lib/allstar/allStarGame";
+import { draftTeams } from "@/lib/allstar/draftTeams";
+import type { NewsImportance } from "@/generated/prisma/client";
+
+// A real sample by the break - same floor selection.ts uses for All-Star
+// eligibility, reused here for the two contests too so a player who's
+// barely played this season can't headline a contest.
+const MIN_GAMES_FOR_CONTEST_ELIGIBILITY = 20;
+
+interface RoundLike {
+  round: number;
+  scores: { leaguePlayerId: string; score: number }[];
+  advanced: string[];
+}
+
+/** Shared by the Three-Point and Slam Dunk contests - both produce the same round-result shape. */
+function deriveEventOutcomes(
+  rounds: RoundLike[],
+  championId: string | null,
+): { leaguePlayerId: string; result: string; score: number }[] {
+  const outcomes = new Map<string, { result: string; score: number }>();
+  rounds.forEach((round, i) => {
+    const isFinalRound = i === rounds.length - 1;
+    for (const s of round.scores) {
+      if (s.leaguePlayerId === championId && isFinalRound) {
+        outcomes.set(s.leaguePlayerId, { result: "CHAMPION", score: s.score });
+      } else if (isFinalRound) {
+        outcomes.set(s.leaguePlayerId, { result: "RUNNER_UP", score: s.score });
+      } else if (!round.advanced.includes(s.leaguePlayerId) && !outcomes.has(s.leaguePlayerId)) {
+        outcomes.set(s.leaguePlayerId, {
+          result: `ELIMINATED_ROUND_${round.round}`,
+          score: s.score,
+        });
+      }
+    }
+  });
+  return [...outcomes.entries()].map(([leaguePlayerId, o]) => ({ leaguePlayerId, ...o }));
+}
+
+interface NewsRow {
+  type: "ALL_STAR_SELECTION" | "ALL_STAR_SNUB" | "ALL_STAR_RESULT";
+  description: string;
+  importance: NewsImportance;
+  teamIds: string[];
+}
+
+/**
+ * Generates an entire All-Star Weekend synchronously in one call: real
+ * selections from this season's actual simulated performance, all three
+ * contests, and the All-Star Game itself, all reusing existing engines
+ * (see docs/ARCHITECTURE.md's All-Star Weekend section). Called once per
+ * league-season, from simulateGamesAction's mid-season checkpoint. Writes
+ * the AllStarWeekend row as PENDING - regular-season simulation stays
+ * blocked until resolveAllStarWeekendAction below flips it to RESOLVED.
+ */
+export interface AllStarPerformancePool {
+  performanceSnapshots: PlayerSeasonPerformanceSnapshot[];
+  risingStarsCandidates: RisingStarsCandidate[];
+  threePointCandidates: ThreePointCandidate[];
+  dunkCandidates: DunkContestCandidate[];
+  fullNameById: Map<string, string>;
+  teamIdById: Map<string, string>;
+}
+
+/**
+ * The same real season-so-far aggregation `generateAllStarWeekend` uses to
+ * decide selections - shared so the pre-break "buzz" news roll in
+ * leagueEvents.ts ranks candidates from this exact pool rather than a
+ * second, separately invented signal.
+ */
+export async function buildAllStarPerformancePool(
+  leagueId: string,
+  season: number,
+): Promise<AllStarPerformancePool> {
+  const rosteredPlayers = await prisma.leaguePlayer.findMany({
+    where: { leagueId, leagueTeamId: { not: null }, isActive: true },
+    select: {
+      id: true,
+      overallRating: true,
+      injuryStatus: true,
+      leagueTeamId: true,
+      player: { select: { fullName: true, position: true, draftYear: true } },
+      leagueTeam: {
+        select: { wins: true, losses: true, team: { select: { conference: true } } },
+      },
+    },
+  });
+
+  const boxAggByPlayer = new Map(
+    (
+      await prisma.playerGameStat.groupBy({
+        by: ["leaguePlayerId"],
+        where: { leagueId, season },
+        _avg: {
+          minutesPlayed: true,
+          points: true,
+          rebounds: true,
+          assists: true,
+          steals: true,
+          blocks: true,
+          turnovers: true,
+        },
+        _sum: {
+          points: true,
+          fgAttempted: true,
+          ftAttempted: true,
+          fg3Made: true,
+          fg3Attempted: true,
+        },
+        _count: { _all: true },
+      })
+    ).map((g) => [g.leaguePlayerId, g]),
+  );
+
+  const fullNameById = new Map(rosteredPlayers.map((p) => [p.id, p.player.fullName]));
+  const teamIdById = new Map(rosteredPlayers.map((p) => [p.id, p.leagueTeamId as string]));
+
+  const performanceSnapshots: PlayerSeasonPerformanceSnapshot[] = [];
+  const risingStarsCandidates: RisingStarsCandidate[] = [];
+  const threePointCandidates: ThreePointCandidate[] = [];
+  const dunkCandidates: DunkContestCandidate[] = [];
+
+  for (const p of rosteredPlayers) {
+    const agg = boxAggByPlayer.get(p.id);
+    const gamesPlayed = agg?._count._all ?? 0;
+    if (gamesPlayed === 0) continue;
+
+    const minutesPerGame = agg!._avg.minutesPlayed ?? 0;
+    const trueShotDenominator =
+      2 * ((agg!._sum.fgAttempted ?? 0) + 0.44 * (agg!._sum.ftAttempted ?? 0));
+    const trueShootingPct =
+      trueShotDenominator > 0 ? (agg!._sum.points ?? 0) / trueShotDenominator : 0.56;
+    const gamesPlayedByTeam = p.leagueTeam ? p.leagueTeam.wins + p.leagueTeam.losses : 0;
+    const teamWinPct =
+      p.leagueTeam && gamesPlayedByTeam > 0 ? p.leagueTeam.wins / gamesPlayedByTeam : 0.5;
+
+    performanceSnapshots.push({
+      leaguePlayerId: p.id,
+      position: p.player.position,
+      conference: p.leagueTeam!.team.conference,
+      overallRating: p.overallRating,
+      gamesPlayed,
+      minutesPerGame,
+      pointsPerGame: agg!._avg.points ?? 0,
+      reboundsPerGame: agg!._avg.rebounds ?? 0,
+      assistsPerGame: agg!._avg.assists ?? 0,
+      stealsPerGame: agg!._avg.steals ?? 0,
+      blocksPerGame: agg!._avg.blocks ?? 0,
+      turnoversPerGame: agg!._avg.turnovers ?? 0,
+      trueShootingPct,
+      teamWinPct,
+      isHealthy: p.injuryStatus === "HEALTHY",
+    });
+
+    risingStarsCandidates.push({
+      leaguePlayerId: p.id,
+      draftYear: p.player.draftYear,
+      gamesPlayed,
+      minutesPerGame,
+      pointsPerGame: agg!._avg.points ?? 0,
+      reboundsPerGame: agg!._avg.rebounds ?? 0,
+      assistsPerGame: agg!._avg.assists ?? 0,
+      stealsPerGame: agg!._avg.steals ?? 0,
+      blocksPerGame: agg!._avg.blocks ?? 0,
+      turnoversPerGame: agg!._avg.turnovers ?? 0,
+      trueShootingPct,
+    });
+
+    if (gamesPlayed >= MIN_GAMES_FOR_CONTEST_ELIGIBILITY) {
+      threePointCandidates.push({
+        leaguePlayerId: p.id,
+        fg3Made: agg!._sum.fg3Made ?? 0,
+        fg3Attempted: agg!._sum.fg3Attempted ?? 0,
+        overallRating: p.overallRating,
+      });
+      dunkCandidates.push({
+        leaguePlayerId: p.id,
+        position: p.player.position,
+        draftYear: p.player.draftYear,
+        overallRating: p.overallRating,
+      });
+    }
+  }
+
+  return {
+    performanceSnapshots,
+    risingStarsCandidates,
+    threePointCandidates,
+    dunkCandidates,
+    fullNameById,
+    teamIdById,
+  };
+}
+
+export async function generateAllStarWeekend(
+  leagueId: string,
+  season: number,
+  triggeredAtDayIndex: number | null = null,
+): Promise<{ allStarWeekendId: string }> {
+  const {
+    performanceSnapshots,
+    risingStarsCandidates,
+    threePointCandidates,
+    dunkCandidates,
+    fullNameById,
+    teamIdById,
+  } = await buildAllStarPerformancePool(leagueId, season);
+
+  // --- All-Star selection ---
+  const { selections, snubs } = selectAllStars(performanceSnapshots);
+  const isHealthyById = new Map(performanceSnapshots.map((p) => [p.leaguePlayerId, p.isHealthy]));
+  const gameRosterSelections = selections.filter(
+    (s) => isHealthyById.get(s.leaguePlayerId) !== false,
+  );
+
+  // First-timer detection - real history, queried before this weekend's own
+  // rows exist yet, not invented.
+  const priorSelectionIds = new Set(
+    (
+      await prisma.allStarSelection.findMany({
+        where: {
+          leaguePlayerId: { in: selections.map((s) => s.leaguePlayerId) },
+          allStarWeekend: { leagueId },
+        },
+        select: { leaguePlayerId: true },
+      })
+    ).map((s) => s.leaguePlayerId),
+  );
+
+  const rng = createSeededRandom(`${leagueId}-${season}-allstarweekend`);
+
+  // --- All-Star Game ---
+  // Guarded rather than assumed: a real 30-team league with real box
+  // scores will always have well over 2 eligible selectees by the break,
+  // but this stays defensive (e.g. a sparse/custom-sized league or a test
+  // fixture with no simulated games yet) rather than crashing the whole
+  // weekend - draftTeams itself intentionally throws below 2.
+  const asgRoster = await getRosterPlayersById(gameRosterSelections.map((s) => s.leaguePlayerId));
+  const asgRosterById = new Map(asgRoster.map((p) => [p.leaguePlayerId, p]));
+  const asgSelectees = gameRosterSelections
+    .map((s) => ({ player: asgRosterById.get(s.leaguePlayerId), score: s.performanceScore }))
+    .filter((s): s is { player: RosterPlayerForSimulation; score: number } => !!s.player);
+  const asgDraft =
+    asgSelectees.length >= 2
+      ? draftTeams(
+          asgSelectees.map((s) => ({ leaguePlayerId: s.player.leaguePlayerId, score: s.score })),
+        )
+      : null;
+  const asgResult = asgDraft ? simulateAllStarGame(asgSelectees, rng) : null;
+
+  // --- Rising Stars ---
+  const risingStars = selectRisingStars(risingStarsCandidates, season);
+  const risingStarsRoster = await getRosterPlayersById(
+    risingStars.selections.map((s) => s.leaguePlayerId),
+  );
+  const risingStarsRosterById = new Map(risingStarsRoster.map((p) => [p.leaguePlayerId, p]));
+  const risingStarsSelectees = risingStars.selections
+    .map((s) => ({
+      player: risingStarsRosterById.get(s.leaguePlayerId),
+      score: s.performanceScore,
+    }))
+    .filter((s): s is { player: RosterPlayerForSimulation; score: number } => !!s.player);
+  const risingStarsDraft =
+    risingStarsSelectees.length >= 2
+      ? draftTeams(
+          risingStarsSelectees.map((s) => ({
+            leaguePlayerId: s.player.leaguePlayerId,
+            score: s.score,
+          })),
+        )
+      : null;
+  const risingStarsResult = risingStarsDraft
+    ? simulateAllStarGame(risingStarsSelectees, rng)
+    : null;
+
+  // --- Three-Point Contest ---
+  const threePointParticipants = selectThreePointParticipants(threePointCandidates);
+  const threePointResult = simulateThreePointContest(
+    threePointParticipants,
+    `${leagueId}-${season}-3pt`,
+  );
+  const threePointOutcomes = deriveEventOutcomes(
+    threePointResult.rounds,
+    threePointResult.championId,
+  );
+
+  // --- Slam Dunk Contest ---
+  const dunkParticipants = selectDunkContestParticipants(
+    dunkCandidates,
+    season,
+    `${leagueId}-${season}-dunk`,
+  );
+  const dunkResult = simulateDunkContest(dunkParticipants, `${leagueId}-${season}-dunk`);
+  const dunkOutcomes = deriveEventOutcomes(dunkResult.rounds, dunkResult.championId);
+
+  // --- Persist ---
+  const weekend = await prisma.allStarWeekend.create({
+    data: { leagueId, season, status: "PENDING", triggeredAtDayIndex },
+  });
+
+  await prisma.allStarSelection.createMany({
+    data: selections.map((s: AllStarSelectionResult) => ({
+      allStarWeekendId: weekend.id,
+      leaguePlayerId: s.leaguePlayerId,
+      conference: s.conference,
+      positionGroup: s.positionGroup,
+      role: s.role,
+      performanceScore: s.performanceScore,
+      pointsPerGame: s.pointsPerGame,
+      reboundsPerGame: s.reboundsPerGame,
+      assistsPerGame: s.assistsPerGame,
+      teamWinPct: s.teamWinPct,
+    })),
+  });
+
+  const risingStarsSideByPlayerId = new Map<string, string>();
+  if (risingStarsDraft) {
+    for (const id of risingStarsDraft.teamA)
+      risingStarsSideByPlayerId.set(id, risingStarsDraft.captainAId);
+    for (const id of risingStarsDraft.teamB)
+      risingStarsSideByPlayerId.set(id, risingStarsDraft.captainBId);
+  }
+  const risingStarsStatByPlayerId = new Map(
+    (risingStarsResult?.stats ?? []).map((s) => [s.leaguePlayerId, s]),
+  );
+
+  await prisma.allStarEventParticipant.createMany({
+    data: [
+      ...risingStars.selections.map((s) => {
+        const stat = risingStarsStatByPlayerId.get(s.leaguePlayerId);
+        const side = risingStarsSideByPlayerId.get(s.leaguePlayerId) ?? "";
+        const isMvp = s.leaguePlayerId === risingStarsResult?.mvpLeaguePlayerId;
+        return {
+          allStarWeekendId: weekend.id,
+          eventType: "RISING_STARS" as const,
+          leaguePlayerId: s.leaguePlayerId,
+          seed: 0,
+          result: isMvp ? `${side}_MVP` : stat ? side : "DID_NOT_PLAY",
+          score: stat?.points ?? 0,
+        };
+      }),
+      ...threePointParticipants.map((p, i) => {
+        const outcome = threePointOutcomes.find((o) => o.leaguePlayerId === p.leaguePlayerId);
+        return {
+          allStarWeekendId: weekend.id,
+          eventType: "THREE_POINT_CONTEST" as const,
+          leaguePlayerId: p.leaguePlayerId,
+          seed: i,
+          result: outcome?.result ?? "ELIMINATED_ROUND_1",
+          score: outcome?.score ?? 0,
+        };
+      }),
+      ...dunkParticipants.map((p, i) => {
+        const outcome = dunkOutcomes.find((o) => o.leaguePlayerId === p.leaguePlayerId);
+        return {
+          allStarWeekendId: weekend.id,
+          eventType: "SLAM_DUNK_CONTEST" as const,
+          leaguePlayerId: p.leaguePlayerId,
+          seed: i,
+          result: outcome?.result ?? "ELIMINATED_ROUND_1",
+          score: outcome?.score ?? 0,
+        };
+      }),
+    ],
+  });
+
+  const allStarGame =
+    asgDraft && asgResult
+      ? await prisma.allStarGame.create({
+          data: {
+            allStarWeekendId: weekend.id,
+            teamACaptainId: asgDraft.captainAId,
+            teamBCaptainId: asgDraft.captainBId,
+            teamAScore: asgResult.teamAScore,
+            teamBScore: asgResult.teamBScore,
+            mvpLeaguePlayerId: asgResult.mvpLeaguePlayerId,
+          },
+        })
+      : null;
+
+  if (allStarGame && asgResult) {
+    await prisma.allStarGameStat.createMany({
+      data: asgResult.stats.map((line) => ({
+        allStarGameId: allStarGame.id,
+        leaguePlayerId: line.leaguePlayerId,
+        side: line.leagueTeamId,
+        minutesPlayed: line.minutesPlayed,
+        points: line.points,
+        rebounds: line.rebounds,
+        assists: line.assists,
+        steals: line.steals,
+        blocks: line.blocks,
+        turnovers: line.turnovers,
+        fgMade: line.fgMade,
+        fgAttempted: line.fgAttempted,
+        fg3Made: line.fg3Made,
+        fg3Attempted: line.fg3Attempted,
+        ftMade: line.ftMade,
+        ftAttempted: line.ftAttempted,
+      })),
+    });
+  }
+
+  // --- News (all derived from the real data just computed above) ---
+  const newsRows: NewsRow[] = [];
+  const teamIdsFor = (leaguePlayerId: string) => {
+    const teamId = teamIdById.get(leaguePlayerId);
+    return teamId ? [teamId] : [];
+  };
+
+  const eastCaptainName = asgDraft ? (fullNameById.get(asgDraft.captainAId) ?? "A player") : null;
+  const westCaptainName = asgDraft ? (fullNameById.get(asgDraft.captainBId) ?? "A player") : null;
+  if (asgDraft && eastCaptainName && westCaptainName) {
+    newsRows.push({
+      type: "ALL_STAR_SELECTION",
+      description: `All-Star Weekend rosters are set, headlined by captains ${eastCaptainName} and ${westCaptainName}.`,
+      importance: "MAJOR",
+      teamIds: [...teamIdsFor(asgDraft.captainAId), ...teamIdsFor(asgDraft.captainBId)],
+    });
+  }
+
+  for (const s of selections) {
+    if (s.role === "INJURY_REPLACEMENT" || priorSelectionIds.has(s.leaguePlayerId)) continue;
+    const name = fullNameById.get(s.leaguePlayerId) ?? "A player";
+    const rating =
+      performanceSnapshots.find((p) => p.leaguePlayerId === s.leaguePlayerId)?.overallRating ?? 70;
+    newsRows.push({
+      type: "ALL_STAR_SELECTION",
+      description: `${name} earns their first career All-Star selection.`,
+      importance: importanceForRating(rating),
+      teamIds: teamIdsFor(s.leaguePlayerId),
+    });
+  }
+
+  for (const snub of snubs) {
+    const name = fullNameById.get(snub.leaguePlayerId) ?? "A player";
+    const rating =
+      performanceSnapshots.find((p) => p.leaguePlayerId === snub.leaguePlayerId)?.overallRating ??
+      70;
+    newsRows.push({
+      type: "ALL_STAR_SNUB",
+      description: `${name} headlines this year's All-Star snubs after a strong season.`,
+      importance: importanceForRating(rating),
+      teamIds: teamIdsFor(snub.leaguePlayerId),
+    });
+  }
+
+  if (threePointResult.championId) {
+    const threePointChampName = fullNameById.get(threePointResult.championId) ?? "A player";
+    newsRows.push({
+      type: "ALL_STAR_RESULT",
+      description: `${threePointChampName} wins the Three-Point Contest.`,
+      importance: "STANDARD",
+      teamIds: teamIdsFor(threePointResult.championId),
+    });
+  }
+
+  if (dunkResult.championId) {
+    const dunkChampName = fullNameById.get(dunkResult.championId) ?? "A player";
+    newsRows.push({
+      type: "ALL_STAR_RESULT",
+      description: `${dunkChampName} wins the Slam Dunk Contest.`,
+      importance: "STANDARD",
+      teamIds: teamIdsFor(dunkResult.championId),
+    });
+  }
+
+  if (risingStarsResult) {
+    const risingStarsMvpName = fullNameById.get(risingStarsResult.mvpLeaguePlayerId) ?? "A player";
+    newsRows.push({
+      type: "ALL_STAR_RESULT",
+      description: `${risingStarsMvpName} is named Rising Stars MVP.`,
+      importance: "STANDARD",
+      teamIds: teamIdsFor(risingStarsResult.mvpLeaguePlayerId),
+    });
+  }
+
+  if (asgResult && eastCaptainName && westCaptainName) {
+    const asgMvpName = fullNameById.get(asgResult.mvpLeaguePlayerId) ?? "A player";
+    newsRows.push({
+      type: "ALL_STAR_RESULT",
+      description: `All-Star Game final: ${eastCaptainName}'s team ${asgResult.teamAScore}, ${westCaptainName}'s team ${asgResult.teamBScore}. ${asgMvpName} named All-Star Game MVP.`,
+      importance: "MAJOR",
+      teamIds: teamIdsFor(asgResult.mvpLeaguePlayerId),
+    });
+  }
+
+  await prisma.leagueTransaction.createMany({
+    data: newsRows.map((row) => ({
+      leagueId,
+      season,
+      type: row.type,
+      description: row.description,
+      importance: row.importance,
+      teamIds: row.teamIds,
+    })),
+  });
+
+  return { allStarWeekendId: weekend.id };
+}
+
+/** The one action that unblocks simulateGamesAction again once the user has viewed (or skipped) the weekend. */
+export async function resolveAllStarWeekendAction(leagueId: string): Promise<void> {
+  const session = await auth();
+  if (!session?.user) redirect("/sign-in");
+
+  const league = await prisma.league.findUnique({ where: { id: leagueId } });
+  if (!league || league.ownerId !== session.user.id) {
+    throw new Error("League not found");
+  }
+
+  await prisma.allStarWeekend.updateMany({
+    where: { leagueId, season: league.currentSeason, status: "PENDING" },
+    data: { status: "RESOLVED" },
+  });
+
+  revalidatePath(`/leagues/${leagueId}`);
+  revalidatePath(`/leagues/${leagueId}/standings`);
+  revalidatePath(`/leagues/${leagueId}/all-star`);
+}

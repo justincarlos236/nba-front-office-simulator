@@ -40,7 +40,16 @@ function StatBox({ label, value }: { label: string; value: string }) {
 /** Given a `PlayerProfileData` (from either identity - league or reference), renders the tabbed profile body. */
 export function PlayerProfileContent({ data }: { data: PlayerProfileData }) {
   const [tab, setTab] = useState<Tab>("Overview");
-  const { identity, leagueContext, contract, seasonStats, valuation, awards, gameLog } = data;
+  const {
+    identity,
+    leagueContext,
+    contract,
+    seasonStats,
+    valuation,
+    awards,
+    allStarHonors,
+    gameLog,
+  } = data;
 
   return (
     <div>
@@ -293,11 +302,25 @@ export function PlayerProfileContent({ data }: { data: PlayerProfileData }) {
 
         {tab === "Awards" && (
           <div className="space-y-2">
-            {awards.length === 0 && <p className="text-sm text-muted">No awards yet.</p>}
+            {awards.length === 0 && allStarHonors.length === 0 && (
+              <p className="text-sm text-muted">No awards yet.</p>
+            )}
             {awards.map((a, i) => (
-              <div key={i} className="rounded-lg border border-border bg-surface p-3 text-sm">
+              <div
+                key={`award-${i}`}
+                className="rounded-lg border border-border bg-surface p-3 text-sm"
+              >
                 <span className="text-foreground">{AWARD_LABELS[a.category] ?? a.category}</span>
                 <span className="ml-2 text-muted">{a.season}</span>
+              </div>
+            ))}
+            {allStarHonors.map((h, i) => (
+              <div
+                key={`allstar-${i}`}
+                className="rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-3 text-sm"
+              >
+                <span className="text-foreground">{h.label}</span>
+                <span className="ml-2 text-muted">{h.season}</span>
               </div>
             ))}
           </div>

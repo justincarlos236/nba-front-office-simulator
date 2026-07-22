@@ -10,11 +10,20 @@ import {
 } from "@/lib/simulation/leagueEvents";
 import { describeSigning, describeTrade } from "@/lib/transactions/describeTransaction";
 import { highestImportance, importanceForRating } from "@/lib/transactions/newsImportance";
+import { buildAllStarPerformancePool } from "@/lib/actions/allStarWeekend";
+import { selectAllStars } from "@/lib/allstar/selection";
 import type { NewsImportance } from "@/generated/prisma/client";
 
 const INJURY_CHANCE_PER_TEAM_GAME = 0.02;
 const TRADE_CHANCE_PER_GAME = 0.006;
 const SIGNING_CHANCE_PER_GAME = 0.01;
+// All-Star Weekend "buzz" news (the weeks-out anticipation the user asked
+// for) - only fires once the user's own team is in a believable pre-break
+// window, ranked from the exact same selectAllStars pool the real weekend
+// will later use, never a separately invented signal.
+const ALL_STAR_BUZZ_CHANCE_PER_GAME = 0.015;
+const ALL_STAR_BUZZ_WINDOW_MIN_GAMES = 30;
+const ALL_STAR_BUZZ_WINDOW_MAX_GAMES = 40;
 
 export interface SimulatedGameTeams {
   homeLeagueTeamId: string;
@@ -81,7 +90,7 @@ export async function applyLeagueEvents(
   );
 
   const transactions: {
-    type: "INJURY" | "TRADE" | "SIGNING";
+    type: "INJURY" | "TRADE" | "SIGNING" | "ALL_STAR_SELECTION";
     description: string;
     importance: NewsImportance;
     teamIds: string[];
@@ -183,6 +192,18 @@ export async function applyLeagueEvents(
     await maybeExecuteCpuSigning(leagueId, season, userControlledTeamId, transactions);
   }
 
+  const userGamesPlayed = userControlledTeamId
+    ? (gamesPlayedByTeam.get(userControlledTeamId) ?? 0)
+    : 0;
+  if (
+    userControlledTeamId &&
+    userGamesPlayed >= ALL_STAR_BUZZ_WINDOW_MIN_GAMES &&
+    userGamesPlayed <= ALL_STAR_BUZZ_WINDOW_MAX_GAMES &&
+    shouldTriggerEvent(totalGames, ALL_STAR_BUZZ_CHANCE_PER_GAME)
+  ) {
+    await maybeEmitAllStarBuzz(leagueId, season, transactions);
+  }
+
   if (transactions.length > 0) {
     await prisma.leagueTransaction.createMany({
       data: transactions.map((t) => ({
@@ -202,7 +223,7 @@ async function maybeExecuteCpuTrade(
   season: number,
   userControlledTeamId: string | null,
   transactions: {
-    type: "INJURY" | "TRADE" | "SIGNING";
+    type: "INJURY" | "TRADE" | "SIGNING" | "ALL_STAR_SELECTION";
     description: string;
     importance: NewsImportance;
     teamIds: string[];
@@ -320,7 +341,7 @@ async function maybeExecuteCpuSigning(
   season: number,
   userControlledTeamId: string | null,
   transactions: {
-    type: "INJURY" | "TRADE" | "SIGNING";
+    type: "INJURY" | "TRADE" | "SIGNING" | "ALL_STAR_SELECTION";
     description: string;
     importance: NewsImportance;
     teamIds: string[];
@@ -387,5 +408,43 @@ async function maybeExecuteCpuSigning(
     ),
     importance: importanceForRating(freeAgent.overallRating),
     teamIds: [team.id],
+  });
+}
+
+/**
+ * Ranks the same real season-so-far pool selectAllStars will later use for
+ * the actual weekend, and names its current top starter as a "building a
+ * case" story - a real early read on who selection.ts would pick if the
+ * break were today, not an independently invented headline.
+ */
+async function maybeEmitAllStarBuzz(
+  leagueId: string,
+  season: number,
+  transactions: {
+    type: "INJURY" | "TRADE" | "SIGNING" | "ALL_STAR_SELECTION";
+    description: string;
+    importance: NewsImportance;
+    teamIds: string[];
+  }[],
+): Promise<void> {
+  const pool = await buildAllStarPerformancePool(leagueId, season);
+  if (pool.performanceSnapshots.length === 0) return;
+
+  const { selections } = selectAllStars(pool.performanceSnapshots);
+  const starters = selections.filter((s) => s.role === "STARTER");
+  if (starters.length === 0) return;
+
+  const top = starters.reduce((best, s) => (s.performanceScore > best.performanceScore ? s : best));
+  const name = pool.fullNameById.get(top.leaguePlayerId) ?? "A player";
+  const rating =
+    pool.performanceSnapshots.find((p) => p.leaguePlayerId === top.leaguePlayerId)?.overallRating ??
+    70;
+  const teamId = pool.teamIdById.get(top.leaguePlayerId);
+
+  transactions.push({
+    type: "ALL_STAR_SELECTION",
+    description: `${name} is building a strong All-Star case as the break approaches.`,
+    importance: importanceForRating(rating),
+    teamIds: teamId ? [teamId] : [],
   });
 }

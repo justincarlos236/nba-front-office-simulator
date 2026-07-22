@@ -80,6 +80,13 @@ export interface PlayerProfileData {
   } | null;
   awards: { season: number; category: string }[];
   /**
+   * All-Star Weekend career honors - real selections/contest results/MVPs
+   * from this league's own AllStarWeekend rows (see
+   * src/lib/actions/allStarWeekend.ts), empty for a bare reference profile
+   * the same way `awards` is.
+   */
+  allStarHonors: { season: number; label: string }[];
+  /**
    * Real, simulated per-game performances from this league's own box-score
    * engine (see src/lib/simulation/boxScore.ts) - only present for a league
    * identity, and only once this league has actually simulated games with
@@ -215,6 +222,7 @@ export async function loadReferencePlayerProfile(
     })),
     valuation,
     awards: [],
+    allStarHonors: [],
     gameLog: null,
   };
 }
@@ -241,7 +249,14 @@ export async function loadLeaguePlayerProfile(
   });
   const season = league?.currentSeason ?? PROFILE_SEASON;
 
-  const [recentGameStats, allGameStats, seasonAgg] = await Promise.all([
+  const [
+    recentGameStats,
+    allGameStats,
+    seasonAgg,
+    allStarSelections,
+    allStarEventResults,
+    allStarGameMvps,
+  ] = await Promise.all([
     prisma.playerGameStat.findMany({
       where: { leaguePlayerId },
       orderBy: { game: { gameNumber: "desc" } },
@@ -280,9 +295,49 @@ export async function loadLeaguePlayerProfile(
       },
       _count: { _all: true },
     }),
+    prisma.allStarSelection.findMany({
+      where: { leaguePlayerId },
+      select: { role: true, allStarWeekend: { select: { season: true } } },
+    }),
+    prisma.allStarEventParticipant.findMany({
+      where: {
+        leaguePlayerId,
+        OR: [{ result: "CHAMPION" }, { result: { contains: "MVP" } }],
+      },
+      select: { eventType: true, result: true, allStarWeekend: { select: { season: true } } },
+    }),
+    prisma.allStarGame.findMany({
+      where: { mvpLeaguePlayerId: leaguePlayerId },
+      select: { allStarWeekend: { select: { season: true } } },
+    }),
   ]);
 
   const gamesPlayed = seasonAgg._count._all;
+
+  const ALL_STAR_ROLE_LABEL: Record<string, string> = {
+    STARTER: "All-Star Starter",
+    RESERVE: "All-Star",
+    INJURY_REPLACEMENT: "All-Star (Injury Replacement)",
+  };
+  const allStarHonors = [
+    ...allStarSelections.map((s) => ({
+      season: s.allStarWeekend.season,
+      label: ALL_STAR_ROLE_LABEL[s.role] ?? "All-Star",
+    })),
+    ...allStarEventResults.map((r) => ({
+      season: r.allStarWeekend.season,
+      label:
+        r.eventType === "RISING_STARS"
+          ? "Rising Stars MVP"
+          : r.eventType === "THREE_POINT_CONTEST"
+            ? "Three-Point Contest Champion"
+            : "Slam Dunk Contest Champion",
+    })),
+    ...allStarGameMvps.map((g) => ({
+      season: g.allStarWeekend.season,
+      label: "All-Star Game MVP",
+    })),
+  ].sort((a, b) => b.season - a.season);
   const gameLog = {
     recentGames: recentGameStats.map((g) => ({
       gameId: g.gameId,
@@ -411,6 +466,7 @@ export async function loadLeaguePlayerProfile(
     })),
     valuation,
     awards: leaguePlayer.seasonAwards.map((a) => ({ season: a.season, category: a.category })),
+    allStarHonors,
     gameLog,
   };
 }

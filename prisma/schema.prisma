@@ -217,6 +217,7 @@ model League {
   staff              Staff[]
   staffAwards        StaffAward[]
   fanHappinessSnapshots FanHappinessSnapshot[]
+  allStarWeekends    AllStarWeekend[]
 
   @@index([ownerId])
   @@map("leagues")
@@ -241,6 +242,11 @@ enum TransactionType {
   // Real staff hiring/firing (Phase 15a) - see the Staff model below.
   STAFF_HIRE
   STAFF_FIRE
+  // Real All-Star Weekend coverage, generated once per season from the
+  // actual AllStarWeekend row - see the models below.
+  ALL_STAR_SELECTION
+  ALL_STAR_SNUB
+  ALL_STAR_RESULT
 }
 
 // Lets the UI prioritize significant events over routine ones. Existing
@@ -564,8 +570,11 @@ model LeaguePlayer {
   reSigningTeam   LeagueTeam?      @relation("ReSigningRights", fields: [reSigningTeamId], references: [id])
   contract        Contract?
   tradeAssets     TradeAsset[]
-  seasonAwards    SeasonAward[]
-  playerGameStats PlayerGameStat[]
+  seasonAwards            SeasonAward[]
+  playerGameStats         PlayerGameStat[]
+  allStarSelections       AllStarSelection[]
+  allStarEventParticipants AllStarEventParticipant[]
+  allStarGameStats        AllStarGameStat[]
 
   @@unique([leagueId, playerId])
   @@index([leagueId, leagueTeamId])
@@ -754,6 +763,138 @@ model StaffAward {
   @@unique([leagueId, season, category])
   @@index([leagueId, season])
   @@map("staff_awards")
+}
+
+enum AllStarWeekendStatus {
+  PENDING // generated, not yet resolved - blocks further regular-season sim
+  RESOLVED // user has viewed/skipped it - regular season can resume
+}
+
+enum AllStarRole {
+  STARTER
+  RESERVE
+  INJURY_REPLACEMENT
+}
+
+enum AllStarPositionGroup {
+  GUARD
+  FRONTCOURT
+}
+
+enum AllStarEventType {
+  RISING_STARS
+  THREE_POINT_CONTEST
+  SLAM_DUNK_CONTEST
+}
+
+// One row per league+season - its existence/status is the mid-season
+// checkpoint marker src/lib/actions/simulation.ts checks before allowing
+// further regular-season simulation, not a separate League field.
+model AllStarWeekend {
+  id                  String               @id @default(cuid())
+  leagueId            String
+  season              Int
+  status              AllStarWeekendStatus @default(PENDING)
+  triggeredAtDayIndex Int?
+  createdAt           DateTime             @default(now())
+
+  league       League                    @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  selections   AllStarSelection[]
+  participants AllStarEventParticipant[]
+  game         AllStarGame?
+
+  @@unique([leagueId, season])
+  @@map("all_star_weekends")
+}
+
+// Separate from SeasonAward/StaffAward - both assume exactly one winner
+// per category per season; an All-Star roster is 24+ players.
+model AllStarSelection {
+  id               String               @id @default(cuid())
+  allStarWeekendId String
+  leaguePlayerId   String
+  conference       Conference
+  positionGroup    AllStarPositionGroup
+  role             AllStarRole
+  // Snapshot at selection time - "why", same intent as SeasonAward.value.
+  performanceScore Float
+  pointsPerGame    Float
+  reboundsPerGame  Float
+  assistsPerGame   Float
+  teamWinPct       Float
+
+  allStarWeekend AllStarWeekend @relation(fields: [allStarWeekendId], references: [id], onDelete: Cascade)
+  leaguePlayer   LeaguePlayer   @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
+
+  @@unique([allStarWeekendId, leaguePlayerId])
+  @@map("all_star_selections")
+}
+
+// One shared model for the 3 contests (structurally identical: a
+// participant, a result, a score) rather than 3 near-duplicate tables -
+// round-by-round detail is a short result string ("CHAMPION"/
+// "ELIMINATED_ROUND_1"), not a full play-by-play log.
+model AllStarEventParticipant {
+  id               String           @id @default(cuid())
+  allStarWeekendId String
+  eventType        AllStarEventType
+  leaguePlayerId   String
+  seed             Int
+  result           String
+  score            Float
+
+  allStarWeekend AllStarWeekend @relation(fields: [allStarWeekendId], references: [id], onDelete: Cascade)
+  leaguePlayer   LeaguePlayer   @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
+
+  @@unique([allStarWeekendId, eventType, leaguePlayerId])
+  @@map("all_star_event_participants")
+}
+
+// The exhibition game itself - deliberately not a row in the existing
+// Game model, since Game.home/awayLeagueTeamId are required FKs to real
+// franchise teams and All-Star "sides" are ad-hoc captain-drafted squads,
+// not LeagueTeams. Reuses the simulation engine's pure functions, not its
+// Game/LeagueTeam-shaped persistence.
+model AllStarGame {
+  id                String @id @default(cuid())
+  allStarWeekendId  String @unique
+  teamACaptainId    String
+  teamBCaptainId    String
+  teamAScore        Int
+  teamBScore        Int
+  mvpLeaguePlayerId String
+
+  allStarWeekend AllStarWeekend    @relation(fields: [allStarWeekendId], references: [id], onDelete: Cascade)
+  stats          AllStarGameStat[]
+
+  @@map("all_star_games")
+}
+
+// Mirrors PlayerBoxScoreLine's fields, minus the real Game/LeagueTeam FKs
+// PlayerGameStat requires - `side` replaces leagueTeamId.
+model AllStarGameStat {
+  id             String @id @default(cuid())
+  allStarGameId  String
+  leaguePlayerId String
+  side           String // teamACaptainId or teamBCaptainId
+  minutesPlayed  Int
+  points         Int
+  rebounds       Int
+  assists        Int
+  steals         Int
+  blocks         Int
+  turnovers      Int
+  fgMade         Int
+  fgAttempted    Int
+  fg3Made        Int
+  fg3Attempted   Int
+  ftMade         Int
+  ftAttempted    Int
+
+  allStarGame  AllStarGame  @relation(fields: [allStarGameId], references: [id], onDelete: Cascade)
+  leaguePlayer LeaguePlayer @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
+
+  @@map("all_star_game_stats")
 }
 
 model DraftPick {

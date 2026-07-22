@@ -32,6 +32,13 @@ const BASE_SENTIMENT: Record<string, number> = {
   AWARD: 0.8,
   STAFF_HIRE: 0.2,
   STAFF_FIRE: -0.3,
+  // All-Star Weekend (fans are excited by their own team's selections and
+  // strong showings, mildly deflated by a snub) - reads the exact same
+  // LeagueTransaction rows generateAllStarWeekend/leagueEvents.ts already
+  // write, not a separate reaction pipeline.
+  ALL_STAR_SELECTION: 0.7,
+  ALL_STAR_SNUB: -0.3,
+  ALL_STAR_RESULT: 0.5,
 };
 
 const INJURY_RECOVERY_SENTIMENT = 0.4;

@@ -41,13 +41,13 @@ function StandingsTable({
       <table className="w-full text-left text-sm">
         <thead className="bg-surface-2 text-xs tracking-wide text-muted uppercase">
           <tr>
-            <th className="px-4 py-3" colSpan={2}>
+            <th className="px-2 py-3" colSpan={2}>
               {title}
             </th>
-            <th className="px-4 py-3 text-right">W</th>
-            <th className="px-4 py-3 text-right">L</th>
-            <th className="px-4 py-3 text-right">PCT</th>
-            <th className="px-4 py-3 text-right">GB</th>
+            <th className="px-2 py-3 text-right">W</th>
+            <th className="px-2 py-3 text-right">L</th>
+            <th className="px-2 py-3 text-right">PCT</th>
+            <th className="px-2 py-3 text-right">GB</th>
           </tr>
         </thead>
         <tbody>
@@ -60,12 +60,12 @@ function StandingsTable({
                 key={team.id}
                 className={`border-t border-border ${team.id === userTeamId ? "bg-accent/10" : ""}`}
               >
-                <td className="px-4 py-3 text-muted">{i + 1}</td>
-                <td className="px-4 py-3 font-medium text-foreground">{team.name}</td>
-                <td className="px-4 py-3 text-right text-foreground">{team.wins}</td>
-                <td className="px-4 py-3 text-right text-muted">{team.losses}</td>
-                <td className="px-4 py-3 text-right font-mono text-muted">{pct.toFixed(3)}</td>
-                <td className="px-4 py-3 text-right font-mono text-muted">
+                <td className="px-2 py-3 text-muted">{i + 1}</td>
+                <td className="px-2 py-3 font-medium text-foreground">{team.name}</td>
+                <td className="px-2 py-3 text-right text-foreground">{team.wins}</td>
+                <td className="px-2 py-3 text-right text-muted">{team.losses}</td>
+                <td className="px-2 py-3 text-right font-mono text-muted">{pct.toFixed(3)}</td>
+                <td className="px-2 py-3 text-right font-mono text-muted">
                   {gb === 0 ? "-" : gb.toFixed(1)}
                 </td>
               </tr>
@@ -90,7 +90,7 @@ export default async function StandingsPage({ params }: PageProps) {
 
   const myLeagueTeamId = league.userControlledTeamId;
 
-  const [gamesRemaining, recentResults, myGames] = await Promise.all([
+  const [gamesRemaining, recentResults, myGames, pendingWeekend] = await Promise.all([
     prisma.game.count({
       where: {
         leagueId: league.id,
@@ -120,6 +120,9 @@ export default async function StandingsPage({ params }: PageProps) {
           orderBy: { gameNumber: "asc" },
         })
       : Promise.resolve([]),
+    prisma.allStarWeekend.findUnique({
+      where: { leagueId_season: { leagueId: league.id, season: league.currentSeason } },
+    }),
   ]);
 
   const calendarGames: CalendarGame[] = myGames
@@ -157,7 +160,7 @@ export default async function StandingsPage({ params }: PageProps) {
     }));
 
   return (
-    <main className="mx-auto max-w-4xl flex-1 px-6 py-16">
+    <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           {league.currentSeason}-{(league.currentSeason + 1).toString().slice(-2)} Standings
@@ -176,19 +179,22 @@ export default async function StandingsPage({ params }: PageProps) {
       </p>
 
       <div className="mt-8">
-        <SimulateControls leagueId={league.id} gamesRemaining={gamesRemaining} />
+        <SimulateControls
+          leagueId={league.id}
+          gamesRemaining={gamesRemaining}
+          allStarWeekendPending={pendingWeekend?.status === "PENDING"}
+        />
       </div>
 
-      {myLeagueTeamId && (
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold text-foreground">Your Schedule</h2>
-          <div className="mt-3">
-            <SeasonCalendar games={calendarGames} />
+      <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-3">
+        {myLeagueTeamId && (
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Your Schedule</h2>
+            <div className="mt-3">
+              <SeasonCalendar games={calendarGames} />
+            </div>
           </div>
-        </div>
-      )}
-
-      <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-2">
+        )}
         <StandingsTable
           title="Eastern Conference"
           teams={eastTeams}

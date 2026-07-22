@@ -38,54 +38,83 @@ export interface RosterPlayerForSimulation {
  * genuinely weaker and that player never appears in a box score until
  * their `injuryStatus` clears.
  */
+const ROSTER_PLAYER_SELECT = {
+  id: true,
+  leagueTeamId: true,
+  overallRating: true,
+  player: {
+    select: {
+      fullName: true,
+      position: true,
+      seasonStats: { where: { season: PROFILE_SEASON }, take: 1 },
+    },
+  },
+} as const;
+
+interface RosterPlayerRow {
+  id: string;
+  leagueTeamId: string | null;
+  overallRating: number;
+  player: {
+    fullName: string;
+    position: Position;
+    seasonStats: {
+      minutesPerGame: number;
+      pointsPerGame: number;
+      reboundsPerGame: number;
+      assistsPerGame: number;
+      stealsPerGame: number;
+      blocksPerGame: number;
+      turnoversPerGame: number;
+      fgPct: number | null;
+      fg3Pct: number | null;
+      ftPct: number | null;
+      trueShootingPct: number | null;
+    }[];
+  };
+}
+
+/** Shared by team-based and by-id roster lookups - one place that turns a raw LeaguePlayer row into the shape simulation/box-score code needs. */
+function toRosterPlayer(p: RosterPlayerRow): RosterPlayerForSimulation {
+  const stat = p.player.seasonStats[0];
+  return {
+    leaguePlayerId: p.id,
+    fullName: p.player.fullName,
+    overallRating: p.overallRating,
+    position: p.player.position,
+    realStat: stat
+      ? {
+          minutesPerGame: stat.minutesPerGame,
+          pointsPerGame: stat.pointsPerGame,
+          reboundsPerGame: stat.reboundsPerGame,
+          assistsPerGame: stat.assistsPerGame,
+          stealsPerGame: stat.stealsPerGame,
+          blocksPerGame: stat.blocksPerGame,
+          turnoversPerGame: stat.turnoversPerGame,
+          fgPct: stat.fgPct,
+          fg3Pct: stat.fg3Pct,
+          ftPct: stat.ftPct,
+          trueShootingPct: stat.trueShootingPct,
+        }
+      : null,
+  };
+}
+
 export async function computeLeagueTeamStrengths(leagueTeamIds: string[]): Promise<{
   strengthByTeam: Map<string, number>;
   rostersByTeam: Map<string, RosterPlayerForSimulation[]>;
 }> {
   const roster = await prisma.leaguePlayer.findMany({
     where: { leagueTeamId: { in: leagueTeamIds }, injuryStatus: "HEALTHY" },
-    select: {
-      id: true,
-      leagueTeamId: true,
-      overallRating: true,
-      player: {
-        select: {
-          fullName: true,
-          position: true,
-          seasonStats: { where: { season: PROFILE_SEASON }, take: 1 },
-        },
-      },
-    },
+    select: ROSTER_PLAYER_SELECT,
   });
 
   const rostersByTeam = new Map<string, RosterPlayerForSimulation[]>();
   const ratingsByTeam = new Map<string, number[]>();
   for (const p of roster) {
     if (!p.leagueTeamId) continue;
-    const stat = p.player.seasonStats[0];
-    const entry: RosterPlayerForSimulation = {
-      leaguePlayerId: p.id,
-      fullName: p.player.fullName,
-      overallRating: p.overallRating,
-      position: p.player.position,
-      realStat: stat
-        ? {
-            minutesPerGame: stat.minutesPerGame,
-            pointsPerGame: stat.pointsPerGame,
-            reboundsPerGame: stat.reboundsPerGame,
-            assistsPerGame: stat.assistsPerGame,
-            stealsPerGame: stat.stealsPerGame,
-            blocksPerGame: stat.blocksPerGame,
-            turnoversPerGame: stat.turnoversPerGame,
-            fgPct: stat.fgPct,
-            fg3Pct: stat.fg3Pct,
-            ftPct: stat.ftPct,
-            trueShootingPct: stat.trueShootingPct,
-          }
-        : null,
-    };
     const list = rostersByTeam.get(p.leagueTeamId) ?? [];
-    list.push(entry);
+    list.push(toRosterPlayer(p));
     rostersByTeam.set(p.leagueTeamId, list);
 
     const ratings = ratingsByTeam.get(p.leagueTeamId) ?? [];
@@ -99,4 +128,23 @@ export async function computeLeagueTeamStrengths(leagueTeamIds: string[]): Promi
   }
 
   return { strengthByTeam, rostersByTeam };
+}
+
+/**
+ * The All-Star Weekend variant of the lookup above - fetches a specific
+ * hand-picked list of players (an All-Star roster drafted across many
+ * different real teams) rather than an entire team's roster. Reuses the
+ * exact same row-to-RosterPlayerForSimulation conversion, so All-Star
+ * game generation and regular-season simulation stay consistent about
+ * what a "roster player" looks like.
+ */
+export async function getRosterPlayersById(
+  leaguePlayerIds: string[],
+): Promise<RosterPlayerForSimulation[]> {
+  if (leaguePlayerIds.length === 0) return [];
+  const roster = await prisma.leaguePlayer.findMany({
+    where: { id: { in: leaguePlayerIds } },
+    select: ROSTER_PLAYER_SELECT,
+  });
+  return roster.map(toRosterPlayer);
 }

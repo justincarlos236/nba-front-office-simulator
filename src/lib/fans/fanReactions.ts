@@ -27,6 +27,9 @@ const REACTION_PHRASE: Record<string, { tone: ReactionTone; phrase: string } | u
   AWARD: { tone: "POSITIVE", phrase: "Fans are proud" },
   STAFF_HIRE: { tone: "POSITIVE", phrase: "Fans are optimistic" },
   STAFF_FIRE: { tone: "NEGATIVE", phrase: "Fans are uneasy" },
+  ALL_STAR_SELECTION: { tone: "POSITIVE", phrase: "Fans are thrilled" },
+  ALL_STAR_SNUB: { tone: "NEGATIVE", phrase: "Fans are frustrated" },
+  ALL_STAR_RESULT: { tone: "POSITIVE", phrase: "Fans are celebrating" },
 };
 
 // A narrow, deliberate exception to "don't parse free text" - the injury

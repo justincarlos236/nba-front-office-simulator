@@ -15,6 +15,7 @@ import {
   type DescribedEvent,
 } from "@/lib/transactions/describeGameEvents";
 import { computeCoachBoxScoreModifier, computeCoachWinBonus } from "@/lib/staff/coachModifiers";
+import { generateAllStarWeekend } from "@/lib/actions/allStarWeekend";
 import type { NewsImportance } from "@/generated/prisma/client";
 
 interface RankedEvent {
@@ -56,6 +57,11 @@ const TARGET_USER_GAMES: Record<SimulateTarget, number> = {
 // same simulate/persist/injury-event logic per chunk as before.
 const CHUNK_SIZE = 50;
 
+// Half of an 82-game season - the real NBA's own midseason checkpoint,
+// measured off the user's own team's completed games (not a calendar date),
+// consistent with how this simulator already tracks season progress.
+const ALL_STAR_BREAK_GAMES_PLAYED = 41;
+
 export async function simulateGamesAction(leagueId: string, target: SimulateTarget) {
   const session = await auth();
   if (!session?.user) redirect("/sign-in");
@@ -65,9 +71,23 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
     throw new Error("League not found");
   }
 
+  // A PENDING weekend already exists from a prior call - regular-season
+  // simulation stays genuinely blocked (not just interrupted once) until
+  // resolveAllStarWeekendAction flips it to RESOLVED.
+  const existingWeekend = await prisma.allStarWeekend.findUnique({
+    where: { leagueId_season: { leagueId, season: league.currentSeason } },
+  });
+  if (existingWeekend?.status === "PENDING") {
+    const remaining = await prisma.game.count({
+      where: { leagueId, season: league.currentSeason, type: "REGULAR_SEASON", playedAt: null },
+    });
+    return { simulated: 0, remaining, userGamesCompleted: 0, allStarWeekendTriggered: true };
+  }
+
   const targetUserGames = TARGET_USER_GAMES[target];
   let totalSimulated = 0;
   let userGamesCompleted = 0;
+  let allStarWeekendTriggered = false;
 
   while (userGamesCompleted < targetUserGames) {
     // type filter matters once play-in/playoff games exist for this season -
@@ -345,6 +365,30 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
       // selection, but stop after one chunk rather than looping forever.
       break;
     }
+
+    // Mid-season checkpoint: once the user's own team has reached the
+    // All-Star break, generate the whole weekend right now and stop -
+    // even mid-target, per the user's explicit requirement that
+    // regular-season simulation must not continue past the break until
+    // the weekend is resolved. Checked fresh from the DB (not the
+    // increments above) since it must reflect the team's true cumulative
+    // total, not just this batch's delta.
+    const userTeam = await prisma.leagueTeam.findUnique({
+      where: { id: league.userControlledTeamId },
+      select: { wins: true, losses: true },
+    });
+    const userGamesPlayed = (userTeam?.wins ?? 0) + (userTeam?.losses ?? 0);
+    if (userGamesPlayed >= ALL_STAR_BREAK_GAMES_PLAYED) {
+      const alreadyExists = await prisma.allStarWeekend.findUnique({
+        where: { leagueId_season: { leagueId, season: league.currentSeason } },
+      });
+      if (!alreadyExists) {
+        const lastDayIndex = unplayedGames[unplayedGames.length - 1]?.dayIndex ?? null;
+        await generateAllStarWeekend(leagueId, league.currentSeason, lastDayIndex);
+        allStarWeekendTriggered = true;
+      }
+      break;
+    }
   }
 
   const remaining = await prisma.game.count({
@@ -355,6 +399,7 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
   revalidatePath(`/leagues/${leagueId}/standings`);
   revalidatePath(`/leagues/${leagueId}/transactions`);
   revalidatePath(`/leagues/${leagueId}/free-agents`);
+  if (allStarWeekendTriggered) revalidatePath(`/leagues/${leagueId}/all-star`);
 
-  return { simulated: totalSimulated, remaining, userGamesCompleted };
+  return { simulated: totalSimulated, remaining, userGamesCompleted, allStarWeekendTriggered };
 }

@@ -84,7 +84,7 @@ unbounded extra work over it).
 | 37  | Transaction History                   | ✅     | P1       | 5       | —            | `LeagueTransaction` log created on every trade, signing, and retirement; viewable at `/leagues/[id]/transactions`                                                               |
 | 38  | Player Career History                 | 🔒     | P2       | —       | multi-season | Only one season (2023-24) of stats exists per player                                                                                                                            |
 | 39  | NBA Awards                            | 🟡     | P2       | 3       | 15,19        | MVP/ROY/Most Improved computed and shown; DPOY/Sixth Man/All-Defense deliberately skipped (no defensive stats or depth chart to base them on honestly)                          |
-| 40  | All-Star Weekend                      | ⬜     | P3       | —       | 15           | —                                                                                                                                                                               |
+| 40  | All-Star Weekend                      | ✅     | P3       | 16      | 15           | Real selections/Rising Stars/3PT/Dunk/ASG, genuine mid-season sim block - see `docs/ARCHITECTURE.md`'s All-Star Weekend section                                                 |
 | 41  | Hall of Fame                          | ⬜     | P3       | —       | 42           | —                                                                                                                                                                               |
 | 42  | Player Retirement                     | ✅     | P3       | 3       | 19           | `retirement.ts` - age/rating-based probability, forced at 41; shown on the offseason recap page                                                                                 |
 | 43  | League History                        | ✅     | P2       | 5       | 15,18,39     | `/leagues/[id]/history` - season-by-season champions, awards, retirees                                                                                                          |
@@ -1645,3 +1645,33 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
     rules are uniform league-wide regardless of team revenue. New
     `/leagues/[id]/fans` Fan Hub page. All 457 unit tests (27 new), `tsc`,
     `eslint` passing.
+- **2026-07-22 (Phase 16, item #40 All-Star Weekend)**: A fresh, extensive
+  user request (full text preserved in `docs/FEATURE_REQUESTS.md`),
+  explicitly invoking the architecture-overlap-review protocol. Agreed
+  overlap findings: a new parallel `AllStarSelection`/
+  `AllStarEventParticipant`/`AllStarGame`/`AllStarGameStat` model set
+  rather than retrofitting `SeasonAward` (one-winner-per-category) or
+  `Game`/`PlayerGameStat` (require real `LeagueTeam` FKs); a genuine new
+  mid-season checkpoint inside `simulateGamesAction`'s chunk loop (nothing
+  like it existed); no persisted "dunk ability" attribute (none exists,
+  none invented). Selection (`src/lib/allstar/selection.ts`) is driven by
+  real simulated season performance via the same `computePerformanceScore`
+  the valuation model uses, with `overallRating` blended in only as a
+  small reputation nudge - so an elite player's poor season can miss out
+  while a breakout player's great one gets in. Rising Stars, the
+  Three-Point Contest, and the Slam Dunk Contest each got their own pure
+  module under `src/lib/allstar/`; the Dunk Contest explicitly uses a
+  synthetic, non-persisted "dunk appeal" composite rather than fabricating
+  a real attribute. The All-Star Game and Rising Stars game both reuse the
+  existing `simulateGame`/`generateBoxScore` engine via a synthetic
+  "exhibition" `CoachModifier` - the same hook Head Coach effects already
+  added - not a second basketball simulation. Per the user's explicit
+  instruction, `simulateGamesAction` now genuinely stops (even mid-batch)
+  once the user's team reaches 41 games played, generates the whole
+  weekend synchronously, and stays blocked until
+  `resolveAllStarWeekendAction` is called from the new
+  `/leagues/[id]/all-star` page. News (roster reveals/first-timers/snubs/
+  contest results/ASG MVP), fan engagement sentiment/reactions, player
+  profile career honors, and League History all consume the same real
+  generated data rather than detecting events independently. All 491 unit
+  tests (32 new), `tsc`, `eslint` passing.

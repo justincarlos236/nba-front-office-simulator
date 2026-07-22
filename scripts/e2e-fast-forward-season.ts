@@ -88,6 +88,22 @@ async function main() {
         awayLeagueTeamId: g.awayLeagueTeamId,
       })),
     );
+
+    // This script never calls simulateGamesAction, so it never creates an
+    // AllStarWeekend row itself (see the "no box-score generation" note
+    // above - generateAllStarWeekend's selections depend on real
+    // PlayerGameStat rows this script deliberately never writes). A
+    // defensive resolve-only check regardless, so a fast-forward never
+    // stalls if a PENDING weekend somehow already exists for this season.
+    const pending = await prisma.allStarWeekend.findUnique({
+      where: { leagueId_season: { leagueId, season: league.currentSeason } },
+    });
+    if (pending?.status === "PENDING") {
+      await prisma.allStarWeekend.update({
+        where: { id: pending.id },
+        data: { status: "RESOLVED" },
+      });
+    }
   }
 }
 
