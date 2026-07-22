@@ -1480,3 +1480,41 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   games these awards require, exactly the guard working as intended).
   Next up: **14d** (news system, migrated onto real events incrementally)
   and **14e** (News page filtering/search redesign).
+- **2026-07-22 (Phase 14d)**: News system grown onto real simulated
+  events, extending `LeagueTransaction` per explicit direction rather
+  than replacing it - every category still corresponds to something that
+  actually happened, never invented; coaching/extensions/waivers/buyouts
+  stay entirely out of scope since those mechanics don't exist yet. Added
+  `NewsImportance` (MINOR/STANDARD/MAJOR/BREAKING), reusing
+  `getPlayerValueTier`'s existing rating boundaries
+  (`src/lib/transactions/newsImportance.ts`) rather than a second
+  threshold system, and retrofitted it onto every existing category
+  (trades by the highest-tier player involved, signings/retirements by
+  rating, injuries by duration - the only real severity signal that roll
+  produces) - not just the new ones. Three new real categories
+  (`src/lib/transactions/describeGameEvents.ts`, pure and unit-tested):
+  `GAME_MILESTONE` reuses Phase 14b's own triple-double/scoring-milestone
+  detectors directly; `WIN_STREAK` reads a new `LeagueTeam.currentStreak`
+  counter and fires only on the exact game a threshold (5, 10, every 5
+  beyond) is first crossed; `GAME_RESULT` covers upsets/blowouts,
+  calibrated against `simulateGame.ts`'s own real 3-22 margin range. Found
+  and fixed a real problem only visible by actually running it: the first
+  version generated a story for every game clearing a threshold, which
+  flooded the feed once tested against a real multi-batch season (a large
+  share of games naturally clear a "notable" bar at real-data scale) -
+  fixed by ranking each batch's candidates by how extreme they were and
+  keeping only the most notable few, scaling with batch size, the same
+  principle real sports coverage follows. News page gained badges for the
+  3 new categories plus a colored left border for MAJOR/BREAKING stories.
+  Also found and fixed a real, unrelated e2e fragility along the way
+  (`free-agency.spec.ts`'s player-name extraction colliding with a
+  `PlayerChip` avatar's initials fallback). All 397 unit tests (21 new:
+  5 for `newsImportance`, 16 for `describeGameEvents`), `tsc`, `eslint`, a
+  clean production build, and all 10 e2e tests passing; visually verified
+  across two passes - the first surfaced the flooding problem directly
+  (an 11,595px-tall feed from one multi-batch season), the second (after
+  the capping fix) showed a proportionate, varied, real feed: injuries,
+  retirements, milestone games with badges, win streaks, and game results,
+  each with correct importance-based styling. Last step of Phase 14:
+  **14e** (News page filtering/search redesign - category/team/search UI
+  on top of the real feed this phase built).

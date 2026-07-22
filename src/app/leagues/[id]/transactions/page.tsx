@@ -15,6 +15,9 @@ const TYPE_LABEL: Record<string, string> = {
   RETIREMENT: "Retirement",
   INJURY: "Injury",
   OWNERSHIP_MESSAGE: "Ownership",
+  GAME_MILESTONE: "Milestone",
+  WIN_STREAK: "Streak",
+  GAME_RESULT: "Game",
 };
 
 const TYPE_BADGE_CLASS: Record<string, string> = {
@@ -23,6 +26,17 @@ const TYPE_BADGE_CLASS: Record<string, string> = {
   RETIREMENT: "bg-muted/20 text-muted",
   INJURY: "bg-red-500/15 text-red-400",
   OWNERSHIP_MESSAGE: "bg-purple-500/15 text-purple-400",
+  GAME_MILESTONE: "bg-sky-500/15 text-sky-400",
+  WIN_STREAK: "bg-orange-500/15 text-orange-400",
+  GAME_RESULT: "bg-yellow-500/15 text-yellow-400",
+};
+
+// Only BREAKING/MAJOR get a visual callout - MINOR/STANDARD read as the
+// plain, routine feed this always was, so the important stuff actually
+// stands out instead of everything competing for attention.
+const IMPORTANCE_BORDER_CLASS: Record<string, string> = {
+  BREAKING: "border-l-4 border-l-red-500",
+  MAJOR: "border-l-4 border-l-orange-400",
 };
 
 export default async function TransactionsPage({ params }: PageProps) {
@@ -74,9 +88,16 @@ export default async function TransactionsPage({ params }: PageProps) {
           {transactions.map((txn) => (
             <div
               key={txn.id}
-              className="flex items-start justify-between gap-4 rounded-lg border border-border bg-surface p-4"
+              className={`flex items-start justify-between gap-4 rounded-lg border border-border bg-surface p-4 ${IMPORTANCE_BORDER_CLASS[txn.importance] ?? ""}`}
             >
-              <p className="text-sm text-foreground">{txn.description}</p>
+              <p className="text-sm text-foreground">
+                {txn.importance === "BREAKING" && (
+                  <span className="mr-2 rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-bold tracking-wide text-red-400 uppercase">
+                    Breaking
+                  </span>
+                )}
+                {txn.description}
+              </p>
               <div className="flex shrink-0 flex-col items-end gap-1">
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-semibold tracking-wide uppercase ${TYPE_BADGE_CLASS[txn.type] ?? "bg-muted/20 text-muted"}`}

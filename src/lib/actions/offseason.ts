@@ -20,6 +20,8 @@ import {
 import { createSeededRandom } from "@/lib/contracts/seededRandom";
 import { generateRoundRobinSchedule } from "@/lib/simulation/generateSchedule";
 import { describeRetirement } from "@/lib/transactions/describeTransaction";
+import { importanceForRating } from "@/lib/transactions/newsImportance";
+import type { NewsImportance } from "@/generated/prisma/client";
 import { computeCapSheet } from "@/lib/cap/capSheet";
 import { computeTeamStrength } from "@/lib/simulation/teamStrength";
 import { computePayrollTier } from "@/lib/gm/payrollTier";
@@ -162,7 +164,7 @@ export async function advanceSeasonAction(leagueId: string) {
     retiredSeason: number | null;
   }[] = [];
   const contractIdsToDelete: string[] = [];
-  const retirementDescriptions: string[] = [];
+  const retirementEvents: { description: string; importance: NewsImportance }[] = [];
 
   const rng = createSeededRandom(`${leagueId}-${season}-offseason`);
 
@@ -243,7 +245,10 @@ export async function advanceSeasonAction(leagueId: string) {
             return team ? `${team.city} ${team.name}` : null;
           })()
         : null;
-      retirementDescriptions.push(describeRetirement(lp.player.fullName, teamLabel));
+      retirementEvents.push({
+        description: describeRetirement(lp.player.fullName, teamLabel),
+        importance: importanceForRating(oldRating),
+      });
     }
 
     playerUpdates.push({
@@ -288,7 +293,10 @@ export async function advanceSeasonAction(leagueId: string) {
     contractIdsToDelete.length > 0
       ? prisma.contract.deleteMany({ where: { id: { in: contractIdsToDelete } } })
       : Promise.resolve(),
-    prisma.leagueTeam.updateMany({ where: { leagueId }, data: { wins: 0, losses: 0 } }),
+    prisma.leagueTeam.updateMany({
+      where: { leagueId },
+      data: { wins: 0, losses: 0, currentStreak: 0 },
+    }),
   ]);
 
   const awardRows = (
@@ -320,13 +328,14 @@ export async function advanceSeasonAction(leagueId: string) {
     await prisma.seasonAward.createMany({ data: awardRows });
   }
 
-  if (retirementDescriptions.length > 0) {
+  if (retirementEvents.length > 0) {
     await prisma.leagueTransaction.createMany({
-      data: retirementDescriptions.map((description) => ({
+      data: retirementEvents.map((event) => ({
         leagueId,
         season,
         type: "RETIREMENT" as const,
-        description,
+        description: event.description,
+        importance: event.importance,
       })),
     });
   }
@@ -488,6 +497,9 @@ export async function advanceSeasonAction(leagueId: string) {
         season: newSeason,
         type: "OWNERSHIP_MESSAGE" as const,
         description,
+        // No player rating attached to a season-recap message - STANDARD
+        // is an honest flat default here, not a placeholder to revisit.
+        importance: "STANDARD" as const,
       })),
     });
   }

@@ -6,6 +6,7 @@ import { computeCapSheet } from "@/lib/cap/capSheet";
 import { prisma } from "@/lib/prisma";
 import { validateTrade, type TradeAssetInput } from "@/lib/trade/validateTrade";
 import { describeTrade } from "@/lib/transactions/describeTransaction";
+import { highestImportance, importanceForRating } from "@/lib/transactions/newsImportance";
 import { computeCompetitivenessPercentiles } from "@/lib/actions/competitiveness";
 import { computeTeamIdentity } from "@/lib/gm/teamIdentity";
 import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
@@ -350,6 +351,11 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
               ...theirPicks.map(pickLabel),
             ],
           },
+        ),
+        // As big as the biggest piece changing hands - a superstar trade
+        // is real news regardless of what else is attached to it.
+        importance: highestImportance(
+          [...myPlayers, ...theirPlayers].map((lp) => importanceForRating(lp.overallRating)),
         ),
       },
     });

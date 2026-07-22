@@ -9,6 +9,8 @@ import {
   type CpuTeam,
 } from "@/lib/simulation/leagueEvents";
 import { describeSigning, describeTrade } from "@/lib/transactions/describeTransaction";
+import { highestImportance, importanceForRating } from "@/lib/transactions/newsImportance";
+import type { NewsImportance } from "@/generated/prisma/client";
 
 const INJURY_CHANCE_PER_TEAM_GAME = 0.02;
 const TRADE_CHANCE_PER_GAME = 0.006;
@@ -68,7 +70,11 @@ export async function applyLeagueEvents(
   // game/team updates before calling this function.
   const gamesPlayedByTeam = new Map(batchTeams.map((t) => [t.id, t.wins + t.losses]));
 
-  const transactions: { type: "INJURY" | "TRADE" | "SIGNING"; description: string }[] = [];
+  const transactions: {
+    type: "INJURY" | "TRADE" | "SIGNING";
+    description: string;
+    importance: NewsImportance;
+  }[] = [];
 
   const returningPlayerIds = injuredPlayers
     .filter(
@@ -82,6 +88,7 @@ export async function applyLeagueEvents(
       transactions.push({
         type: "INJURY",
         description: `${lp.player.fullName} has been cleared to return from injury.`,
+        importance: "MINOR",
       });
     }
   }
@@ -124,6 +131,12 @@ export async function applyLeagueEvents(
       transactions.push({
         type: "INJURY",
         description: `${result.playerName} suffers ${result.injuryName}, expected to miss ${result.durationGames} games.`,
+        // No player-quality signal in this roll (see rollForTeamInjury) -
+        // duration is the real, available severity proxy: a multi-week
+        // absence is bigger news than a day-to-day tweak regardless of who
+        // it happened to.
+        importance:
+          result.durationGames >= 20 ? "MAJOR" : result.durationGames >= 8 ? "STANDARD" : "MINOR",
       });
     }
   }
@@ -159,6 +172,7 @@ export async function applyLeagueEvents(
         season,
         type: t.type,
         description: t.description,
+        importance: t.importance,
       })),
     });
   }
@@ -168,7 +182,11 @@ async function maybeExecuteCpuTrade(
   leagueId: string,
   season: number,
   userControlledTeamId: string | null,
-  transactions: { type: "INJURY" | "TRADE" | "SIGNING"; description: string }[],
+  transactions: {
+    type: "INJURY" | "TRADE" | "SIGNING";
+    description: string;
+    importance: NewsImportance;
+  }[],
 ): Promise<void> {
   const cpuLeagueTeams = await prisma.leagueTeam.findMany({
     where: { leagueId, ...(userControlledTeamId ? { id: { not: userControlledTeamId } } : {}) },
@@ -269,6 +287,10 @@ async function maybeExecuteCpuTrade(
       { teamLabel: result.teamA.teamLabel, sentAssetNames: [result.teamA.player.playerName] },
       { teamLabel: result.teamB.teamLabel, sentAssetNames: [result.teamB.player.playerName] },
     ),
+    importance: highestImportance([
+      importanceForRating(result.teamA.player.rating),
+      importanceForRating(result.teamB.player.rating),
+    ]),
   });
 }
 
@@ -276,7 +298,11 @@ async function maybeExecuteCpuSigning(
   leagueId: string,
   season: number,
   userControlledTeamId: string | null,
-  transactions: { type: "INJURY" | "TRADE" | "SIGNING"; description: string }[],
+  transactions: {
+    type: "INJURY" | "TRADE" | "SIGNING";
+    description: string;
+    importance: NewsImportance;
+  }[],
 ): Promise<void> {
   const [cpuLeagueTeams, freeAgents] = await Promise.all([
     prisma.leagueTeam.findMany({
@@ -337,5 +363,6 @@ async function maybeExecuteCpuSigning(
       1,
       offerSalaryCents,
     ),
+    importance: importanceForRating(freeAgent.overallRating),
   });
 }

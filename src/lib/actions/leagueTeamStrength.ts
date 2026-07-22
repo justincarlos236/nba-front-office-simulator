@@ -19,6 +19,7 @@ export interface RealStatBaseline {
 
 export interface RosterPlayerForSimulation {
   leaguePlayerId: string;
+  fullName: string;
   overallRating: number;
   position: Position;
   /** Null for fictional draft-generated players - no real-world stat line to draw from. */
@@ -49,6 +50,7 @@ export async function computeLeagueTeamStrengths(leagueTeamIds: string[]): Promi
       overallRating: true,
       player: {
         select: {
+          fullName: true,
           position: true,
           seasonStats: { where: { season: PROFILE_SEASON }, take: 1 },
         },
@@ -63,6 +65,7 @@ export async function computeLeagueTeamStrengths(leagueTeamIds: string[]): Promi
     const stat = p.player.seasonStats[0];
     const entry: RosterPlayerForSimulation = {
       leaguePlayerId: p.id,
+      fullName: p.player.fullName,
       overallRating: p.overallRating,
       position: p.player.position,
       realStat: stat

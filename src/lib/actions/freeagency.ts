@@ -8,6 +8,7 @@ import { validateSigning } from "@/lib/freeagency/validateSigning";
 import { computeReSigningMaxOfferCents } from "@/lib/freeagency/reSigningRights";
 import { getSigningExceptionUsage } from "@/lib/actions/signingException";
 import { describeSigning } from "@/lib/transactions/describeTransaction";
+import { importanceForRating } from "@/lib/transactions/newsImportance";
 
 export interface SignFreeAgentInput {
   leagueId: string;
@@ -137,6 +138,7 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
           years,
           totalSalaryCents,
         ),
+        importance: importanceForRating(freeAgent.overallRating),
       },
     });
   });

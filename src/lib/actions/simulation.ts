@@ -8,6 +8,31 @@ import { computeLeagueTeamStrengths } from "@/lib/actions/leagueTeamStrength";
 import { applyLeagueEvents } from "@/lib/actions/leagueEvents";
 import { simulateGame } from "@/lib/simulation/simulateGame";
 import { generateBoxScore, type PlayerBoxScoreLine } from "@/lib/simulation/boxScore";
+import {
+  describeGameResult,
+  describeMilestoneGame,
+  describeWinStreak,
+  type DescribedEvent,
+} from "@/lib/transactions/describeGameEvents";
+import type { NewsImportance } from "@/generated/prisma/client";
+
+interface RankedEvent {
+  event: DescribedEvent;
+  rank: number;
+}
+
+// Every qualifying game individually clears a real threshold, but with up
+// to 50 games a batch, "every qualifying game" can still be a third of the
+// whole batch - real sports coverage headlines the batch's most notable
+// handful, not literally every one that technically qualifies. `limit`
+// scales with batch size so a single-game click isn't starved and a
+// 50-game click isn't flooded.
+function topRanked(candidates: RankedEvent[], limit: number): DescribedEvent[] {
+  return [...candidates]
+    .sort((a, b) => b.rank - a.rank)
+    .slice(0, limit)
+    .map((c) => c.event);
+}
 
 export type SimulateBatchSize = 1 | 10 | 50;
 
@@ -45,12 +70,28 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
     teamIds.add(game.awayLeagueTeamId);
   }
 
-  const { strengthByTeam, rostersByTeam } = await computeLeagueTeamStrengths([...teamIds]);
+  const [{ strengthByTeam, rostersByTeam }, teamInfo] = await Promise.all([
+    computeLeagueTeamStrengths([...teamIds]),
+    prisma.leagueTeam.findMany({
+      where: { id: { in: [...teamIds] } },
+      select: { id: true, currentStreak: true, team: { select: { city: true, name: true } } },
+    }),
+  ]);
+
+  const teamLabelById = new Map(teamInfo.map((t) => [t.id, `${t.team.city} ${t.team.name}`]));
+  const streakByTeam = new Map(teamInfo.map((t) => [t.id, t.currentStreak]));
+  const playerNameById = new Map<string, string>();
+  for (const roster of rostersByTeam.values()) {
+    for (const p of roster) playerNameById.set(p.leaguePlayerId, p.fullName);
+  }
 
   const winIncrements = new Map<string, number>();
   const lossIncrements = new Map<string, number>();
   const gameUpdates: { id: string; homeScore: number; awayScore: number }[] = [];
   const boxScoreRows: (PlayerBoxScoreLine & { gameId: string })[] = [];
+  const newsRows: { type: string; description: string; importance: NewsImportance }[] = [];
+  const gameResultCandidates: RankedEvent[] = [];
+  const milestoneCandidates: RankedEvent[] = [];
 
   for (const game of unplayedGames) {
     const homeStrength = strengthByTeam.get(game.homeLeagueTeamId) ?? 0;
@@ -63,6 +104,46 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
     const loserId = result.homeWon ? game.awayLeagueTeamId : game.homeLeagueTeamId;
     winIncrements.set(winnerId, (winIncrements.get(winnerId) ?? 0) + 1);
     lossIncrements.set(loserId, (lossIncrements.get(loserId) ?? 0) + 1);
+
+    // Real, box-score/standings-driven news (Phase 14d) - generated from
+    // this exact game's actual outcome, not invented. Streaks are tracked
+    // per game within the batch (not just the batch's final total) so a
+    // team blowing past 10 straight to 15 without stopping still gets both
+    // threshold stories, not just the last one.
+    const winnerPrevStreak = streakByTeam.get(winnerId) ?? 0;
+    const winnerNewStreak = winnerPrevStreak > 0 ? winnerPrevStreak + 1 : 1;
+    streakByTeam.set(winnerId, winnerNewStreak);
+    const loserPrevStreak = streakByTeam.get(loserId) ?? 0;
+    const loserNewStreak = loserPrevStreak < 0 ? loserPrevStreak - 1 : -1;
+    streakByTeam.set(loserId, loserNewStreak);
+
+    const winnerLabel = teamLabelById.get(winnerId) ?? "Team";
+    const loserLabel = teamLabelById.get(loserId) ?? "Team";
+
+    const winnerStreakEvent = describeWinStreak(winnerLabel, winnerNewStreak);
+    if (winnerStreakEvent) newsRows.push({ type: "WIN_STREAK", ...winnerStreakEvent });
+    const loserStreakEvent = describeWinStreak(loserLabel, loserNewStreak);
+    if (loserStreakEvent) newsRows.push({ type: "WIN_STREAK", ...loserStreakEvent });
+
+    const margin = Math.abs(result.homeScore - result.awayScore);
+    const winnerWinProbability = result.homeWon
+      ? result.homeWinProbability
+      : 1 - result.homeWinProbability;
+    const gameResultEvent = describeGameResult(
+      winnerLabel,
+      loserLabel,
+      winnerWinProbability,
+      margin,
+    );
+    if (gameResultEvent) {
+      // Rank by how extreme the result was (a bigger upset or a bigger
+      // margin), not just that it cleared the threshold at all - only the
+      // most extreme few per batch actually get reported.
+      gameResultCandidates.push({
+        event: gameResultEvent,
+        rank: (1 - winnerWinProbability) * 100 + margin,
+      });
+    }
 
     // Uses the same pre-batch roster/strength snapshot applyLeagueEvents
     // already treats as locked for the whole batch - a mid-batch injury
@@ -82,7 +163,37 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
     );
     for (const line of lines) {
       boxScoreRows.push({ ...line, gameId: game.id });
+
+      const milestoneEvent = describeMilestoneGame({
+        playerName: playerNameById.get(line.leaguePlayerId) ?? "A player",
+        teamLabel: teamLabelById.get(line.leagueTeamId) ?? "their team",
+        points: line.points,
+        rebounds: line.rebounds,
+        assists: line.assists,
+        steals: line.steals,
+        blocks: line.blocks,
+      });
+      if (milestoneEvent) {
+        milestoneCandidates.push({ event: milestoneEvent, rank: line.points });
+      }
     }
+  }
+
+  // Cap both categories to the batch's most notable handful (see
+  // topRanked) - scales with batch size so a single-game click isn't
+  // starved and a 50-game click isn't flooded with every game that
+  // technically cleared a threshold.
+  for (const event of topRanked(
+    gameResultCandidates,
+    Math.max(1, Math.ceil(unplayedGames.length / 20)),
+  )) {
+    newsRows.push({ type: "GAME_RESULT", ...event });
+  }
+  for (const event of topRanked(
+    milestoneCandidates,
+    Math.max(2, Math.ceil(unplayedGames.length / 10)),
+  )) {
+    newsRows.push({ type: "GAME_MILESTONE", ...event });
   }
 
   // Each game/team update is independent of the others (this batch doesn't
@@ -110,6 +221,9 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
         data: { losses: { increment: losses } },
       }),
     ),
+    ...[...streakByTeam.entries()].map(([teamId, currentStreak]) =>
+      prisma.leagueTeam.update({ where: { id: teamId }, data: { currentStreak } }),
+    ),
     prisma.playerGameStat.createMany({
       data: boxScoreRows.map((row) => ({
         ...row,
@@ -118,6 +232,17 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
         gameType: gameTypeById.get(row.gameId) ?? "REGULAR_SEASON",
       })),
     }),
+    newsRows.length > 0
+      ? prisma.leagueTransaction.createMany({
+          data: newsRows.map((row) => ({
+            leagueId,
+            season: league.currentSeason,
+            type: row.type as "GAME_MILESTONE" | "WIN_STREAK" | "GAME_RESULT",
+            description: row.description,
+            importance: row.importance,
+          })),
+        })
+      : Promise.resolve(),
   ]);
 
   await applyLeagueEvents(

@@ -18,6 +18,7 @@ function makeRoster(
 ): RosterPlayerForSimulation {
   return {
     leaguePlayerId: id,
+    fullName: id,
     realStat: null,
     ...overrides,
   };
@@ -191,6 +192,7 @@ describe("generateBoxScore", () => {
     // bench - not an exact reproduction of a hand-picked input number.
     const star: RosterPlayerForSimulation = {
       leaguePlayerId: "star",
+      fullName: "star",
       position: "SF",
       overallRating: 90,
       realStat: realStatBaseline(),

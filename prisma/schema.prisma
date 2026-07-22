@@ -212,6 +212,24 @@ enum TransactionType {
   RETIREMENT
   INJURY
   OWNERSHIP_MESSAGE
+  // Real, box-score-driven categories (Phase 14d) - generated only from
+  // actual simulated events (see src/lib/transactions/describeGameEvents.ts),
+  // never invented.
+  GAME_MILESTONE
+  WIN_STREAK
+  GAME_RESULT
+}
+
+// Lets the UI prioritize significant events over routine ones. Existing
+// transaction types are backfilled to STANDARD (no reliable way to
+// reconstruct a truer value for already-written rows); every category
+// assigns this deliberately going forward - see
+// src/lib/transactions/newsImportance.ts.
+enum NewsImportance {
+  MINOR
+  STANDARD
+  MAJOR
+  BREAKING
 }
 
 enum ExpectationLevel {
@@ -266,6 +284,7 @@ model LeagueTransaction {
   season      Int
   type        TransactionType
   description String
+  importance  NewsImportance  @default(STANDARD)
   createdAt   DateTime        @default(now())
 
   league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
@@ -297,6 +316,11 @@ model LeagueTeam {
   wins          Int           @default(0)
   losses        Int           @default(0)
   gmPersonality GmPersonality @default(BALANCED)
+  // Positive = current win streak, negative = current loss streak, reset
+  // to 0 each new season alongside wins/losses. Powers real WIN_STREAK
+  // news (src/lib/transactions/describeGameEvents.ts) - not derived by
+  // scanning Game history on read.
+  currentStreak Int           @default(0)
 
   league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   team   Team   @relation(fields: [teamId], references: [id])

@@ -688,6 +688,73 @@ already tested, no reason to disturb them.
   already-fixed locator issue elsewhere; fixed the same way, by
   targeting the name's own `<span>` instead of the whole cell.
 
+## Real, box-score-driven news (Phase 14d)
+
+Per explicit direction: the news feed grows onto real simulated events
+incrementally, extending `LeagueTransaction` rather than replacing it -
+every category still corresponds to an actual thing that happened in the
+simulation, never an invented one. Coaching changes, contract extensions,
+waivers, and buyouts remain out of scope entirely (see Phase 14 context)
+since none of those mechanics exist yet - "modular, event-driven" means
+new categories activate only once their underlying mechanic is real.
+
+- **Importance, applied everywhere, not just new categories**
+  (`src/lib/transactions/newsImportance.ts`): `NewsImportance`
+  (MINOR/STANDARD/MAJOR/BREAKING) reuses `getPlayerValueTier`'s existing
+  rating boundaries - a superstar involved makes a story MAJOR, a star
+  STANDARD, everyone else MINOR - rather than a second threshold system.
+  Retrofitted onto every existing category (trades, signings,
+  retirements, injuries), not just the new ones: a trade's importance is
+  the highest tier among every player involved
+  (`highestImportance`), an injury's is duration-based (the only real
+  severity signal that roll produces), a retirement's is the retiring
+  player's rating at the time. Pre-existing rows were backfilled to
+  STANDARD - there's no way to reconstruct a truer value for a
+  transaction that's already been written.
+- **Real per-game news** (`src/lib/transactions/describeGameEvents.ts`,
+  pure and unit-tested): `describeMilestoneGame` reuses Phase 14b's own
+  `isTripleDouble`/`scoringMilestone` detectors - the exact same
+  functions the player profile's badges already use, not a second
+  implementation. `describeWinStreak` reads a new
+  `LeagueTeam.currentStreak` counter (positive = win streak, negative =
+  loss streak, reset to 0 each season alongside wins/losses) and fires
+  only on the exact game a real threshold (5, 10, then every 5 beyond) is
+  first crossed - not every game past it, so a team running from 10 to 15
+  straight wins without stopping still gets both stories, not a flood of
+  identical ones in between. `describeGameResult` covers upsets (a real
+  win-probability underdog) and blowouts, calibrated against
+  `simulateGame.ts`'s own fixed 3-22 margin range rather than a
+  real-NBA-scale threshold that this lightweight engine could never
+  actually produce.
+- **A real, empirically-driven tuning pass, not a guess left unchecked**:
+  the first version generated a `GAME_RESULT` story for every game that
+  merely cleared a threshold - simulating a real multi-batch season
+  showed this flooded the feed (a large fraction of a 50-game batch
+  naturally clears a "notable" margin or upset-probability bar once
+  actually run against real data, since this engine's margin range is
+  narrow and team-strength mismatches are common league-wide). Fixed by
+  ranking every batch's qualifying candidates by how extreme they were
+  and keeping only the batch's most notable few
+  (`topRanked` in `simulateGamesAction`, scaling with batch size) -
+  the same principle real sports coverage already follows: report the
+  day's headline results, not literally every game that beat a bar.
+  Applied to both `GAME_RESULT` and `GAME_MILESTONE` as a defensive
+  measure. This is exactly the kind of thing that can't be caught by
+  reading the code alone - only found by actually running it against a
+  real, sizable batch of simulated games and looking at what came out.
+- **Where it plugs in**: `simulateGamesAction` tracks each game's streak
+  update and box-score milestones inline in its existing per-game loop
+  (reusing the same roster/team-label lookups already built for box-score
+  generation), then persists everything in the same batched
+  `Promise.all` as the `Game`/`LeagueTeam`/`PlayerGameStat` writes -
+  no extra round trips.
+- **News page**: the transactions page's existing type badges gained
+  three new categories (Milestone/Streak/Game), and rows now get a
+  colored left border for MAJOR/BREAKING stories plus an explicit
+  "Breaking" tag for the rarest tier - MINOR/STANDARD stay visually
+  identical to the plain feed this always was, so the genuinely
+  significant stuff is what actually stands out.
+
 ## Around-the-league activity: injuries, CPU trades & CPU signings
 
 Without this, the only news in a league would ever be things the user
