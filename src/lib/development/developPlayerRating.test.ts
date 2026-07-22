@@ -89,4 +89,42 @@ describe("developPlayerRating", () => {
     const input = { overallRating: 75, potentialRating: 82, age: 24, rng: fixedRng(0.3) };
     expect(developPlayerRating(input)).toBe(developPlayerRating(input));
   });
+
+  it("a high-quality Player Development Coach boosts young-player growth", () => {
+    const base = () =>
+      developPlayerRating({ overallRating: 65, potentialRating: 90, age: 21, rng: fixedRng(0.1) });
+    const coached = () =>
+      developPlayerRating({
+        overallRating: 65,
+        potentialRating: 90,
+        age: 21,
+        rng: fixedRng(0.1),
+        developmentCoachQuality: 99,
+      });
+    expect(coached()).toBeGreaterThanOrEqual(base());
+  });
+
+  it("an unspecified (neutral) coach quality behaves identically to today's curve", () => {
+    const input = { overallRating: 70, potentialRating: 88, age: 22, rng: fixedRng(0.4) };
+    expect(developPlayerRating(input)).toBe(
+      developPlayerRating({ ...input, developmentCoachQuality: 72 }),
+    );
+  });
+
+  it("a high-quality coach dampens an aging player's decline", () => {
+    const uncoached = developPlayerRating({
+      overallRating: 80,
+      potentialRating: 80,
+      age: 35,
+      rng: fixedRng(0.5),
+    });
+    const coached = developPlayerRating({
+      overallRating: 80,
+      potentialRating: 80,
+      age: 35,
+      rng: fixedRng(0.5),
+      developmentCoachQuality: 99,
+    });
+    expect(coached).toBeGreaterThanOrEqual(uncoached);
+  });
 });

@@ -15,6 +15,7 @@ const CATEGORIES = [
   "ALL",
   "TRADE",
   "SIGNING",
+  "STAFF",
   "RETIREMENT",
   "INJURY",
   "AWARD",
@@ -28,6 +29,7 @@ const CATEGORY_LABEL: Record<(typeof CATEGORIES)[number], string> = {
   ALL: "All",
   TRADE: "Trades",
   SIGNING: "Free Agency",
+  STAFF: "Staff",
   RETIREMENT: "Retirements",
   INJURY: "Injuries",
   AWARD: "Awards",
@@ -37,9 +39,29 @@ const CATEGORY_LABEL: Record<(typeof CATEGORIES)[number], string> = {
   OWNERSHIP_MESSAGE: "Ownership",
 };
 
+// Every other category maps 1:1 to a single TransactionType - STAFF is the
+// one exception, grouping both STAFF_HIRE and STAFF_FIRE under one filter
+// pill rather than adding two more pills for what's really one "staff
+// moves" concept to a reader.
+const CATEGORY_TYPES: Record<(typeof CATEGORIES)[number], string[] | null> = {
+  ALL: null,
+  TRADE: ["TRADE"],
+  SIGNING: ["SIGNING"],
+  STAFF: ["STAFF_HIRE", "STAFF_FIRE"],
+  RETIREMENT: ["RETIREMENT"],
+  INJURY: ["INJURY"],
+  AWARD: ["AWARD"],
+  GAME_MILESTONE: ["GAME_MILESTONE"],
+  WIN_STREAK: ["WIN_STREAK"],
+  GAME_RESULT: ["GAME_RESULT"],
+  OWNERSHIP_MESSAGE: ["OWNERSHIP_MESSAGE"],
+};
+
 const TYPE_LABEL: Record<string, string> = {
   TRADE: "Trade",
   SIGNING: "Signing",
+  STAFF_HIRE: "Staff Hire",
+  STAFF_FIRE: "Staff Fire",
   RETIREMENT: "Retirement",
   INJURY: "Injury",
   OWNERSHIP_MESSAGE: "Ownership",
@@ -52,6 +74,8 @@ const TYPE_LABEL: Record<string, string> = {
 const TYPE_BADGE_CLASS: Record<string, string> = {
   TRADE: "bg-accent/15 text-accent",
   SIGNING: "bg-emerald-500/15 text-emerald-400",
+  STAFF_HIRE: "bg-emerald-500/15 text-emerald-400",
+  STAFF_FIRE: "bg-red-500/15 text-red-400",
   RETIREMENT: "bg-muted/20 text-muted",
   INJURY: "bg-red-500/15 text-red-400",
   OWNERSHIP_MESSAGE: "bg-purple-500/15 text-purple-400",
@@ -97,7 +121,7 @@ export function NewsFeed({
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
     return transactions.filter((t) => {
-      if (category !== "ALL" && t.type !== category) return false;
+      if (category !== "ALL" && !CATEGORY_TYPES[category]!.includes(t.type)) return false;
       if (myTeamOnly && (!userTeamId || !t.teamIds.includes(userTeamId))) return false;
       if (query && !t.description.toLowerCase().includes(query)) return false;
       return true;

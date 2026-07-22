@@ -313,6 +313,12 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
             Free agents
           </Link>
           <Link
+            href={`/leagues/${league.id}/staff`}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
+          >
+            Staff
+          </Link>
+          <Link
             href={`/leagues/${league.id}/leaders`}
             className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
           >

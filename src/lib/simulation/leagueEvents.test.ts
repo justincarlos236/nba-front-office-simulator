@@ -50,6 +50,25 @@ describe("rollForTeamInjury", () => {
     expect(result!.durationGames).toBeGreaterThanOrEqual(16);
     expect(result!.durationGames).toBeLessThanOrEqual(30);
   });
+
+  it("a high-quality Medical Staff reduces how often the chance roll hits", () => {
+    // A roll just above the base 2% chance would normally miss anyway, but
+    // this isolates the frequency scaling directly via a mid-range roll
+    // that only a *higher* effective chance (poor medical staff) would hit.
+    const rollValue = 0.021; // just above the unscaled 2% chance
+    const uncoached = rollForTeamInjury(roster, sequence([rollValue]), 0.02, null);
+    const poorMedical = rollForTeamInjury(roster, sequence([rollValue]), 0.02, 60);
+    const greatMedical = rollForTeamInjury(roster, sequence([rollValue]), 0.02, 99);
+    expect(uncoached).toBeNull();
+    expect(poorMedical).not.toBeNull(); // higher effective chance clears this roll
+    expect(greatMedical).toBeNull(); // lower effective chance still misses
+  });
+
+  it("a high-quality Medical Staff shortens injury duration", () => {
+    const uncoached = rollForTeamInjury(roster, sequence([0.0, 0.0, 0.7, 0.99]), 0.02, null);
+    const greatMedical = rollForTeamInjury(roster, sequence([0.0, 0.0, 0.7, 0.99]), 0.02, 99);
+    expect(greatMedical!.durationGames).toBeLessThanOrEqual(uncoached!.durationGames);
+  });
 });
 
 describe("shouldTriggerEvent", () => {

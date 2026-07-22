@@ -42,6 +42,16 @@ export function describeRetirement(playerName: string, teamLabel: string | null)
     : `${playerName} has announced their retirement`;
 }
 
+/** "Bulls hired X as their new Head Coach" */
+export function describeStaffHire(teamLabel: string, staffName: string, roleLabel: string): string {
+  return `${teamLabel} hired ${staffName} as their new ${roleLabel}`;
+}
+
+/** "Bulls fired X as Head Coach" */
+export function describeStaffFire(teamLabel: string, staffName: string, roleLabel: string): string {
+  return `${teamLabel} fired ${staffName} as ${roleLabel}`;
+}
+
 function joinNames(names: string[]): string {
   if (names.length <= 1) return names[0] ?? "";
   if (names.length === 2) return `${names[0]} and ${names[1]}`;

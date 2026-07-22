@@ -14,6 +14,13 @@ describe("computeHomeWinProbability", () => {
     expect(computeHomeWinProbability(100, 0)).toBeLessThan(1);
     expect(computeHomeWinProbability(0, 100)).toBeGreaterThan(0);
   });
+
+  it("a Head Coach bonus (Phase 15a) nudges win probability without it, unchanged", () => {
+    const baseline = computeHomeWinProbability(70, 70);
+    expect(computeHomeWinProbability(70, 70, 0, 0)).toBe(baseline);
+    expect(computeHomeWinProbability(70, 70, 3, 0)).toBeGreaterThan(baseline);
+    expect(computeHomeWinProbability(70, 70, 0, 3)).toBeLessThan(baseline);
+  });
 });
 
 describe("simulateGame", () => {

@@ -97,6 +97,24 @@ describe("allocateMinutes", () => {
   it("returns an empty map for an empty roster", () => {
     expect(allocateMinutes([], 10, Math.random).size).toBe(0);
   });
+
+  it("a high benchTrustDelta coach plays the bench deeper than a low/negative one", () => {
+    const roster = fullRoster("home");
+    let trustedRosterSize = 0;
+    let shortLeashRosterSize = 0;
+    const trials = 40;
+    for (let i = 0; i < trials; i++) {
+      trustedRosterSize += allocateMinutes(roster, 8, Math.random, {
+        benchTrustDelta: 1,
+        threePaMultiplier: 1,
+      }).size;
+      shortLeashRosterSize += allocateMinutes(roster, 8, Math.random, {
+        benchTrustDelta: -1,
+        threePaMultiplier: 1,
+      }).size;
+    }
+    expect(trustedRosterSize / trials).toBeGreaterThan(shortLeashRosterSize / trials);
+  });
 });
 
 describe("generateBoxScore", () => {
@@ -233,5 +251,43 @@ describe("generateBoxScore", () => {
     expect(starPpg).toBeGreaterThan(15);
     expect(starPpg).toBeLessThan(38);
     expect(starPpg).toBeGreaterThan(benchPpg * 1.5);
+  });
+
+  it("a higher threePaMultiplier coach shifts the team's shot selection toward threes", () => {
+    let paceAndSpaceThreeShare = 0;
+    let grindItOutThreeShare = 0;
+    const trials = 15;
+    for (let i = 0; i < trials; i++) {
+      const paceRosters: GameRosters = {
+        homeTeamId: "home-team",
+        awayTeamId: "away-team",
+        homeRoster: fullRoster("home"),
+        awayRoster: fullRoster("away"),
+        homeStrength: 80,
+        awayStrength: 78,
+        homeCoachModifier: { benchTrustDelta: 0, threePaMultiplier: 1.3 },
+      };
+      const grindRosters: GameRosters = {
+        ...paceRosters,
+        homeCoachModifier: { benchTrustDelta: 0, threePaMultiplier: 0.7 },
+      };
+
+      const paceLines = generateBoxScore(paceRosters, 112, 108, Math.random).filter(
+        (l) => l.leagueTeamId === "home-team",
+      );
+      const grindLines = generateBoxScore(grindRosters, 112, 108, Math.random).filter(
+        (l) => l.leagueTeamId === "home-team",
+      );
+
+      const shareOf = (lines: typeof paceLines) => {
+        const fga = lines.reduce((sum, l) => sum + l.fgAttempted, 0);
+        const fg3a = lines.reduce((sum, l) => sum + l.fg3Attempted, 0);
+        return fga > 0 ? fg3a / fga : 0;
+      };
+      paceAndSpaceThreeShare += shareOf(paceLines);
+      grindItOutThreeShare += shareOf(grindLines);
+    }
+
+    expect(paceAndSpaceThreeShare / trials).toBeGreaterThan(grindItOutThreeShare / trials);
   });
 });

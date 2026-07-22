@@ -14,8 +14,18 @@ const SCORE_RANDOMNESS = 22; // +/- swing applied to the loser's score
 const MIN_MARGIN = 3;
 const MAX_MARGIN = 22;
 
-export function computeHomeWinProbability(homeStrength: number, awayStrength: number): number {
-  const diff = homeStrength + HOME_COURT_ADVANTAGE - awayStrength;
+export function computeHomeWinProbability(
+  homeStrength: number,
+  awayStrength: number,
+  // Head Coach effect (Phase 15a) - a small, additive nudge alongside
+  // HOME_COURT_ADVANTAGE, same spirit as that constant. Deliberately kept
+  // out of homeStrength/awayStrength themselves (see
+  // computeLeagueTeamStrengths) since that number is reused elsewhere
+  // (GM expectation-level, trade valuation) as a pure-player signal.
+  homeCoachBonus: number = 0,
+  awayCoachBonus: number = 0,
+): number {
+  const diff = homeStrength + HOME_COURT_ADVANTAGE + homeCoachBonus - awayStrength - awayCoachBonus;
   return 1 / (1 + Math.exp(-WIN_PROB_STEEPNESS * diff));
 }
 
@@ -30,8 +40,15 @@ export function simulateGame(
   homeStrength: number,
   awayStrength: number,
   rng: () => number = Math.random,
+  homeCoachBonus: number = 0,
+  awayCoachBonus: number = 0,
 ): SimulatedGameResult {
-  const homeWinProbability = computeHomeWinProbability(homeStrength, awayStrength);
+  const homeWinProbability = computeHomeWinProbability(
+    homeStrength,
+    awayStrength,
+    homeCoachBonus,
+    awayCoachBonus,
+  );
   const homeWon = rng() < homeWinProbability;
 
   const loserScore = Math.round(AVERAGE_TEAM_SCORE + (rng() - 0.5) * SCORE_RANDOMNESS);

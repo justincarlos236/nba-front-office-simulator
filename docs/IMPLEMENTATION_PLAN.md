@@ -1550,3 +1550,45 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   matching descriptions. **Phase 14 (the full "living league" arc - real
   player box scores, league leaders, real award races, and a real,
   filterable news feed) is now complete.**
+- **2026-07-22 (Phase 15a)**: Staff management foundation - not a
+  `FEATURE_ROADMAP.md`-tracked item, a fresh user request for a coaching/
+  front-office staff system. Preceded by a full architecture-overlap
+  review (per the user's new standing review protocol) that scoped a
+  10+-role, real-world-data, multi-decade request down to three roles for
+  this phase - Head Coach, Player Development Coach, Medical Staff - with
+  algorithmic (not real-world) generation and no hireable GM role, since
+  the user already occupies that seat (see `jobSecurity.ts`). New
+  `Staff`/`StaffContract` models and `StaffRole`/`CoachStyle` enums;
+  `src/lib/staff/generateStaff.ts` for seeded algorithmic generation
+  (reusing `generateProspectName`); three real mechanical hooks (Head
+  Coach → win-probability bonus + box-score style/bench-trust modifiers,
+  Player Development Coach → `developPlayerRating`'s growth/decline rates,
+  Medical Staff → injury frequency/duration), each neutral at quality 72 or
+  when unhired so an existing league's simulation is unaffected until the
+  user actually hires someone; full season progression (aging, retirement,
+  contract expiry, Head Coach reputation drift off team win%, CPU
+  auto-backfill of vacancies) wired into `advanceSeasonAction` on its own
+  seeded RNG stream; `hireStaffAction`/`fireStaffAction` re-validating
+  against current DB state and a minimum-acceptable-offer floor; a new
+  `/leagues/[id]/staff` page (three role sections, current-hire cards with
+  Fire, vacant-slot candidate browsing with Hire); two new `STAFF_HIRE`/
+  `STAFF_FIRE` news types, which also required adding a `STAFF` filter
+  category to `NewsFeed` (the one category mapping to two
+  `TransactionType`s, not one) - a real polish gap caught during hands-on
+  verification, not part of the original plan. All 428 unit tests (31
+  new), `tsc`, `eslint`, a clean production build, and all 10 e2e tests
+  passing. Visually verified across two throwaway scripts: hiring, firing,
+  and re-hiring on a fresh league (all three roles start staffed;
+  firing/hiring correctly moved candidates between the roster card and the
+  browsable pool); and a full season advance (Head Coach aged and its
+  reputation drifted with team win%, a CPU team's vacancy was
+  auto-backfilled, and the resulting `STAFF_HIRE` story showed up under
+  the new Staff filter with a proper badge). **Known cosmetic limitation**:
+  staff names are drawn from the same finite prospect-name pool players
+  use, so two unrelated staff members can coincidentally share a full name
+  within one league - surfaced once during verification, harmless (still
+  distinct rows) but not visually ideal. **Deliberately deferred**: Scouts,
+  Analytics Staff, and a Salary Cap Specialist (needs a design decision
+  against `GmPersonality` first), a Coach of the Year award, real-world
+  coach/executive names, and CPU-vs-CPU competitive bidding for a specific
+  candidate.

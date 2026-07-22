@@ -790,14 +790,19 @@ top of the real feed the earlier 14b-14d phases built.
   heavier filtering pattern for what's fundamentally the same shape of
   problem.
 - **Category set reflects exactly what has real backing** - Trades, Free
-  Agency, Retirements, Injuries, Awards, Milestones, Streaks, Games,
+  Agency, Staff, Retirements, Injuries, Awards, Milestones, Streaks, Games,
   Ownership, plus All and My Team. Categories the original request asked
-  for that still have no real mechanic behind them (Coaching, Contracts-
+  for that still have no real mechanic behind them (Contracts-
   as-a-distinct-mechanic, Rumors, Draft, Standings-as-its-own-story-type,
   Records-beyond-what-Milestones-already-covers) are deliberately absent
   - consistent with the standing "no fictional events" instruction this
     entire Phase 14 arc has followed. Nothing architecturally blocks adding
-    them later if their underlying mechanic ever becomes real.
+    them later if their underlying mechanic ever becomes real. Coaching
+    news was still absent as of this writing, but became real in Phase
+    15a (see "Staff management" below) - the `STAFF` category groups both
+    `STAFF_HIRE` and `STAFF_FIRE` under one filter pill rather than
+    splitting them, the one category that maps to more than one
+    `TransactionType`.
 
 ## Around-the-league activity: injuries, CPU trades & CPU signings
 
@@ -855,6 +860,104 @@ only the next `simulateGamesAction` call. This follows directly from the
 existing "strength computed once per batch" architecture (see Season
 Simulation above) rather than recomputing strength per game, which would
 undo the reason batches exist in the first place.
+
+## Staff management (Phase 15a)
+
+A deliberately scoped-down foundation, not the full multi-decade coaching
+saga the original request described - see the architecture-overlap review
+that preceded this phase for the reasoning. Three roles ship in this
+phase: **Head Coach**, **Player Development Coach**, **Medical Staff**.
+Scouts, Analytics Staff, and a Salary Cap Specialist are deferred - the
+Cap Specialist specifically needs a design decision about its relationship
+to the existing `GmPersonality` enum (`src/lib/gm/gmPersonality.ts`) before
+it's built, since both would otherwise represent overlapping "front-office
+philosophy" concepts.
+
+- **No hireable GM role.** The user already _is_ the GM (see "Product
+  framing" and "GM accountability" above) - `Staff` only models roles that
+  work _for_ the user, never a competing executive role that could be
+  hired/fired the way `jobSecurity.ts` already governs the user's own
+  seat.
+- **Algorithmic generation, not real-world data** (`src/lib/staff/generateStaff.ts`):
+  same reasoning as this project's real-contract generation (see "Data
+  sourcing" below) - no clean, ToS-safe source of real coach/executive
+  bios exists, and a guessed bio would be worse than an honest fictional
+  one. `generateStaffMember` draws age/quality/reputation/style from
+  weighted ranges seeded per `${leagueId}-${teamId}-${role}` (same
+  `createSeededRandom` convention `pickRandomGmPersonality` already
+  established), reusing `generateProspectName` rather than a second name
+  pool. At league bootstrap (`createLeagueAction`) every team gets one of
+  each role plus a small unemployed pool per role to browse immediately.
+  **Known cosmetic limitation**: names are drawn from the same finite
+  pool draft prospects use, so two unrelated staff members can
+  coincidentally share a full name within one league - harmless (each is
+  still a distinct `Staff` row with its own id/age/quality), but visible
+  if it happens to surface in the UI.
+- **`Staff`/`StaffContract` are separate models from `LeaguePlayer`/`Contract`**,
+  not nullable/generalized versions of them - `Contract.leaguePlayerId` is
+  `@unique` with no discriminator column, and every existing cap/trade
+  call site assumes a contract's player always exists. `StaffContract` is
+  also deliberately simpler: one flat `annualSalaryCents`, no
+  `ContractYear`-equivalent year-by-year structure, and it never counts
+  against the player salary cap. A retiring or fired staff member's row
+  is genuinely deleted (cascading their contract) rather than kept-but-
+  inactive the way `LeaguePlayer.isActive`/`retiredSeason` preserve
+  history - there's no staff-history UI in this phase to justify the
+  extra state.
+- **Three real mechanical hooks, not cosmetic flags**:
+  - Head Coach `quality`/`style` feed `computeCoachWinBonus`/
+    `computeCoachBoxScoreModifier` (`src/lib/staff/coachModifiers.ts`),
+    threaded into `simulateGame.ts` as a small additive win-probability
+    term (parallel to the existing `HOME_COURT_ADVANTAGE` constant, never
+    touching the reused-elsewhere `computeLeagueTeamStrengths`) and into
+    `boxScore.ts` as a bench-trust adjustment plus a per-style 3PA-rate
+    multiplier.
+  - Player Development Coach `quality` feeds a new
+    `developmentCoachQuality` parameter on `developPlayerRating`,
+    boosting young-player growth and dampening veteran decline.
+  - Medical Staff `quality` feeds new `frequencyFactor`/`durationFactor`
+    scaling in `rollForTeamInjury` (`src/lib/simulation/leagueEvents.ts`),
+    reducing how often a team's players get hurt and how long they're out.
+  - All three hooks share the same **neutral-anchor convention**: quality
+    72 (this codebase's existing "average" anchor from `playerValue.ts`),
+    `null`, or an unhired role all produce zero effect, so a league with
+    no Head Coach hired behaves exactly as the simulation did before this
+    phase existed.
+- **Season progression lives in `advanceSeasonAction`** (`offseason.ts`),
+  in its own loop seeded independently (`${leagueId}-${season}-staff`) so
+  adding staff rolls never perturbs an existing league's already-
+  deterministic player development. Each offseason: every staff member
+  ages a year; `shouldStaffRetire`/`staffRetirementProbability`
+  (`src/lib/staff/staffRetirement.ts` - same shape as
+  `src/lib/development/retirement.ts`, but coaches trend older before a
+  forced retirement than players); expired contracts free the staff
+  member; a Head Coach's `reputation` drifts off plain team win%
+  (`SeasonExpectation` is user-team-only, so this can't reuse that signal
+  for the other 29 teams). **CPU teams auto-backfill** any vacancy from
+  the available pool (best-quality-available heuristic, no real bidding
+  war) so no CPU team sits with a permanently empty seat; the user's own
+  vacancy is never auto-filled.
+- **`hireStaffAction`/`fireStaffAction`** (`src/lib/actions/staff.ts`):
+  re-validate everything from current DB state (same principle as
+  `signFreeAgentAction`). A hire below `computeMinAcceptableStaffOfferCents`
+  (`src/lib/staff/hireValidation.ts`, 60% of the algorithmically fair
+  salary for that quality) is rejected outright - the user can't lowball a
+  95-quality Head Coach for veteran-minimum money. Firing has no cap/cash
+  penalty in this phase; a real buyout mechanic is a documented future
+  refinement.
+- **News**: two new `TransactionType` values, `STAFF_HIRE`/`STAFF_FIRE`,
+  written by both the user-initiated actions and CPU auto-backfill hires,
+  reusing the existing `teamIds`/`importanceForRating` conventions. This
+  is exactly the "new categories activate only once their underlying
+  mechanic is real" rule the Phase 14e news system documented above -
+  coaching news was listed there as having no real mechanic; it does now.
+
+**Deliberately not in this phase**: Scouts/Analytics/Cap Specialist,
+scouting-accuracy uncertainty (`deriveScoutingProfile` stays fully
+accurate), a Coach of the Year award, real-world coach/executive names,
+and CPU-vs-CPU competitive bidding for a specific candidate (CPU teams
+only fill vacancies from the pool, they don't yet compete with the user in
+real time for the same hire).
 
 ## Playoffs
 

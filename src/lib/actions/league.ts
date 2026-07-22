@@ -15,12 +15,17 @@ import { computeExpectationLevel } from "@/lib/gm/expectationLevel";
 import { buildFuturePickRows, FUTURE_PICK_WINDOW_YEARS } from "@/lib/draft/futurePicks";
 import { pickRandomGmPersonality } from "@/lib/gm/gmPersonality";
 import { createSeededRandom } from "@/lib/contracts/seededRandom";
+import { generateStaffMember } from "@/lib/staff/generateStaff";
+import type { StaffRole } from "@/generated/prisma/client";
 
 const SEASON = 2023;
 // Tied to the ROTATION/MINIMUM tier boundary (playerValueTier.ts) on the
 // 60-99 NBA-2K-style rating scale - the same "bottom ~15%" intent the old
 // cutoff of 25 had on the old 0-100 scale.
 const FREE_AGENT_RATING_CUTOFF = 65;
+
+const STAFF_ROLES: StaffRole[] = ["HEAD_COACH", "PLAYER_DEVELOPMENT_COACH", "MEDICAL_STAFF"];
+const FREE_AGENT_STAFF_POOL_SIZE_PER_ROLE = 6;
 
 /**
  * Bootstraps a brand-new League from the reference snapshot: clones all 30
@@ -82,6 +87,58 @@ export async function createLeagueAction(formData: FormData) {
     })),
   });
   const teamIdToLeagueTeamId = new Map(leagueTeams.map((lt) => [lt.teamId, lt.id]));
+
+  // Staff Management (Phase 15a) - every team starts with an algorithmically
+  // generated Head Coach, Player Development Coach, and Medical Staff (no
+  // real-world data sourced - see docs/ARCHITECTURE.md's Data sourcing
+  // section for why, same reasoning as generated contracts), plus a small
+  // unemployed pool per role the user can hire from immediately. Seeded per
+  // league+team+role, same determinism convention as gmPersonality above.
+  const rosteredStaffGenerated = leagueTeams.flatMap((lt) =>
+    STAFF_ROLES.map((role) => ({
+      leagueTeamId: lt.id as string | null,
+      generated: generateStaffMember(role, createSeededRandom(`${league.id}-${lt.id}-${role}`)),
+    })),
+  );
+  const freeAgentStaffGenerated = STAFF_ROLES.flatMap((role) =>
+    Array.from({ length: FREE_AGENT_STAFF_POOL_SIZE_PER_ROLE }, (_, i) => ({
+      leagueTeamId: null as string | null,
+      generated: generateStaffMember(
+        role,
+        createSeededRandom(`${league.id}-freeagent-${role}-${i}`),
+      ),
+    })),
+  );
+  const allStaffGenerated = [...rosteredStaffGenerated, ...freeAgentStaffGenerated];
+
+  // createManyAndReturn on Postgres compiles to a single INSERT...RETURNING,
+  // which preserves input row order - safe to zip back up by array index
+  // (staff has no natural external key to join on the way players join on
+  // playerId).
+  const createdStaff = await prisma.staff.createManyAndReturn({
+    data: allStaffGenerated.map(({ leagueTeamId, generated }) => ({
+      leagueId: league.id,
+      leagueTeamId,
+      role: generated.role,
+      fullName: generated.fullName,
+      age: generated.age,
+      quality: generated.quality,
+      reputation: generated.reputation,
+      style: generated.style,
+    })),
+  });
+  const staffContractInputs = createdStaff
+    .map((staff, i) => ({ staffId: staff.id, ...allStaffGenerated[i] }))
+    .filter((s) => s.leagueTeamId !== null)
+    .map((s) => ({
+      staffId: s.staffId,
+      leagueTeamId: s.leagueTeamId!,
+      signedSeason: SEASON,
+      startSeason: SEASON,
+      endSeason: SEASON + s.generated.contractYears - 1,
+      annualSalaryCents: s.generated.annualSalaryCents,
+    }));
+  await prisma.staffContract.createMany({ data: staffContractInputs });
 
   await prisma.league.update({
     where: { id: league.id },
@@ -231,6 +288,7 @@ export async function deleteLeagueAction(leagueId: string) {
 
   await prisma.tradeAsset.deleteMany({ where: { trade: { leagueId } } });
   await prisma.contract.deleteMany({ where: { leagueTeam: { leagueId } } });
+  await prisma.staffContract.deleteMany({ where: { leagueTeam: { leagueId } } });
   await prisma.draftPick.deleteMany({ where: { leagueId } });
   await prisma.tradeException.deleteMany({ where: { leagueId } });
   await prisma.league.delete({ where: { id: leagueId } });

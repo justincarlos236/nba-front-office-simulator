@@ -14,6 +14,7 @@ import {
   describeWinStreak,
   type DescribedEvent,
 } from "@/lib/transactions/describeGameEvents";
+import { computeCoachBoxScoreModifier, computeCoachWinBonus } from "@/lib/staff/coachModifiers";
 import type { NewsImportance } from "@/generated/prisma/client";
 
 interface RankedEvent {
@@ -74,16 +75,24 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
     teamIds.add(game.awayLeagueTeamId);
   }
 
-  const [{ strengthByTeam, rostersByTeam }, teamInfo] = await Promise.all([
+  const [{ strengthByTeam, rostersByTeam }, teamInfo, headCoaches] = await Promise.all([
     computeLeagueTeamStrengths([...teamIds]),
     prisma.leagueTeam.findMany({
       where: { id: { in: [...teamIds] } },
       select: { id: true, currentStreak: true, team: { select: { city: true, name: true } } },
     }),
+    // Head Coach effects (Phase 15a) - a team with no coach hired yet
+    // behaves exactly as it did before this phase existed (see
+    // computeCoachWinBonus/computeCoachBoxScoreModifier's null handling).
+    prisma.staff.findMany({
+      where: { leagueId, leagueTeamId: { in: [...teamIds] }, role: "HEAD_COACH" },
+      select: { leagueTeamId: true, quality: true, style: true },
+    }),
   ]);
 
   const teamLabelById = new Map(teamInfo.map((t) => [t.id, `${t.team.city} ${t.team.name}`]));
   const streakByTeam = new Map(teamInfo.map((t) => [t.id, t.currentStreak]));
+  const headCoachByTeam = new Map(headCoaches.map((c) => [c.leagueTeamId as string, c]));
   const playerNameById = new Map<string, string>();
   for (const roster of rostersByTeam.values()) {
     for (const p of roster) playerNameById.set(p.leaguePlayerId, p.fullName);
@@ -105,7 +114,15 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
   for (const game of unplayedGames) {
     const homeStrength = strengthByTeam.get(game.homeLeagueTeamId) ?? 0;
     const awayStrength = strengthByTeam.get(game.awayLeagueTeamId) ?? 0;
-    const result = simulateGame(homeStrength, awayStrength);
+    const homeCoach = headCoachByTeam.get(game.homeLeagueTeamId) ?? null;
+    const awayCoach = headCoachByTeam.get(game.awayLeagueTeamId) ?? null;
+    const result = simulateGame(
+      homeStrength,
+      awayStrength,
+      Math.random,
+      computeCoachWinBonus(homeCoach?.quality ?? null),
+      computeCoachWinBonus(awayCoach?.quality ?? null),
+    );
 
     gameUpdates.push({ id: game.id, homeScore: result.homeScore, awayScore: result.awayScore });
 
@@ -171,6 +188,14 @@ export async function simulateGamesAction(leagueId: string, batchSize: SimulateB
         awayRoster: rostersByTeam.get(game.awayLeagueTeamId) ?? [],
         homeStrength,
         awayStrength,
+        homeCoachModifier: computeCoachBoxScoreModifier(
+          homeCoach?.quality ?? null,
+          homeCoach?.style ?? null,
+        ),
+        awayCoachModifier: computeCoachBoxScoreModifier(
+          awayCoach?.quality ?? null,
+          awayCoach?.style ?? null,
+        ),
       },
       result.homeScore,
       result.awayScore,

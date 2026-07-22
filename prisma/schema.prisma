@@ -201,6 +201,7 @@ model League {
   transactions       LeagueTransaction[]
   seasonExpectations SeasonExpectation[]
   playerGameStats    PlayerGameStat[]
+  staff              Staff[]
 
   @@index([ownerId])
   @@map("leagues")
@@ -222,6 +223,9 @@ enum TransactionType {
   // advanceSeasonAction, using the same SeasonAward rows already shown
   // elsewhere, not a new source of truth.
   AWARD
+  // Real staff hiring/firing (Phase 15a) - see the Staff model below.
+  STAFF_HIRE
+  STAFF_FIRE
 }
 
 // Lets the UI prioritize significant events over routine ones. Existing
@@ -350,6 +354,8 @@ model LeagueTeam {
   lowerSeedIn            PlayoffSeries[]  @relation("LowerSeedSeries")
   wonSeries              PlayoffSeries[]  @relation("WonSeries")
   playerGameStats        PlayerGameStat[]
+  staff                  Staff[]
+  staffContracts         StaffContract[]
 
   @@unique([leagueId, teamId])
   @@index([leagueId])
@@ -600,6 +606,76 @@ model ContractYear {
 
   @@unique([contractId, season])
   @@map("contract_years")
+}
+
+// Staff Management (Phase 15a) - Head Coach, Player Development Coach, and
+// Medical Staff, the three roles with a real, identified mechanical effect
+// on the simulation (see src/lib/simulation/boxScore.ts,
+// src/lib/development/developPlayerRating.ts, and
+// src/lib/actions/leagueEvents.ts respectively). Deliberately scoped down
+// from the full staff roster a real front office has - Scouts, Analytics,
+// and a Salary Cap Specialist are a later phase, and there is no hireable
+// "GM" role at all: the user already is the GM (see League.ownerConfidence/
+// src/lib/gm/jobSecurity.ts), this models the staff working for them.
+enum StaffRole {
+  HEAD_COACH
+  PLAYER_DEVELOPMENT_COACH
+  MEDICAL_STAFF
+}
+
+// Head Coach only - a flavor/style axis distinct from `quality` (skill).
+// Drives shot-selection tendency in box-score generation, not a skill level.
+enum CoachStyle {
+  PACE_AND_SPACE
+  BALANCED
+  GRIND_IT_OUT
+}
+
+model Staff {
+  id           String      @id @default(cuid())
+  leagueId     String
+  leagueTeamId String? // null = unemployed, available on the market
+  role         StaffRole
+  fullName     String
+  age          Int
+  // 60-99, same composite-rating convention as LeaguePlayer.overallRating -
+  // "how good are they at this job."
+  quality      Int
+  // 0-100, distinct from quality (skill) - drifts with team performance
+  // each season (src/lib/actions/offseason.ts). A young/unproven hire can
+  // be high-quality/low-reputation.
+  reputation   Int         @default(50)
+  style        CoachStyle? // Head Coach only, null for the other two roles
+
+  league     League         @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueTeam LeagueTeam?    @relation(fields: [leagueTeamId], references: [id])
+  contract   StaffContract?
+
+  @@index([leagueId, leagueTeamId])
+  @@index([leagueId, role])
+  @@map("staff")
+}
+
+// Deliberately a separate model from Contract, not a generalized/nullable
+// version of it - Contract.leaguePlayerId is @unique with no discriminator
+// column, and every existing call site assumes contract.leaguePlayer always
+// exists. Also simpler on purpose: one flat annual salary, no
+// ContractYear-equivalent year-by-year structure - coaching deals don't need
+// cap-style guarantees here, and staff salaries never count against the
+// player salary cap.
+model StaffContract {
+  id                String @id @default(cuid())
+  staffId           String @unique
+  leagueTeamId      String
+  signedSeason      Int
+  startSeason       Int
+  endSeason         Int
+  annualSalaryCents BigInt
+
+  staff      Staff      @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  leagueTeam LeagueTeam @relation(fields: [leagueTeamId], references: [id])
+
+  @@map("staff_contracts")
 }
 
 model DraftPick {

@@ -51,6 +51,18 @@ function pick<T>(pool: readonly T[], rng: () => number): T {
   return pool[Math.floor(rng() * pool.length)];
 }
 
+function clamp(v: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, v));
+}
+
+// Medical Staff effect (Phase 15a) - a real, modest nudge on both how often
+// a team gets hit and how long an injury lasts. 72 (this codebase's
+// standard neutral anchor) means no effect - null (no Medical Staff hired
+// yet) is treated identically, same convention as the other staff hooks.
+const MEDICAL_QUALITY_ANCHOR = 72;
+const MEDICAL_FREQUENCY_FACTOR_PER_POINT = 0.01;
+const MEDICAL_DURATION_FACTOR_PER_POINT = 0.006;
+
 /**
  * Rolled once per team per simulated game (2% default chance). On a hit,
  * one player is chosen uniformly from that team's currently-healthy active
@@ -61,9 +73,28 @@ export function rollForTeamInjury(
   healthyRoster: InjuryCandidate[],
   rng: () => number = Math.random,
   chance = 0.02,
+  medicalStaffQuality: number | null = null,
 ): InjuryRollResult | null {
   if (healthyRoster.length === 0) return null;
-  if (rng() >= chance) return null;
+
+  const frequencyFactor =
+    medicalStaffQuality === null
+      ? 1
+      : clamp(
+          1 - (medicalStaffQuality - MEDICAL_QUALITY_ANCHOR) * MEDICAL_FREQUENCY_FACTOR_PER_POINT,
+          0.6,
+          1.3,
+        );
+  if (rng() >= chance * frequencyFactor) return null;
+
+  const durationFactor =
+    medicalStaffQuality === null
+      ? 1
+      : clamp(
+          1 - (medicalStaffQuality - MEDICAL_QUALITY_ANCHOR) * MEDICAL_DURATION_FACTOR_PER_POINT,
+          0.75,
+          1.15,
+        );
 
   const injured = pick(healthyRoster, rng);
   const tierRoll = rng();
@@ -72,7 +103,7 @@ export function rollForTeamInjury(
     return {
       leaguePlayerId: injured.leaguePlayerId,
       playerName: injured.playerName,
-      durationGames: 1 + Math.floor(rng() * 5), // 1-5
+      durationGames: Math.max(1, Math.round((1 + Math.floor(rng() * 5)) * durationFactor)), // 1-5
       injuryName: pick(MINOR_INJURIES, rng),
       severity: "DAY_TO_DAY",
     };
@@ -81,7 +112,7 @@ export function rollForTeamInjury(
     return {
       leaguePlayerId: injured.leaguePlayerId,
       playerName: injured.playerName,
-      durationGames: 6 + Math.floor(rng() * 10), // 6-15
+      durationGames: Math.max(1, Math.round((6 + Math.floor(rng() * 10)) * durationFactor)), // 6-15
       injuryName: pick(MODERATE_INJURIES, rng),
       severity: "OUT",
     };
@@ -89,7 +120,7 @@ export function rollForTeamInjury(
   return {
     leaguePlayerId: injured.leaguePlayerId,
     playerName: injured.playerName,
-    durationGames: 16 + Math.floor(rng() * 15), // 16-30
+    durationGames: Math.max(1, Math.round((16 + Math.floor(rng() * 15)) * durationFactor)), // 16-30
     injuryName: pick(MAJOR_INJURIES, rng),
     severity: "SEASON_ENDING",
   };

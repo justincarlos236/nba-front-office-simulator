@@ -28,6 +28,19 @@ export interface PlayerBoxScoreLine {
   ftAttempted: number;
 }
 
+/**
+ * Head Coach effects (Phase 15a) - kept decoupled from the Staff/CoachStyle
+ * model itself; the caller (simulateGamesAction) translates a Head Coach's
+ * quality/style into this shape, so this module stays a pure function of
+ * numbers, same as everywhere else in it.
+ */
+export interface CoachModifier {
+  /** -1 (deep bench trust) .. +1 (short leash) - shifts deep-bench scratch chance. Derived from coach quality. */
+  benchTrustDelta: number;
+  /** Multiplier on 3-point attempt rate - derived from coach style (e.g. ~1.15 PACE_AND_SPACE, 1.0 BALANCED, ~0.85 GRIND_IT_OUT). */
+  threePaMultiplier: number;
+}
+
 export interface GameRosters {
   homeTeamId: string;
   awayTeamId: string;
@@ -35,6 +48,9 @@ export interface GameRosters {
   awayRoster: RosterPlayerForSimulation[];
   homeStrength: number;
   awayStrength: number;
+  /** Optional - a game with no Head Coach hired yet (or before this phase) behaves exactly as before. */
+  homeCoachModifier?: CoachModifier;
+  awayCoachModifier?: CoachModifier;
 }
 
 const TEAM_MINUTES = 240;
@@ -111,6 +127,7 @@ export function allocateMinutes(
   roster: RosterPlayerForSimulation[],
   marginOfVictory: number,
   rng: () => number = Math.random,
+  coachModifier?: CoachModifier,
 ): Map<string, number> {
   const rotation = buildRotation(roster);
   if (rotation.length === 0) return new Map();
@@ -121,11 +138,18 @@ export function allocateMinutes(
     0,
     1,
   );
+  // A trusted (high-quality) Head Coach plays the bench deeper/more
+  // consistently - shifts the deep-bench DNP-CD chance, doesn't eliminate it.
+  const scratchChance = clamp(
+    DEEP_BENCH_SCRATCH_CHANCE - (coachModifier?.benchTrustDelta ?? 0) * 0.15,
+    0.1,
+    0.6,
+  );
 
   const weights = rotation.map(({ player, rank }) => {
     const baseWeight = RANK_MINUTE_WEIGHTS[rank] ?? 0;
     if (baseWeight <= 0) return 0;
-    if (rank >= DEEP_BENCH_SCRATCH_RANK && rng() < DEEP_BENCH_SCRATCH_CHANCE) return 0;
+    if (rank >= DEEP_BENCH_SCRATCH_RANK && rng() < scratchChance) return 0;
 
     const ratingMultiplier = 0.8 + (player.overallRating / 99) * 0.2;
     const garbageMultiplier = rank < 5 ? 1 - 0.4 * garbageFactor : 1 + 0.5 * garbageFactor;
@@ -383,6 +407,7 @@ function generateRawPlayerGame(
   minutes: number,
   opponentStrength: number,
   rng: () => number,
+  threePaMultiplier: number = 1,
 ): PlayerBoxScoreLine {
   const prior = derivePer36Prior(player);
   const oppAdjustment = clamp(
@@ -418,7 +443,9 @@ function generateRawPlayerGame(
   const tsa36 = pts36 / (2 * ts);
   const fga36 = tsa36 / (1 + 0.44 * prior.ftRate);
   const fta36 = prior.ftRate * fga36;
-  const threePa36 = prior.threePARate * fga36;
+  // Head Coach style shifts shot selection, not shot volume - fgAttempted
+  // above is unaffected, only how many of those attempts are threes.
+  const threePa36 = prior.threePARate * threePaMultiplier * fga36;
 
   const fgAttempted = Math.max(0, Math.round(fga36 * minutesFactor * hot));
   const fg3Attempted = Math.min(
@@ -579,21 +606,38 @@ export function generateBoxScore(
 ): PlayerBoxScoreLine[] {
   const margin = Math.abs(homeScore - awayScore);
 
-  const homeMinutes = allocateMinutes(rosters.homeRoster, margin, rng);
-  const awayMinutes = allocateMinutes(rosters.awayRoster, margin, rng);
+  const homeMinutes = allocateMinutes(rosters.homeRoster, margin, rng, rosters.homeCoachModifier);
+  const awayMinutes = allocateMinutes(rosters.awayRoster, margin, rng, rosters.awayCoachModifier);
 
   const homeById = new Map(rosters.homeRoster.map((p) => [p.leaguePlayerId, p]));
   const awayById = new Map(rosters.awayRoster.map((p) => [p.leaguePlayerId, p]));
 
+  const homeThreePaMultiplier = rosters.homeCoachModifier?.threePaMultiplier ?? 1;
+  const awayThreePaMultiplier = rosters.awayCoachModifier?.threePaMultiplier ?? 1;
+
   const homeRaw = [...homeMinutes.entries()].map(([leaguePlayerId, minutes]) => {
     const player = homeById.get(leaguePlayerId);
     if (!player) throw new Error(`Unknown home roster player ${leaguePlayerId}`);
-    return generateRawPlayerGame(player, rosters.homeTeamId, minutes, rosters.awayStrength, rng);
+    return generateRawPlayerGame(
+      player,
+      rosters.homeTeamId,
+      minutes,
+      rosters.awayStrength,
+      rng,
+      homeThreePaMultiplier,
+    );
   });
   const awayRaw = [...awayMinutes.entries()].map(([leaguePlayerId, minutes]) => {
     const player = awayById.get(leaguePlayerId);
     if (!player) throw new Error(`Unknown away roster player ${leaguePlayerId}`);
-    return generateRawPlayerGame(player, rosters.awayTeamId, minutes, rosters.homeStrength, rng);
+    return generateRawPlayerGame(
+      player,
+      rosters.awayTeamId,
+      minutes,
+      rosters.homeStrength,
+      rng,
+      awayThreePaMultiplier,
+    );
   });
 
   const homeReconciled = rescaleStatBand(

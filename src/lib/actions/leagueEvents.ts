@@ -54,7 +54,7 @@ export async function applyLeagueEvents(
     ...new Set(simulatedGames.flatMap((g) => [g.homeLeagueTeamId, g.awayLeagueTeamId])),
   ];
 
-  const [batchTeams, injuredPlayers, healthyPlayers] = await Promise.all([
+  const [batchTeams, injuredPlayers, healthyPlayers, medicalStaff] = await Promise.all([
     prisma.leagueTeam.findMany({ where: { id: { in: teamIds } } }),
     prisma.leaguePlayer.findMany({
       where: { leagueId, leagueTeamId: { in: teamIds }, injuryStatus: { not: "HEALTHY" } },
@@ -64,11 +64,21 @@ export async function applyLeagueEvents(
       where: { leagueId, leagueTeamId: { in: teamIds }, injuryStatus: "HEALTHY", isActive: true },
       include: { player: true },
     }),
+    // Medical Staff effect (Phase 15a) - a team with no Medical Staff hired
+    // yet rolls injuries exactly as it did before this phase existed (see
+    // rollForTeamInjury's null handling).
+    prisma.staff.findMany({
+      where: { leagueId, leagueTeamId: { in: teamIds }, role: "MEDICAL_STAFF" },
+      select: { leagueTeamId: true, quality: true },
+    }),
   ]);
 
   // Already reflects this batch's wins/losses - simulateGamesAction persists
   // game/team updates before calling this function.
   const gamesPlayedByTeam = new Map(batchTeams.map((t) => [t.id, t.wins + t.losses]));
+  const medicalStaffQualityByTeam = new Map(
+    medicalStaff.map((s) => [s.leagueTeamId as string, s.quality]),
+  );
 
   const transactions: {
     type: "INJURY" | "TRADE" | "SIGNING";
@@ -113,7 +123,12 @@ export async function applyLeagueEvents(
   for (const game of simulatedGames) {
     for (const teamId of [game.homeLeagueTeamId, game.awayLeagueTeamId]) {
       const pool = healthyByTeam.get(teamId) ?? [];
-      const result = rollForTeamInjury(pool, Math.random, INJURY_CHANCE_PER_TEAM_GAME);
+      const result = rollForTeamInjury(
+        pool,
+        Math.random,
+        INJURY_CHANCE_PER_TEAM_GAME,
+        medicalStaffQualityByTeam.get(teamId) ?? null,
+      );
       if (!result) continue;
 
       // Remove from this team's pool so one batch can't injure the same

@@ -19,7 +19,7 @@ import {
 } from "@/lib/development/seasonAwards";
 import { createSeededRandom } from "@/lib/contracts/seededRandom";
 import { generateRoundRobinSchedule } from "@/lib/simulation/generateSchedule";
-import { describeRetirement } from "@/lib/transactions/describeTransaction";
+import { describeRetirement, describeStaffHire } from "@/lib/transactions/describeTransaction";
 import { importanceForRating } from "@/lib/transactions/newsImportance";
 import type { NewsImportance } from "@/generated/prisma/client";
 import { computeCapSheet } from "@/lib/cap/capSheet";
@@ -38,6 +38,10 @@ import {
   describeSeasonEvaluation,
 } from "@/lib/gm/ownershipMessages";
 import { buildFuturePickRows, FUTURE_PICK_WINDOW_YEARS } from "@/lib/draft/futurePicks";
+import { shouldStaffRetire } from "@/lib/staff/staffRetirement";
+import { computeStaffSalary } from "@/lib/staff/generateStaff";
+import { STAFF_ROLE_LABEL } from "@/lib/staff/labels";
+import type { StaffRole } from "@/generated/prisma/client";
 
 // Local, server-side copy of the award-category label (small duplication
 // of the UI's own AWARD_LABELS constants, same established pattern as
@@ -63,6 +67,14 @@ const DIRECTIVE_PAYROLL_REDUCTION_FRACTION = 0.85;
 // for the same reason simulateGamesAction batches game writes - see
 // docs/ARCHITECTURE.md.
 const UPDATE_BATCH_SIZE = 50;
+
+// Staff Management (Phase 15a) - Head Coach reputation drift off plain team
+// win% (universal across all 30 teams - SeasonExpectation is user-team-only,
+// so this can't reuse that system the way the user's own GM accountability
+// does). A CPU auto-backfill hire gets a flat, modest deal - CPU staff
+// salaries are flavor, not enforced against any cap.
+const HEAD_COACH_REPUTATION_DRIFT_PER_WIN_PCT = 20;
+const CPU_AUTO_HIRE_CONTRACT_YEARS = 2;
 
 async function requireOwnedLeague(leagueId: string) {
   const session = await auth();
@@ -122,6 +134,18 @@ export async function advanceSeasonAction(leagueId: string) {
     include: { player: true, contract: true },
   });
   const teamById = new Map(league.teams.map((t) => [t.id, t]));
+
+  // Staff Management (Phase 15a) - every staff member (rostered and
+  // free-agent-pool alike) ages this same season boundary.
+  const allStaff = await prisma.staff.findMany({
+    where: { leagueId },
+    include: { contract: true },
+  });
+  const developmentCoachQualityByTeam = new Map(
+    allStaff
+      .filter((s) => s.role === "PLAYER_DEVELOPMENT_COACH" && s.leagueTeamId)
+      .map((s) => [s.leagueTeamId as string, s.quality]),
+  );
 
   // GM accountability (Phase 10d): the outgoing season's expectation and
   // payroll must be captured now, before the contract-expiry cleanup below
@@ -236,6 +260,9 @@ export async function advanceSeasonAction(leagueId: string) {
       potentialRating: lp.potentialRating,
       age: newAge,
       rng,
+      developmentCoachQuality: lp.leagueTeamId
+        ? developmentCoachQualityByTeam.get(lp.leagueTeamId)
+        : undefined,
     });
     const retiring = shouldRetire(newAge, developedRating, rng);
     const finalRating = retiring ? oldRating : developedRating;
@@ -273,6 +300,85 @@ export async function advanceSeasonAction(leagueId: string) {
       isActive: !retiring,
       leagueTeamId: retiring || contractExpired ? null : lp.leagueTeamId,
       retiredSeason: retiring ? season : null,
+    });
+  }
+
+  // --- Staff season progression (Phase 15a) ---
+  // Uses its own seeded rng, independent of the player-development stream
+  // above - adding staff rolls must never shift what an existing league's
+  // players already deterministically develop into.
+  const staffRng = createSeededRandom(`${leagueId}-${season}-staff`);
+  const teamWinPctById = new Map(
+    league.teams.map((t) => {
+      const gamesPlayed = t.wins + t.losses;
+      return [t.id, gamesPlayed > 0 ? t.wins / gamesPlayed : 0.5];
+    }),
+  );
+
+  // Staff don't carry the player model's isActive/retiredSeason fields (no
+  // staff-history page in this phase's scope) - a retiring staff member is
+  // simply removed, cascading away their StaffContract.
+  const staffIdsToDelete: string[] = [];
+  const staffUpdates: {
+    id: string;
+    age: number;
+    leagueTeamId: string | null;
+    reputation: number;
+  }[] = [];
+  const staffContractIdsToDelete: string[] = [];
+  const staffRetirementEvents: {
+    description: string;
+    importance: NewsImportance;
+    teamIds: string[];
+  }[] = [];
+  // Only CPU teams' vacancies get auto-backfilled below - the user's own
+  // vacancy is left open for them to fill via hireStaffAction.
+  const vacatedCpuRoles: { leagueTeamId: string; role: StaffRole }[] = [];
+
+  for (const staff of allStaff) {
+    const newAge = staff.age + 1;
+    const retiring = shouldStaffRetire(newAge, staffRng);
+
+    if (retiring) {
+      staffIdsToDelete.push(staff.id);
+      if (staff.leagueTeamId) {
+        const team = teamById.get(staff.leagueTeamId)?.team;
+        staffRetirementEvents.push({
+          description: team
+            ? `${staff.fullName} is retiring after a career with the ${team.city} ${team.name}.`
+            : `${staff.fullName} is retiring.`,
+          importance: importanceForRating(staff.quality),
+          teamIds: [staff.leagueTeamId],
+        });
+        if (staff.leagueTeamId !== userLeagueTeamId) {
+          vacatedCpuRoles.push({ leagueTeamId: staff.leagueTeamId, role: staff.role });
+        }
+      }
+      continue;
+    }
+
+    const contractExpired = !!staff.contract && staff.contract.endSeason < newSeason;
+    if (contractExpired) {
+      staffContractIdsToDelete.push(staff.contract!.id);
+      if (staff.leagueTeamId && staff.leagueTeamId !== userLeagueTeamId) {
+        vacatedCpuRoles.push({ leagueTeamId: staff.leagueTeamId, role: staff.role });
+      }
+    }
+
+    // Head Coach reputation drift off plain team win% - the only universal
+    // (all 30 teams, not just the user's) performance signal available.
+    let reputation = staff.reputation;
+    if (staff.role === "HEAD_COACH" && staff.leagueTeamId && !contractExpired) {
+      const winPct = teamWinPctById.get(staff.leagueTeamId) ?? 0.5;
+      const delta = Math.round((winPct - 0.5) * HEAD_COACH_REPUTATION_DRIFT_PER_WIN_PCT);
+      reputation = Math.max(0, Math.min(100, staff.reputation + delta));
+    }
+
+    staffUpdates.push({
+      id: staff.id,
+      age: newAge,
+      leagueTeamId: contractExpired ? null : staff.leagueTeamId,
+      reputation,
     });
   }
 
@@ -314,6 +420,107 @@ export async function advanceSeasonAction(leagueId: string) {
       data: { wins: 0, losses: 0, currentStreak: 0 },
     }),
   ]);
+
+  // --- Staff persistence (Phase 15a) ---
+  // CPU auto-backfill: give every CPU vacancy the best available candidate
+  // for that role from the pool computed below (which includes both the
+  // pre-existing free-agent pool and anyone who just became unemployed this
+  // same offseason, e.g. a contract expiring). The user's own vacancy is
+  // deliberately left out - filling it is their call via hireStaffAction.
+  const finalLeagueTeamByStaffId = new Map(staffUpdates.map((u) => [u.id, u.leagueTeamId]));
+  const availablePoolByRole = new Map<StaffRole, { id: string; quality: number }[]>();
+  for (const staff of allStaff) {
+    if (staffIdsToDelete.includes(staff.id)) continue;
+    if (finalLeagueTeamByStaffId.get(staff.id) !== null) continue;
+    const list = availablePoolByRole.get(staff.role) ?? [];
+    list.push({ id: staff.id, quality: staff.quality });
+    availablePoolByRole.set(staff.role, list);
+  }
+
+  const cpuHires: {
+    staffId: string;
+    fullName: string;
+    leagueTeamId: string;
+    role: StaffRole;
+    quality: number;
+  }[] = [];
+  for (const vacancy of vacatedCpuRoles) {
+    const pool = availablePoolByRole.get(vacancy.role) ?? [];
+    if (pool.length === 0) continue;
+    // Best-available-for-a-reasonable-price heuristic - no real CPU-vs-CPU
+    // bidding war, just a deterministic top-quality pick from the pool.
+    pool.sort((a, b) => b.quality - a.quality);
+    const chosen = pool.shift()!;
+    availablePoolByRole.set(vacancy.role, pool);
+    const staffRecord = allStaff.find((s) => s.id === chosen.id)!;
+    cpuHires.push({
+      staffId: chosen.id,
+      fullName: staffRecord.fullName,
+      leagueTeamId: vacancy.leagueTeamId,
+      role: vacancy.role,
+      quality: chosen.quality,
+    });
+    const entry = staffUpdates.find((u) => u.id === chosen.id);
+    if (entry) entry.leagueTeamId = vacancy.leagueTeamId;
+  }
+
+  await Promise.all([
+    ...staffUpdates.map((u) =>
+      prisma.staff.update({
+        where: { id: u.id },
+        data: { age: u.age, leagueTeamId: u.leagueTeamId, reputation: u.reputation },
+      }),
+    ),
+    staffIdsToDelete.length > 0
+      ? prisma.staff.deleteMany({ where: { id: { in: staffIdsToDelete } } })
+      : Promise.resolve(),
+    staffContractIdsToDelete.length > 0
+      ? prisma.staffContract.deleteMany({ where: { id: { in: staffContractIdsToDelete } } })
+      : Promise.resolve(),
+  ]);
+
+  if (cpuHires.length > 0) {
+    await prisma.staffContract.createMany({
+      data: cpuHires.map((hire) => ({
+        staffId: hire.staffId,
+        leagueTeamId: hire.leagueTeamId,
+        signedSeason: newSeason,
+        startSeason: newSeason,
+        endSeason: newSeason + CPU_AUTO_HIRE_CONTRACT_YEARS - 1,
+        annualSalaryCents: computeStaffSalary(hire.role, hire.quality),
+      })),
+    });
+  }
+
+  const staffHireNewsRows = cpuHires.map((hire) => {
+    const team = teamById.get(hire.leagueTeamId)?.team;
+    return {
+      leagueId,
+      season,
+      type: "STAFF_HIRE" as const,
+      description: team
+        ? describeStaffHire(`${team.city} ${team.name}`, hire.fullName, STAFF_ROLE_LABEL[hire.role])
+        : `${hire.fullName} has a new job as ${STAFF_ROLE_LABEL[hire.role]}.`,
+      importance: importanceForRating(hire.quality),
+      teamIds: [hire.leagueTeamId],
+    };
+  });
+
+  if (staffRetirementEvents.length > 0 || staffHireNewsRows.length > 0) {
+    await prisma.leagueTransaction.createMany({
+      data: [
+        ...staffRetirementEvents.map((event) => ({
+          leagueId,
+          season,
+          type: "RETIREMENT" as const,
+          description: event.description,
+          importance: event.importance,
+          teamIds: event.teamIds,
+        })),
+        ...staffHireNewsRows,
+      ],
+    });
+  }
 
   const awardRows = (
     [
