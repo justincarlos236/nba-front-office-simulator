@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  computeDefensivePlayerOfTheYear,
   computeMostImprovedPlayer,
   computeMVP,
   computeRookieOfTheYear,
+  computeSixthManOfTheYear,
+  type BenchSeasonSnapshot,
+  type DefensiveSeasonSnapshot,
   type PlayerSeasonSnapshot,
 } from "./seasonAwards";
 
@@ -88,5 +92,103 @@ describe("computeMostImprovedPlayer", () => {
       player({ overallRating: 60, previousRating: 65 }),
     ];
     expect(computeMostImprovedPlayer(players)).toBeNull();
+  });
+});
+
+function defender(overrides: Partial<DefensiveSeasonSnapshot>): DefensiveSeasonSnapshot {
+  return {
+    leaguePlayerId: "d",
+    gamesPlayed: 40,
+    minutesPerGame: 30,
+    stealsPerGame: 1,
+    blocksPerGame: 0.5,
+    reboundsPerGame: 5,
+    ...overrides,
+  };
+}
+
+describe("computeDefensivePlayerOfTheYear", () => {
+  it("picks the best per-36 defensive producer", () => {
+    const players = [
+      defender({ leaguePlayerId: "a", stealsPerGame: 1, blocksPerGame: 3, minutesPerGame: 32 }),
+      defender({ leaguePlayerId: "b", stealsPerGame: 0.5, blocksPerGame: 0.5, minutesPerGame: 20 }),
+    ];
+    expect(computeDefensivePlayerOfTheYear(players)?.leaguePlayerId).toBe("a");
+  });
+
+  it("normalizes per-36 so a lower-minutes specialist can beat a high-minutes starter", () => {
+    const players = [
+      // Low minutes, but elite per-36 rim protection.
+      defender({
+        leaguePlayerId: "specialist",
+        minutesPerGame: 18,
+        blocksPerGame: 2.5,
+        stealsPerGame: 1,
+      }),
+      // Heavy minutes, modest defensive stats.
+      defender({
+        leaguePlayerId: "starter",
+        minutesPerGame: 34,
+        blocksPerGame: 0.4,
+        stealsPerGame: 0.8,
+      }),
+    ];
+    expect(computeDefensivePlayerOfTheYear(players)?.leaguePlayerId).toBe("specialist");
+  });
+
+  it("excludes players below the games-played threshold", () => {
+    const players = [
+      defender({ leaguePlayerId: "small-sample", gamesPlayed: 3, blocksPerGame: 10 }),
+    ];
+    expect(computeDefensivePlayerOfTheYear(players)).toBeNull();
+  });
+
+  it("returns null for an empty league", () => {
+    expect(computeDefensivePlayerOfTheYear([])).toBeNull();
+  });
+});
+
+function benchPlayer(overrides: Partial<BenchSeasonSnapshot>): BenchSeasonSnapshot {
+  return {
+    leaguePlayerId: "b",
+    gamesPlayed: 40,
+    minutesPerGame: 22,
+    pointsPerGame: 12,
+    reboundsPerGame: 4,
+    assistsPerGame: 2,
+    stealsPerGame: 1,
+    blocksPerGame: 0.3,
+    turnoversPerGame: 1.5,
+    trueShootingPct: 0.56,
+    ...overrides,
+  };
+}
+
+describe("computeSixthManOfTheYear", () => {
+  it("picks the best-producing bench player", () => {
+    const players = [
+      benchPlayer({ leaguePlayerId: "a", pointsPerGame: 20, reboundsPerGame: 6 }),
+      benchPlayer({ leaguePlayerId: "b", pointsPerGame: 10, reboundsPerGame: 3 }),
+    ];
+    expect(computeSixthManOfTheYear(players)?.leaguePlayerId).toBe("a");
+  });
+
+  it("excludes starter-level minutes even if production is strong", () => {
+    const players = [
+      benchPlayer({ leaguePlayerId: "starter", minutesPerGame: 34, pointsPerGame: 28 }),
+      benchPlayer({ leaguePlayerId: "real-bench", minutesPerGame: 24, pointsPerGame: 15 }),
+    ];
+    expect(computeSixthManOfTheYear(players)?.leaguePlayerId).toBe("real-bench");
+  });
+
+  it("excludes players below the games-played threshold", () => {
+    const players = [
+      benchPlayer({ leaguePlayerId: "small-sample", gamesPlayed: 2, pointsPerGame: 30 }),
+    ];
+    expect(computeSixthManOfTheYear(players)).toBeNull();
+  });
+
+  it("returns null for an empty league", () => {
+    expect(computeSixthManOfTheYear([])).toBeNull();
   });
 });

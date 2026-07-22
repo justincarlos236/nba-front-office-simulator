@@ -1443,3 +1443,40 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   career highs. Next up: **14c** (real award races, unblocked now that
   DPOY/6MOY have the box-score/bench-usage data they were previously
   missing), then **14d** (news) and **14e** (News page redesign).
+- **2026-07-22 (Phase 14c)**: Defensive Player of the Year and Sixth Man
+  of the Year become real, computed awards - `seasonAwards.ts` used to
+  exclude both outright for lacking individual defensive/bench-usage
+  data; that's no longer true now that Phase 14a/14b's box scores exist.
+  MVP/ROY/MIP are untouched. `computeDefensivePlayerOfTheYear` uses
+  per-36 steals/blocks/rebounds (the only defensive stats this engine
+  tracks - an honestly narrow slice, not a full defensive rating), gated
+  by a games-played minimum. `computeSixthManOfTheYear` reuses
+  `computePerformanceScore` (the same tested composite the valuation
+  model already uses) fed real simulated season averages, gated by games
+  played and an average-minutes ceiling standing in for a starter/bench
+  flag the engine doesn't persist. Wired into `advanceSeasonAction` via
+  one `groupBy` over `PlayerGameStat`, including a real true-shooting%
+  calculation from actual season sums (not an approximation). Also added
+  a live "Award race - if the season ended today" section
+  (`src/lib/stats/awardRace.ts`) to the leaders page - the same award
+  functions, fed in-progress aggregates instead of final ones; MIP is
+  deliberately left out of the live race since rating only changes at a
+  season transition in this engine, so there's no meaningful in-season
+  signal to show. Found and fixed a real, unrelated e2e fragility along
+  the way: `free-agency.spec.ts` extracted a signed player's name via
+  `.textContent()` on a table cell that's contained a `PlayerChip` since
+  Phase 13b - when that player has no real photo, the avatar's initials
+  fallback and the name concatenate (e.g. "DNDaishen Nix"); fixed by
+  targeting the name's own `<span>`, same pattern already used elsewhere.
+  All 376 unit tests (8 new, for the two new award functions), `tsc`,
+  `eslint`, a clean production build, and all 10 e2e tests passing;
+  visually verified
+  the live award race mid-season (real, differentiated leaders per
+  category, appropriately empty for DPOY/6MOY on a still-small sample)
+  and a real completed season's award panel (MVP/ROY/MIP rendering
+  correctly; DPOY/6MOY correctly absent rather than faked, since this
+  particular test league's real box-score-tracked games - as opposed to
+  the DB-speed-fast-forwarded remainder - never gave any player the 10
+  games these awards require, exactly the guard working as intended).
+  Next up: **14d** (news system, migrated onto real events incrementally)
+  and **14e** (News page filtering/search redesign).

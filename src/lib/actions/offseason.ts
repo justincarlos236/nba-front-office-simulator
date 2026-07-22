@@ -11,7 +11,11 @@ import {
   computeMVP,
   computeMostImprovedPlayer,
   computeRookieOfTheYear,
+  computeDefensivePlayerOfTheYear,
+  computeSixthManOfTheYear,
   type PlayerSeasonSnapshot,
+  type DefensiveSeasonSnapshot,
+  type BenchSeasonSnapshot,
 } from "@/lib/development/seasonAwards";
 import { createSeededRandom } from "@/lib/contracts/seededRandom";
 import { generateRoundRobinSchedule } from "@/lib/simulation/generateSchedule";
@@ -123,8 +127,33 @@ export async function advanceSeasonAction(leagueId: string) {
       ])
     : [null, []];
 
+  // Real per-game box-score aggregates for the season just completed -
+  // what DPOY/Sixth Man are computed from below, now that they exist
+  // (Phase 14a/14b). One groupBy, not a query per player.
+  const boxScoreAggByPlayer = new Map(
+    (
+      await prisma.playerGameStat.groupBy({
+        by: ["leaguePlayerId"],
+        where: { leagueId, season },
+        _avg: {
+          minutesPlayed: true,
+          points: true,
+          rebounds: true,
+          assists: true,
+          steals: true,
+          blocks: true,
+          turnovers: true,
+        },
+        _sum: { points: true, fgAttempted: true, ftAttempted: true },
+        _count: { _all: true },
+      })
+    ).map((g) => [g.leaguePlayerId, g]),
+  );
+
   const rosteredSnapshots: PlayerSeasonSnapshot[] = [];
   const developmentSnapshots: PlayerSeasonSnapshot[] = [];
+  const defensiveSnapshots: DefensiveSeasonSnapshot[] = [];
+  const benchSnapshots: BenchSeasonSnapshot[] = [];
   const playerUpdates: {
     id: string;
     overallRating: number;
@@ -152,6 +181,37 @@ export async function advanceSeasonAction(leagueId: string) {
         experience,
         teamWinPct: gamesPlayed > 0 ? (team?.wins ?? 0) / gamesPlayed : 0,
       });
+
+      const boxAgg = boxScoreAggByPlayer.get(lp.id);
+      if (boxAgg && boxAgg._count._all > 0) {
+        const minutesPerGame = boxAgg._avg.minutesPlayed ?? 0;
+        // Real true-shooting formula (TS% = PTS / (2 * (FGA + 0.44*FTA))),
+        // not an approximation - all three inputs are real season sums.
+        const trueShootingDenominator =
+          2 * ((boxAgg._sum.fgAttempted ?? 0) + 0.44 * (boxAgg._sum.ftAttempted ?? 0));
+        const trueShootingPct =
+          trueShootingDenominator > 0 ? (boxAgg._sum.points ?? 0) / trueShootingDenominator : 0.56;
+        defensiveSnapshots.push({
+          leaguePlayerId: lp.id,
+          gamesPlayed: boxAgg._count._all,
+          minutesPerGame,
+          stealsPerGame: boxAgg._avg.steals ?? 0,
+          blocksPerGame: boxAgg._avg.blocks ?? 0,
+          reboundsPerGame: boxAgg._avg.rebounds ?? 0,
+        });
+        benchSnapshots.push({
+          leaguePlayerId: lp.id,
+          gamesPlayed: boxAgg._count._all,
+          minutesPerGame,
+          pointsPerGame: boxAgg._avg.points ?? 0,
+          reboundsPerGame: boxAgg._avg.rebounds ?? 0,
+          assistsPerGame: boxAgg._avg.assists ?? 0,
+          stealsPerGame: boxAgg._avg.steals ?? 0,
+          blocksPerGame: boxAgg._avg.blocks ?? 0,
+          turnoversPerGame: boxAgg._avg.turnovers ?? 0,
+          trueShootingPct,
+        });
+      }
     }
 
     const developedRating = developPlayerRating({
@@ -198,6 +258,8 @@ export async function advanceSeasonAction(leagueId: string) {
   const mvp = computeMVP(rosteredSnapshots);
   const roy = computeRookieOfTheYear(rosteredSnapshots);
   const mip = computeMostImprovedPlayer(developmentSnapshots);
+  const dpoy = computeDefensivePlayerOfTheYear(defensiveSnapshots);
+  const sixthMan = computeSixthManOfTheYear(benchSnapshots);
 
   for (let i = 0; i < playerUpdates.length; i += UPDATE_BATCH_SIZE) {
     const batch = playerUpdates.slice(i, i + UPDATE_BATCH_SIZE);
@@ -234,8 +296,15 @@ export async function advanceSeasonAction(leagueId: string) {
       mvp && { category: "MVP" as const, ...mvp },
       roy && { category: "ROOKIE_OF_THE_YEAR" as const, ...roy },
       mip && { category: "MOST_IMPROVED_PLAYER" as const, ...mip },
+      dpoy && { category: "DEFENSIVE_PLAYER_OF_THE_YEAR" as const, ...dpoy },
+      sixthMan && { category: "SIXTH_MAN_OF_THE_YEAR" as const, ...sixthMan },
     ].filter(Boolean) as {
-      category: "MVP" | "ROOKIE_OF_THE_YEAR" | "MOST_IMPROVED_PLAYER";
+      category:
+        | "MVP"
+        | "ROOKIE_OF_THE_YEAR"
+        | "MOST_IMPROVED_PLAYER"
+        | "DEFENSIVE_PLAYER_OF_THE_YEAR"
+        | "SIXTH_MAN_OF_THE_YEAR";
       leaguePlayerId: string;
       value: number;
     }[]

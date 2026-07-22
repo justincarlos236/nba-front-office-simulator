@@ -28,11 +28,17 @@ test("sign a free agent to a minimum deal, and reject an offer bigger than any e
   await page.getByRole("link", { name: "Free agents" }).click();
   await expect(page.getByText(/unsigned players/)).toBeVisible();
 
+  // The first cell's PlayerChip renders an avatar (initials fallback text
+  // when there's no real photo) immediately before the name - a plain
+  // .textContent() on the cell can concatenate the two (e.g. "DNDaishen
+  // Nix"), so extract just the name's own <span> instead.
   const signedPlayerName = await page
     .locator("tbody tr")
     .first()
     .locator("td")
     .first()
+    .locator("span")
+    .last()
     .textContent();
 
   // Target the link role directly rather than a bare text match - hundreds

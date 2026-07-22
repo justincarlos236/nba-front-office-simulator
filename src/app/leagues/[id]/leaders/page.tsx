@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getLeagueLeaders, type LeagueLeaderEntry } from "@/lib/stats/leagueLeaders";
+import { getLiveAwardRace, type AwardRaceEntry } from "@/lib/stats/awardRace";
 import { PlayerChip } from "@/components/players/PlayerChip";
 
 export const dynamic = "force-dynamic";
@@ -61,6 +62,33 @@ function LeaderboardCard({
   );
 }
 
+function AwardRaceCard({
+  title,
+  entry,
+  leagueId,
+}: {
+  title: string;
+  entry: AwardRaceEntry | null;
+  leagueId: string;
+}) {
+  return (
+    <div className="rounded-xl border border-accent/30 bg-accent/5 p-4">
+      <h2 className="mb-3 text-xs tracking-wide text-muted uppercase">{title}</h2>
+      {entry ? (
+        <PlayerChip
+          identity={{ kind: "league", leagueId, leaguePlayerId: entry.leaguePlayerId }}
+          fullName={entry.fullName}
+          photoUrl={entry.photoUrl}
+          teamPrimaryColor={entry.teamPrimaryColor}
+          size="md"
+        />
+      ) : (
+        <p className="text-sm text-muted">Not enough games played yet.</p>
+      )}
+    </div>
+  );
+}
+
 export default async function LeadersPage({ params }: PageProps) {
   const { id } = await params;
   const session = await auth();
@@ -69,7 +97,10 @@ export default async function LeadersPage({ params }: PageProps) {
   const league = await prisma.league.findUnique({ where: { id } });
   if (!league || league.ownerId !== session.user.id) notFound();
 
-  const leaders = await getLeagueLeaders(league.id, league.currentSeason);
+  const [leaders, awardRace] = await Promise.all([
+    getLeagueLeaders(league.id, league.currentSeason),
+    getLiveAwardRace(league.id, league.currentSeason),
+  ]);
   const percentEntries = (entries: LeagueLeaderEntry[]) =>
     entries.map((e) => ({ ...e, value: e.value * 100 }));
 
@@ -86,7 +117,29 @@ export default async function LeadersPage({ params }: PageProps) {
         Updates as more games are simulated.
       </p>
 
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <h2 className="mt-8 text-lg font-semibold text-foreground">
+        Award race - if the season ended today
+      </h2>
+      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <AwardRaceCard title="MVP" entry={awardRace.mvp} leagueId={league.id} />
+        <AwardRaceCard
+          title="Defensive Player of the Year"
+          entry={awardRace.defensivePlayerOfTheYear}
+          leagueId={league.id}
+        />
+        <AwardRaceCard
+          title="Sixth Man of the Year"
+          entry={awardRace.sixthManOfTheYear}
+          leagueId={league.id}
+        />
+        <AwardRaceCard
+          title="Rookie of the Year"
+          entry={awardRace.rookieOfTheYear}
+          leagueId={league.id}
+        />
+      </div>
+
+      <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <LeaderboardCard
           title="Points per game"
           suffix=" PPG"

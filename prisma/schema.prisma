@@ -484,6 +484,11 @@ enum AwardCategory {
   MVP
   ROOKIE_OF_THE_YEAR
   MOST_IMPROVED_PLAYER
+  // Unblocked by Phase 14a/14b's real box-score data - previously excluded
+  // for lacking individual defensive/bench-usage stats to back them
+  // honestly. See src/lib/development/seasonAwards.ts.
+  DEFENSIVE_PLAYER_OF_THE_YEAR
+  SIXTH_MAN_OF_THE_YEAR
 }
 
 // One row per league+season+category. Computed once when the season is

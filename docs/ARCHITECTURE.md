@@ -638,6 +638,56 @@ one underlying data source for every stats-driven feature.
   scoring milestone - real detection against real simulated performances,
   not flavor text.
 
+## Real award races (Phase 14c)
+
+`src/lib/development/seasonAwards.ts` originally excluded
+Defensive Player of the Year and Sixth Man of the Year outright - its own
+comment said so - because the engine had no individual defensive or
+bench-usage data to back them honestly. Once Phase 14a/14b's real box
+scores existed, that was no longer true, so this phase unblocks exactly
+that documented limitation. MVP/ROY/MIP are untouched - already tuned,
+already tested, no reason to disturb them.
+
+- **`computeDefensivePlayerOfTheYear`**: per-36 steals/blocks/rebounds
+  (the only defensive box-score stats this lightweight engine tracks -
+  no opponent-shooting or on/off data, an honestly narrow slice of
+  defensive value, not a claim of a complete defensive rating), gated by
+  a minimum games-played threshold so an early hot streak can't be
+  mistaken for a real defensive season.
+- **`computeSixthManOfTheYear`**: reuses `computePerformanceScore` - the
+  same tested composite the valuation model already uses - fed a
+  player's real simulated season averages instead of the frozen
+  real-world baseline. Eligibility requires enough games played and an
+  average-minutes ceiling as a bench-role proxy, since there's no
+  persisted starter/bench flag (box-score minutes are generated per game,
+  not stored as a role) - an honestly-documented approximation, not a
+  real starter/bench distinction.
+- **Wired into `advanceSeasonAction`** (`src/lib/actions/offseason.ts`):
+  one `groupBy` over `PlayerGameStat` for the season just completed
+  builds both award functions' input snapshots, including a real
+  true-shooting-percentage calculation (`points / (2 * (FGA + 0.44*FTA))`)
+  from actual season sums - not an approximation standing in for a
+  missing input.
+- **Live award race, not just a season-end snapshot**
+  (`src/lib/stats/awardRace.ts`, `getLiveAwardRace`): "if the season
+  ended today" standings for MVP/DPOY/6MOY/ROY, computed by the exact
+  same functions the real season-end awards use, fed live in-progress
+  aggregates instead of final ones - one shared implementation, not a
+  parallel approximation for the in-season view. Most Improved Player is
+  deliberately excluded from the live race: rating only ever changes at a
+  season transition in this engine, so there's no meaningful
+  "improvement so far" signal to show mid-season - honestly omitted
+  rather than displaying a number that would always read as zero.
+  Surfaced as an "Award race" section on the league leaders page.
+- **A real, unrelated e2e fragility surfaced and fixed along the way**:
+  `free-agency.spec.ts` extracted a signed player's name via
+  `.textContent()` on a table cell that (since Phase 13b) contains a
+  `PlayerChip` - when that specific player has no real photo, the
+  avatar's initials fallback and the name text concatenate in the
+  extracted string (e.g. "DNDaishen Nix"). Same root cause as an
+  already-fixed locator issue elsewhere; fixed the same way, by
+  targeting the name's own `<span>` instead of the whole cell.
+
 ## Around-the-league activity: injuries, CPU trades & CPU signings
 
 Without this, the only news in a league would ever be things the user

@@ -19,6 +19,8 @@ const AWARD_LABELS: Record<string, string> = {
   MVP: "Most Valuable Player",
   ROOKIE_OF_THE_YEAR: "Rookie of the Year",
   MOST_IMPROVED_PLAYER: "Most Improved Player",
+  DEFENSIVE_PLAYER_OF_THE_YEAR: "Defensive Player of the Year",
+  SIXTH_MAN_OF_THE_YEAR: "Sixth Man of the Year",
 };
 
 export default async function HistoryPage({ params }: PageProps) {

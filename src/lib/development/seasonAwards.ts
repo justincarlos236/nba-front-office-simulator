@@ -1,13 +1,19 @@
 /**
  * Awards computed only from data the simulator actually tracks honestly:
  * rating, team record, rookie status, and season-over-season rating
- * change. Deliberately excludes DPOY/Sixth Man/All-Defense - those would
- * need individual defensive box-score stats or a bench/starter depth
- * chart, neither of which exist yet (the game engine is strength-based,
- * not possession-by-possession - see docs/ARCHITECTURE.md), so faking
- * them would mean presenting a guess as a real result. Same principle
- * this project already applies to contract data.
+ * change. MVP/ROY/MIP predate the box-score engine (Phase 14a) and stay
+ * exactly as they were - untouched, already tuned and tested.
+ *
+ * DEFENSIVE_PLAYER_OF_THE_YEAR and SIXTH_MAN_OF_THE_YEAR were added once
+ * Phase 14a/14b's real per-game box scores existed - previously excluded
+ * here (and still excluded: Coach of the Year, All-Defense) for lacking
+ * the individual defensive/bench-usage data to back them honestly. Same
+ * "don't fabricate what the engine can't support" principle this project
+ * already applies to contract data - now that real steals/blocks/minutes
+ * exist per game, DPOY/6MOY have real data to stand on.
  */
+import { computePerformanceScore } from "@/lib/valuation/playerValue";
+
 export interface PlayerSeasonSnapshot {
   leaguePlayerId: string;
   overallRating: number;
@@ -66,5 +72,97 @@ export function computeMostImprovedPlayer(
   // A league full of decliners shouldn't produce a "most improved" winner
   // with a negative or zero delta.
   if (!best || bestDelta <= 0) return null;
+  return best;
+}
+
+export interface DefensiveSeasonSnapshot {
+  leaguePlayerId: string;
+  gamesPlayed: number;
+  minutesPerGame: number;
+  stealsPerGame: number;
+  blocksPerGame: number;
+  reboundsPerGame: number;
+}
+
+// Enough of a season's sample that a hot early stretch of steals/blocks
+// isn't mistaken for a real defensive season - same "small sample is
+// noise" principle the valuation model and league leaders already apply.
+const MIN_GAMES_FOR_DEFENSIVE_AWARD = 10;
+
+/**
+ * Only steals/blocks/rebounds are available - this engine has no
+ * opponent-shooting or on/off defensive data (see docs/ARCHITECTURE.md's
+ * box-score limitations), so this is a real but narrow slice of defensive
+ * value, not a claim of complete defensive rating. Per-36 normalized so a
+ * lower-minutes defensive specialist isn't crowded out by a high-minutes
+ * starter posting only slightly better raw per-game numbers.
+ */
+export function computeDefensivePlayerOfTheYear(
+  players: DefensiveSeasonSnapshot[],
+): SeasonAwardWinner | null {
+  const eligible = players.filter((p) => p.gamesPlayed >= MIN_GAMES_FOR_DEFENSIVE_AWARD);
+  if (eligible.length === 0) return null;
+
+  let best: SeasonAwardWinner | null = null;
+  let bestScore = -Infinity;
+  for (const p of eligible) {
+    const per36 = (v: number) => (v * 36) / Math.max(p.minutesPerGame, 1);
+    const score =
+      per36(p.stealsPerGame) * 2.5 + per36(p.blocksPerGame) * 2.5 + per36(p.reboundsPerGame) * 0.3;
+    if (score > bestScore) {
+      bestScore = score;
+      best = { leaguePlayerId: p.leaguePlayerId, value: Math.round(score * 100) / 100 };
+    }
+  }
+  return best;
+}
+
+export interface BenchSeasonSnapshot {
+  leaguePlayerId: string;
+  gamesPlayed: number;
+  minutesPerGame: number;
+  pointsPerGame: number;
+  reboundsPerGame: number;
+  assistsPerGame: number;
+  stealsPerGame: number;
+  blocksPerGame: number;
+  turnoversPerGame: number;
+  trueShootingPct: number;
+}
+
+const MIN_GAMES_FOR_SIXTH_MAN_AWARD = 10;
+// A real per-game "started" flag doesn't exist (box-score minutes are
+// generated per game, not persisted as a starter/bench role) - average
+// minutes below this is used as a bench-role proxy, honestly documented as
+// an approximation rather than a real starter/bench distinction.
+const SIXTH_MAN_MINUTES_CEILING = 28;
+
+/** Reuses the same tested performance-composite the valuation model uses, fed real simulated season averages instead of the frozen real-world baseline. */
+export function computeSixthManOfTheYear(players: BenchSeasonSnapshot[]): SeasonAwardWinner | null {
+  const eligible = players.filter(
+    (p) =>
+      p.gamesPlayed >= MIN_GAMES_FOR_SIXTH_MAN_AWARD &&
+      p.minutesPerGame < SIXTH_MAN_MINUTES_CEILING,
+  );
+  if (eligible.length === 0) return null;
+
+  let best: SeasonAwardWinner | null = null;
+  let bestScore = -Infinity;
+  for (const p of eligible) {
+    const score = computePerformanceScore({
+      pointsPerGame: p.pointsPerGame,
+      reboundsPerGame: p.reboundsPerGame,
+      assistsPerGame: p.assistsPerGame,
+      stealsPerGame: p.stealsPerGame,
+      blocksPerGame: p.blocksPerGame,
+      turnoversPerGame: p.turnoversPerGame,
+      minutesPerGame: p.minutesPerGame,
+      trueShootingPct: p.trueShootingPct,
+    });
+    if (score > bestScore) {
+      bestScore = score;
+      best = { leaguePlayerId: p.leaguePlayerId, value: score };
+    }
+  }
   return best;
 }
