@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { simulateGamesAction, type SimulateBatchSize } from "@/lib/actions/simulation";
+import { simulateGamesAction, type SimulateTarget } from "@/lib/actions/simulation";
 
 export function SimulateControls({
   leagueId,
@@ -14,14 +14,14 @@ export function SimulateControls({
   const [lastResult, setLastResult] = useState<string | null>(null);
   const [remaining, setRemaining] = useState(gamesRemaining);
 
-  function handleSimulate(batchSize: SimulateBatchSize) {
+  function handleSimulate(target: SimulateTarget) {
     startTransition(async () => {
-      const result = await simulateGamesAction(leagueId, batchSize);
-      setRemaining(result.remaining);
+      const result = await simulateGamesAction(leagueId, target);
+      setRemaining((r) => Math.max(0, r - result.userGamesCompleted));
       setLastResult(
-        result.simulated === 0
+        result.userGamesCompleted === 0
           ? "Season complete - no games left to simulate."
-          : `Simulated ${result.simulated} game${result.simulated > 1 ? "s" : ""}. ${result.remaining} remaining.`,
+          : `Played ${result.userGamesCompleted} of your team's game${result.userGamesCompleted > 1 ? "s" : ""} (${result.simulated} league-wide).`,
       );
     });
   }
@@ -34,33 +34,22 @@ export function SimulateControls({
         <button
           type="button"
           disabled={disabled}
-          onClick={() => handleSimulate(1)}
+          onClick={() => handleSimulate("NEXT_GAME")}
           className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Simulate next game
+          {isPending ? "Simulating..." : "Sim next game"}
         </button>
         <button
           type="button"
           disabled={disabled}
-          onClick={() => handleSimulate(10)}
+          onClick={() => handleSimulate("NEXT_10_GAMES")}
           className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Simulate next 10
+          {isPending ? "Simulating..." : "Sim next 10 games"}
         </button>
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => handleSimulate(50)}
-          className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Simulate next 50
-        </button>
-        <span className="text-sm text-muted">
-          {remaining} games remaining league-wide this season
-        </span>
+        <span className="text-sm text-muted">{remaining} games remaining on your schedule</span>
       </div>
       {lastResult && <p className="mt-3 text-sm text-accent">{lastResult}</p>}
-      {isPending && <p className="mt-3 text-sm text-muted">Simulating...</p>}
     </div>
   );
 }

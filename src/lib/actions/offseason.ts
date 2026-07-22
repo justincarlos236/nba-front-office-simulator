@@ -704,7 +704,11 @@ export async function advanceSeasonAction(leagueId: string) {
   }
 
   const schedule = generateRoundRobinSchedule(
-    league.teams.map((t) => t.id),
+    league.teams.map((t) => ({
+      leagueTeamId: t.id,
+      conference: t.team.conference,
+      division: t.team.division,
+    })),
     `${leagueId}-${newSeason}`,
   );
   await prisma.game.createMany({
@@ -712,6 +716,7 @@ export async function advanceSeasonAction(leagueId: string) {
       leagueId,
       season: newSeason,
       gameNumber: game.gameNumber,
+      dayIndex: game.dayIndex,
       homeLeagueTeamId: game.homeLeagueTeamId,
       awayLeagueTeamId: game.awayLeagueTeamId,
     })),

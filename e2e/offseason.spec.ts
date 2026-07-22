@@ -122,7 +122,7 @@ test("play through the playoffs, then advance to the next season", async ({ page
   // and a fresh schedule of unplayed games should exist.
   await page.goto(`/leagues/${leagueId}/standings`);
   await expect(page.getByRole("heading", { name: /2024-25 Standings/ })).toBeVisible();
-  const remainingText = await page.getByText(/games remaining league-wide/).textContent();
+  const remainingText = await page.getByText(/games remaining on your schedule/).textContent();
   const remaining = Number(remainingText?.match(/(\d+) games/)?.[1]);
   expect(remaining).toBeGreaterThan(0);
 

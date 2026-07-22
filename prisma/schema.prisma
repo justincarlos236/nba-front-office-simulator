@@ -421,7 +421,13 @@ model Game {
   id               String    @id @default(cuid())
   leagueId         String
   season           Int
-  gameNumber       Int // this team's/league's sequence position, not a calendar date
+  gameNumber       Int // sequence position within the season, derived from dayIndex order
+  // Sequential day-of-season index (1-based), assigned at schedule
+  // generation - not a real DateTime (see generateSchedule.ts). Null for
+  // games generated before this field shipped - existing mid-season
+  // leagues keep their old schedule as-is rather than a destructive
+  // regeneration.
+  dayIndex         Int?
   type             GameType  @default(REGULAR_SEASON)
   seriesId         String?
   homeLeagueTeamId String

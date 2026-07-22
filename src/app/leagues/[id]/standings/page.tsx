@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { SimulateControls } from "@/components/simulation/SimulateControls";
+import { SeasonCalendar, type CalendarGame } from "@/components/simulation/SeasonCalendar";
 
 export const dynamic = "force-dynamic";
 
@@ -87,13 +88,18 @@ export default async function StandingsPage({ params }: PageProps) {
   });
   if (!league || league.ownerId !== session.user.id) notFound();
 
-  const [gamesRemaining, recentResults] = await Promise.all([
+  const myLeagueTeamId = league.userControlledTeamId;
+
+  const [gamesRemaining, recentResults, myGames] = await Promise.all([
     prisma.game.count({
       where: {
         leagueId: league.id,
         season: league.currentSeason,
         type: "REGULAR_SEASON",
         playedAt: null,
+        ...(myLeagueTeamId
+          ? { OR: [{ homeLeagueTeamId: myLeagueTeamId }, { awayLeagueTeamId: myLeagueTeamId }] }
+          : {}),
       },
     }),
     prisma.game.findMany({
@@ -102,7 +108,36 @@ export default async function StandingsPage({ params }: PageProps) {
       orderBy: { playedAt: "desc" },
       take: 10,
     }),
+    myLeagueTeamId
+      ? prisma.game.findMany({
+          where: {
+            leagueId: league.id,
+            season: league.currentSeason,
+            type: "REGULAR_SEASON",
+            OR: [{ homeLeagueTeamId: myLeagueTeamId }, { awayLeagueTeamId: myLeagueTeamId }],
+          },
+          include: { homeTeam: { include: { team: true } }, awayTeam: { include: { team: true } } },
+          orderBy: { gameNumber: "asc" },
+        })
+      : Promise.resolve([]),
   ]);
+
+  const calendarGames: CalendarGame[] = myGames
+    .filter((g) => g.dayIndex !== null)
+    .map((g) => {
+      const isHome = g.homeLeagueTeamId === myLeagueTeamId;
+      const opponent = isHome ? g.awayTeam : g.homeTeam;
+      const myScore = isHome ? g.homeScore : g.awayScore;
+      const opponentScore = isHome ? g.awayScore : g.homeScore;
+      return {
+        dayIndex: g.dayIndex!,
+        opponentLabel: `${opponent.team.city} ${opponent.team.name}`,
+        isHome,
+        won: myScore !== null && opponentScore !== null ? myScore > opponentScore : null,
+        teamScore: myScore,
+        opponentScore: opponentScore,
+      };
+    });
 
   const eastTeams = league.teams
     .filter((lt) => lt.team.conference === "EAST")
@@ -143,6 +178,15 @@ export default async function StandingsPage({ params }: PageProps) {
       <div className="mt-8">
         <SimulateControls leagueId={league.id} gamesRemaining={gamesRemaining} />
       </div>
+
+      {myLeagueTeamId && (
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold text-foreground">Your Schedule</h2>
+          <div className="mt-3">
+            <SeasonCalendar games={calendarGames} />
+          </div>
+        </div>
+      )}
 
       <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-2">
         <StandingsTable

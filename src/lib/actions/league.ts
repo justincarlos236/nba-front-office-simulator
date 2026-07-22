@@ -98,8 +98,12 @@ export async function createLeagueAction(formData: FormData) {
     data: { userControlledTeamId: teamIdToLeagueTeamId.get(teamId) },
   });
 
+  const teamById = new Map(teams.map((t) => [t.id, t]));
   const schedule = generateRoundRobinSchedule(
-    leagueTeams.map((lt) => lt.id),
+    leagueTeams.map((lt) => {
+      const team = teamById.get(lt.teamId)!;
+      return { leagueTeamId: lt.id, conference: team.conference, division: team.division };
+    }),
     league.id,
   );
   await prisma.game.createMany({
@@ -107,6 +111,7 @@ export async function createLeagueAction(formData: FormData) {
       leagueId: league.id,
       season: SEASON,
       gameNumber: game.gameNumber,
+      dayIndex: game.dayIndex,
       homeLeagueTeamId: game.homeLeagueTeamId,
       awayLeagueTeamId: game.awayLeagueTeamId,
     })),

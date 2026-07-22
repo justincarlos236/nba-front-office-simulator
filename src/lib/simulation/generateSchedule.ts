@@ -1,37 +1,278 @@
 import { createSeededRandom } from "../contracts/seededRandom";
 
+export interface ScheduleTeam {
+  leagueTeamId: string;
+  conference: "EAST" | "WEST";
+  division: string;
+}
+
 export interface ScheduledGame {
   gameNumber: number;
+  dayIndex: number;
   homeLeagueTeamId: string;
   awayLeagueTeamId: string;
 }
 
-/**
- * Generates a simplified round-robin regular season: every team plays
- * every other team exactly twice (once at home, once away). For 30 teams
- * that's 58 games/team (1,740 total), not the real NBA's 82 - which
- * weights division/conference opponents unevenly (division rivals 4x,
- * some conference teams 3-4x, the other conference 2x). Replicating that
- * exact weighting is a lot of complexity for little added value here, so
- * this is a documented, intentional simplification (see docs/ARCHITECTURE.md).
- *
- * Deterministic given `seed`, so a league's schedule is reproducible.
- */
-export function generateRoundRobinSchedule(leagueTeamIds: string[], seed: string): ScheduledGame[] {
-  const games: Omit<ScheduledGame, "gameNumber">[] = [];
+interface UnscheduledGame {
+  homeLeagueTeamId: string;
+  awayLeagueTeamId: string;
+}
 
-  for (let i = 0; i < leagueTeamIds.length; i++) {
-    for (let j = i + 1; j < leagueTeamIds.length; j++) {
-      games.push({ homeLeagueTeamId: leagueTeamIds[i], awayLeagueTeamId: leagueTeamIds[j] });
-      games.push({ homeLeagueTeamId: leagueTeamIds[j], awayLeagueTeamId: leagueTeamIds[i] });
+interface PairGames {
+  teamA: string;
+  teamB: string;
+  count: number;
+}
+
+// Close to the real NBA's Oct-April window - a target, not a hard cap (see
+// assignDays: the day-by-day loop runs past this if the eligibility rule
+// needs more room, it never fails to schedule everyone).
+const SEASON_LENGTH_DAYS_TARGET = 175;
+
+function shuffledIndices(n: number, rng: () => number): number[] {
+  const arr = Array.from({ length: n }, (_, i) => i);
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function groupByConferenceAndDivision(
+  teams: ScheduleTeam[],
+): Map<string, Map<string, ScheduleTeam[]>> {
+  const byConference = new Map<string, Map<string, ScheduleTeam[]>>();
+  for (const t of teams) {
+    let byDivision = byConference.get(t.conference);
+    if (!byDivision) {
+      byDivision = new Map();
+      byConference.set(t.conference, byDivision);
+    }
+    const list = byDivision.get(t.division) ?? [];
+    list.push(t);
+    byDivision.set(t.division, list);
+  }
+  return byConference;
+}
+
+/**
+ * Real NBA per-team distribution: 4 division rivals x4 (16) + 10
+ * same-conference non-division opponents split 6x4/4x3 (36) + 15
+ * other-conference opponents x2 (30) = 82. The 6-of-10/4-of-10 split is
+ * exact and symmetric by construction, not approximated: the non-division
+ * relationship between any two divisions (5 teams each) is a complete
+ * bipartite K(5,5), which decomposes into exactly 5 perfect matchings
+ * (team i <-> team (i+k)%5 for k=0..4). Picking 3 of those 5 matchings as
+ * "4-game" and the other 2 as "3-game" makes every team's degree work out
+ * to 3+3=6 four-game opponents and 2+2=4 three-game opponents (solving
+ * a+b=6, a+c=6, b+c=6 across a conference's 3 division-pair relationships
+ * gives a=b=c=3) - no general regular-graph search needed.
+ */
+function buildPairGames(teams: ScheduleTeam[], rng: () => number): PairGames[] {
+  const pairs: PairGames[] = [];
+  const byConference = groupByConferenceAndDivision(teams);
+
+  for (const byDivision of byConference.values()) {
+    const divisions = [...byDivision.values()];
+
+    for (const divTeams of divisions) {
+      for (let i = 0; i < divTeams.length; i++) {
+        for (let j = i + 1; j < divTeams.length; j++) {
+          pairs.push({
+            teamA: divTeams[i].leagueTeamId,
+            teamB: divTeams[j].leagueTeamId,
+            count: 4,
+          });
+        }
+      }
+    }
+
+    for (let d1 = 0; d1 < divisions.length; d1++) {
+      for (let d2 = d1 + 1; d2 < divisions.length; d2++) {
+        const teamsX = divisions[d1];
+        const teamsY = divisions[d2];
+        const bonusMatchings = new Set(shuffledIndices(5, rng).slice(0, 3));
+        for (let k = 0; k < 5; k++) {
+          const count = bonusMatchings.has(k) ? 4 : 3;
+          for (let i = 0; i < teamsX.length; i++) {
+            const j = (i + k) % teamsY.length;
+            pairs.push({ teamA: teamsX[i].leagueTeamId, teamB: teamsY[j].leagueTeamId, count });
+          }
+        }
+      }
     }
   }
 
-  const rng = createSeededRandom(seed);
-  for (let i = games.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [games[i], games[j]] = [games[j], games[i]];
+  const conferences = [...byConference.values()];
+  if (conferences.length === 2) {
+    const allA = [...conferences[0].values()].flat();
+    const allB = [...conferences[1].values()].flat();
+    for (const a of allA) {
+      for (const b of allB) {
+        pairs.push({ teamA: a.leagueTeamId, teamB: b.leagueTeamId, count: 2 });
+      }
+    }
   }
 
-  return games.map((game, index) => ({ ...game, gameNumber: index + 1 }));
+  return pairs;
+}
+
+/** Expands a pair's total game count into individual home/away games - even counts split evenly, odd counts (the 3-game conference pairs) give the extra home game to whichever team id sorts first, a simple deterministic tiebreak. */
+function expandPairToGames(pair: PairGames): UnscheduledGame[] {
+  let homeForA: number;
+  if (pair.count % 2 === 0) {
+    homeForA = pair.count / 2;
+  } else {
+    homeForA = pair.teamA < pair.teamB ? Math.ceil(pair.count / 2) : Math.floor(pair.count / 2);
+  }
+  const homeForB = pair.count - homeForA;
+
+  const games: UnscheduledGame[] = [];
+  for (let i = 0; i < homeForA; i++) {
+    games.push({ homeLeagueTeamId: pair.teamA, awayLeagueTeamId: pair.teamB });
+  }
+  for (let i = 0; i < homeForB; i++) {
+    games.push({ homeLeagueTeamId: pair.teamB, awayLeagueTeamId: pair.teamA });
+  }
+  return games;
+}
+
+function pairKey(a: string, b: string): string {
+  return a < b ? `${a}|${b}` : `${b}|${a}`;
+}
+
+/**
+ * Capacity-and-eligibility-constrained day-by-day assignment - not a
+ * random greedy chain. A first-draft "shuffle + max(lastDay)+1+jitter"
+ * approach has no season-length target, no control over back-to-back
+ * frequency, and no mechanism keeping all 30 teams finishing near the
+ * same day; this calendar is meant to be the foundation for future
+ * date-sensitive systems (All-Star break, trade deadline, fatigue,
+ * injury recovery timing), so it needs real temporal structure:
+ * - A team may not play 3 days in a row (caps back-to-backs at exactly
+ *   one, matching modern real NBA scheduling).
+ * - Each day fills up to a target game count derived from the total
+ *   games and SEASON_LENGTH_DAYS_TARGET, prioritizing pairs where a team
+ *   is furthest behind on its remaining games - this actively keeps all
+ *   30 teams finishing close together instead of drifting apart.
+ * - The loop runs past the target length if the eligibility rule needs
+ *   more room; it never fails to schedule everyone.
+ */
+function assignDays(games: UnscheduledGame[], rng: () => number): ScheduledGame[] {
+  const targetGamesPerDay = Math.max(1, Math.ceil(games.length / SEASON_LENGTH_DAYS_TARGET));
+
+  const remainingByPair = new Map<string, UnscheduledGame[]>();
+  for (const g of shuffledIndices(games.length, rng).map((i) => games[i])) {
+    const key = pairKey(g.homeLeagueTeamId, g.awayLeagueTeamId);
+    const list = remainingByPair.get(key) ?? [];
+    list.push(g);
+    remainingByPair.set(key, list);
+  }
+
+  const gamesRemainingByTeam = new Map<string, number>();
+  for (const g of games) {
+    gamesRemainingByTeam.set(
+      g.homeLeagueTeamId,
+      (gamesRemainingByTeam.get(g.homeLeagueTeamId) ?? 0) + 1,
+    );
+    gamesRemainingByTeam.set(
+      g.awayLeagueTeamId,
+      (gamesRemainingByTeam.get(g.awayLeagueTeamId) ?? 0) + 1,
+    );
+  }
+
+  const lastPlayedDay = new Map<string, number>();
+  const consecutiveStreak = new Map<string, number>();
+
+  function isEligible(teamId: string, day: number): boolean {
+    const last = lastPlayedDay.get(teamId);
+    if (last === undefined || last !== day - 1) return true;
+    return (consecutiveStreak.get(teamId) ?? 0) < 2;
+  }
+
+  function markPlayed(teamId: string, day: number): void {
+    const last = lastPlayedDay.get(teamId);
+    consecutiveStreak.set(teamId, last === day - 1 ? (consecutiveStreak.get(teamId) ?? 0) + 1 : 1);
+    lastPlayedDay.set(teamId, day);
+  }
+
+  const scheduled: ScheduledGame[] = [];
+  let remainingCount = games.length;
+  let day = 0;
+  const maxDays = SEASON_LENGTH_DAYS_TARGET * 3;
+
+  while (remainingCount > 0 && day < maxDays) {
+    day += 1;
+    const usedToday = new Set<string>();
+    let scheduledToday = 0;
+
+    const candidates = [...remainingByPair.values()]
+      .filter((list) => list.length > 0)
+      .sort((listA, listB) => {
+        const gA = listA[0];
+        const gB = listB[0];
+        const minA = Math.min(
+          gamesRemainingByTeam.get(gA.homeLeagueTeamId) ?? 0,
+          gamesRemainingByTeam.get(gA.awayLeagueTeamId) ?? 0,
+        );
+        const minB = Math.min(
+          gamesRemainingByTeam.get(gB.homeLeagueTeamId) ?? 0,
+          gamesRemainingByTeam.get(gB.awayLeagueTeamId) ?? 0,
+        );
+        return minB - minA;
+      });
+
+    for (const list of candidates) {
+      if (scheduledToday >= targetGamesPerDay) break;
+      const game = list[0];
+      const { homeLeagueTeamId, awayLeagueTeamId } = game;
+      if (usedToday.has(homeLeagueTeamId) || usedToday.has(awayLeagueTeamId)) continue;
+      if (!isEligible(homeLeagueTeamId, day) || !isEligible(awayLeagueTeamId, day)) continue;
+
+      list.shift();
+      usedToday.add(homeLeagueTeamId);
+      usedToday.add(awayLeagueTeamId);
+      scheduled.push({ ...game, dayIndex: day, gameNumber: 0 });
+      remainingCount -= 1;
+      scheduledToday += 1;
+      gamesRemainingByTeam.set(
+        homeLeagueTeamId,
+        (gamesRemainingByTeam.get(homeLeagueTeamId) ?? 1) - 1,
+      );
+      gamesRemainingByTeam.set(
+        awayLeagueTeamId,
+        (gamesRemainingByTeam.get(awayLeagueTeamId) ?? 1) - 1,
+      );
+      markPlayed(homeLeagueTeamId, day);
+      markPlayed(awayLeagueTeamId, day);
+    }
+  }
+
+  if (remainingCount > 0) {
+    throw new Error(
+      `generateRoundRobinSchedule: failed to schedule ${remainingCount} games within ${maxDays} days`,
+    );
+  }
+
+  return scheduled;
+}
+
+/**
+ * Real-NBA-weighted 82-game regular season (1,230 games league-wide) with
+ * a day-by-day calendar (`dayIndex`) - see buildPairGames/assignDays for
+ * the exact weighting and scheduling rules. `gameNumber` is derived from
+ * the final day-sorted order, so existing simulation code (which resolves
+ * games in `gameNumber` order) automatically processes them chronologically
+ * with no changes needed there. Deterministic given `seed`. Assumes the
+ * standard 30-team, 2-conference/3-division/5-team-per-division structure
+ * (same assumption the previous simplified schedule made implicitly).
+ */
+export function generateRoundRobinSchedule(teams: ScheduleTeam[], seed: string): ScheduledGame[] {
+  const rng = createSeededRandom(seed);
+  const pairs = buildPairGames(teams, rng);
+  const games = pairs.flatMap(expandPairToGames);
+  const scheduled = assignDays(games, rng);
+
+  scheduled.sort((a, b) => a.dayIndex - b.dayIndex);
+  return scheduled.map((game, index) => ({ ...game, gameNumber: index + 1 }));
 }

@@ -24,6 +24,96 @@ actually asked for.
 
 ---
 
+## Team-Centric Simulation Flow & Season Calendar (requested 2026-07-22)
+
+### Request (verbatim)
+
+> I want to redesign the simulation flow so that it is centered around
+> the user's own franchise rather than arbitrary league-wide game
+> batches. The simulator should feel like I am managing a single NBA team
+> throughout an entire season, while the rest of the league continues
+> progressing naturally in the background.
+>
+> Remove the current simulation options that advance a fixed number of
+> league-wide games. Replace them with only two simulation actions: Sim
+> Next Game and Sim Next 10 Games.
+>
+> Sim Next Game should advance the calendar until my team's next
+> scheduled game has been completed. Any NBA games involving other teams
+> that occur before or during that period should still be simulated
+> automatically behind the scenes so that the entire league schedule
+> remains synchronized. When the simulation finishes, my team should have
+> completed exactly one additional game.
+>
+> Sim Next 10 Games should work in the same way, except it should
+> continue advancing until my team has completed its next ten scheduled
+> games. All other NBA games should continue to be simulated
+> automatically in the background so that league standings, statistics,
+> injuries, awards, and every other system continue progressing normally.
+> Also, increase the games played for each team to 82 (like real life
+> NBA) from the current 58.
+>
+> I also want to introduce a dedicated season calendar that becomes the
+> primary visualization while simulation is occurring. Instead of
+> instantly jumping to the end of the simulation, the calendar should
+> visibly progress day by day as time advances, giving users the feeling
+> that an NBA season is unfolding rather than simply skipping ahead. For
+> this first version, keep the calendar simple and focused only on games.
+> Days without a game can remain empty, while every game day should be
+> clearly marked with the opponent and the result once the game has been
+> simulated. Display a clear visual indicator such as W or L, using an
+> intuitive design that matches the rest of the application's UI. The
+> progression through the calendar should feel smooth and polished so
+> users can visually follow their season as each game is completed.
+>
+> The overall goal is to make advancing through the season feel much more
+> immersive and intuitive. Users should feel like they are progressing
+> through their own team's schedule while the rest of the NBA evolves
+> naturally in the background, with the calendar serving as a visual
+> timeline of the season rather than simply pressing a fast-forward
+> button.
+
+### Scoping decision
+
+Per an architecture-overlap review: reused the existing per-chunk
+simulate/persist/injury-event pipeline entirely (only its stopping
+condition changed); the schedule algorithm needed a real rewrite (58
+games/team was structural, not a constant) - the user chose real NBA
+schedule weighting over a simplified version. The day-assignment
+algorithm went through a second pass after the user pushed back on an
+initial "shuffle + jitter" design that had no season-length target or
+back-to-back control - replaced with a capacity-and-eligibility-
+constrained day-by-day loop so the calendar has real temporal structure
+to support future date-sensitive systems. See `docs/ARCHITECTURE.md`'s
+Season simulation section for the full design.
+
+### Status
+
+**Built:**
+
+- Real-NBA-weighted 82-game schedule (1,230 games league-wide): 4
+  division rivals x4, 10 conference non-division opponents split 6x4/4x3,
+  15 other-conference opponents x2.
+- `Game.dayIndex` - a day-by-day season calendar with realistic pacing
+  (season lands ~150-160 days, all 30 teams finish within a few days of
+  each other, back-to-backs capped at one in a row).
+- Team-centric `simulateGamesAction`: "Sim Next Game" / "Sim Next 10
+  Games" advance until the user's own team has played that many more
+  games, resolving every other team's games automatically.
+- `SeasonCalendar` on the Standings page showing the user's own team's
+  full schedule with W/L results and rest-day gaps.
+
+**Not built / outstanding:**
+
+- Real calendar dates (actual `DateTime`s, month/week grouping) - just a
+  sequential day index, per the "keep it simple" request.
+- Animated/incremental reveal of games as they resolve - busy-state +
+  refresh, same as the existing draft page pattern.
+- Regenerating the schedule for leagues already mid-season - only new
+  leagues/seasons get the 82-game/day-indexed schedule.
+
+---
+
 ## Fan Engagement (requested 2026-07-22)
 
 ### Request (verbatim)

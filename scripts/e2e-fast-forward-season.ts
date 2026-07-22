@@ -3,9 +3,10 @@
  * remaining regular-season game for a league, using the exact same pure
  * simulation functions and league-event logic `simulateGamesAction` uses
  * (see src/lib/actions/simulation.ts) - just invoked directly here instead
- * of through an authenticated server action. Finishing an 870-game season
- * one UI-driven batch of 50 at a time is what season-simulation.spec.ts
- * already covers, and would make a playoffs-focused test prohibitively slow.
+ * of through an authenticated server action. Finishing a 1,230-game season
+ * one UI-driven "Sim next 10 games" click at a time is what
+ * season-simulation.spec.ts already covers, and would make a
+ * playoffs-focused test prohibitively slow.
  *
  * Processes games in batches of 50 (mirroring the real action's max batch
  * size) rather than one giant batch, both to match production behavior more

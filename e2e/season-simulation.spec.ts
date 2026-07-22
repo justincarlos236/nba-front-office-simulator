@@ -24,13 +24,13 @@ test("simulate games and see standings update", async ({ page }) => {
   await expect(page.getByText("Western Conference")).toBeVisible();
   await expect(page.getByText("Boston Celtics")).toBeVisible();
 
-  const remainingBefore = await page.getByText(/games remaining league-wide/).textContent();
+  const remainingBefore = await page.getByText(/games remaining on your schedule/).textContent();
   const gamesBefore = Number(remainingBefore?.match(/(\d+) games/)?.[1]);
 
-  await page.getByText("Simulate next 10").click();
-  await expect(page.getByText(/Simulated 10 games/)).toBeVisible({ timeout: 15_000 });
+  await page.getByText("Sim next 10 games").click();
+  await expect(page.getByText(/Played 10 of your team's games/)).toBeVisible({ timeout: 30_000 });
 
-  const remainingAfter = await page.getByText(/games remaining league-wide/).textContent();
+  const remainingAfter = await page.getByText(/games remaining on your schedule/).textContent();
   const gamesAfter = Number(remainingAfter?.match(/(\d+) games/)?.[1]);
   expect(gamesBefore - gamesAfter).toBe(10);
 
