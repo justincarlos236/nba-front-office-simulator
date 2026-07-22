@@ -17,10 +17,12 @@ import { suggestCounterOffer, type IdentifiedTradeAsset } from "@/lib/trade/sugg
 import { TEAM_IDENTITY_LABEL, type TeamIdentity } from "@/lib/gm/teamIdentity";
 import { TEAM_NEED_LABEL, type TeamNeed } from "@/lib/gm/teamNeeds";
 import { GM_PERSONALITY_LABEL, type GmPersonality } from "@/lib/gm/gmPersonality";
+import { PlayerAvatar } from "@/components/players/PlayerAvatar";
 
 interface RosterPlayerDTO {
   leaguePlayerId: string;
   fullName: string;
+  photoUrl: string | null;
   position: "PG" | "SG" | "SF" | "PF" | "C";
   overallRating: number;
   potentialRating: number;
@@ -44,6 +46,7 @@ interface DraftPickDTO {
 interface TeamSideDTO {
   leagueTeamId: string;
   name: string;
+  primaryColor: string;
   apronLevel: string;
   capSpaceCents: string;
   players: RosterPlayerDTO[];
@@ -345,6 +348,7 @@ export function TradeBuilder({
         <RosterColumn
           title={`Send from ${myTeam.name}`}
           players={myTeam.players}
+          teamPrimaryColor={myTeam.primaryColor}
           selected={mySelected}
           onToggle={(id) => toggle(mySelected, setMySelected, id)}
           picks={myTeam.picks}
@@ -354,6 +358,7 @@ export function TradeBuilder({
         <RosterColumn
           title={`Receive from ${theirTeam.name}`}
           players={theirTeam.players}
+          teamPrimaryColor={theirTeam.primaryColor}
           selected={theirSelected}
           onToggle={(id) => toggle(theirSelected, setTheirSelected, id)}
           picks={theirTeam.picks}
@@ -483,6 +488,7 @@ function TeamIdentityCard({ team }: { team: TeamSideDTO }) {
 function RosterColumn({
   title,
   players,
+  teamPrimaryColor,
   selected,
   onToggle,
   picks,
@@ -491,6 +497,7 @@ function RosterColumn({
 }: {
   title: string;
   players: RosterPlayerDTO[];
+  teamPrimaryColor: string;
   selected: Set<string>;
   onToggle: (id: string) => void;
   picks: DraftPickDTO[];
@@ -512,6 +519,12 @@ function RosterColumn({
                 checked={selected.has(p.leaguePlayerId)}
                 onChange={() => onToggle(p.leaguePlayerId)}
                 className="accent-orange-500"
+              />
+              <PlayerAvatar
+                photoUrl={p.photoUrl}
+                fullName={p.fullName}
+                size="sm"
+                teamPrimaryColor={teamPrimaryColor}
               />
               <span className="text-foreground">{p.fullName}</span>
               <span className="text-xs text-muted">{p.position}</span>

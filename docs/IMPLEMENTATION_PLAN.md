@@ -1254,4 +1254,59 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   including actual top-5 picks - other draft years look correctly rated.
   Root cause not yet investigated; likely the original NBA-2K rescale's
   backfill missed fictional draft-generated players. Flagged as a known
-  follow-up task, not silently dropped.
+  follow-up task, not silently dropped. **Update, same day**: this turned
+  out to be the exact same bug fixed below (`createLeagueAction`'s
+  unfiltered player pool) - draft year 2024 was disproportionately
+  represented because it was most real/test leagues' first-ever draft
+  class. No longer deferred; confirmed zero sub-60-rated rows remain in
+  any real league after that fix's cleanup.
+- **2026-07-22 (later)**: Phase 13a completed (real player headshots +
+  `PlayerAvatar` component) - see `docs/ARCHITECTURE.md`'s "Data sourcing"
+  section for the full ESPN headshot-resolution pipeline writeup
+  (`espnPlayerPhoto.ts`, `resolve-player-photos.ts`, 468/497 real players
+  resolved). `PlayerAvatar.tsx` renders the photo with a graceful
+  `onError` fallback to an initials-on-gradient placeholder (team-tinted
+  when a team color is available), wired into every current player-display
+  surface: the team dashboard roster, free-agent board and signing page,
+  `TradeBuilder`'s roster columns, offseason awards/retirements, league
+  history awards/retirees, team-browse rosters, and the player detail
+  page header. Found and fixed a real gap in the test setup while writing
+  `PlayerAvatar.test.tsx` (this app's first component test): `vitest.config.ts`
+  doesn't set `test.globals: true`, so React Testing Library's own
+  auto-cleanup (which looks for a global `afterEach`) never registered -
+  every test's render was leaking into the next, corrupting later
+  assertions. Fixed once, project-wide, in `vitest.setup.ts` rather than
+  per-test. 6 new `PlayerAvatar` tests (348 total - the resolver's own 9
+  tests were already counted in the 342 baseline from the rating-formula
+  fix above, written earlier in this same pass). All `tsc`, `eslint`, a clean
+  production build (including the statically-generated `/teams/[abbreviation]`
+  pages), and all 10 e2e tests passing; visually verified real ESPN
+  headshots actually decode in a live browser (not just curl) across the
+  dashboard roster, free-agent board, and team-browse page.
+- **2026-07-22 (later)**: Found and fixed a serious, actively-worsening
+  bug while doing Phase 13a's visual verification - a fresh league's
+  free-agent board showed "6387 unsigned players" instead of a plausible
+  ~100-250. Root cause: `createLeagueAction` bootstrapped a new league
+  from `prisma.player.findMany()` with **no filter at all** - every
+  fictional draft-generated prospect ever created by _any_ league
+  (`draftProspectsToTeams` creates a real, permanent `Player` row for
+  every generated rookie, with no per-league scoping and no cleanup when
+  a league is later deleted) leaked into every subsequent new league's
+  free-agent pool, each showing a broken flat 50 rating (no real stats to
+  compute one from). This wasn't just a test-data artifact - direct
+  inspection of the user's own 5 real leagues showed the pollution
+  monotonically worsening over time (Boston Celtics, the oldest, was
+  clean at 497 total players; the newest, Brooklyn Nets, had 6,649,
+  6,267 of them broken free agents). Fixed with a one-line
+  `externalId: { not: null }` filter (`src/lib/actions/league.ts`) so
+  bootstrap only ever pulls the real 497-player pool; fictional prospects
+  still enter a league normally, just through that league's own draft.
+  Cleaned up the existing damage: deleted 85,948 already-polluted
+  `LeaguePlayer` rows across all 16 leagues in the database (real and
+  leftover test) and 6,075 fully-orphaned fictional `Player` rows (zero
+  remaining references anywhere, safe to remove), followed by
+  `VACUUM FULL`. All 5 real leagues now show sane free-agent counts
+  (77-251). All 348 unit tests, `tsc`, `eslint`, a clean production
+  build, and all 10 e2e tests passing; visually re-verified a fresh
+  league now shows a plausible free-agent count (115) with real
+  headshots still rendering correctly.

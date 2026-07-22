@@ -45,7 +45,18 @@ export async function createLeagueAction(formData: FormData) {
 
   const [teams, players, chosenTeam] = await Promise.all([
     prisma.team.findMany(),
-    prisma.player.findMany({ include: { seasonStats: { where: { season: SEASON } } } }),
+    // Only the real, imported 497-player pool (externalId set) - fictional
+    // draft-generated prospects (externalId null) are created per-league by
+    // that league's own draft (src/lib/actions/draft.ts) and must never be
+    // swept into a *different* new league's bootstrap. Player is shared,
+    // global reference data with no per-league scoping and no cleanup when
+    // a league is deleted, so without this filter every past league's
+    // fictional rookies (accumulated indefinitely) would leak into every
+    // future league's free-agent pool.
+    prisma.player.findMany({
+      where: { externalId: { not: null } },
+      include: { seasonStats: { where: { season: SEASON } } },
+    }),
     prisma.team.findUnique({ where: { id: teamId } }),
   ]);
   if (!chosenTeam) throw new Error("Unknown team");

@@ -6,6 +6,7 @@ import { formatCentsCompact } from "@/lib/money";
 import { scoreToCapFraction, computePerformanceScore } from "@/lib/valuation/playerValue";
 import { getPlayerValueTier, PLAYER_VALUE_TIER_LABEL } from "@/lib/valuation/playerValueTier";
 import { getSeasonCapRules } from "@/lib/cap/constants";
+import { PlayerAvatar } from "@/components/players/PlayerAvatar";
 
 export const dynamic = "force-dynamic";
 
@@ -75,7 +76,14 @@ export default async function FreeAgentsPage({ params }: PageProps) {
               return (
                 <tr key={fa.id} className="border-t border-border hover:bg-surface/60">
                   <td className="px-4 py-3 font-medium text-foreground">
-                    {fa.player.fullName}
+                    <span className="inline-flex items-center gap-3 align-middle">
+                      <PlayerAvatar
+                        photoUrl={fa.player.photoUrl}
+                        fullName={fa.player.fullName}
+                        size="sm"
+                      />
+                      {fa.player.fullName}
+                    </span>
                     {fa.reSigningTeamId === league.userControlledTeamId && (
                       <span className="ml-2 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-emerald-400 uppercase">
                         Re-Signing Rights

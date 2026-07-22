@@ -8,6 +8,7 @@ import { getSeasonCapRules } from "@/lib/cap/constants";
 import { computeReSigningMaxOfferCents } from "@/lib/freeagency/reSigningRights";
 import { getSigningExceptionUsage } from "@/lib/actions/signingException";
 import { SignOfferForm } from "@/components/freeagency/SignOfferForm";
+import { PlayerAvatar } from "@/components/players/PlayerAvatar";
 
 export const dynamic = "force-dynamic";
 
@@ -85,13 +86,22 @@ export default async function SignFreeAgentPage({ params }: PageProps) {
       >
         &larr; All free agents
       </Link>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground">
-        Offer a contract to {freeAgent.player.fullName}
-      </h1>
-      <p className="mt-2 text-muted">
-        {freeAgent.player.position} &middot; Rating {freeAgent.overallRating}
-        {stat ? ` · ${stat.pointsPerGame.toFixed(1)} PPG in 2023-24` : ""}
-      </p>
+      <div className="mt-4 flex items-center gap-4">
+        <PlayerAvatar
+          photoUrl={freeAgent.player.photoUrl}
+          fullName={freeAgent.player.fullName}
+          size="lg"
+        />
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Offer a contract to {freeAgent.player.fullName}
+          </h1>
+          <p className="mt-2 text-muted">
+            {freeAgent.player.position} &middot; Rating {freeAgent.overallRating}
+            {stat ? ` · ${stat.pointsPerGame.toFixed(1)} PPG in 2023-24` : ""}
+          </p>
+        </div>
+      </div>
       {hasReSigningRights && (
         <p className="mt-3 inline-block rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-400">
           You hold this player&apos;s Re-Signing Rights - you can exceed the cap to keep them

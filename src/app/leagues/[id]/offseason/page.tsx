@@ -6,6 +6,7 @@ import { getSeasonCapRules } from "@/lib/cap/constants";
 import { formatCentsCompact } from "@/lib/money";
 import { estimateAge } from "@/lib/players/age";
 import { OffseasonControls } from "@/components/offseason/OffseasonControls";
+import { PlayerAvatar } from "@/components/players/PlayerAvatar";
 
 export const dynamic = "force-dynamic";
 
@@ -181,7 +182,13 @@ export default async function OffseasonPage({ params }: PageProps) {
                   <p className="text-xs tracking-wide text-muted uppercase">
                     {AWARD_LABELS[award.category] ?? award.category}
                   </p>
-                  <p className="mt-1 font-semibold text-foreground">
+                  <p className="mt-1 flex items-center gap-2 font-semibold text-foreground">
+                    <PlayerAvatar
+                      photoUrl={award.leaguePlayer.player.photoUrl}
+                      fullName={award.leaguePlayer.player.fullName}
+                      size="sm"
+                      teamPrimaryColor={award.leaguePlayer.leagueTeam?.team.primaryColor}
+                    />
                     {award.leaguePlayer.player.fullName}
                   </p>
                   <p className="text-xs text-muted">
@@ -205,7 +212,14 @@ export default async function OffseasonPage({ params }: PageProps) {
                 key={r.id}
                 className="flex items-center justify-between rounded-lg border border-border bg-surface p-4 text-sm"
               >
-                <span className="font-medium text-foreground">{r.player.fullName}</span>
+                <span className="flex items-center gap-3 font-medium text-foreground">
+                  <PlayerAvatar
+                    photoUrl={r.player.photoUrl}
+                    fullName={r.player.fullName}
+                    size="sm"
+                  />
+                  {r.player.fullName}
+                </span>
                 <span className="text-muted">
                   Retired at {estimateAge(r.player.draftYear, previousSeason)} &middot; final rating{" "}
                   {r.overallRating}

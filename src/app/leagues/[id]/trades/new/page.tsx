@@ -38,6 +38,7 @@ async function loadRoster(leagueTeamId: string, season: number) {
     .map((lp) => ({
       leaguePlayerId: lp.id,
       fullName: lp.player.fullName,
+      photoUrl: lp.player.photoUrl,
       position: lp.player.position,
       overallRating: lp.overallRating,
       potentialRating: lp.potentialRating,
@@ -223,6 +224,7 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
           myTeam={{
             leagueTeamId: myLeagueTeam.id,
             name: `${myLeagueTeam.team.city} ${myLeagueTeam.team.name}`,
+            primaryColor: myLeagueTeam.team.primaryColor,
             apronLevel: mine.capSheet.apronLevel,
             capSpaceCents: mine.capSheet.capSpaceCents.toString(),
             players: mine.players,
@@ -236,6 +238,7 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
           theirTeam={{
             leagueTeamId: otherLeagueTeam.id,
             name: `${otherLeagueTeam.team.city} ${otherLeagueTeam.team.name}`,
+            primaryColor: otherLeagueTeam.team.primaryColor,
             apronLevel: theirs.capSheet.apronLevel,
             capSpaceCents: theirs.capSheet.capSpaceCents.toString(),
             players: theirs.players,

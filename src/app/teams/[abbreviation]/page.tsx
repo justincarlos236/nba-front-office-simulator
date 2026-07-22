@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { deriveOverallRating } from "@/lib/league/ratingFromStats";
 import { RosterScatterChart } from "@/components/teams/RosterScatterChart";
+import { PlayerAvatar } from "@/components/players/PlayerAvatar";
 
 interface PageProps {
   params: Promise<{ abbreviation: string }>;
@@ -102,8 +103,14 @@ export default async function TeamDetailPage({ params }: PageProps) {
                 <td className="px-4 py-3">
                   <Link
                     href={`/players/${player.id}`}
-                    className="font-medium text-foreground hover:text-accent"
+                    className="flex items-center gap-3 font-medium text-foreground hover:text-accent"
                   >
+                    <PlayerAvatar
+                      photoUrl={player.photoUrl}
+                      fullName={player.fullName}
+                      size="sm"
+                      teamPrimaryColor={team.primaryColor}
+                    />
                     {player.fullName}
                   </Link>
                 </td>

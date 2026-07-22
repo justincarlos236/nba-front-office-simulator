@@ -28,6 +28,22 @@ seeded alongside (e.g. Luka Dončić's `currentTeamId` points to Dallas,
 matching his 2023-24 stat line, even though he's really on the Lakers as
 of today) - see "Data sourcing" below for the bug this was fixed from.
 
+**A real gotcha this caused**: `Player` is also where fictional
+draft-generated prospects live (`draftProspectsToTeams`,
+`src/lib/actions/draft.ts`, creates a real `Player` row with no
+`externalId` for every generated rookie) - but unlike the real 497-player
+import, these rows are never scoped to the league that drafted them and
+are never cleaned up when a league is deleted. `createLeagueAction`
+originally queried `prisma.player.findMany()` with no filter at all, so
+every league's bootstrap silently inherited every _other_ league's entire
+draft history as extra, broken (flat 50-rated) free agents - worse for
+leagues created later in this database's history, since the pollution
+only ever grew. Fixed by scoping that query to `externalId: { not: null }`
+(the real players only); fictional prospects still enter a league
+normally, just through that league's own draft, never another league's
+leftovers. See `docs/IMPLEMENTATION_PLAN.md`'s status log for the cleanup
+of already-polluted leagues.
+
 **Per-save state** (`League`, `LeagueTeam`, `LeaguePlayer`, `Contract`,
 `ContractYear`, `DraftPick`, `Trade`, `TradeAsset`, `TradeException`) — one
 set of these rows per `League`. `LeaguePlayer` is the mutable copy of a
@@ -999,6 +1015,29 @@ trade-AI valuation) reads or recalibrates against.
   all). Fixed by preferring the stats fixture's team; see
   `prisma/data/players.test.ts`'s Dončić/Jokić cases for the exact
   regression coverage.
+- **Player headshots** (`Player.photoUrl`): programmatic, not hand-curated
+  - the user explicitly rejected a `teams.ts`-style manually-assigned URL
+    list for 497 players as unmaintainable. `src/lib/data-sources/espnPlayerPhoto.ts`
+    resolves each real player's name against ESPN's public, unauthenticated
+    search API (`site.web.api.espn.com/apis/common/v3/search`) to an ESPN
+    athlete id (exact normalized-name match preferred, falling back to the
+    top result flagged "fuzzy" for a quick spot-check), then verifies
+    `a.espncdn.com/i/headshots/nba/players/full/{id}.png` actually resolves
+    (a real `200`, not a 404) before trusting it - same "verify in a real
+    browser, not just curl" discipline as the team-logo Wikipedia switch.
+    `scripts/resolve-player-photos.ts` runs this once (checkpointed to
+    `.data-import/`, same resumable pattern as `import-players.ts`) and
+    writes the resolved URL back into `players.json`, which flows into the
+    DB through the exact same `seedPlayers()` upsert as every other bio
+    field - resolved 468/497 real players (94%) on the first pass, only 2
+    fuzzy matches (both known name-alias cases already handled elsewhere:
+    Vezenkov, Hyland). Fictional draft-generated prospects never get a real
+    photo (no real-world identity to look up) - `PlayerAvatar`
+    (`src/components/players/PlayerAvatar.tsx`) always falls back to a
+    polished initials-on-gradient placeholder for them, and gracefully for
+    any real player whose photo fails to load (an `onError` handler, not
+    just a missing `photoUrl`) - a real, permanent visual treatment, never a
+    broken `<img>`.
 - **Season stats**: real per-player 2023-24 season averages, but not from a
   live API — that season's per-game box scores are bundled from
   [NocturneBear/NBA-Data-2010-2024](https://github.com/NocturneBear/NBA-Data-2010-2024)

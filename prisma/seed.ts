@@ -19,6 +19,7 @@ interface PlayersFile {
     draftRound: number | null;
     draftPick: number | null;
     teamAbbreviation: string | null;
+    photoUrl?: string | null;
     stats: {
       gamesPlayed: number;
       minutesPerGame: number;
@@ -111,6 +112,7 @@ async function seedPlayers() {
         draftRound: player.draftRound,
         draftPick: player.draftPick,
         currentTeamId: currentTeamId ?? null,
+        photoUrl: player.photoUrl ?? null,
       },
       create: {
         externalId: player.externalId,
@@ -122,6 +124,7 @@ async function seedPlayers() {
         draftRound: player.draftRound,
         draftPick: player.draftPick,
         currentTeamId: currentTeamId ?? null,
+        photoUrl: player.photoUrl ?? null,
       },
     });
 

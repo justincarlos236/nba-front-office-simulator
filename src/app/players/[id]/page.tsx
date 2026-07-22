@@ -4,6 +4,7 @@ import { getSeasonCapRules } from "@/lib/cap/constants";
 import { prisma } from "@/lib/prisma";
 import { formatCentsCompact } from "@/lib/money";
 import { computePerformanceScore, scoreToCapFraction } from "@/lib/valuation/playerValue";
+import { PlayerAvatar } from "@/components/players/PlayerAvatar";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -47,15 +48,25 @@ export default async function PlayerDetailPage({ params }: PageProps) {
         </Link>
       )}
 
-      <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground">{player.fullName}</h1>
-      <p className="mt-1 text-muted">
-        {player.position}
-        {player.heightInches
-          ? ` · ${Math.floor(player.heightInches / 12)}'${player.heightInches % 12}"`
-          : ""}
-        {player.weightLbs ? ` · ${player.weightLbs} lbs` : ""}
-        {player.draftYear ? ` · Drafted ${player.draftYear}` : ""}
-      </p>
+      <div className="mt-4 flex items-center gap-4">
+        <PlayerAvatar
+          photoUrl={player.photoUrl}
+          fullName={player.fullName}
+          size="xl"
+          teamPrimaryColor={player.currentTeam?.primaryColor}
+        />
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">{player.fullName}</h1>
+          <p className="mt-1 text-muted">
+            {player.position}
+            {player.heightInches
+              ? ` · ${Math.floor(player.heightInches / 12)}'${player.heightInches % 12}"`
+              : ""}
+            {player.weightLbs ? ` · ${player.weightLbs} lbs` : ""}
+            {player.draftYear ? ` · Drafted ${player.draftYear}` : ""}
+          </p>
+        </div>
+      </div>
 
       {stat ? (
         <>
