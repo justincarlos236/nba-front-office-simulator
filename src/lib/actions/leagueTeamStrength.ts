@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { computeTeamStrength } from "@/lib/simulation/teamStrength";
+import { computeRotationAdjustedStrength } from "@/lib/rotation/rotationStrength";
 import { PROFILE_SEASON } from "@/lib/players/profileData";
 import type { Position } from "@/generated/prisma/client";
 
@@ -24,6 +24,9 @@ export interface RosterPlayerForSimulation {
   position: Position;
   /** Null for fictional draft-generated players - no real-world stat line to draw from. */
   realStat: RealStatBaseline | null;
+  /** Rotation Management - both null/omitted means "not customized," resolved via src/lib/rotation/resolveRotation.ts. */
+  rotationSlot?: number | null;
+  targetMinutesPerGame?: number | null;
 }
 
 /**
@@ -42,6 +45,8 @@ const ROSTER_PLAYER_SELECT = {
   id: true,
   leagueTeamId: true,
   overallRating: true,
+  rotationSlot: true,
+  targetMinutesPerGame: true,
   player: {
     select: {
       fullName: true,
@@ -55,6 +60,8 @@ interface RosterPlayerRow {
   id: string;
   leagueTeamId: string | null;
   overallRating: number;
+  rotationSlot: number | null;
+  targetMinutesPerGame: number | null;
   player: {
     fullName: string;
     position: Position;
@@ -82,6 +89,8 @@ function toRosterPlayer(p: RosterPlayerRow): RosterPlayerForSimulation {
     fullName: p.player.fullName,
     overallRating: p.overallRating,
     position: p.player.position,
+    rotationSlot: p.rotationSlot,
+    targetMinutesPerGame: p.targetMinutesPerGame,
     realStat: stat
       ? {
           minutesPerGame: stat.minutesPerGame,
@@ -110,21 +119,21 @@ export async function computeLeagueTeamStrengths(leagueTeamIds: string[]): Promi
   });
 
   const rostersByTeam = new Map<string, RosterPlayerForSimulation[]>();
-  const ratingsByTeam = new Map<string, number[]>();
   for (const p of roster) {
     if (!p.leagueTeamId) continue;
     const list = rostersByTeam.get(p.leagueTeamId) ?? [];
     list.push(toRosterPlayer(p));
     rostersByTeam.set(p.leagueTeamId, list);
-
-    const ratings = ratingsByTeam.get(p.leagueTeamId) ?? [];
-    ratings.push(p.overallRating);
-    ratingsByTeam.set(p.leagueTeamId, ratings);
   }
 
+  // Rotation-adjusted, not the plain roster-talent computeTeamStrength -
+  // this is the one place "how strong is this team tonight" needs to
+  // reflect who's actually slated to play and for how long (see
+  // src/lib/rotation/rotationStrength.ts for why this is a separate
+  // function from computeTeamStrength, not a modification of it).
   const strengthByTeam = new Map<string, number>();
   for (const teamId of leagueTeamIds) {
-    strengthByTeam.set(teamId, computeTeamStrength(ratingsByTeam.get(teamId) ?? []));
+    strengthByTeam.set(teamId, computeRotationAdjustedStrength(rostersByTeam.get(teamId) ?? []));
   }
 
   return { strengthByTeam, rostersByTeam };

@@ -19,6 +19,11 @@ export interface SentimentTransaction {
 }
 
 const INJURY_RECOVERY_PHRASE = "cleared to return from injury";
+// Same deterministic-template exception as injury recovery above -
+// describeRotationChange (src/lib/transactions/describeTransaction.ts)
+// always generates one of these two exact phrases, so recognizing which
+// one isn't guessing at a rotation change's direction from free text.
+const ROTATION_PROMOTION_PHRASE = "earns a spot in the";
 
 const BASE_SENTIMENT: Record<string, number> = {
   TRADE: 0.3,
@@ -39,9 +44,14 @@ const BASE_SENTIMENT: Record<string, number> = {
   ALL_STAR_SELECTION: 0.7,
   ALL_STAR_SNUB: -0.3,
   ALL_STAR_RESULT: 0.5,
+  // Direction-neutral fallback for ROTATION_CHANGE - actual sentiment is
+  // read from the fixed phrase below, same pattern as injury recovery.
+  ROTATION_CHANGE: 0,
 };
 
 const INJURY_RECOVERY_SENTIMENT = 0.4;
+const ROTATION_PROMOTION_SENTIMENT = 0.3;
+const ROTATION_DEMOTION_SENTIMENT = -0.2;
 
 // Escalating, same intent as NewsFeed's BREAKING/MAJOR visual treatment -
 // a bigger story moves the needle more than a routine one.
@@ -57,7 +67,16 @@ export function computeTransactionSentiment(transactions: SentimentTransaction[]
   let total = 0;
   for (const t of transactions) {
     const isInjuryRecovery = t.type === "INJURY" && t.description.includes(INJURY_RECOVERY_PHRASE);
-    const base = isInjuryRecovery ? INJURY_RECOVERY_SENTIMENT : (BASE_SENTIMENT[t.type] ?? 0);
+    const isRotationPromotion =
+      t.type === "ROTATION_CHANGE" && t.description.includes(ROTATION_PROMOTION_PHRASE);
+    const isRotationDemotion = t.type === "ROTATION_CHANGE" && !isRotationPromotion;
+
+    let base: number;
+    if (isInjuryRecovery) base = INJURY_RECOVERY_SENTIMENT;
+    else if (isRotationPromotion) base = ROTATION_PROMOTION_SENTIMENT;
+    else if (isRotationDemotion) base = ROTATION_DEMOTION_SENTIMENT;
+    else base = BASE_SENTIMENT[t.type] ?? 0;
+
     const weight = IMPORTANCE_WEIGHT[t.importance] ?? 1;
     total += base * weight;
   }

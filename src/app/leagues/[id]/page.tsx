@@ -389,6 +389,11 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
           headline="Browse available players"
         />
         <OverviewCard
+          href={`/leagues/${league.id}/rotation`}
+          label="Rotation"
+          headline="Set your starting five, bench, and minutes"
+        />
+        <OverviewCard
           href={`/leagues/${league.id}/trades/new`}
           label="Team identity"
           headline={TEAM_IDENTITY_LABEL[teamIdentity]}

@@ -52,6 +52,17 @@ export function describeStaffFire(teamLabel: string, staffName: string, roleLabe
   return `${teamLabel} fired ${staffName} as ${roleLabel}`;
 }
 
+/** Only fired for a genuine starter/bench boundary crossing - see src/lib/actions/rotation.ts. */
+export function describeRotationChange(
+  teamLabel: string,
+  playerName: string,
+  movedToStarting: boolean,
+): string {
+  return movedToStarting
+    ? `${playerName} earns a spot in the ${teamLabel} starting lineup`
+    : `${playerName} moves to the bench for the ${teamLabel}`;
+}
+
 function joinNames(names: string[]): string {
   if (names.length <= 1) return names[0] ?? "";
   if (names.length === 2) return `${names[0]} and ${names[1]}`;

@@ -247,6 +247,10 @@ enum TransactionType {
   ALL_STAR_SELECTION
   ALL_STAR_SNUB
   ALL_STAR_RESULT
+  // A user-driven starter/bench boundary crossing (Rotation Management) -
+  // see src/lib/actions/rotation.ts. Only notable moves get a story, not
+  // every minutes tweak.
+  ROTATION_CHANGE
 }
 
 // Lets the UI prioritize significant events over routine ones. Existing
@@ -563,6 +567,13 @@ model LeaguePlayer {
   // when a contract expires, so it still points at the player's most
   // recent team while they're a free agent.
   reSigningTeamId            String?
+  // Rotation Management - both null means "not customized," which is
+  // exactly today's fully-automatic behavior (see src/lib/rotation/).
+  // Reset to null whenever leagueTeamId changes (trade/signing/waiver) so
+  // stale depth-chart numbers from a former team never collide with a new
+  // team's numbering.
+  rotationSlot               Int? // 0-11 depth-chart order on the current team; null = auto-derived
+  targetMinutesPerGame       Int? // user-assigned expected minutes per game; null = auto-derived
 
   league          League           @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   player          Player           @relation(fields: [playerId], references: [id])

@@ -207,6 +207,13 @@ export async function advanceSeasonAction(leagueId: string) {
     isActive: boolean;
     leagueTeamId: string | null;
     retiredSeason: number | null;
+    // Only ever set (to null) when a player is actually leaving their
+    // team this offseason (retirement or contract expiry) - a stale
+    // depth-chart slot is meaningless once they're off the roster. Absent
+    // (not just null) for anyone staying, so their existing customization
+    // is left untouched.
+    rotationSlot?: null;
+    targetMinutesPerGame?: null;
   }[] = [];
   const contractIdsToDelete: string[] = [];
   const retirementEvents: {
@@ -221,6 +228,13 @@ export async function advanceSeasonAction(leagueId: string) {
     const oldRating = lp.overallRating;
     const newAge = estimateAge(lp.player.draftYear, newSeason);
     const experience = estimateExperience(lp.player.draftYear, season);
+    const boxAgg = boxScoreAggByPlayer.get(lp.id);
+    const hasRealMinutes = !!boxAgg && boxAgg._count._all > 0;
+    // Rotation Management - real per-season minutes feed developPlayerRating
+    // below as a modest nudge, same neutral-anchor pattern as the dev-coach
+    // bonus. undefined (no games played this season) means no effect.
+    const seasonMinutesPerGame =
+      boxAgg && hasRealMinutes ? (boxAgg._avg.minutesPlayed ?? undefined) : undefined;
 
     if (lp.leagueTeamId) {
       const team = teamById.get(lp.leagueTeamId);
@@ -233,8 +247,7 @@ export async function advanceSeasonAction(leagueId: string) {
         teamWinPct: gamesPlayed > 0 ? (team?.wins ?? 0) / gamesPlayed : 0,
       });
 
-      const boxAgg = boxScoreAggByPlayer.get(lp.id);
-      if (boxAgg && boxAgg._count._all > 0) {
+      if (boxAgg && hasRealMinutes) {
         const minutesPerGame = boxAgg._avg.minutesPlayed ?? 0;
         // Real true-shooting formula (TS% = PTS / (2 * (FGA + 0.44*FTA))),
         // not an approximation - all three inputs are real season sums.
@@ -273,6 +286,7 @@ export async function advanceSeasonAction(leagueId: string) {
       developmentCoachQuality: lp.leagueTeamId
         ? developmentCoachQualityByTeam.get(lp.leagueTeamId)
         : undefined,
+      minutesPerGame: seasonMinutesPerGame,
     });
     const retiring = shouldRetire(newAge, developedRating, rng);
     const finalRating = retiring ? oldRating : developedRating;
@@ -304,12 +318,14 @@ export async function advanceSeasonAction(leagueId: string) {
       });
     }
 
+    const leftTeam = retiring || contractExpired;
     playerUpdates.push({
       id: lp.id,
       overallRating: finalRating,
       isActive: !retiring,
-      leagueTeamId: retiring || contractExpired ? null : lp.leagueTeamId,
+      leagueTeamId: leftTeam ? null : lp.leagueTeamId,
       retiredSeason: retiring ? season : null,
+      ...(leftTeam ? { rotationSlot: null, targetMinutesPerGame: null } : {}),
     });
   }
 
@@ -484,6 +500,8 @@ export async function advanceSeasonAction(leagueId: string) {
             isActive: u.isActive,
             leagueTeamId: u.leagueTeamId,
             retiredSeason: u.retiredSeason,
+            rotationSlot: u.rotationSlot,
+            targetMinutesPerGame: u.targetMinutesPerGame,
             // A new season starts with everyone healthy - team wins/losses
             // reset to 0 too, so an in-season injury's `returnsAt` (measured
             // in that team's own games played) would otherwise never

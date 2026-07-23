@@ -30,6 +30,9 @@ const REACTION_PHRASE: Record<string, { tone: ReactionTone; phrase: string } | u
   ALL_STAR_SELECTION: { tone: "POSITIVE", phrase: "Fans are thrilled" },
   ALL_STAR_SNUB: { tone: "NEGATIVE", phrase: "Fans are frustrated" },
   ALL_STAR_RESULT: { tone: "POSITIVE", phrase: "Fans are celebrating" },
+  // No entry needed for ROTATION_CHANGE itself - direction (promotion vs.
+  // demotion) is read from the fixed phrase below, same exception as
+  // injury recovery.
 };
 
 // A narrow, deliberate exception to "don't parse free text" - the injury
@@ -41,13 +44,29 @@ const REACTION_PHRASE: Record<string, { tone: ReactionTone; phrase: string } | u
 const INJURY_RECOVERY_PHRASE = "cleared to return from injury";
 const INJURY_RECOVERY_REACTION = { tone: "POSITIVE" as const, phrase: "Fans are relieved" };
 
+// describeRotationChange (src/lib/transactions/describeTransaction.ts)
+// always generates one of exactly two fixed phrases - same deterministic-
+// template exception as injury recovery, not guessing at outcome quality.
+const ROTATION_PROMOTION_PHRASE = "earns a spot in the";
+const ROTATION_PROMOTION_REACTION = { tone: "POSITIVE" as const, phrase: "Fans are excited" };
+const ROTATION_DEMOTION_REACTION = {
+  tone: "NEGATIVE" as const,
+  phrase: "Fans are second-guessing the move",
+};
+
 export function describeFanReaction(
   transaction: ReactionTransaction,
 ): { tone: ReactionTone; text: string } | null {
-  const entry =
-    transaction.type === "INJURY" && transaction.description.includes(INJURY_RECOVERY_PHRASE)
-      ? INJURY_RECOVERY_REACTION
-      : REACTION_PHRASE[transaction.type];
+  let entry: { tone: ReactionTone; phrase: string } | undefined;
+  if (transaction.type === "INJURY" && transaction.description.includes(INJURY_RECOVERY_PHRASE)) {
+    entry = INJURY_RECOVERY_REACTION;
+  } else if (transaction.type === "ROTATION_CHANGE") {
+    entry = transaction.description.includes(ROTATION_PROMOTION_PHRASE)
+      ? ROTATION_PROMOTION_REACTION
+      : ROTATION_DEMOTION_REACTION;
+  } else {
+    entry = REACTION_PHRASE[transaction.type];
+  }
   if (!entry) return null;
   return { tone: entry.tone, text: `${entry.phrase}: ${transaction.description}` };
 }

@@ -91,7 +91,14 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
   await prisma.$transaction(async (tx) => {
     await tx.leaguePlayer.update({
       where: { id: freeAgent.id },
-      data: { leagueTeamId: myLeagueTeamId, reSigningTeamId: myLeagueTeamId },
+      data: {
+        leagueTeamId: myLeagueTeamId,
+        reSigningTeamId: myLeagueTeamId,
+        // A stale depth-chart slot from a prior team is meaningless here -
+        // reset so it doesn't collide with this team's own numbering.
+        rotationSlot: null,
+        targetMinutesPerGame: null,
+      },
     });
 
     const contract = await tx.contract.create({

@@ -72,12 +72,12 @@ unbounded extra work over it).
 | 25  | Trade Grades                          | ⬜     | P2       | 6       | 6            | Legality validation exists; a quality "grade" doesn't                                                                                                                           |
 | 26  | Advanced Player Statistics            | 🟡     | P2       | —       | —            | PPG/RPG/APG/TS%/FG% shown; PER/BPM/usage columns exist but unpopulated (no source)                                                                                              |
 | 27  | Player Comparison Tool                | ⬜     | P1       | 7       | —            | —                                                                                                                                                                               |
-| 28  | Depth Chart Management                | ⬜     | P2       | 7       | —            | Deliberately deferred out of Phase 3 - roster micromanagement, not season progression                                                                                           |
-| 29  | Rotation Management                   | ⬜     | P2       | 3       | 28           | —                                                                                                                                                                               |
+| 28  | Depth Chart Management                | ✅     | P2       | 17      | —            | Drag-and-drop depth chart at `/leagues/[id]/rotation` - see `src/lib/rotation/` and `docs/ARCHITECTURE.md`'s Rotation Management section                                        |
+| 29  | Rotation Management                   | ✅     | P2       | 17      | 28           | Same phase as #28 - user-assigned target minutes actually drive box-score minute allocation and rotation-adjusted team strength, not cosmetic                                   |
 | 30  | Injury System                         | ✅     | P2       | 7       | 15,16        | Fast-tracked out of order: in-season injuries roll as games are simulated, with a real mechanical effect (`InjuryStatus`/strength calc) - see `src/lib/actions/leagueEvents.ts` |
 | 31  | Player Morale                         | ⬜     | P2       | 6       | —            | —                                                                                                                                                                               |
 | 32  | Trade Requests                        | ⬜     | P3       | —       | 31           | —                                                                                                                                                                               |
-| 33  | Player Roles                          | ⬜     | P3       | —       | —            | —                                                                                                                                                                               |
+| 33  | Player Roles                          | ✅     | P3       | 17      | 28           | Satisfied as a byproduct of Rotation Management - role labels (Starter/Sixth Man/Rotation Player/Bench Player) are derived from depth-chart rank, not a separate field          |
 | 34  | Player Potential                      | 🟡     | P1       | 3       | —            | `potentialRating` computed + shown; doesn't drive development yet (see #19)                                                                                                     |
 | 35  | Scouting Reports                      | ⬜     | P3       | —       | —            | —                                                                                                                                                                               |
 | 36  | League News Feed                      | ✅     | P2       | 5       | 37           | Same `LeagueTransaction` feed as #37, framed as a news wire - `/leagues/[id]/transactions`                                                                                      |
@@ -1675,3 +1675,45 @@ items-center`. Also rebuilt the connectors as proper elbows (a vertical
   profile career honors, and League History all consume the same real
   generated data rather than detecting events independently. All 491 unit
   tests (32 new), `tsc`, `eslint` passing.
+- **2026-07-23 (Phase 17, items #28/#29 Depth Chart + Rotation Management,
+  #33 Player Roles as a byproduct)**: A fresh, extensive user request (full
+  text preserved in `docs/FEATURE_REQUESTS.md`), explicitly invoking the
+  architecture-overlap-review protocol before any implementation. Key
+  finding: `boxScore.ts` already had a fully-automatic rotation engine
+  (`buildRotation`/`allocateMinutes`) - the right move was letting a
+  user's depth chart override that engine's own ranking/weights, not
+  building a second one. Two nullable fields added directly to
+  `LeaguePlayer` (`rotationSlot`, `targetMinutesPerGame`) rather than a new
+  model, mirroring the `injuryStatus` precedent - `null` on both is
+  exactly today's behavior, so every existing save and every CPU team
+  (which never gets custom values) keeps working unchanged forever. New
+  `src/lib/rotation/` holds the pure resolution logic
+  (`resolveRotation.ts`, byte-identical to the old automatic behavior
+  when nothing is customized - verified by a dedicated equivalence test)
+  and a new `computeRotationAdjustedStrength` used only inside
+  `computeLeagueTeamStrengths` (the one function feeding real per-game win
+  probability and opponent-strength adjustment) - explicitly kept separate
+  from `computeTeamStrength`, which stays untouched everywhere it already
+  evaluates roster _talent_ (`SeasonExpectation` seeding, All-Star
+  Weekend's exhibition squads), per the user's own instruction not to let
+  a shared function change unrelated mechanics. A real, hard-caught bug
+  during implementation: a user's absolute `targetMinutesPerGame` was
+  initially fed into the same weight-normalization pool as the engine's
+  own small relative rank weights, letting one custom player's raw minute
+  count overwhelm everyone else's share - fixed with an explicit
+  weight-per-minute conversion constant derived from the existing weight
+  curve. Player development (`developPlayerRating`) now takes real
+  per-season minutes as an optional modest nudge, same neutral-anchor
+  pattern as the existing dev-coach-quality bonus. Rotation changes that
+  cross the starter/bench boundary generate a `ROTATION_CHANGE` news story
+  (not every minutes tweak), wired into fan engagement sentiment the same
+  way every other transaction type already is. New `/leagues/[id]/rotation`
+  page with `@dnd-kit` drag-and-drop reordering (a new dependency - none
+  existed before), a running minutes total with a clear proportional-
+  scaling warning when unbalanced, and an "Auto-balance minutes" action
+  the user specifically asked for during plan review. Hands-on
+  verification confirmed the full pipeline works end-to-end: promoting a
+  bench player via drag-and-drop and assigning them real minutes visibly
+  and dramatically changed their actual simulated box-score production
+  over real games. All 512 unit tests (24 new), `tsc`, `eslint`, a clean
+  production build, and all 10 e2e tests passing.

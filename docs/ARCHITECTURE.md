@@ -639,6 +639,144 @@ nonexistent for fictional draft-generated prospects.
   visible surface built on this data, with league leaders, milestones,
   and real award races to follow.
 
+## Rotation Management
+
+A fresh, extensive user request (see `docs/FEATURE_REQUESTS.md`'s Rotation
+Management entry for the full original ask, and its Status section for
+what shipped). Explicitly invoked the architecture-overlap-review protocol
+before any implementation, and the user made one binding follow-up
+decision after that review: win probability must reflect the rotation, but
+`computeTeamStrength` must stay byte-identical for its other consumers.
+Satisfies Roadmap items #28 (Depth Chart Management), #29 (Rotation
+Management), and #33 (Player Roles, as a derived byproduct).
+
+- **The automatic rotation engine already existed - the work was making it
+  overridable, not duplicating it.** `buildRotation`/`allocateMinutes`
+  (`src/lib/simulation/boxScore.ts`) already ranked a healthy roster and
+  split 240 team-minutes by a fixed per-rank curve
+  (`RANK_MINUTE_WEIGHTS`), with natural triangular variance, garbage-time
+  adjustment, and Head Coach `benchTrustDelta`/`threePaMultiplier`
+  modulation layered on top. `buildRotation` moved to
+  `src/lib/rotation/autoRotation.ts` (renamed `buildAutoRotation`, byte-
+  for-byte unchanged) to avoid a circular import, and a new
+  `src/lib/rotation/resolveRotation.ts` sits in front of it: if nobody on
+  the roster has a custom `rotationSlot`, it returns exactly what
+  `buildAutoRotation` always returned - verified by a dedicated
+  equivalence test, since every CPU team relies on this holding forever.
+  Otherwise, explicitly-slotted players take their exact depth position,
+  the unslotted remainder auto-ranks into whatever numeric slots are still
+  open (the "fill gaps, don't disturb what's set" behavior a newly-traded-
+  for or newly-healthy player needs), and `allocateMinutes` uses a
+  player's `targetMinutesPerGame` as the new base weight feeding the
+  _same_ variance/garbage-time/coach pipeline instead of always falling
+  back to the rank curve - this is what makes an assigned "34 minutes"
+  vary naturally rather than being rigid.
+- **A real bug, caught by writing the test the plan promised.** The plan's
+  backward-compatibility invariant demanded a unit test proving
+  `allocateMinutes` was unchanged when uncustomized - writing the test for
+  the _customized_ case first surfaced that a user's absolute
+  `targetMinutesPerGame` (e.g. 34) was being used directly as a weight
+  alongside `RANK_MINUTE_WEIGHTS`'s own small relative values (~0.08-1.42),
+  letting one custom player's raw minute count dominate the whole team's
+  240-minute normalization and starve everyone else. Fixed with an
+  explicit `WEIGHT_PER_MINUTE` conversion constant derived from
+  `RANK_MINUTE_WEIGHTS`'s own sum, so a custom target joins the same
+  normalization pool on the same scale as the rank-based fallback.
+- **Two nullable fields directly on `LeaguePlayer`, not a new model.**
+  `rotationSlot: Int?` and `targetMinutesPerGame: Int?` mirror the
+  `injuryStatus`/`injuryReturnsAtGamesPlayed` precedent (a small, optional,
+  genuinely per-player-per-team attribute) rather than the Staff/AllStar
+  precedent (a new model, used specifically where the _shape_ - many-per-
+  season achievement records - didn't fit `LeaguePlayer`). `null` on both
+  is exactly the prior automatic behavior, so no backfill was needed:
+  every existing save and every CPU team (which never gets custom values)
+  continues unchanged forever. Every roster-transfer call site (both
+  sides of a user trade, a user free-agent signing, CPU-CPU trades and
+  signings, a contract expiring or a player retiring at the season
+  boundary) resets both fields to `null` when a player's team changes, so
+  a stale depth-chart number from an old team never collides with a new
+  team's numbering.
+- **Injury-aware redistribution is free, by construction.**
+  `computeLeagueTeamStrengths` already queried only `injuryStatus:
+"HEALTHY"` players before this feature existed, so an injured player
+  never reached `buildRotation`/`allocateMinutes` at all. Nothing new
+  needed to change: a persisted rotation is keyed by `leaguePlayerId`, the
+  engine simply never sees whoever isn't currently healthy, and the
+  existing weight-normalization math re-spreads their minutes across
+  everyone else automatically. Their own stored slot/target is never
+  touched by an injury, so it resumes exactly where it was on return -
+  and any _other_ players' slots the user deliberately changed in the
+  meantime are left alone too, since nothing auto-rewrites them either.
+- **The roster-talent vs. active-game-strength split.** Per the user's
+  explicit instruction, `computeTeamStrength`
+  (`src/lib/simulation/teamStrength.ts`) was not modified - it keeps
+  answering "how good is this roster on paper" for every consumer that
+  evaluates talent rather than a specific game (`league.ts`'s and
+  `offseason.ts`'s `SeasonExpectation` seeding, All-Star Weekend's
+  exhibition-squad strength in `allstar/allStarGame.ts`). A new
+  `computeRotationAdjustedStrength`
+  (`src/lib/rotation/rotationStrength.ts`) answers a different question -
+  "how strong is this team tonight, given who's actually playing and for
+  how long" - and is used only inside `computeLeagueTeamStrengths`, the
+  one function whose output feeds both `simulateGame`'s real win
+  probability and `generateBoxScore`'s opponent-strength adjustment (a
+  benched star correctly makes that team's box scores read as an easier
+  defensive matchup that night too, from the same one swap). For an
+  uncustomized roster it delegates straight to `computeTeamStrength` on
+  the full roster - not an approximation of it, the literal same call -
+  since that function's own top-9-then-flat-bench-weight curve isn't
+  numerically identical to `resolveRotation`'s 12-capped, rank-weighted
+  curve; only once a user actually customizes a rotation does the newer,
+  rotation-aware curve take over, and a player left outside the resolved
+  rotation entirely correctly contributes nothing to that night's
+  strength.
+- **Player development takes real playing time as a modest nudge, not a
+  new curve.** `developPlayerRating`
+  (`src/lib/development/developPlayerRating.ts`), previously pure age/
+  potential/dev-coach-quality, gained an optional `minutesPerGame`
+  parameter with the exact same neutral-anchor pattern as the existing
+  dev-coach bonus (a "regular rotation player" baseline of 24 MPG, a
+  small capped bonus/penalty scaled off distance from it, folded into
+  both the young-growth roll and the aging-decline roll). Omitted
+  (`undefined`) is a zero-effect no-op, so every existing test kept
+  passing unmodified. `offseason.ts` already aggregated real per-player
+  season minutes for DPOY/Sixth Man snapshots - that same value is now
+  also passed into `developPlayerRating`'s call, no new query.
+- **Deliberately out of scope, and why.** Player-level morale/
+  satisfaction reacting to rotation decisions was not built - no such
+  system exists anywhere today (only team-level `LeagueTeam.fanHappiness`),
+  and the user explicitly said not to invent a parallel one; this is a
+  candidate to revisit only if/when a real player-morale system exists.
+  Fatigue mechanics were likewise not built (no such system exists, only
+  a hypothetical forward-looking doc comment). Playoffs don't generate
+  `PlayerGameStat` rows today (win-roll only), so rotation has no
+  playoff-game box-score surface - matching existing behavior, not a
+  regression. CPU teams keep using `buildAutoRotation` forever, unchanged.
+  No new "coach rotation philosophy" field was added - `CoachStyle` and
+  `quality` already cover pace and bench trust, and a third coaching dial
+  wasn't requested.
+- **News, fan engagement, and the UI.** A new `ROTATION_CHANGE`
+  `TransactionType` fires only for a genuine starter/bench boundary
+  crossing (`rank < 5` flipping before vs. after a save) - detected inside
+  `updateRotationAction` (`src/lib/actions/rotation.ts`) by resolving the
+  rotation both before and after the edit, never for an interior bench
+  reshuffle. Wired into `NewsFeed.tsx`'s category pills and into
+  `transactionSentiment.ts`/`fanReactions.ts` the same way every other
+  transaction type already is - reading the fixed promotion/demotion
+  phrase from `describeRotationChange` to pick a direction, the same
+  deterministic-template exception this codebase already established for
+  injury-recovery stories. The `/leagues/[id]/rotation` page
+  (`src/components/rotation/RotationBoard.tsx`) is a `@dnd-kit`-based
+  drag-and-drop depth chart (a new dependency - none existed before,
+  chosen as the modern, accessible, actively-maintained option) with
+  three sections (Starting Five/Bench Rotation/Out of Rotation), a running
+  minutes total that explicitly warns (never blocks) when it doesn't sum
+  to 240 - since `allocateMinutes`'s own normalization already
+  proportionally rescales whatever's entered - and an "Auto-balance
+  minutes" action (added after plan review specifically to address that
+  UX concern) that rescales the current draft to exactly 240 client-side
+  before saving, so what the user sees is what they get.
+
 ## League leaders & milestones (Phase 14b)
 
 Season aggregation and record-keeping built directly on `PlayerGameStat` -

@@ -127,4 +127,25 @@ describe("developPlayerRating", () => {
     });
     expect(coached).toBeGreaterThanOrEqual(uncoached);
   });
+
+  it("an unspecified minutesPerGame behaves identically to before Rotation Management existed", () => {
+    const input = { overallRating: 70, potentialRating: 88, age: 22, rng: fixedRng(0.4) };
+    expect(developPlayerRating(input)).toBe(
+      developPlayerRating({ ...input, minutesPerGame: undefined }),
+    );
+  });
+
+  it("a young player who actually played heavy minutes grows faster than one who barely played", () => {
+    const base = { overallRating: 65, potentialRating: 90, age: 21, rng: fixedRng(0.1) };
+    const heavyMinutes = developPlayerRating({ ...base, minutesPerGame: 34 });
+    const barelyPlayed = developPlayerRating({ ...base, minutesPerGame: 4 });
+    expect(heavyMinutes).toBeGreaterThanOrEqual(barelyPlayed);
+  });
+
+  it("heavy real playing time dampens an aging player's decline", () => {
+    const base = { overallRating: 80, potentialRating: 80, age: 35, rng: fixedRng(0.5) };
+    const heavyMinutes = developPlayerRating({ ...base, minutesPerGame: 34 });
+    const benched = developPlayerRating({ ...base, minutesPerGame: 4 });
+    expect(heavyMinutes).toBeGreaterThanOrEqual(benched);
+  });
 });

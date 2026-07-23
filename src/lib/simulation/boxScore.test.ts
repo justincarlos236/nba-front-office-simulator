@@ -115,6 +115,34 @@ describe("allocateMinutes", () => {
     }
     expect(trustedRosterSize / trials).toBeGreaterThan(shortLeashRosterSize / trials);
   });
+
+  it("guides minutes toward a custom targetMinutesPerGame rather than the rank-based default", () => {
+    // A deep bench player (would normally get very few minutes) is
+    // promoted into the starting slot with a real assigned target -
+    // Rotation Management should push their actual minutes up near that
+    // target, still varying naturally, rather than the old rank-based
+    // curve winning out.
+    const roster = fullRoster("home").map((p) =>
+      p.leaguePlayerId === "home-bench-7" ? { ...p, rotationSlot: 0, targetMinutesPerGame: 34 } : p,
+    );
+    const samples = Array.from({ length: 30 }, () => allocateMinutes(roster, 6, Math.random));
+    const promotedMinutes = samples.map((m) => m.get("home-bench-7") ?? 0);
+    const average = promotedMinutes.reduce((sum, m) => sum + m, 0) / promotedMinutes.length;
+
+    expect(average).toBeGreaterThan(25); // clearly elevated from a deep-bench default (~a few minutes)
+    expect(new Set(promotedMinutes).size).toBeGreaterThan(1); // still varies game to game, not pinned exactly
+  });
+
+  it("still allocates exactly 240 team-minutes with a custom rotation in play", () => {
+    const roster = fullRoster("home").map((p, i) => ({
+      ...p,
+      rotationSlot: i,
+      targetMinutesPerGame: i === 0 ? 36 : undefined,
+    }));
+    const minutes = allocateMinutes(roster, 8, () => 0.5);
+    const total = [...minutes.values()].reduce((sum, m) => sum + m, 0);
+    expect(total).toBe(240);
+  });
 });
 
 describe("generateBoxScore", () => {

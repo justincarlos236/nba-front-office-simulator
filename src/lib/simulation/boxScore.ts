@@ -1,6 +1,8 @@
 import type { Position } from "@/generated/prisma/client";
 import { deriveOverallRating } from "@/lib/league/ratingFromStats";
 import type { RosterPlayerForSimulation, RealStatBaseline } from "@/lib/actions/leagueTeamStrength";
+import { resolveRotation } from "@/lib/rotation/resolveRotation";
+import { RANK_MINUTE_WEIGHTS } from "@/lib/rotation/autoRotation";
 
 /**
  * A lightweight (not possession-by-possession) per-game player box-score
@@ -54,16 +56,18 @@ export interface GameRosters {
 }
 
 const TEAM_MINUTES = 240;
-const MAX_ROTATION_SIZE = 12;
-// Base minute-weight per rotation rank (0 = best player), tapering from
-// starters through a 6th-man bump down to deep bench.
-const RANK_MINUTE_WEIGHTS = [1.42, 1.35, 1.28, 1.2, 1.12, 0.95, 0.72, 0.55, 0.4, 0.28, 0.15, 0.08];
 const GARBAGE_TIME_MARGIN_FLOOR = 15;
 const GARBAGE_TIME_MARGIN_CEIL = 40;
 const DEEP_BENCH_SCRATCH_RANK = 9; // rank >= this can DNP-CD
 const DEEP_BENCH_SCRATCH_CHANCE = 0.4;
 
-const POSITIONS: readonly Position[] = ["PG", "SG", "SF", "PF", "C"];
+// Converts an absolute targetMinutesPerGame into the same relative-weight
+// scale RANK_MINUTE_WEIGHTS already uses, so a custom target can share one
+// normalization pool with rank-based fallback weights - RANK_MINUTE_WEIGHTS
+// sums to ~9.5 across a full 12-man rotation and normalizes to 240
+// team-minutes, so 1 minute of intended playing time is worth this many
+// weight units at that same scale.
+const WEIGHT_PER_MINUTE = RANK_MINUTE_WEIGHTS.reduce((sum, w) => sum + w, 0) / TEAM_MINUTES;
 
 function clamp(v: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, v));
@@ -88,40 +92,6 @@ function countSuccesses(attempts: number, pct: number, rng: () => number): numbe
 // 1. Minutes allocation
 // ---------------------------------------------------------------------------
 
-function buildRotation(
-  roster: RosterPlayerForSimulation[],
-): { player: RosterPlayerForSimulation; rank: number }[] {
-  const used = new Set<string>();
-  const starters: RosterPlayerForSimulation[] = [];
-
-  for (const pos of POSITIONS) {
-    const candidate = roster
-      .filter((p) => p.position === pos && !used.has(p.leaguePlayerId))
-      .sort((a, b) => b.overallRating - a.overallRating)[0];
-    if (candidate) {
-      starters.push(candidate);
-      used.add(candidate.leaguePlayerId);
-    }
-  }
-
-  const remaining = roster
-    .filter((p) => !used.has(p.leaguePlayerId))
-    .sort((a, b) => b.overallRating - a.overallRating);
-
-  // Backfill any unfilled starting slot (e.g. no true center on the
-  // roster) with the best remaining player regardless of position.
-  while (starters.length < 5 && remaining.length > 0) {
-    const next = remaining.shift();
-    if (!next) break;
-    starters.push(next);
-  }
-
-  return [...starters, ...remaining].slice(0, MAX_ROTATION_SIZE).map((player, rank) => ({
-    player,
-    rank,
-  }));
-}
-
 /** Allocates exactly 240 team-minutes across a healthy roster for one game. */
 export function allocateMinutes(
   roster: RosterPlayerForSimulation[],
@@ -129,7 +99,7 @@ export function allocateMinutes(
   rng: () => number = Math.random,
   coachModifier?: CoachModifier,
 ): Map<string, number> {
-  const rotation = buildRotation(roster);
+  const rotation = resolveRotation(roster);
   if (rotation.length === 0) return new Map();
 
   const garbageFactor = clamp(
@@ -146,8 +116,21 @@ export function allocateMinutes(
     0.6,
   );
 
-  const weights = rotation.map(({ player, rank }) => {
-    const baseWeight = RANK_MINUTE_WEIGHTS[rank] ?? 0;
+  const weights = rotation.map(({ player, rank, targetMinutes }) => {
+    // A user's assigned target minutes become the new base weight feeding
+    // this exact same variance/garbage-time/coach pipeline - Rotation
+    // Management (see src/lib/rotation/) guides the simulation rather than
+    // rigidly predetermining it. Falls back to the rank-based curve for
+    // any player without a custom target (every CPU team, always).
+    //
+    // targetMinutes is an absolute minutes value, not a relative weight
+    // like RANK_MINUTE_WEIGHTS's own ~0.08-1.42 scale - converting it via
+    // WEIGHT_PER_MINUTE puts it in the same units before it joins the
+    // shared normalization pool below, so one custom player doesn't
+    // overwhelm everyone else's share and the 240-minute total still
+    // comes out right regardless of how many players have a custom target.
+    const baseWeight =
+      targetMinutes !== null ? targetMinutes * WEIGHT_PER_MINUTE : (RANK_MINUTE_WEIGHTS[rank] ?? 0);
     if (baseWeight <= 0) return 0;
     if (rank >= DEEP_BENCH_SCRATCH_RANK && rng() < scratchChance) return 0;
 

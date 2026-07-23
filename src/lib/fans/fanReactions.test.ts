@@ -36,4 +36,17 @@ describe("describeFanReaction", () => {
   it("returns null for an unknown transaction type", () => {
     expect(describeFanReaction({ type: "SOMETHING_NEW", description: "..." })).toBeNull();
   });
+
+  it("returns a positive reaction for a rotation promotion, negative for a demotion", () => {
+    const promotion = describeFanReaction({
+      type: "ROTATION_CHANGE",
+      description: "X earns a spot in the Bulls starting lineup",
+    });
+    const demotion = describeFanReaction({
+      type: "ROTATION_CHANGE",
+      description: "X moves to the bench for the Bulls",
+    });
+    expect(promotion?.tone).toBe("POSITIVE");
+    expect(demotion?.tone).toBe("NEGATIVE");
+  });
 });

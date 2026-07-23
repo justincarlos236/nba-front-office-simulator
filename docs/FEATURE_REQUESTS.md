@@ -24,6 +24,157 @@ actually asked for.
 
 ---
 
+## Rotation Management (requested 2026-07-23)
+
+### Request (verbatim)
+
+> I want to implement a comprehensive Rotation Management system that gives
+> users meaningful control over how their team actually plays and makes
+> roster management extend beyond simply trading and signing players.
+> Before implementing anything, analyze the existing architecture and
+> determine how this should integrate with the current game simulation
+> engine, player box-score generation, coaching/staff systems, injuries,
+> fatigue, player development, morale if applicable, player roles, news,
+> and any other relevant systems. Reuse existing functionality wherever
+> appropriate rather than creating duplicate systems. If you identify
+> significant overlap, conflicts, architectural concerns, or a better
+> implementation approach, explain them to me before implementation
+> according to our existing architecture-overlap review protocol.
+>
+> I want users to be able to manage their team's rotation in an intuitive
+> and realistic way. At minimum, users should have control over their
+> starting lineup, bench rotation, rotation order or depth chart, and
+> expected minutes distribution. The system should make it easy to
+> understand who starts, who receives significant bench minutes, who has a
+> limited role, and who is currently outside the regular rotation.
+> Determine the best UI and underlying data model for this based on the
+> existing architecture rather than assuming a particular implementation.
+>
+> Rotation decisions must have real consequences in simulated games. The
+> game simulation engine should use the user's rotation when determining
+> which players appear, how many minutes they approximately play, and how
+> opportunities are distributed. If I assign a player 34 minutes per game,
+> I expect them to generally receive around that amount rather than
+> exactly 34 every night. Actual minutes should still vary naturally
+> because of game context, foul trouble if modeled, injuries, fatigue,
+> blowouts, overtime, coaching effects, and other relevant factors. The
+> rotation should guide the simulation rather than rigidly predetermine
+> every box score.
+>
+> Make the system realistic enough that users cannot create impossible
+> rotations. Expected regulation minutes should be internally consistent
+> with basketball's available playing time, while the UI should make
+> resolving invalid minute allocations simple and understandable. Use your
+> judgment about how much realism is appropriate without making rotation
+> management tedious for casual NBA fans.
+>
+> The user should be able to easily make common basketball decisions such
+> as promoting a bench player into the starting lineup, benching a
+> struggling starter, increasing a young player's minutes, reducing an
+> aging veteran's workload, removing someone from the rotation, giving a
+> newly acquired player a major role, or temporarily adjusting the lineup
+> because of an injury. These changes should actually be reflected in
+> subsequent simulated games.
+>
+> Injuries should integrate naturally with rotations. If a rotation player
+> becomes unavailable, determine the best way for their minutes and lineup
+> position to be redistributed based on the existing simulation
+> architecture. The user should not be forced to manually repair the
+> entire rotation every time a minor roster change occurs, but they should
+> retain the ability to override automatic adjustments. Likewise, when an
+> injured player returns, avoid unexpectedly destroying intentional
+> rotation changes the user made while that player was unavailable.
+>
+> The system should also integrate meaningfully with Staff Management.
+> Coaching quality, philosophy, rotation tendencies, bench trust, player
+> development, or any relevant coaching mechanics that already exist
+> should influence how rotations function where appropriate. However,
+> because the user is acting as the franchise decision-maker, I still want
+> them to have meaningful control over their team's rotation. Determine
+> the appropriate balance between user control and coaching influence
+> based on the systems already implemented.
+>
+> Rotation decisions should eventually be capable of interacting with
+> player satisfaction and development where the architecture supports it.
+> Young players receiving meaningful opportunities may develop differently
+> from players who never play, veterans may have expectations about their
+> roles, starters may react to being benched, and players expecting
+> significant minutes may become dissatisfied if consistently left outside
+> the rotation. Do not invent parallel morale or development systems if
+> these concepts already exist or are planned; instead, integrate rotation
+> information into the appropriate existing systems.
+>
+> I also want the UI to make rotation management enjoyable rather than
+> feeling like editing a spreadsheet. Clearly communicate starters, bench
+> players, expected minutes, positions, injuries, and relevant player
+> information while keeping the interface clean. Consider interactions
+> such as drag-and-drop ordering, intuitive minute controls, automatic
+> balancing, recommended rotations, or other UX approaches if they fit the
+> existing application. You have access to the actual codebase, so
+> determine which interaction model would work best with the current UI.
+>
+> Provide sensible automation for users who do not want to micromanage.
+> There should be an easy way to allow the simulator or coaching staff to
+> generate or recommend a reasonable rotation based on roster quality,
+> positions, health, coaching preferences, and other relevant factors.
+> However, users who want deeper control should be able to customize the
+> rotation themselves. The goal is to support both casual users and users
+> who enjoy detailed franchise management.
+>
+> Consider how rotation management should behave after trades, signings,
+> waivers, injuries, player returns, draft additions, and other roster
+> changes. The system should remain robust as the roster evolves over many
+> simulated seasons and should not require users to constantly fix broken
+> rotations because another system changed the roster.
+>
+> Most importantly, rotation management must be connected to the actual
+> simulation rather than existing as a cosmetic UI feature. If I
+> dramatically change my rotation, I should be able to see the
+> consequences in subsequent player minutes, box scores, performance,
+> development, fatigue, and any other systems that logically depend on
+> playing time.
+>
+> The overall goal is to give users another meaningful layer of control
+> over their franchise. Building the roster should only be part of the
+> job; users should also have meaningful decisions about how that roster
+> is actually used. I want rotation management to be accessible enough for
+> casual NBA fans to understand immediately while providing enough depth
+> that changing starters, bench roles, and minutes becomes a legitimate
+> strategic decision throughout the season. Analyze the existing
+> architecture first and determine the cleanest, most maintainable way to
+> achieve this before implementing it.
+
+### Status
+
+Implemented. Users set their starting five, bench order, and expected
+minutes via drag-and-drop at `/leagues/[id]/rotation`
+(`src/components/rotation/RotationBoard.tsx`), backed by two nullable
+fields on `LeaguePlayer` (`rotationSlot`, `targetMinutesPerGame`) rather
+than a new model - `null` on both is exactly the prior fully-automatic
+behavior, so every existing save and every CPU team is unaffected unless
+the user opts in. The existing `buildRotation`/`allocateMinutes` engine in
+`boxScore.ts` was extended (not duplicated) via `src/lib/rotation/
+resolveRotation.ts` to let a custom depth chart override its own
+ranking/weights while keeping all natural variance, garbage-time, and
+coaching-modifier behavior intact - a custom target minutes value guides
+actual simulated minutes rather than pinning them exactly, confirmed via
+hands-on testing (a promoted bench player's simulated production shifted
+dramatically and varied naturally game to game). Per the user's explicit
+follow-up decision, win probability also reflects the rotation: a new
+`computeRotationAdjustedStrength` (`src/lib/rotation/rotationStrength.ts`)
+is used only where actual game outcomes depend on who's playing, while
+`computeTeamStrength` stays untouched everywhere it evaluates roster
+talent instead (GM-accountability `SeasonExpectation`, All-Star Weekend
+exhibition squads). Player development takes real per-season minutes as a
+modest nudge; starter/bench boundary crossings generate real News stories
+wired into fan engagement. See `docs/ARCHITECTURE.md`'s Rotation
+Management section for the full design, including a real weight-scale bug
+caught and fixed during implementation. Also satisfies Roadmap items #28
+(Depth Chart Management), #29 (Rotation Management), and #33 (Player
+Roles, as a derived byproduct rather than a separate system).
+
+---
+
 ## All-Star Weekend (requested 2026-07-22)
 
 ### Request (verbatim)

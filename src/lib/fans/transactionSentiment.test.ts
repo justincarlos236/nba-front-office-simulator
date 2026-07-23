@@ -59,4 +59,15 @@ describe("computeTransactionSentiment", () => {
     expect(freshInjury).toBeLessThan(0);
     expect(recovery).toBeGreaterThan(0);
   });
+
+  it("reads rotation-change direction from the description, not a single fixed sentiment", () => {
+    const promotion = computeTransactionSentiment([
+      txn({ type: "ROTATION_CHANGE", description: "X earns a spot in the Bulls starting lineup" }),
+    ]);
+    const demotion = computeTransactionSentiment([
+      txn({ type: "ROTATION_CHANGE", description: "X moves to the bench for the Bulls" }),
+    ]);
+    expect(promotion).toBeGreaterThan(0);
+    expect(demotion).toBeLessThan(0);
+  });
 });

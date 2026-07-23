@@ -17,6 +17,14 @@ const MAX_RATING = 99;
 const DEV_COACH_QUALITY_ANCHOR = 72;
 const DEV_COACH_BONUS_PER_QUALITY_POINT = 0.03;
 
+// Rotation Management: real playing time nudges development, same "modest,
+// neutral-anchored" pattern as the dev-coach bonus above. 24 MPG ("a
+// regular rotation player") is the neutral anchor - a player with no real
+// minutes data (undefined) behaves exactly as this function always did.
+const MINUTES_ANCHOR = 24;
+const MINUTES_BONUS_PER_MPG = 0.05;
+const MINUTES_BONUS_CAP = 1.5;
+
 function randomIntInclusive(rng: () => number, min: number, max: number): number {
   return min + Math.floor(rng() * (max - min + 1));
 }
@@ -33,6 +41,8 @@ export interface DevelopPlayerRatingInput {
   rng: () => number;
   /** 60-99, defaults to the neutral anchor (no Head Coach/Dev Coach hired yet behaves exactly as before this parameter existed). */
   developmentCoachQuality?: number;
+  /** This season's real average minutes played, if any - omitted behaves exactly as before this parameter existed (no effect). */
+  minutesPerGame?: number;
 }
 
 export function developPlayerRating({
@@ -41,14 +51,28 @@ export function developPlayerRating({
   age,
   rng,
   developmentCoachQuality = DEV_COACH_QUALITY_ANCHOR,
+  minutesPerGame,
 }: DevelopPlayerRatingInput): number {
   const room = potentialRating - overallRating;
   const coachBonus =
     (developmentCoachQuality - DEV_COACH_QUALITY_ANCHOR) * DEV_COACH_BONUS_PER_QUALITY_POINT;
+  // A young player who actually played meaningful minutes develops faster
+  // than one who never got on the floor; a veteran playing heavy minutes
+  // stays sharper (slightly dampens decline) than one glued to the bench.
+  const minutesBonus =
+    minutesPerGame === undefined
+      ? 0
+      : Math.max(
+          -MINUTES_BONUS_CAP,
+          Math.min(MINUTES_BONUS_CAP, (minutesPerGame - MINUTES_ANCHOR) * MINUTES_BONUS_PER_MPG),
+        );
 
   if (age <= YOUNG_DEVELOPMENT_AGE_CEILING && room > 0) {
     const growth = randomIntInclusive(rng, 1, Math.min(4, room));
-    const coachedGrowth = Math.max(1, Math.min(room, Math.round(growth + coachBonus)));
+    const coachedGrowth = Math.max(
+      1,
+      Math.min(room, Math.round(growth + coachBonus + minutesBonus)),
+    );
     return Math.min(potentialRating, overallRating + coachedGrowth);
   }
 
@@ -59,10 +83,13 @@ export function developPlayerRating({
   }
 
   // Past peak: decline accelerates the further past 30 a player is. A good
-  // development coach helps a vet stay sharp, slightly dampening (never
-  // reversing) the decline.
+  // development coach - or real, heavy playing time - helps a vet stay
+  // sharp, slightly dampening (never reversing) the decline.
   const yearsPastDeclineStart = age - DECLINE_START_AGE;
   const baseDecline = 1 + Math.floor(yearsPastDeclineStart / 3);
-  const decline = Math.max(0, randomIntInclusive(rng, baseDecline, baseDecline + 2) - coachBonus);
+  const decline = Math.max(
+    0,
+    randomIntInclusive(rng, baseDecline, baseDecline + 2) - coachBonus - minutesBonus,
+  );
   return clampRating(overallRating - decline);
 }

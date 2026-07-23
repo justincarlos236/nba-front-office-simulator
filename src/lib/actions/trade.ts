@@ -303,7 +303,15 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
     for (const lp of myPlayers) {
       await tx.leaguePlayer.update({
         where: { id: lp.id },
-        data: { leagueTeamId: input.toTeamId, reSigningTeamId: input.toTeamId },
+        data: {
+          leagueTeamId: input.toTeamId,
+          reSigningTeamId: input.toTeamId,
+          // A depth-chart slot from the old team is meaningless on the new
+          // one - reset so it doesn't collide with the new team's own
+          // numbering (see src/lib/rotation/).
+          rotationSlot: null,
+          targetMinutesPerGame: null,
+        },
       });
       await tx.contract.update({
         where: { leaguePlayerId: lp.id },
@@ -313,7 +321,12 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
     for (const lp of theirPlayers) {
       await tx.leaguePlayer.update({
         where: { id: lp.id },
-        data: { leagueTeamId: input.fromTeamId, reSigningTeamId: input.fromTeamId },
+        data: {
+          leagueTeamId: input.fromTeamId,
+          reSigningTeamId: input.fromTeamId,
+          rotationSlot: null,
+          targetMinutesPerGame: null,
+        },
       });
       await tx.contract.update({
         where: { leaguePlayerId: lp.id },
