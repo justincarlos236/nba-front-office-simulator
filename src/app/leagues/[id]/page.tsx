@@ -51,13 +51,6 @@ interface PageProps {
 
 export const dynamic = "force-dynamic";
 
-const ROUND_LABEL: Record<number, string> = {
-  1: "Round 1",
-  2: "Conf. Semis",
-  3: "Conf. Finals",
-  4: "NBA Finals",
-};
-
 function ordinal(n: number): string {
   const mod100 = n % 100;
   if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
@@ -88,37 +81,6 @@ function conferenceRank(
   return sorted.findIndex((t) => t.id === teamId) + 1;
 }
 
-function describePlayoffStatus({
-  regularSeasonGamesRemaining,
-  series,
-  userTeamId,
-}: {
-  regularSeasonGamesRemaining: number;
-  series: {
-    round: number;
-    higherSeedTeamId: string;
-    lowerSeedTeamId: string;
-    winnerTeamId: string | null;
-  }[];
-  userTeamId: string;
-}): string {
-  if (regularSeasonGamesRemaining > 0) return "Regular season in progress";
-  if (series.length === 0) return "Playoffs haven't started yet";
-
-  const champion = series.find((s) => s.round === 4 && s.winnerTeamId);
-  if (champion?.winnerTeamId === userTeamId) return "League Champion!";
-
-  const teamSeries = series
-    .filter((s) => s.higherSeedTeamId === userTeamId || s.lowerSeedTeamId === userTeamId)
-    .sort((a, b) => b.round - a.round);
-  if (teamSeries.length === 0) return "Did not qualify this season";
-
-  const latest = teamSeries[0];
-  if (!latest.winnerTeamId) return `Alive in the ${ROUND_LABEL[latest.round]}`;
-  if (latest.winnerTeamId === userTeamId) return `Won the ${ROUND_LABEL[latest.round]}`;
-  return `Eliminated in the ${ROUND_LABEL[latest.round]}`;
-}
-
 export default async function LeagueDashboardPage({ params }: PageProps) {
   const { id } = await params;
   const session = await auth();
@@ -137,57 +99,14 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
 
   const season = league.currentSeason;
 
-  const [
-    leaguePlayers,
-    regularSeasonGamesRemaining,
-    playoffSeries,
-    teamDraftPicks,
-    pendingTeamDraftPicks,
-    recentTransactions,
-    championshipsWon,
-  ] = await Promise.all([
-    prisma.leaguePlayer.findMany({
-      where: { leagueTeamId: userLeagueTeam.id },
-      include: {
-        player: true,
-        contract: { include: { years: { where: { season } } } },
-      },
-      orderBy: { overallRating: "desc" },
-    }),
-    prisma.game.count({
-      where: { leagueId: league.id, season, type: "REGULAR_SEASON", playedAt: null },
-    }),
-    prisma.playoffSeries.findMany({ where: { leagueId: league.id, season } }),
-    // A future-pick placeholder always exists by now (Phase 11a);
-    // `overallPickNumber` is the real "draft started" signal, so this
-    // keeps showing only this season's actual draft picks, not the
-    // multi-year future-pick inventory.
-    prisma.draftPick.count({
-      where: {
-        leagueId: league.id,
-        season,
-        overallPickNumber: { not: null },
-        currentOwnerId: userLeagueTeam.id,
-      },
-    }),
-    prisma.draftPick.count({
-      where: {
-        leagueId: league.id,
-        season,
-        overallPickNumber: { not: null },
-        currentOwnerId: userLeagueTeam.id,
-        selectedProspectId: null,
-      },
-    }),
-    prisma.leagueTransaction.findMany({
-      where: { leagueId: league.id },
-      orderBy: { createdAt: "desc" },
-      take: 3,
-    }),
-    prisma.playoffSeries.count({
-      where: { leagueId: league.id, round: 4, winnerTeamId: userLeagueTeam.id },
-    }),
-  ]);
+  const leaguePlayers = await prisma.leaguePlayer.findMany({
+    where: { leagueTeamId: userLeagueTeam.id },
+    include: {
+      player: true,
+      contract: { include: { years: { where: { season } } } },
+    },
+    orderBy: { overallRating: "desc" },
+  });
 
   const currentExpectation = await prisma.seasonExpectation.findUnique({
     where: { leagueId_season: { leagueId: league.id, season } },
@@ -254,18 +173,6 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
     userLeagueTeam.id,
     userLeagueTeam.team.conference,
   );
-  const playoffStatus = describePlayoffStatus({
-    regularSeasonGamesRemaining,
-    series: playoffSeries,
-    userTeamId: userLeagueTeam.id,
-  });
-  const draftHeadline =
-    teamDraftPicks === 0
-      ? "No picks scheduled yet"
-      : pendingTeamDraftPicks === 0
-        ? `${teamDraftPicks} pick${teamDraftPicks > 1 ? "s" : ""} - complete`
-        : `${pendingTeamDraftPicks} of ${teamDraftPicks} pick${teamDraftPicks > 1 ? "s" : ""} remaining`;
-
   return (
     <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
       <div
@@ -357,36 +264,6 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
           label="Conference rank"
           headline={rank > 0 ? `${ordinal(rank)} in ${userLeagueTeam.team.conference}` : "-"}
           detail={`${userLeagueTeam.wins}-${userLeagueTeam.losses}`}
-        />
-        <OverviewCard
-          href={`/leagues/${league.id}/playoffs`}
-          label="Playoff picture"
-          headline={playoffStatus}
-        />
-        <OverviewCard
-          href={`/leagues/${league.id}/draft`}
-          label={`${season} draft picks`}
-          headline={draftHeadline}
-        />
-        <OverviewCard
-          href={`/leagues/${league.id}/transactions`}
-          label="Recent activity"
-          headline={recentTransactions[0]?.description ?? "No activity yet"}
-          truncate
-        />
-        <OverviewCard
-          href={`/leagues/${league.id}/history`}
-          label="All-time record"
-          headline={
-            championshipsWon > 0
-              ? `${championshipsWon} championship${championshipsWon > 1 ? "s" : ""}`
-              : "No championships yet"
-          }
-        />
-        <OverviewCard
-          href={`/leagues/${league.id}/free-agents`}
-          label="Free agency"
-          headline="Browse available players"
         />
         <OverviewCard
           href={`/leagues/${league.id}/rotation`}
