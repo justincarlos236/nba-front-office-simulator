@@ -1,0 +1,18 @@
+{
+  "_comment": "Minimal consensus override layer. A curated target overall for the handful of players where the box-score seed model clearly disagrees with broad NBA consensus - mostly stars the small-sample regression pulls down after an injury-shortened season. These are editorial ratings (our own judgment informed by public consensus/awards/role), NOT a copy of any proprietary board. Keys are player names (normalized on load, so accents/suffixes/case don't matter). Refresh each season alongside the roster dataset; keep this list as short as genuinely necessary. season: 2025-26.",
+  "Shai Gilgeous-Alexander": 98,
+  "Nikola Jokic": 98,
+  "Giannis Antetokounmpo": 96,
+  "Luka Doncic": 95,
+  "Victor Wembanyama": 95,
+  "Stephen Curry": 93,
+  "Anthony Edwards": 93,
+  "Kevin Durant": 92,
+  "LeBron James": 92,
+  "Jayson Tatum": 93,
+  "Joel Embiid": 90,
+  "Tyrese Haliburton": 90,
+  "Damian Lillard": 88,
+  "Kawhi Leonard": 91,
+  "Tyrese Maxey": 89
+}
