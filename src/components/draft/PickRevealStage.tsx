@@ -1,0 +1,359 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { TeamBadge } from "@/components/draft/lottery/TeamBadge";
+import type { ResolvedPick } from "@/lib/actions/draft";
+import type { DraftTeamInfo } from "./types";
+import { teamLabel } from "./types";
+import { DraftResolutionCard } from "./DraftResolutionCard";
+
+/**
+ * Forked from `src/components/draft/lottery/LotteryReveal.tsx` - the same
+ * manual/auto/speed/skip mechanism (ref-mirrored state so an in-flight
+ * async reveal loop always reads current control values, and the
+ * "skip must still force-set the authoritative final state and hold
+ * briefly before completing" discipline), adapted for a batch of already-
+ * decided draft picks instead of a lottery result. Every pick in
+ * `resolvedPicks` is already fully resolved server-side (see
+ * `advanceDraftAction`/`makeDraftPickAction`) - this only paces how it's
+ * shown, never influences the outcome.
+ */
+
+const SPEED_MULTIPLIERS = { "1x": 1, "2x": 2, "4x": 4, Fast: 10 } as const;
+type SpeedLabel = keyof typeof SPEED_MULTIPLIERS;
+type Mode = "auto" | "manual";
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isBigMoment(pick: ResolvedPick, userTeamId: string | null): boolean {
+  return (
+    pick.overallPickNumber === 1 ||
+    pick.leagueTeamId === userTeamId ||
+    pick.narrative !== null ||
+    pick.tradedFromTeamId !== null
+  );
+}
+
+function baseDelayForPick(pick: ResolvedPick, userTeamId: string | null): number {
+  if (pick.overallPickNumber === 1) return 2600;
+  if (isBigMoment(pick, userTeamId)) return 1500;
+  if (pick.overallPickNumber <= 5) return 1100;
+  if (pick.overallPickNumber <= 14) return 750;
+  if (pick.overallPickNumber <= 30) return 400;
+  return 220; // round 2 - keep it snappy
+}
+function settleDelayForPick(pick: ResolvedPick, userTeamId: string | null): number {
+  if (pick.overallPickNumber === 1) return 1200;
+  if (isBigMoment(pick, userTeamId)) return 700;
+  if (pick.overallPickNumber <= 14) return 350;
+  return 150;
+}
+
+export function PickRevealStage({
+  resolvedPicks,
+  teamsById,
+  userTeamId,
+  onReveal,
+  onComplete,
+}: {
+  /** Already sorted ascending by overallPickNumber. */
+  resolvedPicks: ResolvedPick[];
+  teamsById: Record<string, DraftTeamInfo>;
+  userTeamId: string | null;
+  /** Fired once per entry, the moment it becomes the current reveal - lets the parent update the live board/order rail/night-event log in real time. */
+  onReveal: (pick: ResolvedPick) => void;
+  onComplete: () => void;
+}) {
+  const isSingle = resolvedPicks.length === 1;
+
+  const [revealedCount, setRevealedCount] = useState(0);
+  const [current, setCurrent] = useState<ResolvedPick | null>(null);
+  const [isFinal, setIsFinal] = useState(false);
+  const [mode, setMode] = useState<Mode>("auto");
+  const [speed, setSpeed] = useState<SpeedLabel>("2x");
+  const [isPaused, setIsPaused] = useState(false);
+
+  const modeRef = useRef(mode);
+  const speedRef = useRef(speed);
+  const pausedRef = useRef(isPaused);
+  const simToEndRef = useRef(false);
+  const manualResolverRef = useRef<(() => void) | null>(null);
+  const onRevealRef = useRef(onReveal);
+  const onCompleteRef = useRef(onComplete);
+
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+  useEffect(() => {
+    speedRef.current = speed;
+  }, [speed]);
+  useEffect(() => {
+    pausedRef.current = isPaused;
+  }, [isPaused]);
+  useEffect(() => {
+    onRevealRef.current = onReveal;
+    onCompleteRef.current = onComplete;
+  }, [onReveal, onComplete]);
+
+  async function waitTicks(ms: number) {
+    let remaining = ms;
+    while (remaining > 0) {
+      if (simToEndRef.current) return;
+      if (pausedRef.current) {
+        await sleep(60);
+        continue;
+      }
+      const chunk = Math.min(60, remaining);
+      await sleep(chunk / SPEED_MULTIPLIERS[speedRef.current]);
+      remaining -= chunk;
+    }
+  }
+
+  function waitForManualAdvance(): Promise<void> {
+    if (simToEndRef.current) return Promise.resolve();
+    return new Promise((resolve) => {
+      manualResolverRef.current = resolve;
+    });
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function reveal() {
+      // Tracked as a plain closure variable, not React state - state set
+      // inside this long-lived async closure would only ever reflect the
+      // value from the render that started it, not live updates.
+      let revealedSoFar = 0;
+
+      for (let i = 0; i < resolvedPicks.length; i++) {
+        if (cancelled) return;
+        if (simToEndRef.current) break;
+
+        const entry = resolvedPicks[i];
+
+        if (!isSingle && modeRef.current === "manual") {
+          await waitForManualAdvance();
+        } else {
+          await waitTicks(baseDelayForPick(entry, userTeamId));
+        }
+        if (cancelled) return;
+        if (simToEndRef.current) break;
+
+        revealedSoFar = i + 1;
+        setRevealedCount(revealedSoFar);
+        setCurrent(entry);
+        onRevealRef.current(entry);
+        await waitTicks(settleDelayForPick(entry, userTeamId));
+      }
+
+      if (cancelled) return;
+
+      // Sim to End (or the natural end) - force-apply every remaining
+      // entry's reveal callback so the board is never left partially
+      // updated, then land on the exact authoritative final state.
+      for (let i = revealedSoFar; i < resolvedPicks.length; i++) {
+        onRevealRef.current(resolvedPicks[i]);
+      }
+      setRevealedCount(resolvedPicks.length);
+      setCurrent(resolvedPicks[resolvedPicks.length - 1] ?? null);
+      setIsFinal(true);
+
+      await sleep(500);
+      if (!cancelled) onCompleteRef.current();
+    }
+
+    reveal();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleManualAdvance() {
+    manualResolverRef.current?.();
+    manualResolverRef.current = null;
+  }
+
+  function handleSkipToEnd() {
+    simToEndRef.current = true;
+    setIsPaused(false);
+    manualResolverRef.current?.();
+    manualResolverRef.current = null;
+  }
+
+  const isClimax = current?.overallPickNumber === 1;
+  const isUserPick = Boolean(current && current.leagueTeamId === userTeamId);
+  const team = current ? teamsById[current.leagueTeamId] : undefined;
+
+  return (
+    <div>
+      <div
+        className={`relative min-h-[26rem] overflow-hidden rounded-xl border p-8 text-center transition-all ${
+          isClimax
+            ? "border-accent bg-accent/5"
+            : isUserPick
+              ? "border-accent/60 bg-accent/5"
+              : "border-border bg-surface"
+        }`}
+      >
+        <p
+          className={`text-xs font-semibold tracking-widest uppercase ${isClimax ? "text-accent" : "text-muted"}`}
+        >
+          {current?.overallPickNumber === 1
+            ? "The No. 1 Overall Pick"
+            : current
+              ? `Pick ${current.overallPickNumber}`
+              : "On the clock..."}
+        </p>
+
+        {current ? (
+          <div
+            key={current.pickId}
+            className={`mt-4 flex flex-col items-center gap-3 animate-lottery-card-in ${
+              isClimax ? "animate-lottery-glow-pulse rounded-xl p-4" : ""
+            }`}
+          >
+            <TeamBadge logoUrl={team?.logoUrl ?? null} size={isClimax ? "xl" : "lg"} />
+            <p className={`font-bold text-foreground ${isClimax ? "text-3xl" : "text-xl"}`}>
+              {team ? `${team.city} ${team.name}` : "Unknown team"}
+            </p>
+            {isUserPick && (
+              <span className="rounded-full bg-accent/15 px-3 py-1 text-xs font-bold text-accent">
+                YOUR PICK
+              </span>
+            )}
+            <div className="mt-1">
+              <p className="text-lg font-semibold text-foreground">{current.fullName}</p>
+              <p className="text-xs text-muted">
+                {current.position} &middot; OVR {current.overallRating} &middot; POT{" "}
+                {current.potentialRating}
+              </p>
+            </div>
+
+            {current.tradedFromTeamId && (
+              <div className="animate-lottery-banner-in mt-2 rounded-lg border border-orange-400 bg-orange-400/15 px-4 py-2">
+                <p className="text-xs font-black tracking-wide text-orange-400 uppercase">
+                  Trade Alert
+                </p>
+                <p className="mt-0.5 text-xs text-foreground">
+                  {teamLabel(teamsById, current.tradedFromTeamId)} traded this pick to{" "}
+                  {teamLabel(teamsById, current.leagueTeamId)}
+                </p>
+              </div>
+            )}
+
+            {current.narrative === "REACH" && (
+              <p className="text-sm font-semibold text-orange-400">
+                ▲ A reach - the board had someone else in mind here
+              </p>
+            )}
+            {current.narrative === "STEAL" && (
+              <div className="animate-lottery-banner-in mt-2 rounded-lg border border-emerald-400 bg-emerald-400/15 px-4 py-2">
+                <p className="text-xs font-black tracking-wide text-emerald-400 uppercase">
+                  Hidden Gem
+                </p>
+                <p className="mt-0.5 text-xs text-foreground">
+                  A real slide - great value this late
+                </p>
+              </div>
+            )}
+            {current.resolutionSummary && (
+              <DraftResolutionCard summary={current.resolutionSummary} />
+            )}
+          </div>
+        ) : (
+          <p className="mt-6 text-sm text-muted">The commissioner steps to the podium...</p>
+        )}
+      </div>
+
+      {!isSingle && (
+        <div className="mt-6 flex flex-col items-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="flex overflow-hidden rounded-lg border border-border">
+              <button
+                type="button"
+                disabled={isFinal}
+                onClick={() => setMode("auto")}
+                className={`px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
+                  mode === "auto" ? "bg-accent text-black" : "text-foreground hover:bg-surface-2"
+                }`}
+              >
+                Auto-play
+              </button>
+              <button
+                type="button"
+                disabled={isFinal}
+                onClick={() => setMode("manual")}
+                className={`px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
+                  mode === "manual" ? "bg-accent text-black" : "text-foreground hover:bg-surface-2"
+                }`}
+              >
+                Manual
+              </button>
+            </div>
+
+            {mode === "auto" &&
+              (Object.keys(SPEED_MULTIPLIERS) as SpeedLabel[]).map((label) => (
+                <button
+                  key={label}
+                  type="button"
+                  disabled={isFinal}
+                  onClick={() => {
+                    setSpeed(label);
+                    setIsPaused(false);
+                  }}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
+                    speed === label && !isPaused
+                      ? "border-accent bg-accent/15 text-accent"
+                      : "border-border text-foreground hover:bg-surface-2"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+
+            {mode === "auto" && (
+              <button
+                type="button"
+                disabled={isFinal}
+                onClick={() => setIsPaused((p) => !p)}
+                className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
+                  isPaused
+                    ? "border-accent bg-accent/15 text-accent"
+                    : "border-border text-foreground hover:bg-surface-2"
+                }`}
+              >
+                {isPaused ? "Resume" : "Pause"}
+              </button>
+            )}
+
+            {mode === "manual" && (
+              <button
+                type="button"
+                disabled={isFinal}
+                onClick={handleManualAdvance}
+                className="rounded-lg bg-accent px-4 py-1.5 text-xs font-bold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Reveal Next Pick
+              </button>
+            )}
+
+            <button
+              type="button"
+              disabled={isFinal}
+              onClick={handleSkipToEnd}
+              className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              Skip Ahead
+            </button>
+          </div>
+          <p className="text-xs text-muted">
+            {revealedCount} of {resolvedPicks.length} revealed
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
