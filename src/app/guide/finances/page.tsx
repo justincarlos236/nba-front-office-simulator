@@ -1,5 +1,4 @@
-import Link from "next/link";
-import type { ReactNode } from "react";
+import { GuideLayout, GuideSection } from "@/components/guide/GuideLayout";
 import { CAP_STATUS_LABEL, CAP_STATUS_DESCRIPTION } from "@/lib/cap/capStatusLabel";
 import { PLAYER_VALUE_TIER_LABEL } from "@/lib/valuation/playerValueTier";
 import { JOB_SECURITY_LABEL, JOB_SECURITY_DESCRIPTION } from "@/lib/gm/jobSecurity";
@@ -26,45 +25,23 @@ const PAYROLL_TIER_BASELINE_EXPECTATION: Record<keyof typeof PAYROLL_TIER_LABEL,
   EXTREME: "baseline expectation is a deep playoff run",
 };
 
-function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
-  return (
-    <section id={id} className="mt-12 scroll-mt-20">
-      <h2 className="text-xl font-semibold text-foreground">{title}</h2>
-      <div className="mt-3 space-y-3 text-sm text-muted">{children}</div>
-    </section>
-  );
-}
-
 export default function FinancialGuidePage() {
   return (
-    <main className="mx-auto max-w-3xl flex-1 px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground">How the finances work</h1>
-      <p className="mt-2 text-muted">
-        A plain-English guide to the salary cap system - no NBA CBA knowledge required. Jump to a
-        section:
-      </p>
-      <nav className="mt-4 flex flex-wrap gap-2 text-sm">
-        {[
-          ["#financial-status", "Financial Status"],
-          ["#value-tiers", "Player Value Tiers"],
-          ["#trades", "Trade Financial Check"],
-          ["#cpu-trade-decisions", "CPU Trade Decisions"],
-          ["#re-signing-rights", "Re-Signing Rights"],
-          ["#signing-exception", "Signing Exception"],
-          ["#financial-flexibility", "Financial Flexibility Grade"],
-          ["#owner-confidence", "Owner Confidence & Job Security"],
-        ].map(([href, label]) => (
-          <a
-            key={href}
-            href={href}
-            className="rounded-full border border-border px-3 py-1 text-foreground transition hover:border-accent/40"
-          >
-            {label}
-          </a>
-        ))}
-      </nav>
-
-      <Section id="financial-status" title="Financial Status">
+    <GuideLayout
+      title="How the finances work"
+      intro="A plain-English guide to the salary cap system - no NBA CBA knowledge required. Jump to a section:"
+      sections={[
+        ["#financial-status", "Financial Status"],
+        ["#value-tiers", "Player Value Tiers"],
+        ["#trades", "Trade Financial Check"],
+        ["#cpu-trade-decisions", "CPU Trade Decisions"],
+        ["#re-signing-rights", "Re-Signing Rights"],
+        ["#signing-exception", "Signing Exception"],
+        ["#financial-flexibility", "Financial Flexibility Grade"],
+        ["#owner-confidence", "Owner Confidence & Job Security"],
+      ]}
+    >
+      <GuideSection id="financial-status" title="Financial Status">
         <p>
           Every team has a single financial status that sums up its cap situation. It never shows up
           as a hard spending wall - it changes *how* you can add players, not whether you can build
@@ -78,9 +55,9 @@ export default function FinancialGuidePage() {
             </div>
           ))}
         </div>
-      </Section>
+      </GuideSection>
 
-      <Section id="value-tiers" title="Player Value Tiers">
+      <GuideSection id="value-tiers" title="Player Value Tiers">
         <p>
           Every player is labeled with a tier so you can tell how expensive they are at a glance,
           without needing to compare exact ratings.
@@ -95,9 +72,9 @@ export default function FinancialGuidePage() {
             ),
           )}
         </div>
-      </Section>
+      </GuideSection>
 
-      <Section id="trades" title="Trade Financial Check">
+      <GuideSection id="trades" title="Trade Financial Check">
         <p>
           Every trade you build gets checked automatically - you&apos;ll always see a plain
           &quot;Valid&quot; or &quot;Invalid&quot; result with a one-line explanation, never a raw
@@ -129,9 +106,9 @@ export default function FinancialGuidePage() {
           If a trade is invalid because of salary matching, the message tells you approximately how
           much more salary you need to send out - you&apos;ll never have to do that math yourself.
         </p>
-      </Section>
+      </GuideSection>
 
-      <Section id="cpu-trade-decisions" title="CPU Trade Decisions">
+      <GuideSection id="cpu-trade-decisions" title="CPU Trade Decisions">
         <p>
           Passing the Trade Financial Check only means a trade is <em>legal</em>. The other team
           still has to actually want it - every CPU team genuinely evaluates a proposed trade before
@@ -204,9 +181,9 @@ export default function FinancialGuidePage() {
             a note that you should build the offer around someone else instead.
           </p>
         </div>
-      </Section>
+      </GuideSection>
 
-      <Section id="re-signing-rights" title="Re-Signing Rights">
+      <GuideSection id="re-signing-rights" title="Re-Signing Rights">
         <p>
           If a player&apos;s contract with your team expires and they become a free agent, you keep
           their <span className="text-foreground">Re-Signing Rights</span> - shown as a badge
@@ -219,9 +196,9 @@ export default function FinancialGuidePage() {
           using ordinary Cap Space or a Signing Exception. Re-Signing Rights follow a player if you
           trade for them, too.
         </p>
-      </Section>
+      </GuideSection>
 
-      <Section id="signing-exception" title="Signing Exception">
+      <GuideSection id="signing-exception" title="Signing Exception">
         <p>
           Once your team is over the cap, you still have a limited amount of extra spending power
           for free agents (outside of any Re-Signing Rights): the{" "}
@@ -236,9 +213,9 @@ export default function FinancialGuidePage() {
           to a <span className="text-foreground">Minimum Contract</span> - that path is never
           restricted.
         </p>
-      </Section>
+      </GuideSection>
 
-      <Section id="financial-flexibility" title="Financial Flexibility Grade">
+      <GuideSection id="financial-flexibility" title="Financial Flexibility Grade">
         <p>
           Long-term contracts affect more than this season - a big four-year deal eats into cap room
           for years after you sign it. Every team gets a single{" "}
@@ -259,9 +236,9 @@ export default function FinancialGuidePage() {
           <span className="text-foreground"> already committed</span> from decisions you&apos;ve
           already made - not a prediction of what you&apos;ll do next.
         </p>
-      </Section>
+      </GuideSection>
 
-      <Section id="owner-confidence" title="Owner Confidence & Job Security">
+      <GuideSection id="owner-confidence" title="Owner Confidence & Job Security">
         <p>
           Ownership sets an expectation for your team at the start of every season, based on your
           payroll and roster quality:
@@ -299,13 +276,7 @@ export default function FinancialGuidePage() {
           posted to your league&apos;s News feed as it happens, so you&apos;re never caught off
           guard.
         </p>
-      </Section>
-
-      <p className="mt-12 text-xs text-muted">
-        <Link href="/leagues" className="hover:text-foreground">
-          &larr; Back to My Leagues
-        </Link>
-      </p>
-    </main>
+      </GuideSection>
+    </GuideLayout>
   );
 }

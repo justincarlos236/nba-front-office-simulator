@@ -26,6 +26,7 @@ import {
   buildAutoRotation,
 } from "@/lib/rotation/autoRotation";
 import { rotationRoleLabel } from "@/lib/rotation/roleLabel";
+import { getMoraleLevel, MORALE_LEVEL_LABEL, type MoraleLevel } from "@/lib/morale/moraleLevel";
 import type { Position, InjuryStatus } from "@/generated/prisma/client";
 
 export interface RotationPlayer {
@@ -38,6 +39,38 @@ export interface RotationPlayer {
   /** Server-resolved depth position at load time, null if not currently in the rotation. */
   rank: number | null;
   targetMinutesPerGame: number | null;
+  /** Player Morale & Personality System - a role/minutes change here is the exact event this reacts to. */
+  morale: number;
+  tradeRequestActive: boolean;
+}
+
+const MORALE_DOT_CLASS: Record<MoraleLevel, string> = {
+  THRILLED: "bg-emerald-400",
+  CONTENT: "bg-emerald-400/70",
+  NEUTRAL: "bg-muted",
+  UNHAPPY: "bg-amber-400",
+  DISGRUNTLED: "bg-red-500",
+};
+
+function MoraleIndicator({
+  morale,
+  tradeRequestActive,
+}: {
+  morale: number;
+  tradeRequestActive: boolean;
+}) {
+  const level = getMoraleLevel(morale);
+  return (
+    <span
+      className="flex shrink-0 items-center gap-1"
+      title={tradeRequestActive ? "Has requested a trade" : MORALE_LEVEL_LABEL[level]}
+    >
+      <span className={`h-2 w-2 rounded-full ${MORALE_DOT_CLASS[level]}`} />
+      {tradeRequestActive && (
+        <span className="text-xs font-semibold text-red-400">Trade Request</span>
+      )}
+    </span>
+  );
 }
 
 const TEAM_MINUTES = 240;
@@ -126,6 +159,7 @@ function SortableRow({
         />
       </div>
       <span className="w-10 shrink-0 text-xs text-muted">{player.position}</span>
+      <MoraleIndicator morale={player.morale} tradeRequestActive={player.tradeRequestActive} />
       {player.injuryStatus !== "HEALTHY" && (
         <span className="shrink-0 rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-semibold text-red-400">
           Out
