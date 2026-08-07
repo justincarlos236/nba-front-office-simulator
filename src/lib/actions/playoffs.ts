@@ -11,17 +11,34 @@ import {
   type StandingsEntry,
 } from "@/lib/simulation/playoffSeeding";
 import { simulatePlayIn } from "@/lib/simulation/playInTournament";
-import { simulateSeriesToCompletion } from "@/lib/simulation/simulateSeries";
+import {
+  isHigherSeedHomeGame,
+  simulateSeriesToCompletion,
+  type SeriesState,
+} from "@/lib/simulation/simulateSeries";
+import {
+  simulateLiveGame,
+  allocatePlayerStatsAcrossPeriods,
+} from "@/lib/simulation/simulateLiveGame";
+import { computeHomeWinProbability } from "@/lib/simulation/simulateGame";
+import { generateBoxScore, type PlayerBoxScoreLine } from "@/lib/simulation/boxScore";
+import { computeCoachBoxScoreModifier, computeCoachWinBonus } from "@/lib/staff/coachModifiers";
+import { describeGameResult, describeMilestoneGame } from "@/lib/transactions/describeGameEvents";
+import { Prisma } from "@/generated/prisma/client";
 
 type ConferenceName = "EAST" | "WEST";
 
-async function requireOwnedLeague(leagueId: string) {
+const PLAYOFFS_LEAGUE_INCLUDE = { teams: { include: { team: true } } } as const;
+
+export type PlayoffsLeague = Prisma.LeagueGetPayload<{ include: typeof PLAYOFFS_LEAGUE_INCLUDE }>;
+
+async function requireOwnedLeague(leagueId: string): Promise<PlayoffsLeague> {
   const session = await auth();
   if (!session?.user) redirect("/sign-in");
 
   const league = await prisma.league.findUnique({
     where: { id: leagueId },
-    include: { teams: { include: { team: true } } },
+    include: PLAYOFFS_LEAGUE_INCLUDE,
   });
   if (!league || league.ownerId !== session.user.id) {
     throw new Error("League not found");
@@ -160,9 +177,116 @@ export async function startPlayoffsAction(leagueId: string) {
 }
 
 /**
+ * Re-checks every series in `activeRound` fresh from the DB and, only once
+ * every one of them has a winner, advances the bracket: creates the next
+ * round's series from this round's winners, or - at round 4 - crowns the
+ * champion. A no-op (returns `{ champion: null }`) if any series in the
+ * round - including the user's own, which `simulateRoundAction` may have
+ * deliberately left pending - is still undecided. Callable after resolving
+ * either just one series (the user's own live game) or a whole batch (the
+ * bulk round action), so the bracket advances correctly regardless of which
+ * path finished the round.
+ */
+async function advanceRoundIfComplete(
+  leagueId: string,
+  season: number,
+  league: { teams: { id: string; wins: number; losses: number }[] },
+  activeRound: number,
+): Promise<{ champion: string | null }> {
+  const roundSeries = await prisma.playoffSeries.findMany({
+    where: { leagueId, season, round: activeRound },
+  });
+  if (roundSeries.length === 0 || roundSeries.some((s) => !s.winnerTeamId)) {
+    return { champion: null };
+  }
+
+  if (activeRound === 4) {
+    return { champion: roundSeries[0].winnerTeamId };
+  }
+
+  // Need each winner's regular-season record to decide home-court in the
+  // next round (better record hosts, same rule the real playoffs use).
+  const winnerStandings = new Map<string, StandingsEntry>(
+    league.teams.map((lt) => [lt.id, { leagueTeamId: lt.id, wins: lt.wins, losses: lt.losses }]),
+  );
+
+  if (activeRound < 3) {
+    // Round 1 -> 2, or round 2 -> 3: pair within each conference by
+    // bracket slot (slot 2N & 2N+1 feed next round's slot N).
+    const byConference = new Map<ConferenceName, typeof roundSeries>();
+    for (const s of roundSeries) {
+      const list = byConference.get(s.conference as ConferenceName) ?? [];
+      list.push(s);
+      byConference.set(s.conference as ConferenceName, list);
+    }
+
+    const nextRoundInputs: {
+      leagueId: string;
+      season: number;
+      round: number;
+      bracketSlot: number;
+      conference: ConferenceName;
+      higherSeedTeamId: string;
+      lowerSeedTeamId: string;
+      winsNeeded: number;
+    }[] = [];
+
+    for (const [conference, series] of byConference) {
+      const bySlot = [...series].sort((a, b) => a.bracketSlot - b.bracketSlot);
+      for (let i = 0; i + 1 < bySlot.length; i += 2) {
+        const winnerA = bySlot[i].winnerTeamId!;
+        const winnerB = bySlot[i + 1].winnerTeamId!;
+        const higher = pickHigherSeed(winnerStandings.get(winnerA)!, winnerStandings.get(winnerB)!);
+        const lower = higher.leagueTeamId === winnerA ? winnerB : winnerA;
+        nextRoundInputs.push({
+          leagueId,
+          season,
+          round: activeRound + 1,
+          bracketSlot: i / 2,
+          conference,
+          higherSeedTeamId: higher.leagueTeamId,
+          lowerSeedTeamId: lower,
+          winsNeeded: 4,
+        });
+      }
+    }
+
+    await prisma.playoffSeries.createMany({ data: nextRoundInputs });
+  } else {
+    // Round 3 (conference finals) -> round 4 (NBA Finals): cross-conference,
+    // home-court by better regular-season record rather than conference.
+    const eastFinal = roundSeries.find((s) => s.conference === "EAST")!;
+    const westFinal = roundSeries.find((s) => s.conference === "WEST")!;
+    const eastChamp = eastFinal.winnerTeamId!;
+    const westChamp = westFinal.winnerTeamId!;
+    const higher = pickHigherSeed(winnerStandings.get(eastChamp)!, winnerStandings.get(westChamp)!);
+    const lower = higher.leagueTeamId === eastChamp ? westChamp : eastChamp;
+
+    await prisma.playoffSeries.create({
+      data: {
+        leagueId,
+        season,
+        round: 4,
+        bracketSlot: 0,
+        conference: null,
+        higherSeedTeamId: higher.leagueTeamId,
+        lowerSeedTeamId: lower,
+        winsNeeded: 4,
+      },
+    });
+  }
+
+  return { champion: null };
+}
+
+/**
  * Simulates every remaining series in the current (lowest undecided) round
  * to completion, then advances the bracket: creates the next round's series
- * from this round's winners, or - at round 4 - crowns the champion.
+ * from this round's winners, or - at round 4 - crowns the champion. The
+ * user's own series in that round, if still undecided, is deliberately left
+ * untouched - it plays out one game at a time via `playLiveSeriesGameAction`
+ * instead, and this action won't advance the bracket past that round until
+ * it's decided (see `advanceRoundIfComplete`).
  */
 export async function simulateRoundAction(leagueId: string) {
   const league = await requireOwnedLeague(leagueId);
@@ -180,7 +304,28 @@ export async function simulateRoundAction(leagueId: string) {
   }
 
   const activeRound = Math.min(...undecided.map((s) => s.round));
-  const roundSeries = undecided.filter((s) => s.round === activeRound);
+  const roundSeriesAll = undecided.filter((s) => s.round === activeRound);
+
+  const userTeamId = league.userControlledTeamId;
+  const userSeriesInRound = userTeamId
+    ? roundSeriesAll.find(
+        (s) => s.higherSeedTeamId === userTeamId || s.lowerSeedTeamId === userTeamId,
+      )
+    : undefined;
+  // Every other series in the round still resolves in bulk exactly as
+  // before; the user's own game-by-game series (if any) is skipped here.
+  const roundSeries = userSeriesInRound
+    ? roundSeriesAll.filter((s) => s.id !== userSeriesInRound.id)
+    : roundSeriesAll;
+
+  if (roundSeries.length === 0) {
+    return {
+      roundCompleted: activeRound,
+      champion: null,
+      seriesResults: [],
+      pendingUserSeries: true,
+    };
+  }
 
   const teamIds = [...new Set(roundSeries.flatMap((s) => [s.higherSeedTeamId, s.lowerSeedTeamId]))];
   const { strengthByTeam } = await computeLeagueTeamStrengths(teamIds);
@@ -265,93 +410,236 @@ export async function simulateRoundAction(leagueId: string) {
     ),
   ]);
 
-  if (activeRound < 4) {
-    // Need each winner's regular-season record to decide home-court in the
-    // next round (better record hosts, same rule the real playoffs use).
-    const winnerStandings = new Map<string, StandingsEntry>(
-      league.teams.map((lt) => [lt.id, { leagueTeamId: lt.id, wins: lt.wins, losses: lt.losses }]),
-    );
-    const winnerOf = (seriesId: string) =>
-      seriesResults.find((r) => r.seriesId === seriesId)!.winnerTeamId;
+  const { champion } = await advanceRoundIfComplete(leagueId, season, league, activeRound);
 
-    if (activeRound < 3) {
-      // Round 1 -> 2, or round 2 -> 3: pair within each conference by
-      // bracket slot (slot 2N & 2N+1 feed next round's slot N).
-      const byConference = new Map<ConferenceName, typeof roundSeries>();
-      for (const s of roundSeries) {
-        const list = byConference.get(s.conference as ConferenceName) ?? [];
-        list.push(s);
-        byConference.set(s.conference as ConferenceName, list);
-      }
+  revalidatePath(`/leagues/${leagueId}/playoffs`);
 
-      const nextRoundInputs: {
-        leagueId: string;
-        season: number;
-        round: number;
-        bracketSlot: number;
-        conference: ConferenceName;
-        higherSeedTeamId: string;
-        lowerSeedTeamId: string;
-        winsNeeded: number;
-      }[] = [];
+  return {
+    roundCompleted: activeRound,
+    champion,
+    seriesResults,
+    pendingUserSeries: Boolean(userSeriesInRound),
+  };
+}
 
-      for (const [conference, series] of byConference) {
-        const bySlot = [...series].sort((a, b) => a.bracketSlot - b.bracketSlot);
-        for (let i = 0; i + 1 < bySlot.length; i += 2) {
-          const winnerA = winnerOf(bySlot[i].id);
-          const winnerB = winnerOf(bySlot[i + 1].id);
-          const higher = pickHigherSeed(
-            winnerStandings.get(winnerA)!,
-            winnerStandings.get(winnerB)!,
-          );
-          const lower = higher.leagueTeamId === winnerA ? winnerB : winnerA;
-          nextRoundInputs.push({
+/**
+ * Locates the user's own team's next game in their current, undecided
+ * playoff series, simulates it via the independent quarter-by-quarter live
+ * engine (`simulateLiveGame`), generates its authoritative box score, and
+ * persists the `Game`, `PlayerGameStat`, and updated `PlayoffSeries` rows -
+ * exactly one game per call. Returns the full quarter-by-quarter payload for
+ * the client's animated reveal. If this game decides the series, the shared
+ * round-advancement helper is invoked so the bracket progresses correctly.
+ */
+export async function playLiveSeriesGameAction(leagueId: string) {
+  const league = await requireOwnedLeague(leagueId);
+  const season = league.currentSeason;
+  const userTeamId = league.userControlledTeamId;
+  if (!userTeamId) {
+    throw new Error("This league has no user-controlled team.");
+  }
+
+  const series = await prisma.playoffSeries.findFirst({
+    where: {
+      leagueId,
+      season,
+      winnerTeamId: null,
+      OR: [{ higherSeedTeamId: userTeamId }, { lowerSeedTeamId: userTeamId }],
+    },
+  });
+  if (!series) {
+    throw new Error("Your team has no pending playoff series to play.");
+  }
+
+  const gameNumberInSeries = series.higherSeedWins + series.lowerSeedWins + 1;
+  const isHigherSeedHome = isHigherSeedHomeGame(gameNumberInSeries);
+  const homeTeamId = isHigherSeedHome ? series.higherSeedTeamId : series.lowerSeedTeamId;
+  const awayTeamId = isHigherSeedHome ? series.lowerSeedTeamId : series.higherSeedTeamId;
+
+  const [{ strengthByTeam, rostersByTeam }, teamInfo, headCoaches] = await Promise.all([
+    computeLeagueTeamStrengths([homeTeamId, awayTeamId]),
+    prisma.leagueTeam.findMany({
+      where: { id: { in: [homeTeamId, awayTeamId] } },
+      select: { id: true, team: { select: { city: true, name: true, logoUrl: true } } },
+    }),
+    prisma.staff.findMany({
+      where: { leagueId, leagueTeamId: { in: [homeTeamId, awayTeamId] }, role: "HEAD_COACH" },
+      select: { leagueTeamId: true, quality: true, style: true },
+    }),
+  ]);
+
+  const homeStrength = strengthByTeam.get(homeTeamId) ?? 0;
+  const awayStrength = strengthByTeam.get(awayTeamId) ?? 0;
+  const homeCoach = headCoaches.find((c) => c.leagueTeamId === homeTeamId) ?? null;
+  const awayCoach = headCoaches.find((c) => c.leagueTeamId === awayTeamId) ?? null;
+
+  const liveGame = simulateLiveGame(
+    homeStrength,
+    awayStrength,
+    computeCoachWinBonus(homeCoach?.quality ?? null),
+    computeCoachWinBonus(awayCoach?.quality ?? null),
+  );
+
+  const boxScore = generateBoxScore(
+    {
+      homeTeamId,
+      awayTeamId,
+      homeRoster: rostersByTeam.get(homeTeamId) ?? [],
+      awayRoster: rostersByTeam.get(awayTeamId) ?? [],
+      homeStrength,
+      awayStrength,
+      homeCoachModifier: computeCoachBoxScoreModifier(
+        homeCoach?.quality ?? null,
+        homeCoach?.style ?? null,
+      ),
+      awayCoachModifier: computeCoachBoxScoreModifier(
+        awayCoach?.quality ?? null,
+        awayCoach?.style ?? null,
+      ),
+    },
+    liveGame.finalHomeScore,
+    liveGame.finalAwayScore,
+  );
+
+  const higherSeedWonGame = isHigherSeedHome ? liveGame.homeWon : !liveGame.homeWon;
+  const newState: SeriesState = {
+    higherSeedWins: series.higherSeedWins + (higherSeedWonGame ? 1 : 0),
+    lowerSeedWins: series.lowerSeedWins + (higherSeedWonGame ? 0 : 1),
+  };
+  const winnerTeamId =
+    newState.higherSeedWins >= series.winsNeeded
+      ? series.higherSeedTeamId
+      : newState.lowerSeedWins >= series.winsNeeded
+        ? series.lowerSeedTeamId
+        : null;
+
+  const gameNumber = await startingGameNumber(leagueId, season);
+  const playedAt = new Date();
+  const game = await prisma.game.create({
+    data: {
+      leagueId,
+      season,
+      gameNumber,
+      type: "PLAYOFF",
+      seriesId: series.id,
+      homeLeagueTeamId: homeTeamId,
+      awayLeagueTeamId: awayTeamId,
+      homeScore: liveGame.finalHomeScore,
+      awayScore: liveGame.finalAwayScore,
+      playedAt,
+    },
+  });
+
+  const teamLabelById = new Map(teamInfo.map((t) => [t.id, `${t.team.city} ${t.team.name}`]));
+  const teamLogoById = new Map(teamInfo.map((t) => [t.id, t.team.logoUrl]));
+  const playerNameById = new Map<string, string>();
+  for (const roster of rostersByTeam.values()) {
+    for (const p of roster) playerNameById.set(p.leaguePlayerId, p.fullName);
+  }
+
+  const homeWinProbability = computeHomeWinProbability(
+    homeStrength,
+    awayStrength,
+    computeCoachWinBonus(homeCoach?.quality ?? null),
+    computeCoachWinBonus(awayCoach?.quality ?? null),
+  );
+  const gameResultEvent = describeGameResult(
+    teamLabelById.get(liveGame.homeWon ? homeTeamId : awayTeamId) ?? "Team",
+    teamLabelById.get(liveGame.homeWon ? awayTeamId : homeTeamId) ?? "Team",
+    liveGame.homeWon ? homeWinProbability : 1 - homeWinProbability,
+    Math.abs(liveGame.finalHomeScore - liveGame.finalAwayScore),
+  );
+  const milestoneEvents = boxScore
+    .map((line) =>
+      describeMilestoneGame({
+        playerName: playerNameById.get(line.leaguePlayerId) ?? "A player",
+        teamLabel: teamLabelById.get(line.leagueTeamId) ?? "their team",
+        points: line.points,
+        rebounds: line.rebounds,
+        assists: line.assists,
+        steals: line.steals,
+        blocks: line.blocks,
+      }),
+    )
+    .filter((e): e is NonNullable<typeof e> => e !== null);
+
+  const newsRows = [
+    ...(gameResultEvent
+      ? [
+          {
+            ...gameResultEvent,
+            type: "GAME_RESULT" as const,
             leagueId,
             season,
-            round: activeRound + 1,
-            bracketSlot: i / 2,
-            conference,
-            higherSeedTeamId: higher.leagueTeamId,
-            lowerSeedTeamId: lower,
-            winsNeeded: 4,
-          });
-        }
-      }
+            teamIds: [homeTeamId, awayTeamId],
+          },
+        ]
+      : []),
+    ...milestoneEvents.map((e) => ({
+      ...e,
+      type: "GAME_MILESTONE" as const,
+      leagueId,
+      season,
+      teamIds: [homeTeamId, awayTeamId],
+    })),
+  ];
 
-      await prisma.playoffSeries.createMany({ data: nextRoundInputs });
-    } else {
-      // Round 3 (conference finals) -> round 4 (NBA Finals): cross-conference,
-      // home-court by better regular-season record rather than conference.
-      const [eastFinal, westFinal] = roundSeries;
-      const eastChamp = winnerOf(eastFinal.id);
-      const westChamp = winnerOf(westFinal.id);
-      const higher = pickHigherSeed(
-        winnerStandings.get(eastChamp)!,
-        winnerStandings.get(westChamp)!,
-      );
-      const lower = higher.leagueTeamId === eastChamp ? westChamp : eastChamp;
+  await Promise.all([
+    prisma.playerGameStat.createMany({
+      data: boxScore.map((line: PlayerBoxScoreLine) => ({
+        ...line,
+        gameId: game.id,
+        leagueId,
+        season,
+        gameType: "PLAYOFF" as const,
+      })),
+    }),
+    prisma.playoffSeries.update({
+      where: { id: series.id },
+      data: {
+        higherSeedWins: newState.higherSeedWins,
+        lowerSeedWins: newState.lowerSeedWins,
+        winnerTeamId,
+      },
+    }),
+    ...(newsRows.length > 0 ? [prisma.leagueTransaction.createMany({ data: newsRows })] : []),
+  ]);
 
-      await prisma.playoffSeries.create({
-        data: {
-          leagueId,
-          season,
-          round: 4,
-          bracketSlot: 0,
-          conference: null,
-          higherSeedTeamId: higher.leagueTeamId,
-          lowerSeedTeamId: lower,
-          winsNeeded: 4,
-        },
-      });
-    }
+  let champion: string | null = null;
+  if (winnerTeamId) {
+    ({ champion } = await advanceRoundIfComplete(leagueId, season, league, series.round));
   }
 
   revalidatePath(`/leagues/${leagueId}/playoffs`);
 
-  const champion =
-    activeRound === 4
-      ? seriesResults.find((r) => r.seriesId === roundSeries[0].id)?.winnerTeamId
-      : null;
-
-  return { roundCompleted: activeRound, champion: champion ?? null, seriesResults };
+  return {
+    seriesId: series.id,
+    homeTeamId,
+    awayTeamId,
+    homeTeamLabel: teamLabelById.get(homeTeamId) ?? "Home",
+    awayTeamLabel: teamLabelById.get(awayTeamId) ?? "Away",
+    homeTeamLogoUrl: teamLogoById.get(homeTeamId) ?? null,
+    awayTeamLogoUrl: teamLogoById.get(awayTeamId) ?? null,
+    quarters: liveGame.quarters,
+    overtimes: liveGame.overtimes,
+    perPeriodStats: allocatePlayerStatsAcrossPeriods(
+      boxScore,
+      [...liveGame.quarters, ...liveGame.overtimes],
+      homeTeamId,
+    ),
+    finalHomeScore: liveGame.finalHomeScore,
+    finalAwayScore: liveGame.finalAwayScore,
+    homeWon: liveGame.homeWon,
+    boxScore: boxScore.map((line) => ({
+      ...line,
+      playerName: playerNameById.get(line.leaguePlayerId) ?? "Unknown",
+    })),
+    seriesHigherSeedWins: newState.higherSeedWins,
+    seriesLowerSeedWins: newState.lowerSeedWins,
+    higherSeedTeamId: series.higherSeedTeamId,
+    lowerSeedTeamId: series.lowerSeedTeamId,
+    seriesWinnerTeamId: winnerTeamId,
+    champion,
+    news: newsRows.map((n) => ({ description: n.description, importance: n.importance })),
+  };
 }

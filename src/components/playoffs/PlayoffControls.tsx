@@ -5,7 +5,15 @@ import { simulateRoundAction, startPlayoffsAction } from "@/lib/actions/playoffs
 
 type Phase = "regular-season" | "not-started" | "in-progress" | "complete";
 
-export function PlayoffControls({ leagueId, phase }: { leagueId: string; phase: Phase }) {
+export function PlayoffControls({
+  leagueId,
+  phase,
+  pendingUserGame,
+}: {
+  leagueId: string;
+  phase: Phase;
+  pendingUserGame: { seriesId: string; gameNumber: number } | null;
+}) {
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -30,7 +38,9 @@ export function PlayoffControls({ leagueId, phase }: { leagueId: string; phase: 
         setMessage(
           result.champion
             ? "The championship series is decided - see the champion below."
-            : `Round ${result.roundCompleted} complete. The bracket has advanced.`,
+            : result.seriesResults.length === 0
+              ? "No other series left to simulate this round - play your own game above to continue."
+              : `Round ${result.roundCompleted} complete. The bracket has advanced.`,
         );
       } catch (err) {
         setErrorMessage(err instanceof Error ? err.message : "Something went wrong.");
@@ -56,14 +66,37 @@ export function PlayoffControls({ leagueId, phase }: { leagueId: string; phase: 
         </button>
       )}
       {phase === "in-progress" && (
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={handleSimulateRound}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {isPending ? "Simulating..." : "Simulate next round"}
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          {pendingUserGame && (
+            // A plain anchor, not next/link - every game in a series shares
+            // the same seriesId-scoped URL (see PostgameSummary's "Play next
+            // game" link, fixed for the identical reason), so a client-side
+            // Link risks the router cache serving a stale snapshot from an
+            // earlier game in this same series instead of refetching fresh.
+            <a
+              href={`/leagues/${leagueId}/playoffs/live/${pendingUserGame.seriesId}`}
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90"
+            >
+              Play Game {pendingUserGame.gameNumber} &rarr;
+            </a>
+          )}
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={handleSimulateRound}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${
+              pendingUserGame
+                ? "border border-border text-foreground hover:bg-surface-2"
+                : "bg-accent text-black hover:opacity-90"
+            }`}
+          >
+            {isPending
+              ? "Simulating..."
+              : pendingUserGame
+                ? "Simulate other series"
+                : "Simulate next round"}
+          </button>
+        </div>
       )}
       {phase === "complete" && (
         <p className="text-sm text-muted">The playoffs are complete for this season.</p>

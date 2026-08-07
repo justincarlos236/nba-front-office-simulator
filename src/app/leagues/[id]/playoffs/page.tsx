@@ -102,24 +102,25 @@ export default async function PlayoffsPage({ params }: PageProps) {
 
   const userStatus = describeUserStatus({ userTeamId, series, playInGames, champion });
 
+  const pendingUserSeries = userTeamId
+    ? series.find(
+        (s) =>
+          !s.winnerTeamId &&
+          (s.higherSeedTeamId === userTeamId || s.lowerSeedTeamId === userTeamId),
+      )
+    : undefined;
+  const pendingUserGame = pendingUserSeries
+    ? {
+        seriesId: pendingUserSeries.id,
+        gameNumber: pendingUserSeries.higherSeedWins + pendingUserSeries.lowerSeedWins + 1,
+      }
+    : null;
+
   return (
     <main className="mx-auto max-w-4xl flex-1 px-6 py-16">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <Link href={`/leagues/${league.id}`} className="text-sm text-muted hover:text-foreground">
-            &larr; Back to team
-          </Link>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">
-            {league.currentSeason}-{(league.currentSeason + 1).toString().slice(-2)} Playoffs
-          </h1>
-        </div>
-        <Link
-          href={`/leagues/${league.id}/standings`}
-          className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
-        >
-          Standings
-        </Link>
-      </div>
+      <h1 className="text-3xl font-bold tracking-tight text-foreground">
+        {league.currentSeason}-{(league.currentSeason + 1).toString().slice(-2)} Playoffs
+      </h1>
 
       <p className="mt-2 max-w-2xl text-muted">
         Top 6 seeds per conference qualify directly; seeds 7-10 play into the final two spots via
@@ -147,7 +148,7 @@ export default async function PlayoffsPage({ params }: PageProps) {
       )}
 
       <div className="mt-8">
-        <PlayoffControls leagueId={league.id} phase={phase} />
+        <PlayoffControls leagueId={league.id} phase={phase} pendingUserGame={pendingUserGame} />
       </div>
 
       {playInGames.length > 0 && (

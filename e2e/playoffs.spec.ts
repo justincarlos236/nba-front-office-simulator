@@ -59,20 +59,64 @@ test("start the playoffs and simulate to a champion", async ({ page }) => {
   // confirm it rendered at all, not which side.
   await expect(page.getByRole("heading", { name: "Round 1" }).first()).toBeVisible();
 
-  // Advance the bracket one round at a time: Round 1 -> Conf Semis -> Conf
-  // Finals -> NBA Finals, until a champion is crowned.
-  for (let i = 0; i < 4; i++) {
+  // Advance the bracket, playing the user's own series game-by-game via the
+  // live flow whenever it's pending (see playLiveSeriesGameAction/
+  // simulateRoundAction in playoffs.ts - the user's own series is
+  // deliberately excluded from bulk resolution), and bulk-resolving every
+  // other series via "Simulate next round"/"Simulate other series" -
+  // until a champion is crowned. A generous iteration cap (not "1 per
+  // round") because each "Play Game" cycle now consumes one iteration too
+  // (a best-of-7 series can take up to 7), and at the Finals the user's
+  // own series is the *only* one in the round, so a bulk click there is a
+  // no-op message that still needs a follow-up cycle to actually play the
+  // pending game. Worst realistic case: up to 7 games/round across all 4
+  // rounds plus a handful of bulk-resolve clicks - 40 leaves comfortable
+  // headroom.
+  for (let i = 0; i < 40; i++) {
     if (
       await page
-        .getByText("League Champion")
+        .getByText("League Champion", { exact: true })
         .isVisible()
         .catch(() => false)
     )
       break;
-    await page.getByText("Simulate next round").click();
-    await expect(page.getByText(/Round \d complete|championship series is decided/)).toBeVisible({
-      timeout: 30_000,
-    });
+
+    if (
+      await page
+        .getByRole("link", { name: /Play Game \d/ })
+        .isVisible()
+        .catch(() => false)
+    ) {
+      // "Play Game N" and "Back to playoffs" are plain <a> tags (a hard
+      // reload, not a client-side Link) - see PlayoffControls.tsx/
+      // PostgameSummary.tsx for why - so explicitly wait for each
+      // navigation to actually land before interacting with the new
+      // page, rather than relying on locator auto-wait alone.
+      await page.getByRole("link", { name: /Play Game \d/ }).click();
+      await page.waitForURL(/\/playoffs\/live\//, { timeout: 15_000 });
+      await page.getByRole("button", { name: "Tip off" }).click();
+      await page.getByRole("button", { name: "Sim to End" }).click();
+      await expect(page.getByText("Final", { exact: true })).toBeVisible({ timeout: 30_000 });
+      await page.getByRole("link", { name: "Back to playoffs" }).click();
+      await page.waitForURL(/\/playoffs$/, { timeout: 15_000 });
+      await expect(page.getByRole("heading", { name: /Playoffs/ })).toBeVisible();
+      continue;
+    }
+
+    // Defensive: the champion can get crowned by another tab/refresh
+    // between the check above and here (e.g. the round-4 bulk-resolve
+    // itself crowns it), so confirm the button is still actually there
+    // before clicking rather than assuming it - otherwise this click hangs
+    // forever waiting for text that will never (re)appear.
+    const simButton = page.getByText(/Simulate next round|Simulate other series/);
+    if (!(await simButton.isVisible().catch(() => false))) {
+      await page.waitForTimeout(300);
+      continue;
+    }
+    await simButton.click();
+    await expect(
+      page.getByText(/Round \d complete|championship series is decided|No other series left/),
+    ).toBeVisible({ timeout: 30_000 });
   }
 
   await expect(page.getByText("League Champion", { exact: true })).toBeVisible();
