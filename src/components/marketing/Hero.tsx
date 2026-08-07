@@ -1,6 +1,10 @@
 import Link from "next/link";
+import { resolvePrimaryCta } from "@/lib/marketing/primaryCta";
+import { TeamLogoMarquee } from "./TeamLogoMarquee";
 
-export function Hero() {
+export async function Hero() {
+  const primaryCta = await resolvePrimaryCta();
+
   return (
     <section className="relative overflow-hidden border-b border-border">
       <div
@@ -11,39 +15,40 @@ export function Hero() {
         }}
       />
       <div className="relative mx-auto flex max-w-5xl flex-col items-center px-6 py-24 text-center sm:py-32">
-        <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-1.5 text-xs font-medium text-muted">
-          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-          In active development — built in the open
+        <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-1.5 text-xs font-medium tracking-wide text-muted uppercase">
+          General Manager Mode
         </span>
 
         <h1 className="text-balance text-4xl font-bold tracking-tight text-foreground sm:text-6xl">
-          Run your franchise like a real{" "}
+          Every trade. Every contract.{" "}
           <span className="bg-gradient-to-r from-accent to-accent-2 bg-clip-text text-transparent">
-            NBA General Manager
-          </span>
-          .
+            Every decision.
+          </span>{" "}
+          Yours.
         </h1>
 
         <p className="mt-6 max-w-2xl text-balance text-lg text-muted">
-          Manage the salary cap under real 2023 CBA rules, negotiate trades that actually have to
-          clear the cap sheet, and lean on an AI assistant grounded in real computed numbers — not
-          vibes.
+          Take over an NBA franchise. Build a roster, work the salary cap, run the draft, and answer
+          to ownership and your fans - one real decision at a time, for as many seasons as you can
+          survive.
         </p>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
-            href="/teams"
+            href={primaryCta.href}
             className="rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-black transition hover:opacity-90"
           >
-            Browse the league (real data)
+            {primaryCta.label}
           </Link>
-          <a
-            href="#engineering"
+          <Link
+            href="/teams"
             className="rounded-lg border border-border px-6 py-3 text-sm font-semibold text-foreground transition hover:bg-surface"
           >
-            Explore the engineering
-          </a>
+            See the League
+          </Link>
         </div>
+
+        <TeamLogoMarquee />
       </div>
     </section>
   );

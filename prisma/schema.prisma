@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -10,24 +7,45 @@ datasource db {
   provider = "postgresql"
 }
 
-// ---------------------------------------------------------------------------
-// Auth (Auth.js)
-// ---------------------------------------------------------------------------
-
 model User {
-  id            String    @id @default(cuid())
+  id            String         @id @default(cuid())
   name          String?
-  email         String?   @unique
+  email         String?        @unique
   emailVerified DateTime?
   image         String?
   passwordHash  String?
-  createdAt     DateTime  @default(now())
-
-  accounts Account[]
-  sessions Session[]
-  leagues  League[]
+  createdAt     DateTime       @default(now())
+  gmReputation  Int            @default(50)
+  accounts      Account[]
+  careerRecords CareerRecord[]
+  leagues       League[]
+  sessions      Session[]
 
   @@map("users")
+}
+
+model CareerRecord {
+  id                      String          @id @default(cuid())
+  userId                  String
+  leagueId                String?
+  teamLabel               String
+  seasons                 Int
+  wins                    Int
+  losses                  Int
+  championships           Int
+  playoffAppearances      Int
+  bestPlayoffFinish       String
+  careerEarningsCents     BigInt
+  notableTradeDescription String?
+  endReason               CareerEndReason
+  finalOwnerConfidence    Int
+  reputationDelta         Int
+  createdAt               DateTime        @default(now())
+  league                  League?         @relation(fields: [leagueId], references: [id])
+  user                    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("career_records")
 }
 
 model Account {
@@ -36,15 +54,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -55,8 +72,7 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
 }
@@ -70,32 +86,10 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
-// ---------------------------------------------------------------------------
-// Reference data: a real-world NBA snapshot, seeded once and shared by every
-// league. Leagues never mutate these rows directly - a new League clones the
-// snapshot into its own LeagueTeam / LeaguePlayer / Contract rows so each save
-// can diverge independently (trades, extensions, retirements, etc.) without
-// touching any other save or the canonical reference data.
-// ---------------------------------------------------------------------------
-
-enum Conference {
-  EAST
-  WEST
-}
-
-// Real, sourced classification (metro-area size) - same category of
-// fixture data as city/conference/colors, not fabricated. Drives fan
-// engagement's attendance/franchise-popularity baselines.
-enum MarketSize {
-  LARGE
-  MID
-  SMALL
-}
-
 model Team {
-  id             String     @id @default(cuid())
-  externalId     String?    @unique
-  abbreviation   String     @unique
+  id             String       @id @default(cuid())
+  externalId     String?      @unique
+  abbreviation   String       @unique
   name           String
   city           String
   conference     Conference
@@ -103,55 +97,44 @@ model Team {
   primaryColor   String
   secondaryColor String
   logoUrl        String?
-  // Defaulted (not left nullable) so the migration doesn't fail against
-  // the 30 real Team rows that already exist - seedTeams() immediately
-  // overwrites every row with its real per-team value right after.
-  marketSize     MarketSize @default(MID)
-
-  players     Player[]
-  leagueTeams LeagueTeam[]
+  marketSize     MarketSize   @default(MID)
+  leagueTeams    LeagueTeam[]
+  players        Player[]
 
   @@map("teams")
 }
 
-enum Position {
-  PG
-  SG
-  SF
-  PF
-  C
-}
-
 model Player {
-  id            String    @id @default(cuid())
-  externalId    String?   @unique
-  fullName      String
-  position      Position
-  birthDate     DateTime?
-  heightInches  Int?
-  weightLbs     Int?
-  draftYear     Int?
-  draftRound    Int?
-  draftPick     Int?
-  photoUrl      String?
-  currentTeamId String?
-
-  currentTeam   Team?              @relation(fields: [currentTeamId], references: [id])
-  seasonStats   PlayerSeasonStat[]
-  leaguePlayers LeaguePlayer[]
+  id                  String             @id @default(cuid())
+  externalId          String?            @unique
+  fullName            String
+  position            Position
+  birthDate           DateTime?
+  heightInches        Int?
+  weightLbs           Int?
+  draftYear           Int?
+  draftRound          Int?
+  draftPick           Int?
+  photoUrl            String?
+  currentTeamId       String?
+  seedOverallRating   Int?
+  seedPotentialRating Int?
+  pathway             ProspectPathway?
+  draftProspectId     String?            @unique
+  leaguePlayers       LeaguePlayer[]
+  seasonStats         PlayerSeasonStat[]
+  currentTeam         Team?              @relation(fields: [currentTeamId], references: [id])
+  draftProspect       DraftProspect?     @relation(fields: [draftProspectId], references: [id], onDelete: SetNull)
 
   @@index([currentTeamId])
   @@map("players")
 }
 
-// Real historical per-season stat lines, imported once. Used both to display
-// scouting/comparison data and as feature input to the player valuation model.
 model PlayerSeasonStat {
-  id       String @id @default(cuid())
-  playerId String
-  season   Int // e.g. 2025 for the 2025-26 season
-  team     String // abbreviation at time of season (a player can be traded mid-season)
-
+  id                   String @id @default(cuid())
+  playerId             String
+  season               Int
+  team                 String
   gamesPlayed          Int
   minutesPerGame       Float
   pointsPerGame        Float
@@ -168,59 +151,904 @@ model PlayerSeasonStat {
   winSharesPer48       Float?
   boxPlusMinus         Float?
   valueOverReplacement Float?
-
-  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  player               Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
 
   @@unique([playerId, season, team])
   @@index([playerId])
   @@map("player_season_stats")
 }
 
-// ---------------------------------------------------------------------------
-// Per-save simulation state
-// ---------------------------------------------------------------------------
-
 model League {
-  id                          String   @id @default(cuid())
+  id                          String                    @id @default(cuid())
   name                        String
   ownerId                     String
-  userControlledTeamId        String? // set once the user picks which franchise to run
-  currentSeason               Int // e.g. 2025 for 2025-26
-  seasonStartedAt             DateTime @default(now())
-  salaryCapOverrideCents      BigInt? // null = use the league-wide default for currentSeason
-  createdAt                   DateTime @default(now())
-  updatedAt                   DateTime @updatedAt
-  // GM accountability (Phase 10d) - 0-100, see src/lib/gm/jobSecurity.ts.
-  // Starts at a neutral "Stable" footing rather than 50/50, since a brand
-  // new GM hasn't done anything to lose ownership's trust yet.
-  ownerConfidence             Int      @default(65)
-  // An active "reduce payroll below $X by season Y" directive, if
-  // ownership has issued one - null when there's no outstanding
-  // directive. Checked once, at the start of the season it targets.
-  payrollReductionTargetCents BigInt?
+  userControlledTeamId        String?
+  currentSeason               Int
+  seasonStartedAt             DateTime                  @default(now())
+  salaryCapOverrideCents      BigInt?
+  createdAt                   DateTime                  @default(now())
+  updatedAt                   DateTime                  @updatedAt
+  ownerConfidence             Int                       @default(65)
   payrollDirectiveSeason      Int?
-
-  owner              User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  teams              LeagueTeam[]
-  players            LeaguePlayer[]
-  draftPicks         DraftPick[]
-  draftProspects     DraftProspect[]
-  trades             Trade[]
-  tradeExceptions    TradeException[]
-  assistantThreads   AssistantThread[]
-  games              Game[]
-  playoffSeries      PlayoffSeries[]
-  seasonAwards       SeasonAward[]
-  transactions       LeagueTransaction[]
-  seasonExpectations SeasonExpectation[]
-  playerGameStats    PlayerGameStat[]
-  staff              Staff[]
-  staffAwards        StaffAward[]
-  fanHappinessSnapshots FanHappinessSnapshot[]
-  allStarWeekends    AllStarWeekend[]
+  payrollReductionTargetCents BigInt?
+  endReason                   CareerEndReason?
+  endedAt                     DateTime?
+  financialMandateSeason      Int?
+  financialMandateStaked      Boolean                   @default(false)
+  payrollDirectiveStaked      Boolean                   @default(false)
+  allStarWeekends             AllStarWeekend[]
+  assistantThreads            AssistantThread[]
+  businessDecisions           BusinessDecision[]
+  businessLedgerEntries       BusinessLedgerEntry[]
+  capitalProjects             CapitalProject[]
+  careerRecords               CareerRecord[]
+  draftPicks                  DraftPick[]
+  draftProspectBookmarks      DraftProspectBookmark[]
+  draftProspects              DraftProspect[]
+  fanCultures                 FanCulture[]
+  fanHappinessSnapshots       FanHappinessSnapshot[]
+  fanMandates                 FanMandate[]
+  fanNarratives               FanNarrative[]
+  fanSentimentEvents          FanSentimentEvent[]
+  financialSnapshots          FinancialSnapshot[]
+  games                       Game[]
+  players                     LeaguePlayer[]
+  teams                       LeagueTeam[]
+  transactions                LeagueTransaction[]
+  owner                       User                      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  lotteryResults              LotteryResult[]
+  negotiations                Negotiation[]
+  playerGameStats             PlayerGameStat[]
+  playoffSeries               PlayoffSeries[]
+  scoutingAssignmentSpends    ScoutingAssignmentSpend[]
+  seasonAwards                SeasonAward[]
+  seasonExpectations          SeasonExpectation[]
+  sponsorshipDeals            SponsorshipDeal[]
+  staff                       Staff[]
+  staffAwards                 StaffAward[]
+  tradeExceptions             TradeException[]
+  trades                      Trade[]
 
   @@index([ownerId])
   @@map("leagues")
+}
+
+model SeasonExpectation {
+  id                   String             @id @default(cuid())
+  leagueId             String
+  season               Int
+  expectationLevel     ExpectationLevel
+  actualResultLabel    String?
+  verdict              EvaluationVerdict?
+  ownerConfidenceDelta Int?
+  createdAt            DateTime           @default(now())
+  league               League             @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, season])
+  @@map("season_expectations")
+}
+
+model LeagueTransaction {
+  id                    String          @id @default(cuid())
+  leagueId              String
+  season                Int
+  type                  TransactionType
+  description           String
+  createdAt             DateTime        @default(now())
+  importance            NewsImportance  @default(STANDARD)
+  teamIds               String[]        @default([])
+  subjectLeaguePlayerId String?
+  league                League          @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@index([leagueId, createdAt])
+  @@index([subjectLeaguePlayerId])
+  @@map("league_transactions")
+}
+
+model LeagueTeam {
+  id                           String                 @id @default(cuid())
+  leagueId                     String
+  teamId                       String
+  wins                         Int                    @default(0)
+  losses                       Int                    @default(0)
+  gmPersonality                GmPersonality          @default(BALANCED)
+  currentStreak                Int                    @default(0)
+  fanHappiness                 Int                    @default(65)
+  totalPayrollPaidCents        BigInt                 @default(0)
+  cashReserveCents             BigInt                 @default(0)
+  franchiseValueCents          BigInt                 @default(0)
+  ticketPricingPosture         TicketPricingPosture   @default(STANDARD)
+  analyticsLevel               DepartmentLevel        @default(STANDARD)
+  coachingSupportLevel         DepartmentLevel        @default(STANDARD)
+  marketingLevel               DepartmentLevel        @default(STANDARD)
+  playerDevelopmentLevel       DepartmentLevel        @default(STANDARD)
+  scoutingLevel                DepartmentLevel        @default(STANDARD)
+  seasonTicketBase             Int                    @default(65)
+  sportsScienceLevel           DepartmentLevel        @default(STANDARD)
+  arenaAgeSeasons              Int                    @default(0)
+  arenaLeaseExpiresSeason      Int                    @default(0)
+  arenaQualityIndex            Int                    @default(65)
+  debtCents                    BigInt                 @default(0)
+  failedArenaNegotiations      Int                    @default(0)
+  marketSizeOverride           MarketSize?
+  relocatedAtSeason            Int?
+  relocatedCityName            String?
+  ownerArchetype               OwnerArchetype         @default(PATIENT_BUILDER)
+  ownerArchetypeSince          Int                    @default(0)
+  businessDecisions            BusinessDecision[]
+  businessLedgerEntries        BusinessLedgerEntry[]
+  capitalProjects              CapitalProject[]
+  contracts                    Contract[]
+  ownedPicks                   DraftPick[]            @relation("CurrentOwner")
+  originalPicks                DraftPick[]            @relation("OriginalTeam")
+  fanCulture                   FanCulture?
+  fanHappinessSnapshots        FanHappinessSnapshot[]
+  fanMandate                   FanMandate?
+  fanNarratives                FanNarrative[]
+  fanSentimentEvents           FanSentimentEvent[]
+  financialSnapshots           FinancialSnapshot[]
+  awayGames                    Game[]                 @relation("AwayGames")
+  homeGames                    Game[]                 @relation("HomeGames")
+  players                      LeaguePlayer[]
+  reSigningRightsHolders       LeaguePlayer[]         @relation("ReSigningRights")
+  league                       League                 @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  team                         Team                   @relation(fields: [teamId], references: [id])
+  lotteryResultsAsCurrentOwner LotteryResult[]        @relation("LotteryResultCurrentOwnerTeam")
+  lotteryResultsAsOriginalTeam LotteryResult[]        @relation("LotteryResultOriginalTeam")
+  negotiations                 Negotiation[]
+  playerGameStats              PlayerGameStat[]
+  higherSeedIn                 PlayoffSeries[]        @relation("HigherSeedSeries")
+  lowerSeedIn                  PlayoffSeries[]        @relation("LowerSeedSeries")
+  wonSeries                    PlayoffSeries[]        @relation("WonSeries")
+  sponsorshipDeals             SponsorshipDeal[]
+  staff                        Staff[]
+  staffContracts               StaffContract[]
+  tradeAssetsFrom              TradeAsset[]           @relation("AssetFromTeam")
+  tradeAssetsTo                TradeAsset[]           @relation("AssetToTeam")
+  tradeExceptions              TradeException[]
+
+  @@unique([leagueId, teamId])
+  @@index([leagueId])
+  @@map("league_teams")
+}
+
+model FanHappinessSnapshot {
+  id                  String     @id @default(cuid())
+  leagueId            String
+  leagueTeamId        String
+  season              Int
+  fanHappiness        Int
+  attendancePct       Float
+  franchisePopularity Int
+  league              League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueTeam          LeagueTeam @relation(fields: [leagueTeamId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, leagueTeamId, season])
+  @@index([leagueId, leagueTeamId])
+  @@map("fan_happiness_snapshots")
+}
+
+model Game {
+  id               String           @id @default(cuid())
+  leagueId         String
+  season           Int
+  gameNumber       Int
+  homeLeagueTeamId String
+  awayLeagueTeamId String
+  homeScore        Int?
+  awayScore        Int?
+  playedAt         DateTime?
+  seriesId         String?
+  type             GameType         @default(REGULAR_SEASON)
+  dayIndex         Int?
+  awayTeam         LeagueTeam       @relation("AwayGames", fields: [awayLeagueTeamId], references: [id])
+  homeTeam         LeagueTeam       @relation("HomeGames", fields: [homeLeagueTeamId], references: [id])
+  league           League           @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  series           PlayoffSeries?   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  playerGameStats  PlayerGameStat[]
+
+  @@index([leagueId, season])
+  @@index([leagueId, playedAt])
+  @@map("games")
+}
+
+model PlayerGameStat {
+  id             String       @id @default(cuid())
+  gameId         String
+  leaguePlayerId String
+  leagueTeamId   String
+  season         Int
+  gameType       GameType
+  minutesPlayed  Int
+  points         Int
+  rebounds       Int
+  assists        Int
+  steals         Int
+  blocks         Int
+  turnovers      Int
+  fgMade         Int
+  fgAttempted    Int
+  fg3Made        Int
+  fg3Attempted   Int
+  ftMade         Int
+  ftAttempted    Int
+  leagueId       String
+  game           Game         @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  league         League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leaguePlayer   LeaguePlayer @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
+  leagueTeam     LeagueTeam   @relation(fields: [leagueTeamId], references: [id])
+
+  @@unique([gameId, leaguePlayerId])
+  @@index([leaguePlayerId, season])
+  @@index([leagueId, season])
+  @@index([gameId])
+  @@map("player_game_stats")
+}
+
+model PlayoffSeries {
+  id               String      @id @default(cuid())
+  leagueId         String
+  season           Int
+  round            Int
+  conference       Conference?
+  higherSeedTeamId String
+  lowerSeedTeamId  String
+  winsNeeded       Int         @default(4)
+  higherSeedWins   Int         @default(0)
+  lowerSeedWins    Int         @default(0)
+  winnerTeamId     String?
+  bracketSlot      Int         @default(0)
+  games            Game[]
+  higherSeedTeam   LeagueTeam  @relation("HigherSeedSeries", fields: [higherSeedTeamId], references: [id])
+  league           League      @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  lowerSeedTeam    LeagueTeam  @relation("LowerSeedSeries", fields: [lowerSeedTeamId], references: [id])
+  winnerTeam       LeagueTeam? @relation("WonSeries", fields: [winnerTeamId], references: [id])
+
+  @@index([leagueId, season, round])
+  @@map("playoff_series")
+}
+
+model LeaguePlayer {
+  id                         String                    @id @default(cuid())
+  leagueId                   String
+  playerId                   String
+  leagueTeamId               String?
+  overallRating              Int
+  potentialRating            Int
+  injuryStatus               InjuryStatus              @default(HEALTHY)
+  isActive                   Boolean                   @default(true)
+  retiredSeason              Int?
+  injuryReturnsAtGamesPlayed Int?
+  reSigningTeamId            String?
+  careerGamesMissedToInjury  Int                       @default(0)
+  rotationSlot               Int?
+  targetMinutesPerGame       Int?
+  morale                     Int                       @default(70)
+  tradeRequestActive         Boolean                   @default(false)
+  tradeRequestSince          Int?
+  homegrown                  Boolean                   @default(false)
+  joinedTeamSeason           Int?
+  allStarEventParticipants   AllStarEventParticipant[]
+  allStarGameStats           AllStarGameStat[]
+  allStarSelections          AllStarSelection[]
+  contract                   Contract?
+  fanMandatesAsKeepOurGuy    FanMandate[]
+  fanNarratives              FanNarrative[]
+  fanSentimentEvents         FanSentimentEvent[]
+  league                     League                    @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueTeam                 LeagueTeam?               @relation(fields: [leagueTeamId], references: [id])
+  player                     Player                    @relation(fields: [playerId], references: [id])
+  reSigningTeam              LeagueTeam?               @relation("ReSigningRights", fields: [reSigningTeamId], references: [id])
+  playerGameStats            PlayerGameStat[]
+  personalityProfile         PlayerPersonalityProfile?
+  seasonAwards               SeasonAward[]
+  sponsorshipDealConditions  SponsorshipDeal[]
+  tradeAssets                TradeAsset[]
+
+  @@unique([leagueId, playerId])
+  @@index([leagueId, leagueTeamId])
+  @@map("league_players")
+}
+
+model SeasonAward {
+  id             String        @id @default(cuid())
+  leagueId       String
+  season         Int
+  category       AwardCategory
+  leaguePlayerId String
+  value          Float
+  league         League        @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leaguePlayer   LeaguePlayer  @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, season, category])
+  @@index([leagueId, season])
+  @@map("season_awards")
+}
+
+model Contract {
+  id             String         @id @default(cuid())
+  leaguePlayerId String         @unique
+  leagueTeamId   String
+  signedSeason   Int
+  startSeason    Int
+  endSeason      Int
+  noTradeClause  Boolean        @default(false)
+  signedUsing    ExceptionUsed  @default(NONE)
+  years          ContractYear[]
+  leaguePlayer   LeaguePlayer   @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
+  leagueTeam     LeagueTeam     @relation(fields: [leagueTeamId], references: [id])
+
+  @@index([leagueTeamId])
+  @@map("contracts")
+}
+
+model ContractYear {
+  id              String             @id @default(cuid())
+  contractId      String
+  season          Int
+  salaryCents     BigInt
+  guaranteedCents BigInt
+  optionType      ContractOptionType @default(NONE)
+  contract        Contract           @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@unique([contractId, season])
+  @@map("contract_years")
+}
+
+model Staff {
+  id           String         @id @default(cuid())
+  leagueId     String
+  leagueTeamId String?
+  role         StaffRole
+  fullName     String
+  age          Int
+  quality      Int
+  reputation   Int            @default(50)
+  style        CoachStyle?
+  league       League         @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueTeam   LeagueTeam?    @relation(fields: [leagueTeamId], references: [id])
+  staffAwards  StaffAward[]
+  contract     StaffContract?
+
+  @@index([leagueId, leagueTeamId])
+  @@index([leagueId, role])
+  @@map("staff")
+}
+
+model StaffContract {
+  id                String     @id @default(cuid())
+  staffId           String     @unique
+  leagueTeamId      String
+  signedSeason      Int
+  startSeason       Int
+  endSeason         Int
+  annualSalaryCents BigInt
+  leagueTeam        LeagueTeam @relation(fields: [leagueTeamId], references: [id])
+  staff             Staff      @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@map("staff_contracts")
+}
+
+model StaffAward {
+  id       String             @id @default(cuid())
+  leagueId String
+  season   Int
+  category StaffAwardCategory
+  staffId  String
+  value    Float
+  league   League             @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  staff    Staff              @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, season, category])
+  @@index([leagueId, season])
+  @@map("staff_awards")
+}
+
+model AllStarWeekend {
+  id                  String                    @id @default(cuid())
+  leagueId            String
+  season              Int
+  status              AllStarWeekendStatus      @default(PENDING)
+  triggeredAtDayIndex Int?
+  createdAt           DateTime                  @default(now())
+  participants        AllStarEventParticipant[]
+  game                AllStarGame?
+  selections          AllStarSelection[]
+  league              League                    @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, season])
+  @@map("all_star_weekends")
+}
+
+model AllStarSelection {
+  id               String               @id @default(cuid())
+  allStarWeekendId String
+  leaguePlayerId   String
+  conference       Conference
+  positionGroup    AllStarPositionGroup
+  role             AllStarRole
+  performanceScore Float
+  pointsPerGame    Float
+  reboundsPerGame  Float
+  assistsPerGame   Float
+  teamWinPct       Float
+  allStarWeekend   AllStarWeekend       @relation(fields: [allStarWeekendId], references: [id], onDelete: Cascade)
+  leaguePlayer     LeaguePlayer         @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
+
+  @@unique([allStarWeekendId, leaguePlayerId])
+  @@map("all_star_selections")
+}
+
+model AllStarEventParticipant {
+  id               String           @id @default(cuid())
+  allStarWeekendId String
+  eventType        AllStarEventType
+  leaguePlayerId   String
+  seed             Int
+  result           String
+  score            Float
+  allStarWeekend   AllStarWeekend   @relation(fields: [allStarWeekendId], references: [id], onDelete: Cascade)
+  leaguePlayer     LeaguePlayer     @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
+
+  @@unique([allStarWeekendId, eventType, leaguePlayerId])
+  @@map("all_star_event_participants")
+}
+
+model AllStarGame {
+  id                String            @id @default(cuid())
+  allStarWeekendId  String            @unique
+  teamACaptainId    String
+  teamBCaptainId    String
+  teamAScore        Int
+  teamBScore        Int
+  mvpLeaguePlayerId String
+  stats             AllStarGameStat[]
+  allStarWeekend    AllStarWeekend    @relation(fields: [allStarWeekendId], references: [id], onDelete: Cascade)
+
+  @@map("all_star_games")
+}
+
+model AllStarGameStat {
+  id             String       @id @default(cuid())
+  allStarGameId  String
+  leaguePlayerId String
+  side           String
+  minutesPlayed  Int
+  points         Int
+  rebounds       Int
+  assists        Int
+  steals         Int
+  blocks         Int
+  turnovers      Int
+  fgMade         Int
+  fgAttempted    Int
+  fg3Made        Int
+  fg3Attempted   Int
+  ftMade         Int
+  ftAttempted    Int
+  allStarGame    AllStarGame  @relation(fields: [allStarGameId], references: [id], onDelete: Cascade)
+  leaguePlayer   LeaguePlayer @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
+
+  @@map("all_star_game_stats")
+}
+
+model DraftPick {
+  id                 String         @id @default(cuid())
+  leagueId           String
+  season             Int
+  round              Int
+  originalTeamId     String
+  currentOwnerId     String
+  protectionNote     String?
+  overallPickNumber  Int?
+  selectedProspectId String?        @unique
+  currentOwner       LeagueTeam     @relation("CurrentOwner", fields: [currentOwnerId], references: [id])
+  league             League         @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  originalTeam       LeagueTeam     @relation("OriginalTeam", fields: [originalTeamId], references: [id])
+  selectedProspect   DraftProspect? @relation(fields: [selectedProspectId], references: [id])
+  tradeAssets        TradeAsset[]
+
+  @@index([leagueId])
+  @@index([leagueId, season, overallPickNumber])
+  @@map("draft_picks")
+}
+
+model DraftProspect {
+  id                   String                  @id @default(cuid())
+  leagueId             String
+  season               Int
+  fullName             String
+  position             Position
+  age                  Int
+  overallRating        Int
+  potentialRating      Int
+  collegeOrTeam        String?
+  comparisonPlayerName String?
+  heightInches         Int?
+  isInternational      Boolean                 @default(false)
+  nationality          String?
+  weightLbs            Int?
+  scoutingDepth        Int                     @default(0)
+  pathway              ProspectPathway?
+  resolvedHiddenTraits String[]                @default([])
+  classCharacter       ClassCharacter          @default(BALANCED)
+  draftPick            DraftPick?
+  bookmarks            DraftProspectBookmark[]
+  league               League                  @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  draftedAsPlayer      Player?
+
+  @@index([leagueId, season])
+  @@map("draft_prospects")
+}
+
+model Trade {
+  id               String       @id @default(cuid())
+  leagueId         String
+  proposedById     String
+  status           TradeStatus  @default(PROPOSED)
+  validationResult Json?
+  createdAt        DateTime     @default(now())
+  resolvedAt       DateTime?
+  assets           TradeAsset[]
+  league           League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@index([leagueId])
+  @@map("trades")
+}
+
+model TradeAsset {
+  id               String         @id @default(cuid())
+  tradeId          String
+  type             TradeAssetType
+  fromLeagueTeamId String
+  toLeagueTeamId   String
+  leaguePlayerId   String?
+  draftPickId      String?
+  cashCents        BigInt?
+  draftPick        DraftPick?     @relation(fields: [draftPickId], references: [id])
+  fromTeam         LeagueTeam     @relation("AssetFromTeam", fields: [fromLeagueTeamId], references: [id])
+  leaguePlayer     LeaguePlayer?  @relation(fields: [leaguePlayerId], references: [id])
+  toTeam           LeagueTeam     @relation("AssetToTeam", fields: [toLeagueTeamId], references: [id])
+  trade            Trade          @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+
+  @@index([tradeId])
+  @@map("trade_assets")
+}
+
+model TradeException {
+  id           String     @id @default(cuid())
+  leagueId     String
+  leagueTeamId String
+  amountCents  BigInt
+  createdAt    DateTime   @default(now())
+  expiresAt    DateTime
+  usedAt       DateTime?
+  league       League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueTeam   LeagueTeam @relation(fields: [leagueTeamId], references: [id])
+
+  @@index([leagueId, leagueTeamId])
+  @@map("trade_exceptions")
+}
+
+model AssistantThread {
+  id        String             @id @default(cuid())
+  leagueId  String
+  title     String
+  createdAt DateTime           @default(now())
+  messages  AssistantMessage[]
+  league    League             @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@index([leagueId])
+  @@map("assistant_threads")
+}
+
+model AssistantMessage {
+  id             String          @id @default(cuid())
+  threadId       String
+  role           AssistantRole
+  content        String
+  toolName       String?
+  toolResultJson Json?
+  createdAt      DateTime        @default(now())
+  thread         AssistantThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId])
+  @@map("assistant_messages")
+}
+
+model BusinessDecision {
+  id                    String                 @id @default(cuid())
+  leagueId              String
+  leagueTeamId          String
+  season                Int
+  dayIndex              Int
+  kind                  BusinessDecisionKind
+  severity              NewsImportance
+  status                BusinessDecisionStatus @default(PENDING)
+  headline              String
+  body                  String
+  options               Json
+  defaultOptionId       String
+  deadlineDayIndex      Int
+  resolvedOptionId      String?
+  resolvedAt            DateTime?
+  createdAt             DateTime               @default(now())
+  negotiationId         String?
+  league                League                 @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueTeam            LeagueTeam             @relation(fields: [leagueTeamId], references: [id], onDelete: Cascade)
+  negotiation           Negotiation?           @relation(fields: [negotiationId], references: [id], onDelete: Cascade)
+  businessLedgerEntries BusinessLedgerEntry[]
+
+  @@index([leagueId, leagueTeamId, status])
+  @@map("business_decisions")
+}
+
+model BusinessLedgerEntry {
+  id                 String                 @id @default(cuid())
+  leagueId           String
+  leagueTeamId       String
+  season             Int
+  dayIndex           Int
+  category           BusinessLedgerCategory
+  amountCents        BigInt
+  description        String
+  businessDecisionId String?
+  createdAt          DateTime               @default(now())
+  businessDecision   BusinessDecision?      @relation(fields: [businessDecisionId], references: [id])
+  league             League                 @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueTeam         LeagueTeam             @relation(fields: [leagueTeamId], references: [id], onDelete: Cascade)
+
+  @@index([leagueId, leagueTeamId, season])
+  @@map("business_ledger_entries")
+}
+
+model CapitalProject {
+  id               String               @id @default(cuid())
+  leagueId         String
+  leagueTeamId     String
+  kind             CapitalProjectKind
+  status           CapitalProjectStatus @default(IN_PROGRESS)
+  startSeason      Int
+  completionSeason Int
+  totalCostCents   BigInt
+  createdAt        DateTime             @default(now())
+  league           League               @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueTeam       LeagueTeam           @relation(fields: [leagueTeamId], references: [id], onDelete: Cascade)
+
+  @@index([leagueId, leagueTeamId, status])
+  @@map("capital_projects")
+}
+
+model DraftProspectBookmark {
+  id            String        @id @default(cuid())
+  leagueId      String
+  season        Int
+  prospectId    String
+  createdAt     DateTime      @default(now())
+  boardRank     Int
+  league        League        @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  draftProspect DraftProspect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, prospectId])
+  @@index([leagueId, season])
+  @@map("draft_prospect_bookmarks")
+}
+
+model FanCulture {
+  id                   String     @id @default(cuid())
+  leagueId             String
+  leagueTeamId         String     @unique
+  patience             Int        @default(50)
+  expectationCeiling   Int        @default(50)
+  loyalty              Int        @default(50)
+  lastRecomputedSeason Int        @default(0)
+  league               League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueTeam           LeagueTeam @relation(fields: [leagueTeamId], references: [id], onDelete: Cascade)
+
+  @@index([leagueId])
+  @@map("fan_cultures")
+}
+
+model FanMandate {
+  id                   String         @id @default(cuid())
+  leagueId             String
+  leagueTeamId         String         @unique
+  primary              FanMandateKind
+  keepOurGuy           Boolean        @default(false)
+  keepOurGuyPlayerId   String?
+  satisfaction         Int            @default(50)
+  lastRecomputedSeason Int            @default(0)
+  keepOurGuyPlayer     LeaguePlayer?  @relation(fields: [keepOurGuyPlayerId], references: [id])
+  league               League         @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueTeam           LeagueTeam     @relation(fields: [leagueTeamId], references: [id], onDelete: Cascade)
+
+  @@index([leagueId])
+  @@map("fan_mandates")
+}
+
+model FanNarrative {
+  id                 String             @id @default(cuid())
+  leagueId           String
+  leagueTeamId       String
+  kind               FanNarrativeKind
+  status             FanNarrativeStatus @default(OPEN)
+  headline           String
+  body               String
+  openedSeason       Int
+  openedDayIndex     Int                @default(0)
+  resolvedSeason     Int?
+  resolutionBeat     String?
+  leaguePlayerId     String?
+  openedFanHappiness Int?
+  league             League             @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leaguePlayer       LeaguePlayer?      @relation(fields: [leaguePlayerId], references: [id])
+  leagueTeam         LeagueTeam         @relation(fields: [leagueTeamId], references: [id], onDelete: Cascade)
+
+  @@index([leagueId, leagueTeamId, status])
+  @@map("fan_narratives")
+}
+
+model FanSentimentEvent {
+  id             String           @id @default(cuid())
+  leagueId       String
+  leagueTeamId   String
+  season         Int
+  dayIndex       Int              @default(0)
+  kind           FanSentimentKind
+  delta          Int
+  description    String
+  leaguePlayerId String?
+  createdAt      DateTime         @default(now())
+  league         League           @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leaguePlayer   LeaguePlayer?    @relation(fields: [leaguePlayerId], references: [id])
+  leagueTeam     LeagueTeam       @relation(fields: [leagueTeamId], references: [id], onDelete: Cascade)
+
+  @@index([leagueId, leagueTeamId, season, dayIndex])
+  @@index([leagueId, leagueTeamId, season])
+  @@map("fan_sentiment_events")
+}
+
+model FinancialSnapshot {
+  id                      String     @id @default(cuid())
+  leagueId                String
+  leagueTeamId            String
+  season                  Int
+  ticketRevenueCents      BigInt
+  mediaRevenueCents       BigInt
+  playoffRevenueCents     BigInt
+  leagueRevenueCents      BigInt
+  payrollExpenseCents     BigInt
+  luxuryTaxExpenseCents   BigInt
+  staffExpenseCents       BigInt
+  investmentExpenseCents  BigInt
+  operatingExpenseCents   BigInt
+  netIncomeCents          BigInt
+  cashReserveCents        BigInt
+  franchiseValueCents     BigInt
+  otherExpenseCents       BigInt     @default(0)
+  otherIncomeCents        BigInt     @default(0)
+  sponsorshipRevenueCents BigInt     @default(0)
+  interestExpenseCents    BigInt     @default(0)
+  league                  League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueTeam              LeagueTeam @relation(fields: [leagueTeamId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, leagueTeamId, season])
+  @@index([leagueId, leagueTeamId])
+  @@map("financial_snapshots")
+}
+
+model LotteryResult {
+  id                      String     @id @default(cuid())
+  leagueId                String
+  season                  Int
+  originalTeamId          String
+  currentOwnerId          String
+  projectedSeed           Int
+  resultPickNumber        Int
+  oddsForNumberOnePickPct Float
+  currentOwner            LeagueTeam @relation("LotteryResultCurrentOwnerTeam", fields: [currentOwnerId], references: [id])
+  league                  League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  originalTeam            LeagueTeam @relation("LotteryResultOriginalTeam", fields: [originalTeamId], references: [id])
+
+  @@index([leagueId, season])
+  @@map("lottery_results")
+}
+
+model Negotiation {
+  id                String             @id @default(cuid())
+  leagueId          String
+  leagueTeamId      String
+  kind              NegotiationKind
+  status            NegotiationStatus  @default(IN_PROGRESS)
+  season            Int
+  round             Int                @default(1)
+  totalRounds       Int
+  cityWillingness   Int                @default(50)
+  outcome           Json?
+  createdAt         DateTime           @default(now())
+  resolvedAt        DateTime?
+  businessDecisions BusinessDecision[]
+  league            League             @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueTeam        LeagueTeam         @relation(fields: [leagueTeamId], references: [id], onDelete: Cascade)
+
+  @@index([leagueId, leagueTeamId, status])
+  @@map("negotiations")
+}
+
+model PlayerPersonalityProfile {
+  id                  String       @id @default(cuid())
+  leaguePlayerId      String       @unique
+  competitiveness     Int
+  roleSensitivity     Int
+  loyalty             Int
+  financialMotivation Int
+  createdAt           DateTime     @default(now())
+  leaguePlayer        LeaguePlayer @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
+
+  @@map("player_personality_profiles")
+}
+
+model ScoutingAssignmentSpend {
+  id           String                 @id @default(cuid())
+  leagueId     String
+  season       Int
+  leagueTeamId String
+  kind         ScoutingAssignmentKind
+  cost         Int
+  prospectId   String?
+  createdAt    DateTime               @default(now())
+  pathway      ProspectPathway?
+  league       League                 @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@index([leagueId, season, leagueTeamId])
+  @@map("scouting_assignment_spends")
+}
+
+model SponsorshipDeal {
+  id                           String                @id @default(cuid())
+  leagueId                     String
+  leagueTeamId                 String
+  kind                         SponsorshipDealKind
+  label                        String
+  annualValueCents             BigInt
+  startSeason                  Int
+  endSeason                    Int
+  conditionLeaguePlayerId      String?
+  franchiseValueUpsideFraction Float                 @default(0)
+  status                       SponsorshipDealStatus @default(ACTIVE)
+  voidedReason                 String?
+  createdAt                    DateTime              @default(now())
+  conditionPlayer              LeaguePlayer?         @relation(fields: [conditionLeaguePlayerId], references: [id])
+  league                       League                @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueTeam                   LeagueTeam            @relation(fields: [leagueTeamId], references: [id], onDelete: Cascade)
+
+  @@index([conditionLeaguePlayerId])
+  @@index([leagueId, leagueTeamId, status])
+  @@map("sponsorship_deals")
+}
+
+enum CareerEndReason {
+  FIRED
+  RETIRED
+}
+
+enum Conference {
+  EAST
+  WEST
+}
+
+enum MarketSize {
+  LARGE
+  MID
+  SMALL
+}
+
+enum Position {
+  PG
+  SG
+  SF
+  PF
+  C
 }
 
 enum TransactionType {
@@ -229,35 +1057,24 @@ enum TransactionType {
   RETIREMENT
   INJURY
   OWNERSHIP_MESSAGE
-  // Real, box-score-driven categories (Phase 14d) - generated only from
-  // actual simulated events (see src/lib/transactions/describeGameEvents.ts),
-  // never invented.
   GAME_MILESTONE
   WIN_STREAK
   GAME_RESULT
-  // Real season-end awards (Phase 14e) - announced once computed in
-  // advanceSeasonAction, using the same SeasonAward rows already shown
-  // elsewhere, not a new source of truth.
   AWARD
-  // Real staff hiring/firing (Phase 15a) - see the Staff model below.
   STAFF_HIRE
   STAFF_FIRE
-  // Real All-Star Weekend coverage, generated once per season from the
-  // actual AllStarWeekend row - see the models below.
   ALL_STAR_SELECTION
   ALL_STAR_SNUB
   ALL_STAR_RESULT
-  // A user-driven starter/bench boundary crossing (Rotation Management) -
-  // see src/lib/actions/rotation.ts. Only notable moves get a story, not
-  // every minutes tweak.
   ROTATION_CHANGE
+  DRAFT_LOTTERY
+  DRAFT_SELECTION
+  PLAYER_MORALE
+  FINANCIAL_REPORT
+  FRANCHISE_MILESTONE
+  BUSINESS_DECISION
 }
 
-// Lets the UI prioritize significant events over routine ones. Existing
-// transaction types are backfilled to STANDARD (no reliable way to
-// reconstruct a truer value for already-written rows); every category
-// assigns this deliberately going forward - see
-// src/lib/transactions/newsImportance.ts.
 enum NewsImportance {
   MINOR
   STANDARD
@@ -281,63 +1098,6 @@ enum EvaluationVerdict {
   DRASTICALLY_FELL_SHORT
 }
 
-// One row per league+season, capturing the preseason expectation set for
-// the user's team from that season's payroll tier + roster quality at the
-// moment the season begins - then updated with what actually happened, so
-// the eventual evaluation always compares against what was expected at
-// the time, not a standard re-computed from a roster that's since changed
-// via trades/signings. See src/lib/gm/expectationLevel.ts.
-model SeasonExpectation {
-  id                   String             @id @default(cuid())
-  leagueId             String
-  season               Int
-  expectationLevel     ExpectationLevel
-  // Both null until the season concludes and advanceSeasonAction evaluates it.
-  actualResultLabel    String?
-  verdict              EvaluationVerdict?
-  ownerConfidenceDelta Int?
-  createdAt            DateTime           @default(now())
-
-  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-
-  @@unique([leagueId, season])
-  @@map("season_expectations")
-}
-
-// A denormalized, human-readable log entry for the transaction wire / news
-// feed. `description` is pre-rendered at write time (see
-// src/lib/transactions/describeTransaction.ts) rather than reconstructed
-// from Trade/Contract rows at read time, since a trade or signing's
-// human-readable form (team names, player names, deal terms) is fixed at
-// the moment it happens and shouldn't change if e.g. a player is later
-// traded again.
-model LeagueTransaction {
-  id          String          @id @default(cuid())
-  leagueId    String
-  season      Int
-  type        TransactionType
-  description String
-  importance  NewsImportance  @default(STANDARD)
-  // Every LeagueTeam id substantively involved (1 for a signing/injury/
-  // award, 2 for a trade/game) - powers "My Team" filtering. Defaults to
-  // empty for rows written before this field existed (Phase 14e) - there's
-  // no reliable way to reconstruct team involvement from free-text
-  // descriptions alone, so old rows just won't match a team filter,
-  // consistent with this project's forward-only backfill precedent.
-  teamIds     String[]        @default([])
-  createdAt   DateTime        @default(now())
-
-  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-
-  @@index([leagueId, createdAt])
-  @@map("league_transactions")
-}
-
-// GM personality traits (Phase 11c) - a persistent front-office philosophy
-// that reweights how much a team leans toward certain trade factors
-// (youth vs. production, picks vs. players, salary flexibility). Assigned
-// once per team at league bootstrap and stable for the life of the save,
-// same as a real front office's standing tendencies.
 enum GmPersonality {
   AGGRESSIVE
   CONSERVATIVE
@@ -348,186 +1108,10 @@ enum GmPersonality {
   BALANCED
 }
 
-model LeagueTeam {
-  id       String @id @default(cuid())
-  leagueId String
-  teamId   String
-
-  wins          Int           @default(0)
-  losses        Int           @default(0)
-  gmPersonality GmPersonality @default(BALANCED)
-  // Positive = current win streak, negative = current loss streak, reset
-  // to 0 each new season alongside wins/losses. Powers real WIN_STREAK
-  // news (src/lib/transactions/describeGameEvents.ts) - not derived by
-  // scanning Game history on read.
-  currentStreak Int           @default(0)
-  // Fan engagement - 0-100, same neutral-start convention as
-  // League.ownerConfidence. Recomputed every season for all 30 teams
-  // (src/lib/fans/), not just the user's - franchisePopularity needs a
-  // full-league comparison to mean anything.
-  fanHappiness  Int           @default(65)
-
-  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  team   Team   @relation(fields: [teamId], references: [id])
-
-  players                LeaguePlayer[]
-  reSigningRightsHolders LeaguePlayer[]   @relation("ReSigningRights")
-  contracts              Contract[]
-  ownedPicks             DraftPick[]      @relation("CurrentOwner")
-  originalPicks          DraftPick[]      @relation("OriginalTeam")
-  tradeExceptions        TradeException[]
-  tradeAssetsFrom        TradeAsset[]     @relation("AssetFromTeam")
-  tradeAssetsTo          TradeAsset[]     @relation("AssetToTeam")
-  homeGames              Game[]           @relation("HomeGames")
-  awayGames              Game[]           @relation("AwayGames")
-  higherSeedIn           PlayoffSeries[]  @relation("HigherSeedSeries")
-  lowerSeedIn            PlayoffSeries[]  @relation("LowerSeedSeries")
-  wonSeries              PlayoffSeries[]  @relation("WonSeries")
-  playerGameStats        PlayerGameStat[]
-  staff                  Staff[]
-  staffContracts         StaffContract[]
-  fanHappinessSnapshots  FanHappinessSnapshot[]
-
-  @@unique([leagueId, teamId])
-  @@index([leagueId])
-  @@map("league_teams")
-}
-
-// One row per league+team+season - powers a multi-season trend graph the
-// same way SeasonAward/SeasonExpectation persist once rather than
-// recompute on every read. attendancePct/franchisePopularity are derived,
-// presentational numbers (see src/lib/fans/fanHappiness.ts) - deliberately
-// no separate merchandise/ticket-demand/buzz columns, since those are
-// UI-side tier labels read off these two numbers + marketSize, not
-// independently tracked state.
-model FanHappinessSnapshot {
-  id                  String @id @default(cuid())
-  leagueId            String
-  leagueTeamId        String
-  season              Int
-  fanHappiness        Int
-  attendancePct       Float
-  franchisePopularity Int
-
-  league     League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  leagueTeam LeagueTeam @relation(fields: [leagueTeamId], references: [id], onDelete: Cascade)
-
-  @@unique([leagueId, leagueTeamId, season])
-  @@index([leagueId, leagueTeamId])
-  @@map("fan_happiness_snapshots")
-}
-
 enum GameType {
   REGULAR_SEASON
   PLAY_IN
   PLAYOFF
-}
-
-// A simplified, strength-based schedule entry covering the regular season,
-// play-in, and playoffs alike (see docs/ARCHITECTURE.md for how this
-// differs from the real NBA). `homeScore`/`awayScore` are null until
-// simulated. `seriesId` is set only for PLAYOFF games.
-model Game {
-  id               String    @id @default(cuid())
-  leagueId         String
-  season           Int
-  gameNumber       Int // sequence position within the season, derived from dayIndex order
-  // Sequential day-of-season index (1-based), assigned at schedule
-  // generation - not a real DateTime (see generateSchedule.ts). Null for
-  // games generated before this field shipped - existing mid-season
-  // leagues keep their old schedule as-is rather than a destructive
-  // regeneration.
-  dayIndex         Int?
-  type             GameType  @default(REGULAR_SEASON)
-  seriesId         String?
-  homeLeagueTeamId String
-  awayLeagueTeamId String
-  homeScore        Int?
-  awayScore        Int?
-  playedAt         DateTime?
-
-  league          League           @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  homeTeam        LeagueTeam       @relation("HomeGames", fields: [homeLeagueTeamId], references: [id])
-  awayTeam        LeagueTeam       @relation("AwayGames", fields: [awayLeagueTeamId], references: [id])
-  series          PlayoffSeries?   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
-  playerGameStats PlayerGameStat[]
-
-  @@index([leagueId, season])
-  @@index([leagueId, playedAt])
-  @@map("games")
-}
-
-// One row per player who actually played in a given simulated game -
-// see src/lib/simulation/boxScore.ts for how these are generated.
-// Deliberately no stored fgPct/plusMinus: percentages derive cheaply from
-// made/attempted on read, and plusMinus would need possession-level on/off
-// data this lightweight (not possession-by-possession) engine doesn't
-// produce. A player who didn't play gets no row at all, not a
-// minutesPlayed: 0 row, so "games played" denominators stay clean.
-model PlayerGameStat {
-  id             String   @id @default(cuid())
-  gameId         String
-  leagueId       String // denormalized from Game - every league-scoped query (leaders, records) needs this without a join
-  leaguePlayerId String
-  leagueTeamId   String // pinned to the team as of this game, survives a later trade
-  season         Int // denormalized from Game, cheap season-aggregate queries
-  gameType       GameType // denormalized from Game, cheap regular-season-vs-playoff filtering
-
-  minutesPlayed Int
-  points        Int
-  rebounds      Int
-  assists       Int
-  steals        Int
-  blocks        Int
-  turnovers     Int
-  fgMade        Int
-  fgAttempted   Int
-  fg3Made       Int
-  fg3Attempted  Int
-  ftMade        Int
-  ftAttempted   Int
-
-  game         Game         @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  league       League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  leaguePlayer LeaguePlayer @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
-  leagueTeam   LeagueTeam   @relation(fields: [leagueTeamId], references: [id])
-
-  @@unique([gameId, leaguePlayerId])
-  @@index([leaguePlayerId, season])
-  @@index([leagueId, season])
-  @@index([gameId])
-  @@map("player_game_stats")
-}
-
-// Round 0 = play-in (single elimination, winsNeeded 1); round 1 = first
-// round, 2 = conference semis, 3 = conference finals, 4 = NBA Finals
-// (conference null for round 4). Best-of-7 rounds need 4 wins.
-model PlayoffSeries {
-  id               String      @id @default(cuid())
-  leagueId         String
-  season           Int
-  round            Int
-  // Position within this round+conference group (0-based). The next round's
-  // slot N is always the winner of this round's slot 2N vs. slot 2N+1 - a
-  // fixed single-elimination bracket, not a reseeded one, matching the real
-  // NBA playoff format.
-  bracketSlot      Int         @default(0)
-  conference       Conference?
-  higherSeedTeamId String
-  lowerSeedTeamId  String
-  winsNeeded       Int         @default(4)
-  higherSeedWins   Int         @default(0)
-  lowerSeedWins    Int         @default(0)
-  winnerTeamId     String?
-
-  league         League      @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  higherSeedTeam LeagueTeam  @relation("HigherSeedSeries", fields: [higherSeedTeamId], references: [id])
-  lowerSeedTeam  LeagueTeam  @relation("LowerSeedSeries", fields: [lowerSeedTeamId], references: [id])
-  winnerTeam     LeagueTeam? @relation("WonSeries", fields: [winnerTeamId], references: [id])
-  games          Game[]
-
-  @@index([leagueId, season, round])
-  @@map("playoff_series")
 }
 
 enum InjuryStatus {
@@ -537,91 +1121,12 @@ enum InjuryStatus {
   SEASON_ENDING
 }
 
-// The mutable, per-save copy of a player: this is what trades, aging, and
-// development actually operate on. `overallRating` drifts over time (an age
-// curve applied per season) independently in every league.
-model LeaguePlayer {
-  id                         String       @id @default(cuid())
-  leagueId                   String
-  playerId                   String
-  leagueTeamId               String? // null = unsigned free agent within this league
-  overallRating              Int // 0-100 composite used by the valuation model & AI GMs
-  potentialRating            Int
-  injuryStatus               InjuryStatus @default(HEALTHY)
-  // Set only while injuryStatus != HEALTHY: the injured team's own
-  // (wins+losses) count at which this player is cleared to return. Compared
-  // against the team's regular-season game count, not a calendar date -
-  // see src/lib/actions/leagueEvents.ts.
-  injuryReturnsAtGamesPlayed Int?
-  // Total games missed to injury across this player's whole league career
-  // (incremented alongside the INJURY transaction log in
-  // src/lib/actions/leagueEvents.ts) - real injury-history signal for the
-  // trade-value model (Phase 11c), not just current health.
-  careerGamesMissedToInjury  Int          @default(0)
-  isActive                   Boolean      @default(true) // false once retired within this league
-  retiredSeason              Int? // the season this player retired after, if any
-  // The team currently holding this player's simplified "Re-Signing
-  // Rights" (a casual stand-in for real Bird/Early-Bird/Non-Bird rights -
-  // see src/lib/freeagency/reSigningRights.ts). Kept in sync with
-  // leagueTeamId on every signing/trade, but deliberately NOT cleared
-  // when a contract expires, so it still points at the player's most
-  // recent team while they're a free agent.
-  reSigningTeamId            String?
-  // Rotation Management - both null means "not customized," which is
-  // exactly today's fully-automatic behavior (see src/lib/rotation/).
-  // Reset to null whenever leagueTeamId changes (trade/signing/waiver) so
-  // stale depth-chart numbers from a former team never collide with a new
-  // team's numbering.
-  rotationSlot               Int? // 0-11 depth-chart order on the current team; null = auto-derived
-  targetMinutesPerGame       Int? // user-assigned expected minutes per game; null = auto-derived
-
-  league          League           @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  player          Player           @relation(fields: [playerId], references: [id])
-  leagueTeam      LeagueTeam?      @relation(fields: [leagueTeamId], references: [id])
-  reSigningTeam   LeagueTeam?      @relation("ReSigningRights", fields: [reSigningTeamId], references: [id])
-  contract        Contract?
-  tradeAssets     TradeAsset[]
-  seasonAwards            SeasonAward[]
-  playerGameStats         PlayerGameStat[]
-  allStarSelections       AllStarSelection[]
-  allStarEventParticipants AllStarEventParticipant[]
-  allStarGameStats        AllStarGameStat[]
-
-  @@unique([leagueId, playerId])
-  @@index([leagueId, leagueTeamId])
-  @@map("league_players")
-}
-
 enum AwardCategory {
   MVP
   ROOKIE_OF_THE_YEAR
   MOST_IMPROVED_PLAYER
-  // Unblocked by Phase 14a/14b's real box-score data - previously excluded
-  // for lacking individual defensive/bench-usage stats to back them
-  // honestly. See src/lib/development/seasonAwards.ts.
   DEFENSIVE_PLAYER_OF_THE_YEAR
   SIXTH_MAN_OF_THE_YEAR
-}
-
-// One row per league+season+category. Computed once when the season is
-// advanced (from that season's final ratings/standings), then persisted
-// rather than recomputed on every page view.
-model SeasonAward {
-  id             String        @id @default(cuid())
-  leagueId       String
-  season         Int
-  category       AwardCategory
-  leaguePlayerId String
-  // The stat the award was decided on - rating for MVP/ROY, rating delta
-  // for MIP - kept so the UI can show "why" without recomputing.
-  value          Float
-
-  league       League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  leaguePlayer LeaguePlayer @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
-
-  @@unique([leagueId, season, category])
-  @@index([leagueId, season])
-  @@map("season_awards")
 }
 
 enum ContractOptionType {
@@ -644,141 +1149,25 @@ enum ExceptionUsed {
   NON_BIRD_RIGHTS
 }
 
-model Contract {
-  id             String        @id @default(cuid())
-  leaguePlayerId String        @unique
-  leagueTeamId   String
-  signedSeason   Int
-  startSeason    Int
-  endSeason      Int
-  noTradeClause  Boolean       @default(false)
-  signedUsing    ExceptionUsed @default(NONE)
-
-  leaguePlayer LeaguePlayer   @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
-  leagueTeam   LeagueTeam     @relation(fields: [leagueTeamId], references: [id])
-  years        ContractYear[]
-
-  @@index([leagueTeamId])
-  @@map("contracts")
-}
-
-// One row per season of a contract, so cap hits (which can balloon/decline,
-// include partial guarantees, and carry options) are modeled precisely
-// instead of assuming flat annual salaries.
-model ContractYear {
-  id              String             @id @default(cuid())
-  contractId      String
-  season          Int
-  salaryCents     BigInt
-  guaranteedCents BigInt
-  optionType      ContractOptionType @default(NONE)
-
-  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
-
-  @@unique([contractId, season])
-  @@map("contract_years")
-}
-
-// Staff Management (Phase 15a) - Head Coach, Player Development Coach, and
-// Medical Staff, the three roles with a real, identified mechanical effect
-// on the simulation (see src/lib/simulation/boxScore.ts,
-// src/lib/development/developPlayerRating.ts, and
-// src/lib/actions/leagueEvents.ts respectively). Deliberately scoped down
-// from the full staff roster a real front office has - Scouts, Analytics,
-// and a Salary Cap Specialist are a later phase, and there is no hireable
-// "GM" role at all: the user already is the GM (see League.ownerConfidence/
-// src/lib/gm/jobSecurity.ts), this models the staff working for them.
 enum StaffRole {
   HEAD_COACH
   PLAYER_DEVELOPMENT_COACH
   MEDICAL_STAFF
 }
 
-// Head Coach only - a flavor/style axis distinct from `quality` (skill).
-// Drives shot-selection tendency in box-score generation, not a skill level.
 enum CoachStyle {
   PACE_AND_SPACE
   BALANCED
   GRIND_IT_OUT
 }
 
-model Staff {
-  id           String      @id @default(cuid())
-  leagueId     String
-  leagueTeamId String? // null = unemployed, available on the market
-  role         StaffRole
-  fullName     String
-  age          Int
-  // 60-99, same composite-rating convention as LeaguePlayer.overallRating -
-  // "how good are they at this job."
-  quality      Int
-  // 0-100, distinct from quality (skill) - drifts with team performance
-  // each season (src/lib/actions/offseason.ts). A young/unproven hire can
-  // be high-quality/low-reputation.
-  reputation   Int         @default(50)
-  style        CoachStyle? // Head Coach only, null for the other two roles
-
-  league      League          @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  leagueTeam  LeagueTeam?     @relation(fields: [leagueTeamId], references: [id])
-  contract    StaffContract?
-  staffAwards StaffAward[]
-
-  @@index([leagueId, leagueTeamId])
-  @@index([leagueId, role])
-  @@map("staff")
-}
-
-// Deliberately a separate model from Contract, not a generalized/nullable
-// version of it - Contract.leaguePlayerId is @unique with no discriminator
-// column, and every existing call site assumes contract.leaguePlayer always
-// exists. Also simpler on purpose: one flat annual salary, no
-// ContractYear-equivalent year-by-year structure - coaching deals don't need
-// cap-style guarantees here, and staff salaries never count against the
-// player salary cap.
-model StaffContract {
-  id                String @id @default(cuid())
-  staffId           String @unique
-  leagueTeamId      String
-  signedSeason      Int
-  startSeason       Int
-  endSeason         Int
-  annualSalaryCents BigInt
-
-  staff      Staff      @relation(fields: [staffId], references: [id], onDelete: Cascade)
-  leagueTeam LeagueTeam @relation(fields: [leagueTeamId], references: [id])
-
-  @@map("staff_contracts")
-}
-
 enum StaffAwardCategory {
   COACH_OF_THE_YEAR
 }
 
-// Separate from SeasonAward (not a nullable/generalized version of it) for
-// the same reason Staff/StaffContract are separate from LeaguePlayer/Contract
-// - SeasonAward.leaguePlayerId is required with no discriminator column, and
-// every existing call site assumes the winner is always a LeaguePlayer.
-model StaffAward {
-  id       String             @id @default(cuid())
-  leagueId String
-  season   Int
-  category StaffAwardCategory
-  staffId  String
-  // The stat the award was decided on - that season's team win% - same
-  // "keep the why" intent as SeasonAward.value.
-  value    Float
-
-  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  staff  Staff  @relation(fields: [staffId], references: [id], onDelete: Cascade)
-
-  @@unique([leagueId, season, category])
-  @@index([leagueId, season])
-  @@map("staff_awards")
-}
-
 enum AllStarWeekendStatus {
-  PENDING // generated, not yet resolved - blocks further regular-season sim
-  RESOLVED // user has viewed/skipped it - regular season can resume
+  PENDING
+  RESOLVED
 }
 
 enum AllStarRole {
@@ -798,184 +1187,12 @@ enum AllStarEventType {
   SLAM_DUNK_CONTEST
 }
 
-// One row per league+season - its existence/status is the mid-season
-// checkpoint marker src/lib/actions/simulation.ts checks before allowing
-// further regular-season simulation, not a separate League field.
-model AllStarWeekend {
-  id                  String               @id @default(cuid())
-  leagueId            String
-  season              Int
-  status              AllStarWeekendStatus @default(PENDING)
-  triggeredAtDayIndex Int?
-  createdAt           DateTime             @default(now())
-
-  league       League                    @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  selections   AllStarSelection[]
-  participants AllStarEventParticipant[]
-  game         AllStarGame?
-
-  @@unique([leagueId, season])
-  @@map("all_star_weekends")
-}
-
-// Separate from SeasonAward/StaffAward - both assume exactly one winner
-// per category per season; an All-Star roster is 24+ players.
-model AllStarSelection {
-  id               String               @id @default(cuid())
-  allStarWeekendId String
-  leaguePlayerId   String
-  conference       Conference
-  positionGroup    AllStarPositionGroup
-  role             AllStarRole
-  // Snapshot at selection time - "why", same intent as SeasonAward.value.
-  performanceScore Float
-  pointsPerGame    Float
-  reboundsPerGame  Float
-  assistsPerGame   Float
-  teamWinPct       Float
-
-  allStarWeekend AllStarWeekend @relation(fields: [allStarWeekendId], references: [id], onDelete: Cascade)
-  leaguePlayer   LeaguePlayer   @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
-
-  @@unique([allStarWeekendId, leaguePlayerId])
-  @@map("all_star_selections")
-}
-
-// One shared model for the 3 contests (structurally identical: a
-// participant, a result, a score) rather than 3 near-duplicate tables -
-// round-by-round detail is a short result string ("CHAMPION"/
-// "ELIMINATED_ROUND_1"), not a full play-by-play log.
-model AllStarEventParticipant {
-  id               String           @id @default(cuid())
-  allStarWeekendId String
-  eventType        AllStarEventType
-  leaguePlayerId   String
-  seed             Int
-  result           String
-  score            Float
-
-  allStarWeekend AllStarWeekend @relation(fields: [allStarWeekendId], references: [id], onDelete: Cascade)
-  leaguePlayer   LeaguePlayer   @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
-
-  @@unique([allStarWeekendId, eventType, leaguePlayerId])
-  @@map("all_star_event_participants")
-}
-
-// The exhibition game itself - deliberately not a row in the existing
-// Game model, since Game.home/awayLeagueTeamId are required FKs to real
-// franchise teams and All-Star "sides" are ad-hoc captain-drafted squads,
-// not LeagueTeams. Reuses the simulation engine's pure functions, not its
-// Game/LeagueTeam-shaped persistence.
-model AllStarGame {
-  id                String @id @default(cuid())
-  allStarWeekendId  String @unique
-  teamACaptainId    String
-  teamBCaptainId    String
-  teamAScore        Int
-  teamBScore        Int
-  mvpLeaguePlayerId String
-
-  allStarWeekend AllStarWeekend    @relation(fields: [allStarWeekendId], references: [id], onDelete: Cascade)
-  stats          AllStarGameStat[]
-
-  @@map("all_star_games")
-}
-
-// Mirrors PlayerBoxScoreLine's fields, minus the real Game/LeagueTeam FKs
-// PlayerGameStat requires - `side` replaces leagueTeamId.
-model AllStarGameStat {
-  id             String @id @default(cuid())
-  allStarGameId  String
-  leaguePlayerId String
-  side           String // teamACaptainId or teamBCaptainId
-  minutesPlayed  Int
-  points         Int
-  rebounds       Int
-  assists        Int
-  steals         Int
-  blocks         Int
-  turnovers      Int
-  fgMade         Int
-  fgAttempted    Int
-  fg3Made        Int
-  fg3Attempted   Int
-  ftMade         Int
-  ftAttempted    Int
-
-  allStarGame  AllStarGame  @relation(fields: [allStarGameId], references: [id], onDelete: Cascade)
-  leaguePlayer LeaguePlayer @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
-
-  @@map("all_star_game_stats")
-}
-
-model DraftPick {
-  id                 String  @id @default(cuid())
-  leagueId           String
-  season             Int
-  round              Int // 1 or 2
-  originalTeamId     String
-  currentOwnerId     String
-  protectionNote     String? // free text, e.g. "Top-4 protected, converts to 2027 2nd if not conveyed"
-  // Set once the lottery/pick order is determined for this season (1-30 for
-  // round 1, 31-60 for round 2) - null until `startDraftAction` runs.
-  overallPickNumber  Int?
-  selectedProspectId String? @unique
-
-  league           League         @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  originalTeam     LeagueTeam     @relation("OriginalTeam", fields: [originalTeamId], references: [id])
-  currentOwner     LeagueTeam     @relation("CurrentOwner", fields: [currentOwnerId], references: [id])
-  selectedProspect DraftProspect? @relation(fields: [selectedProspectId], references: [id])
-  tradeAssets      TradeAsset[]
-
-  @@index([leagueId])
-  @@index([leagueId, season, overallPickNumber])
-  @@map("draft_picks")
-}
-
-// A fictional prospect generated for one league's draft class - not a real
-// person, since no real future draft class data exists (see
-// docs/ARCHITECTURE.md). Ratings are generated once at `startDraftAction`
-// time and are visible to the user immediately (no scouting uncertainty
-// modeled yet).
-model DraftProspect {
-  id              String   @id @default(cuid())
-  leagueId        String
-  season          Int
-  fullName        String
-  position        Position
-  age             Int
-  overallRating   Int
-  potentialRating Int
-
-  league    League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  draftPick DraftPick?
-
-  @@index([leagueId, season])
-  @@map("draft_prospects")
-}
-
 enum TradeStatus {
   PROPOSED
   ACCEPTED
   REJECTED
   EXECUTED
   CANCELLED
-}
-
-model Trade {
-  id               String      @id @default(cuid())
-  leagueId         String
-  proposedById     String // LeagueTeam id
-  status           TradeStatus @default(PROPOSED)
-  validationResult Json? // snapshot of the validator's rule-by-rule pass/fail output
-  createdAt        DateTime    @default(now())
-  resolvedAt       DateTime?
-
-  league League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  assets TradeAsset[]
-
-  @@index([leagueId])
-  @@map("trades")
 }
 
 enum TradeAssetType {
@@ -985,78 +1202,172 @@ enum TradeAssetType {
   TRADE_EXCEPTION
 }
 
-model TradeAsset {
-  id               String         @id @default(cuid())
-  tradeId          String
-  type             TradeAssetType
-  fromLeagueTeamId String
-  toLeagueTeamId   String
-  leaguePlayerId   String?
-  draftPickId      String?
-  cashCents        BigInt?
-
-  trade        Trade         @relation(fields: [tradeId], references: [id], onDelete: Cascade)
-  fromTeam     LeagueTeam    @relation("AssetFromTeam", fields: [fromLeagueTeamId], references: [id])
-  toTeam       LeagueTeam    @relation("AssetToTeam", fields: [toLeagueTeamId], references: [id])
-  leaguePlayer LeaguePlayer? @relation(fields: [leaguePlayerId], references: [id])
-  draftPick    DraftPick?    @relation(fields: [draftPickId], references: [id])
-
-  @@index([tradeId])
-  @@map("trade_assets")
-}
-
-// Created when a team trades away a player for less than they take back
-// (or via a sign-and-trade); bankable for one year to absorb salary later.
-model TradeException {
-  id           String    @id @default(cuid())
-  leagueId     String
-  leagueTeamId String
-  amountCents  BigInt
-  createdAt    DateTime  @default(now())
-  expiresAt    DateTime
-  usedAt       DateTime?
-
-  league     League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  leagueTeam LeagueTeam @relation(fields: [leagueTeamId], references: [id])
-
-  @@index([leagueId, leagueTeamId])
-  @@map("trade_exceptions")
-}
-
-// ---------------------------------------------------------------------------
-// AI GM Assistant
-// ---------------------------------------------------------------------------
-
 enum AssistantRole {
   USER
   ASSISTANT
   TOOL
 }
 
-model AssistantThread {
-  id        String   @id @default(cuid())
-  leagueId  String
-  title     String
-  createdAt DateTime @default(now())
-
-  league   League             @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  messages AssistantMessage[]
-
-  @@index([leagueId])
-  @@map("assistant_threads")
+enum BusinessDecisionKind {
+  SPONSOR_PULLOUT
+  ARENA_SYSTEMS_FAILURE
+  TICKETING_SCANDAL
+  LEAGUE_REVENUE_DOWNTURN
+  INTERNATIONAL_PRESEASON_GAME
+  DOCUMENTARY_CREW
+  JERSEY_REDESIGN
+  MERCHANDISE_PUSH
+  SPONSORSHIP_BET_ON_YOURSELF
+  SPONSORSHIP_STAR_CLAUSE
+  SPONSORSHIP_UNPOPULAR_MONEY
+  SPONSORSHIP_EQUITY_SWAP
+  OWNERSHIP_PAYROLL_NEGOTIATION
+  OWNERSHIP_FINANCIAL_NEGOTIATION
+  NEGOTIATION_ROUND
+  HOT_STREAK_MEDIA_FEATURE
+  MOMENTUM_MERCHANDISE_SURGE
+  BANDWAGON_SPONSOR_INTEREST
+  SEASON_TICKET_HOLDER_BACKLASH
+  BOOSTER_CLUB_PATIENCE_TEST
+  LOCAL_MEDIA_CRITICISM_CYCLE
+  PLAYOFF_PUSH_TICKET_DEMAND
+  NATIONAL_TV_SLOT_REQUEST
+  PLAYOFF_WATCH_PARTY_PROPOSAL
+  TANK_WATCH_FAN_FRUSTRATION
+  REBUILD_PATIENCE_APPEAL
+  SIGNATURE_WIN_HIGHLIGHT_DEAL
+  EMBARRASSING_LOSS_DAMAGE_CONTROL
 }
 
-model AssistantMessage {
-  id             String        @id @default(cuid())
-  threadId       String
-  role           AssistantRole
-  content        String        @db.Text
-  toolName       String? // set when role = TOOL: which grounding tool produced this content
-  toolResultJson Json?
-  createdAt      DateTime      @default(now())
+enum BusinessDecisionStatus {
+  PENDING
+  RESOLVED
+  EXPIRED
+}
 
-  thread AssistantThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+enum BusinessLedgerCategory {
+  EVENT_INCOME
+  EVENT_EXPENSE
+}
 
-  @@index([threadId])
-  @@map("assistant_messages")
+enum CapitalProjectKind {
+  ARENA_RENOVATION
+  ARENA_NEW_BUILD
+  GLEAGUE_AFFILIATE
+  INTERNATIONAL_ACADEMY
+  PRACTICE_FACILITY
+  REAL_ESTATE_MEDIA
+}
+
+enum CapitalProjectStatus {
+  IN_PROGRESS
+  COMPLETE
+  ABANDONED
+}
+
+enum ClassCharacter {
+  TOP_HEAVY
+  DEEP_BUT_FLAT
+  INTERNATIONAL_HEAVY
+  INJURY_RIDDLED
+  WEAK_CLASS
+  BALANCED
+}
+
+enum DepartmentLevel {
+  MINIMAL
+  LOW
+  STANDARD
+  HIGH
+  MAXIMUM
+}
+
+enum FanMandateKind {
+  BE_PATIENT_WITH_THE_KIDS
+  SHOW_ME_PROGRESS
+  WIN_NOW
+  CHAMPIONSHIP_OR_BUST
+  GIVE_US_A_REASON_TO_CARE
+}
+
+enum FanNarrativeKind {
+  ICON_DEPARTURE_FALLOUT
+  REBUILD_PROGRESS_WATCH
+  CHAMPIONSHIP_WINDOW_WATCH
+}
+
+enum FanNarrativeStatus {
+  OPEN
+  RESOLVED
+}
+
+enum FanSentimentKind {
+  TRADE
+  SIGNING
+  WIN_STREAK
+  LOSS_STREAK
+  INJURY
+  INJURY_RECOVERY
+  STAFF_CHANGE
+  ROTATION_CHANGE
+  AWARD
+  ALL_STAR_SELECTION
+  ALL_STAR_SNUB
+  ALL_STAR_RESULT
+  DRAFT_LOTTERY
+  ICON_DEPARTURE
+  BUSINESS_DECISION
+  DISTRESSED_FINANCING
+  SEASON_RESULT
+}
+
+enum NegotiationKind {
+  ARENA_FUNDING
+  RELOCATION_DECISION
+}
+
+enum NegotiationStatus {
+  IN_PROGRESS
+  SUCCEEDED
+  FAILED
+}
+
+enum OwnerArchetype {
+  WIN_NOW_BILLIONAIRE
+  PENNY_PINCHER
+  PATIENT_BUILDER
+  ABSENTEE
+  MEDDLER
+}
+
+enum ProspectPathway {
+  POWER_CONFERENCE
+  MID_MAJOR
+  INTERNATIONAL_PROFESSIONAL
+  DEVELOPMENT_PATHWAY
+}
+
+enum ScoutingAssignmentKind {
+  FOCUSED_LOOK
+  SWEEP
+  PRIVATE_WORKOUT
+}
+
+enum SponsorshipDealKind {
+  JERSEY_PATCH
+  ARENA_NAMING_RIGHTS
+  APPAREL_PARTNER
+  INTERNATIONAL_PARTNERSHIP
+}
+
+enum SponsorshipDealStatus {
+  ACTIVE
+  EXPIRED
+  VOIDED
+}
+
+enum TicketPricingPosture {
+  FAN_FRIENDLY
+  STANDARD
+  PREMIUM
 }

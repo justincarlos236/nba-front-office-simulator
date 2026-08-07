@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HowDoesThisWork } from "@/components/guide/HowDoesThisWork";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
@@ -11,6 +12,13 @@ import { getSeasonCapRules } from "@/lib/cap/constants";
 import { computeMultiYearProjection } from "@/lib/cap/multiYearProjection";
 import { computeFinancialFlexibilityGrade } from "@/lib/cap/financialFlexibilityGrade";
 import { formatCentsCompact } from "@/lib/money";
+import {
+  computeFinancialHealth,
+  FINANCIAL_HEALTH_LABEL,
+  type FinancialHealth,
+} from "@/lib/finances/finances";
+import { formatFinanceCents } from "@/lib/finances/formatFinance";
+import { RetireButton } from "@/components/career/RetireButton";
 import { prisma } from "@/lib/prisma";
 import { getPlayerValueTier, PLAYER_VALUE_TIER_LABEL } from "@/lib/valuation/playerValueTier";
 import {
@@ -23,8 +31,15 @@ import { EXPECTATION_LEVEL_LABEL } from "@/lib/gm/expectationLevel";
 import { computeCompetitivenessPercentiles } from "@/lib/actions/competitiveness";
 import { computeTeamIdentity, TEAM_IDENTITY_LABEL } from "@/lib/gm/teamIdentity";
 import { computeTeamNeeds, TEAM_NEED_LABEL } from "@/lib/gm/teamNeeds";
+import {
+  getActionCenterItems,
+  ACTION_CENTER_DISPLAY_LIMIT,
+  type ActionCenterRosterPlayer,
+} from "@/lib/gm/actionCenter";
 import { estimateAge } from "@/lib/players/age";
 import { PlayerChip } from "@/components/players/PlayerChip";
+import { ActionCenter } from "@/components/dashboard/ActionCenter";
+import { pickDidYouKnowTip } from "@/lib/gm/didYouKnow";
 
 const PROJECTION_YEARS_AHEAD = 4;
 
@@ -43,6 +58,14 @@ const JOB_SECURITY_BADGE_CLASS: Record<JobSecurityLevel, string> = {
   UNDER_PRESSURE: "bg-orange-500/15 text-orange-400",
   HOT_SEAT: "bg-red-500/15 text-red-400",
   CRITICAL: "bg-red-600/20 text-red-500",
+};
+
+const FINANCIAL_HEALTH_BADGE_CLASS: Record<FinancialHealth, string> = {
+  THRIVING: "bg-emerald-500/15 text-emerald-400",
+  HEALTHY: "bg-emerald-500/15 text-emerald-400",
+  STABLE: "bg-sky-500/15 text-sky-400",
+  STRAINED: "bg-amber-500/15 text-amber-400",
+  IN_THE_RED: "bg-red-600/20 text-red-500",
 };
 
 interface PageProps {
@@ -112,6 +135,16 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
     where: { leagueId_season: { leagueId: league.id, season } },
   });
 
+  // Franchise Finances - a compact business snapshot for the dashboard card.
+  const latestFinancialSnapshot = await prisma.financialSnapshot.findFirst({
+    where: { leagueId: league.id, leagueTeamId: userLeagueTeam.id },
+    orderBy: { season: "desc" },
+  });
+  const financialHealth = computeFinancialHealth(
+    Number(userLeagueTeam.cashReserveCents),
+    latestFinancialSnapshot ? Number(latestFinancialSnapshot.netIncomeCents) : 0,
+  );
+
   // Team identity/needs (Phase 11b) - the lens the trade-AI evaluation
   // engine (11c) reasons through.
   const competitivenessPercentiles = await computeCompetitivenessPercentiles(league.teams);
@@ -146,6 +179,40 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
       })),
   });
 
+  // Action Center (Phase 2 of the onboarding/flow work) - reuses this
+  // page's own already-fetched roster/cap/needs data, no extra queries
+  // beyond the small set `getActionCenterItems` runs itself.
+  const actionCenterRoster: ActionCenterRosterPlayer[] = leaguePlayers.map((lp) => ({
+    fullName: lp.player.fullName,
+    overallRating: lp.overallRating,
+    injuryStatus: lp.injuryStatus,
+    contractEndSeason: lp.contract?.endSeason ?? null,
+    morale: lp.morale,
+    tradeRequestActive: lp.tradeRequestActive,
+    rotation: {
+      leaguePlayerId: lp.id,
+      fullName: lp.player.fullName,
+      overallRating: lp.overallRating,
+      position: lp.player.position,
+      realStat: null,
+      rotationSlot: lp.rotationSlot,
+      targetMinutesPerGame: lp.targetMinutesPerGame,
+    },
+  }));
+  const allActionCenterItems = await getActionCenterItems(league.id, league, {
+    totalSalaryCents: capSheet.totalSalaryCents,
+    capSpaceCents: capSheet.capSpaceCents,
+    simpleCapStatus: simplifyCapStatus(capSheet.apronLevel),
+    teamNeeds,
+    roster: actionCenterRoster,
+  });
+  const actionCenterItems = allActionCenterItems.slice(0, ACTION_CENTER_DISPLAY_LIMIT);
+  // Onboarding Philosophy Phase 4 (docs/ONBOARDING_DESIGN.md Part 1.4 "too
+  // early") - reuses the Action Center's own first-session signal rather
+  // than a second "is this day 0" query, so there's exactly one place that
+  // decides what counts as brand-new.
+  const isBrandNewSeason = allActionCenterItems.some((i) => i.id === "first-games-not-simulated");
+
   const futureProjections = computeMultiYearProjection(
     futureContractYears,
     season + 1,
@@ -176,89 +243,26 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
   return (
     <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
       <div
-        className="flex items-center justify-between gap-4 border-l-4 pl-4"
+        className="border-l-4 pl-4"
         style={{ borderLeftColor: userLeagueTeam.team.primaryColor }}
       >
-        <div>
-          <p className="text-sm text-muted">
-            {league.currentSeason}-{(league.currentSeason + 1).toString().slice(-2)} season &middot;{" "}
-            {userLeagueTeam.wins}-{userLeagueTeam.losses}
-          </p>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            {userLeagueTeam.team.city} {userLeagueTeam.team.name}
-          </h1>
-        </div>
-        <div className="flex flex-wrap justify-end gap-3">
-          <Link
-            href={`/leagues/${league.id}/standings`}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
-          >
-            Standings
-          </Link>
-          <Link
-            href={`/leagues/${league.id}/playoffs`}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
-          >
-            Playoffs
-          </Link>
-          <Link
-            href={`/leagues/${league.id}/offseason`}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
-          >
-            Offseason
-          </Link>
-          <Link
-            href={`/leagues/${league.id}/draft`}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
-          >
-            Draft
-          </Link>
-          <Link
-            href={`/leagues/${league.id}/free-agents`}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
-          >
-            Free agents
-          </Link>
-          <Link
-            href={`/leagues/${league.id}/staff`}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
-          >
-            Staff
-          </Link>
-          <Link
-            href={`/leagues/${league.id}/fans`}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
-          >
-            Fans
-          </Link>
-          <Link
-            href={`/leagues/${league.id}/leaders`}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
-          >
-            Leaders
-          </Link>
-          <Link
-            href={`/leagues/${league.id}/transactions`}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
-          >
-            News
-          </Link>
-          <Link
-            href={`/leagues/${league.id}/history`}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
-          >
-            History
-          </Link>
-          <Link
-            href={`/leagues/${league.id}/trades/new`}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90"
-          >
-            Propose a trade
-          </Link>
-        </div>
+        <p className="text-sm text-muted">
+          {league.currentSeason}-{(league.currentSeason + 1).toString().slice(-2)} season &middot;{" "}
+          {userLeagueTeam.wins}-{userLeagueTeam.losses}
+        </p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          {userLeagueTeam.team.city} {userLeagueTeam.team.name}
+        </h1>
       </div>
 
-      <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-10">
+        <ActionCenter
+          items={actionCenterItems}
+          didYouKnowTip={actionCenterItems.length === 0 ? pickDidYouKnowTip(league.id) : null}
+        />
+      </div>
+
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <OverviewCard
           href={`/leagues/${league.id}/standings`}
           label="Conference rank"
@@ -296,45 +300,61 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
       </div>
       <p className="mt-3 text-sm text-muted">
         {CAP_STATUS_DESCRIPTION[simplifyCapStatus(capSheet.apronLevel)]}{" "}
-        <Link href="/guide/finances" className="underline hover:text-foreground">
-          How does this work?
-        </Link>
+        <HowDoesThisWork topic="financial-status" className="underline hover:text-foreground" />
       </p>
 
-      <div className="mt-10 rounded-xl border border-border bg-surface p-5">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="font-semibold text-foreground">Future Financial Flexibility</h2>
-            <p className="mt-1 text-sm text-muted">{flexibilityGrade.summary}</p>
-          </div>
-          <span
-            className={`shrink-0 rounded-full px-3 py-1.5 text-lg font-bold ${GRADE_BADGE_CLASS[flexibilityGrade.grade]}`}
-          >
-            {flexibilityGrade.grade}
-          </span>
+      {isBrandNewSeason ? (
+        // Onboarding Philosophy Phase 4 (docs/ONBOARDING_DESIGN.md Beat 2 /
+        // Part 1.4 "too early") - a 4-year projection with a letter grade
+        // isn't actionable before a single game or roster move has
+        // happened. Never hard-hidden (same "nothing ever hidden, only
+        // de-emphasized" rule as the sub-nav) - still visible, just not
+        // shouting for attention on day one.
+        <div className="mt-10 rounded-xl border border-dashed border-border bg-surface p-5">
+          <h2 className="font-semibold text-foreground">Future Financial Flexibility</h2>
+          <p className="mt-1 text-sm text-muted">
+            Long-term contracts will show up here once your books have some real history - nothing
+            to plan around yet on day one.{" "}
+            <HowDoesThisWork
+              topic="financial-flexibility"
+              className="underline hover:text-foreground"
+            />
+          </p>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {futureProjections.map((projection) => (
-            <div key={projection.season} className="rounded-lg border border-border p-3">
-              <p className="text-xs tracking-wide text-muted uppercase">
-                {projection.season}-{(projection.season + 1).toString().slice(-2)}
-              </p>
-              <p className="mt-1 font-mono text-foreground">
-                {formatCentsCompact(projection.committedSalaryCents)}
-              </p>
-              <p className="text-xs text-muted">committed</p>
+      ) : (
+        <div className="mt-10 rounded-xl border border-border bg-surface p-5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="font-semibold text-foreground">Future Financial Flexibility</h2>
+              <p className="mt-1 text-sm text-muted">{flexibilityGrade.summary}</p>
             </div>
-          ))}
+            <span
+              className={`shrink-0 rounded-full px-3 py-1.5 text-lg font-bold ${GRADE_BADGE_CLASS[flexibilityGrade.grade]}`}
+            >
+              {flexibilityGrade.grade}
+            </span>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {futureProjections.map((projection) => (
+              <div key={projection.season} className="rounded-lg border border-border p-3">
+                <p className="text-xs tracking-wide text-muted uppercase">
+                  {projection.season}-{(projection.season + 1).toString().slice(-2)}
+                </p>
+                <p className="mt-1 font-mono text-foreground">
+                  {formatCentsCompact(projection.committedSalaryCents)}
+                </p>
+                <p className="text-xs text-muted">committed</p>
+              </div>
+            ))}
+          </div>
+          <HowDoesThisWork
+            topic="financial-flexibility"
+            className="mt-3 inline-block text-xs text-muted underline hover:text-foreground"
+          />
         </div>
-        <Link
-          href="/guide/finances#financial-flexibility"
-          className="mt-3 inline-block text-xs text-muted underline hover:text-foreground"
-        >
-          How does this work?
-        </Link>
-      </div>
+      )}
 
-      <div className="mt-6 rounded-xl border border-border bg-surface p-5">
+      <div id="gm-job-security" className="mt-6 rounded-xl border border-border bg-surface p-5">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="font-semibold text-foreground">GM Job Security</h2>
@@ -366,13 +386,60 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
             {(league.payrollDirectiveSeason + 1).toString().slice(-2)} season.
           </p>
         )}
-        <Link
-          href="/guide/finances#owner-confidence"
-          className="mt-3 inline-block text-xs text-muted underline hover:text-foreground"
-        >
-          How does this work?
-        </Link>
+        {league.financialMandateSeason != null && (
+          <p className="mt-2 text-sm text-red-400">
+            Financial mandate: return the franchise to profitability before the{" "}
+            {league.financialMandateSeason}-
+            {(league.financialMandateSeason + 1).toString().slice(-2)} season, or your job is at
+            risk.
+          </p>
+        )}
+        <div className="mt-3 flex items-center justify-between gap-4">
+          <HowDoesThisWork topic="owner-confidence" />
+          <RetireButton leagueId={league.id} />
+        </div>
       </div>
+
+      <Link
+        href={`/leagues/${league.id}/finances`}
+        className="mt-6 block rounded-xl border border-border bg-surface p-5 transition hover:bg-surface-2"
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="font-semibold text-foreground">Franchise Finances</h2>
+            <p className="mt-1 text-sm text-muted">
+              Franchise value {formatFinanceCents(userLeagueTeam.franchiseValueCents)} · Cash{" "}
+              <span
+                className={Number(userLeagueTeam.cashReserveCents) < 0 ? "text-red-400" : undefined}
+              >
+                {formatFinanceCents(userLeagueTeam.cashReserveCents)}
+              </span>
+              {latestFinancialSnapshot && (
+                <>
+                  {" · "}
+                  <span
+                    className={
+                      Number(latestFinancialSnapshot.netIncomeCents) < 0
+                        ? "text-red-400"
+                        : "text-emerald-400"
+                    }
+                  >
+                    {Number(latestFinancialSnapshot.netIncomeCents) < 0
+                      ? "Net loss "
+                      : "Net profit "}
+                    {formatFinanceCents(Math.abs(Number(latestFinancialSnapshot.netIncomeCents)))}
+                  </span>
+                </>
+              )}
+            </p>
+          </div>
+          <span
+            className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-bold ${FINANCIAL_HEALTH_BADGE_CLASS[financialHealth]}`}
+          >
+            {FINANCIAL_HEALTH_LABEL[financialHealth]}
+          </span>
+        </div>
+      </Link>
 
       <div className="mt-10 overflow-x-auto rounded-xl border border-border">
         <table className="w-full text-left text-sm">

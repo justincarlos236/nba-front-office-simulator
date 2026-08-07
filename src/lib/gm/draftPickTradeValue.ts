@@ -17,7 +17,7 @@ export interface DraftPickTradeValueInput {
   /** Which draft class this pick belongs to. */
   pickSeason: number;
   round: 1 | 2;
-  /** Known once that season's own draft has actually started - see `startDraftAction`. */
+  /** Known once that season's own draft has actually started - see `runDraftLotteryAction`. */
   overallPickNumber: number | null;
   /**
    * The pick's *original* team's current competitiveness percentile

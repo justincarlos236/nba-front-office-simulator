@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import Link from "next/link";
+import { HowDoesThisWork } from "@/components/guide/HowDoesThisWork";
 import { ApronLevel, eligibleMidLevelException } from "@/lib/cap/apron";
 import { getSeasonCapRules } from "@/lib/cap/constants";
 import { formatCentsCompact } from "@/lib/money";
@@ -140,13 +140,11 @@ export function SignOfferForm({
         >
           {feasibility.headline}
         </p>
-        <Link
-          href={`/guide/finances${reSigningRights.held ? "#re-signing-rights" : "#signing-exception"}`}
-          target="_blank"
+        <HowDoesThisWork
+          topic={reSigningRights.held ? "re-signing-rights" : "signing-exception"}
+          openInNewTab
           className="mt-1 inline-block text-xs text-muted underline hover:text-foreground"
-        >
-          How does this work?
-        </Link>
+        />
 
         {submitError && <p className="mt-3 text-sm text-red-400">{submitError}</p>}
 

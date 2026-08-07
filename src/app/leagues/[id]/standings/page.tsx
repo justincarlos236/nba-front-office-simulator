@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { SimulateControls } from "@/components/simulation/SimulateControls";
-import { SeasonCalendar, type CalendarGame } from "@/components/simulation/SeasonCalendar";
 
 export const dynamic = "force-dynamic";
 
@@ -90,57 +89,43 @@ export default async function StandingsPage({ params }: PageProps) {
 
   const myLeagueTeamId = league.userControlledTeamId;
 
-  const [gamesRemaining, recentResults, myGames, pendingWeekend] = await Promise.all([
-    prisma.game.count({
-      where: {
-        leagueId: league.id,
-        season: league.currentSeason,
-        type: "REGULAR_SEASON",
-        playedAt: null,
-        ...(myLeagueTeamId
-          ? { OR: [{ homeLeagueTeamId: myLeagueTeamId }, { awayLeagueTeamId: myLeagueTeamId }] }
-          : {}),
-      },
-    }),
-    prisma.game.findMany({
-      where: { leagueId: league.id, season: league.currentSeason, playedAt: { not: null } },
-      include: { homeTeam: { include: { team: true } }, awayTeam: { include: { team: true } } },
-      orderBy: { playedAt: "desc" },
-      take: 10,
-    }),
-    myLeagueTeamId
-      ? prisma.game.findMany({
-          where: {
-            leagueId: league.id,
-            season: league.currentSeason,
-            type: "REGULAR_SEASON",
-            OR: [{ homeLeagueTeamId: myLeagueTeamId }, { awayLeagueTeamId: myLeagueTeamId }],
-          },
-          include: { homeTeam: { include: { team: true } }, awayTeam: { include: { team: true } } },
-          orderBy: { gameNumber: "asc" },
-        })
-      : Promise.resolve([]),
-    prisma.allStarWeekend.findUnique({
-      where: { leagueId_season: { leagueId: league.id, season: league.currentSeason } },
-    }),
-  ]);
-
-  const calendarGames: CalendarGame[] = myGames
-    .filter((g) => g.dayIndex !== null)
-    .map((g) => {
-      const isHome = g.homeLeagueTeamId === myLeagueTeamId;
-      const opponent = isHome ? g.awayTeam : g.homeTeam;
-      const myScore = isHome ? g.homeScore : g.awayScore;
-      const opponentScore = isHome ? g.awayScore : g.homeScore;
-      return {
-        dayIndex: g.dayIndex!,
-        opponentLabel: `${opponent.team.city} ${opponent.team.name}`,
-        isHome,
-        won: myScore !== null && opponentScore !== null ? myScore > opponentScore : null,
-        teamScore: myScore,
-        opponentScore: opponentScore,
-      };
-    });
+  const [gamesRemaining, recentResults, pendingWeekend, pendingBreakingDecision] =
+    await Promise.all([
+      prisma.game.count({
+        where: {
+          leagueId: league.id,
+          season: league.currentSeason,
+          type: "REGULAR_SEASON",
+          playedAt: null,
+          ...(myLeagueTeamId
+            ? { OR: [{ homeLeagueTeamId: myLeagueTeamId }, { awayLeagueTeamId: myLeagueTeamId }] }
+            : {}),
+        },
+      }),
+      prisma.game.findMany({
+        where: { leagueId: league.id, season: league.currentSeason, playedAt: { not: null } },
+        include: { homeTeam: { include: { team: true } }, awayTeam: { include: { team: true } } },
+        orderBy: { playedAt: "desc" },
+        take: 10,
+      }),
+      prisma.allStarWeekend.findUnique({
+        where: { leagueId_season: { leagueId: league.id, season: league.currentSeason } },
+      }),
+      // Finances as a Gameplay Pillar (Phase 1) - mirrors the All-Star-weekend
+      // pending check so the sim buttons don't invite a click that will just
+      // no-op server-side (see simulateGamesAction's own BREAKING gate).
+      myLeagueTeamId
+        ? prisma.businessDecision.findFirst({
+            where: {
+              leagueId: league.id,
+              leagueTeamId: myLeagueTeamId,
+              status: "PENDING",
+              severity: "BREAKING",
+            },
+            select: { id: true },
+          })
+        : Promise.resolve(null),
+    ]);
 
   const eastTeams = league.teams
     .filter((lt) => lt.team.conference === "EAST")
@@ -161,17 +146,9 @@ export default async function StandingsPage({ params }: PageProps) {
 
   return (
     <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          {league.currentSeason}-{(league.currentSeason + 1).toString().slice(-2)} Standings
-        </h1>
-        <Link
-          href={`/leagues/${league.id}/playoffs`}
-          className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
-        >
-          Playoffs
-        </Link>
-      </div>
+      <h1 className="text-3xl font-bold tracking-tight text-foreground">
+        {league.currentSeason}-{(league.currentSeason + 1).toString().slice(-2)} Standings
+      </h1>
       <p className="mt-2 max-w-2xl text-muted">
         A simplified, strength-based simulation (not possession-by-possession) - each team&apos;s
         rotation ratings determine a win probability per game, with a small home-court edge. See
@@ -183,18 +160,11 @@ export default async function StandingsPage({ params }: PageProps) {
           leagueId={league.id}
           gamesRemaining={gamesRemaining}
           allStarWeekendPending={pendingWeekend?.status === "PENDING"}
+          businessDecisionPending={!!pendingBreakingDecision}
         />
       </div>
 
-      <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {myLeagueTeamId && (
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">Your Schedule</h2>
-            <div className="mt-3">
-              <SeasonCalendar games={calendarGames} />
-            </div>
-          </div>
-        )}
+      <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-2">
         <StandingsTable
           title="Eastern Conference"
           teams={eastTeams}

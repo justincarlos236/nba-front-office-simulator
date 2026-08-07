@@ -14,6 +14,22 @@ const SCORE_RANDOMNESS = 22; // +/- swing applied to the loser's score
 const MIN_MARGIN = 3;
 const MAX_MARGIN = 22;
 
+/**
+ * The single shared strength-differential signal every win/scoring model
+ * in this engine derives from - exported so the live playoff quarter
+ * simulator (`simulateLiveGame.ts`) uses the exact same underlying number
+ * `computeHomeWinProbability` does, rather than a second copy of this
+ * formula that could quietly drift out of sync with it.
+ */
+export function computeStrengthDiff(
+  homeStrength: number,
+  awayStrength: number,
+  homeCoachBonus: number = 0,
+  awayCoachBonus: number = 0,
+): number {
+  return homeStrength + HOME_COURT_ADVANTAGE + homeCoachBonus - awayStrength - awayCoachBonus;
+}
+
 export function computeHomeWinProbability(
   homeStrength: number,
   awayStrength: number,
@@ -25,7 +41,7 @@ export function computeHomeWinProbability(
   homeCoachBonus: number = 0,
   awayCoachBonus: number = 0,
 ): number {
-  const diff = homeStrength + HOME_COURT_ADVANTAGE + homeCoachBonus - awayStrength - awayCoachBonus;
+  const diff = computeStrengthDiff(homeStrength, awayStrength, homeCoachBonus, awayCoachBonus);
   return 1 / (1 + Math.exp(-WIN_PROB_STEEPNESS * diff));
 }
 

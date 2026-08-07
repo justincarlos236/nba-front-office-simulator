@@ -19,13 +19,110 @@ import {
 } from "@/lib/development/seasonAwards";
 import { createSeededRandom } from "@/lib/contracts/seededRandom";
 import { generateRoundRobinSchedule } from "@/lib/simulation/generateSchedule";
-import { describeRetirement, describeStaffHire } from "@/lib/transactions/describeTransaction";
+import {
+  describeRetirement,
+  describeStaffHire,
+  describeSigning,
+  describePlayerMoraleEvent,
+  describeTradeRequest,
+} from "@/lib/transactions/describeTransaction";
 import { importanceForRating } from "@/lib/transactions/newsImportance";
 import type { NewsImportance } from "@/generated/prisma/client";
 import { computeCapSheet } from "@/lib/cap/capSheet";
+import { getSeasonCapRules } from "@/lib/cap/constants";
+import {
+  computeSeasonRevenue,
+  computeSeasonExpenses,
+  computeNetIncome,
+  computeFinancialHealth,
+  computeFranchiseValue,
+  financialSpendingResistance,
+  TICKET_POSTURE_FAN_DELTA,
+} from "@/lib/finances/finances";
+import { computeCpuSponsorshipRevenueCents } from "@/lib/finances/sponsorship";
+import {
+  departmentQualityDelta,
+  totalDepartmentBudgetCostCents,
+  type DepartmentBudget,
+} from "@/lib/finances/departments";
+import {
+  computeSeasonTicketBaseDelta,
+  applySeasonTicketBaseDelta,
+  computeAttendanceFloor,
+} from "@/lib/fans/seasonTickets";
+import { effectiveStaffQuality } from "@/lib/staff/coachModifiers";
+import {
+  computeArenaAttendanceBonus,
+  computeArenaAgingDelta,
+  applyArenaQualityDelta,
+  isRelocationEligible,
+  buildNegotiationRound,
+  RELOCATION_DECISION_TOTAL_ROUNDS,
+  RELOCATION_DESTINATIONS,
+  computeRelocationFanHappinessHit,
+  computeRelocationFranchiseValueMultiplier,
+} from "@/lib/finances/arena";
+import {
+  sumCompletedProjectEffects,
+  computeConstructionAttendancePenalty,
+  capitalProjectCostCents,
+  capitalProjectCompletionSeason,
+  ARENA_PROJECT_KINDS,
+  CAPITAL_PROJECT_LABEL,
+} from "@/lib/finances/capitalProjects";
+import { computeAnnualInterestCents, loanAmountCents } from "@/lib/finances/financing";
+import {
+  shouldCpuRenovateArena,
+  shouldCpuTakeLoan,
+  isCpuRelocationEligible,
+  shouldCpuRelocate,
+  pickCpuRelocationDestinationIndex,
+} from "@/lib/finances/cpuPolicy";
+import {
+  describeSeasonFinancialReport,
+  describeFranchiseValueMilestone,
+} from "@/lib/finances/financeNews";
+import { computeFranchiseIconScore, iconValuePremiumFraction } from "@/lib/finances/franchiseIcon";
+import { computeCareerRecordSnapshot } from "@/lib/actions/careerRecord";
+import { computeReputationDelta } from "@/lib/gm/careerRecord";
+import {
+  computeFinancialStanding,
+  financialStandingPatienceFactor,
+  financialStandingConfidenceBonus,
+  ownerBacksTaxSpending,
+  shouldIssueFinancialMandate,
+  describeFinancialStandingMessage,
+  describeFinancialMandate,
+  describeFinancialMandateResolution,
+  FINANCIAL_MANDATE_DEADLINE_YEARS,
+  FINANCIAL_MANDATE_ISSUE_PENALTY,
+  FINANCIAL_MANDATE_MET_REWARD,
+  FINANCIAL_MANDATE_IGNORED_PENALTY,
+  type FinancialStanding,
+} from "@/lib/finances/ownershipFinance";
 import { computeTeamStrength } from "@/lib/simulation/teamStrength";
 import { computePayrollTier } from "@/lib/gm/payrollTier";
-import { computeExpectationLevel } from "@/lib/gm/expectationLevel";
+import { computeExpectationLevel, EXPECTATION_LEVEL_ORDER } from "@/lib/gm/expectationLevel";
+import { computeCompetitivenessPercentiles } from "@/lib/actions/competitiveness";
+import {
+  archetypeConfidenceDeltaMultiplier,
+  archetypeExpectationLevelShift,
+  archetypeDirectiveConfidenceThreshold,
+  archetypeShouldIssueFinancialMandate,
+  rollOwnerArchetype,
+  shouldOwnershipChange,
+  confidenceAfterOwnershipChange,
+  describeOwnershipChange,
+} from "@/lib/gm/ownerArchetype";
+import {
+  buildPayrollDirectiveNegotiation,
+  buildFinancialMandateNegotiation,
+} from "@/lib/finances/businessDecisions";
+import { computeTeamIdentity } from "@/lib/gm/teamIdentity";
+import { computeTeamNeeds, type TeamNeedRosterPlayer } from "@/lib/gm/teamNeeds";
+import { computePlayerTradeValue } from "@/lib/gm/playerTradeValue";
+import { computeReSigningMaxOfferCents } from "@/lib/freeagency/reSigningRights";
+import { evaluateReSigningDecision } from "@/lib/gm/reSigningDecision";
 import {
   computeActualOutcome,
   computeConfidenceDelta,
@@ -42,7 +139,7 @@ import { shouldStaffRetire } from "@/lib/staff/staffRetirement";
 import { computeStaffSalary } from "@/lib/staff/generateStaff";
 import { computeCoachOfTheYear } from "@/lib/staff/coachOfTheYear";
 import { STAFF_ROLE_LABEL } from "@/lib/staff/labels";
-import { getPlayerValueTier } from "@/lib/valuation/playerValueTier";
+import { getPlayerValueTier, type PlayerValueTier } from "@/lib/valuation/playerValueTier";
 import { computeTransactionSentiment } from "@/lib/fans/transactionSentiment";
 import {
   computeFanHappinessDelta,
@@ -50,8 +147,25 @@ import {
   computeAttendancePct,
   type FanHappinessInputs,
 } from "@/lib/fans/fanHappiness";
+import {
+  applyFanHappinessDelta,
+  applyScaledFanHappinessDelta,
+  computeAwardSentimentDelta,
+} from "@/lib/fans/sentimentEvents";
+import { recordFanSentimentMany, type SentimentRecord } from "@/lib/fans/recordSentiment";
+import { recomputeFanCultures } from "@/lib/actions/fanCulture";
+import { recomputeFanMandates } from "@/lib/actions/fanMandate";
+import { progressFanNarratives } from "@/lib/actions/fanNarrative";
+import { describeAwardSentiment } from "@/lib/fans/describeSentiment";
 import type { EvaluationVerdict } from "@/lib/gm/seasonEvaluation";
-import type { StaffRole } from "@/generated/prisma/client";
+import type { StaffRole, MarketSize, TicketPricingPosture } from "@/generated/prisma/client";
+import {
+  computeContractSituationMoraleDelta,
+  computeCoachFitMoraleDelta,
+  decayMoraleTowardBaseline,
+  MORALE_NEWS_THRESHOLD,
+} from "@/lib/morale/moraleEvents";
+import { applyMoraleChange } from "@/lib/morale/moraleLevel";
 
 // Local, server-side copy of the award-category label (small duplication
 // of the UI's own AWARD_LABELS constants, same established pattern as
@@ -92,7 +206,11 @@ async function requireOwnedLeague(leagueId: string) {
 
   const league = await prisma.league.findUnique({
     where: { id: leagueId },
-    include: { teams: { include: { team: true } } },
+    // Fans Page Redesign (Phase 3) - fanCulture included here (as it stood
+    // BEFORE this pass's own recomputeFanCultures call at the end) so this
+    // season's sentiment deltas scale against last season's culture, not a
+    // number this same pass is about to overwrite.
+    include: { teams: { include: { team: true, fanCulture: true } } },
   });
   if (!league || league.ownerId !== session.user.id) {
     throw new Error("League not found");
@@ -112,6 +230,12 @@ export async function advanceSeasonAction(leagueId: string) {
   const league = await requireOwnedLeague(leagueId);
   const season = league.currentSeason;
   const newSeason = season + 1;
+
+  // GM Career Mode - a fired/retired franchise is a permanent, read-only
+  // record; it can never be advanced again.
+  if (league.endedAt) {
+    throw new Error("This franchise has ended - it can no longer be advanced.");
+  }
 
   const finals = await prisma.playoffSeries.findFirst({
     where: { leagueId, season, round: 4 },
@@ -141,9 +265,18 @@ export async function advanceSeasonAction(leagueId: string) {
 
   const leaguePlayers = await prisma.leaguePlayer.findMany({
     where: { leagueId, isActive: true },
-    include: { player: true, contract: true },
+    include: {
+      player: true,
+      contract: { include: { years: { where: { season } } } },
+      personalityProfile: true,
+    },
   });
   const teamById = new Map(league.teams.map((t) => [t.id, t]));
+  // Built early (not just for the award-news section further down) so the
+  // CPU re-signing pass (Phase 1 of CPU Autonomous GM Intelligence) can look
+  // up a pending player's real position/potential/injury history by id
+  // without a second query.
+  const leaguePlayerById = new Map(leaguePlayers.map((lp) => [lp.id, lp]));
 
   // Staff Management (Phase 15a) - every staff member (rostered and
   // free-agent-pool alike) ages this same season boundary.
@@ -151,10 +284,83 @@ export async function advanceSeasonAction(leagueId: string) {
     where: { leagueId },
     include: { contract: true },
   });
+
+  // Finances as a Gameplay Pillar (Phase 5) - System 2/8's shared capital-
+  // project plumbing. A project committed this pass (or earlier) completes
+  // once `completionSeason <= newSeason`; its permanent effects apply
+  // starting the season that's about to begin, alongside every other
+  // already-COMPLETE project this team has finished.
+  const allCapitalProjects = await prisma.capitalProject.findMany({
+    where: { leagueId, status: { in: ["IN_PROGRESS", "COMPLETE"] } },
+  });
+  const completingThisPassByTeam = new Map<string, typeof allCapitalProjects>();
+  const stillInProgressKindsByTeam = new Map<
+    string,
+    (typeof allCapitalProjects)[number]["kind"][]
+  >();
+  const completedKindsByTeam = new Map<string, (typeof allCapitalProjects)[number]["kind"][]>();
+  for (const project of allCapitalProjects) {
+    if (project.status === "COMPLETE") {
+      const list = completedKindsByTeam.get(project.leagueTeamId) ?? [];
+      list.push(project.kind);
+      completedKindsByTeam.set(project.leagueTeamId, list);
+      continue;
+    }
+    if (project.completionSeason <= newSeason) {
+      const list = completingThisPassByTeam.get(project.leagueTeamId) ?? [];
+      list.push(project);
+      completingThisPassByTeam.set(project.leagueTeamId, list);
+      // Its effects apply starting next season too - fold it into the
+      // "completed" set alongside anything already finished earlier.
+      const completedList = completedKindsByTeam.get(project.leagueTeamId) ?? [];
+      completedList.push(project.kind);
+      completedKindsByTeam.set(project.leagueTeamId, completedList);
+    } else {
+      const list = stillInProgressKindsByTeam.get(project.leagueTeamId) ?? [];
+      list.push(project.kind);
+      stillInProgressKindsByTeam.set(project.leagueTeamId, list);
+    }
+  }
+  const completedEffectsByTeam = new Map(
+    league.teams.map((lt) => [
+      lt.id,
+      sumCompletedProjectEffects(completedKindsByTeam.get(lt.id) ?? []),
+    ]),
+  );
+  // Finances as a Gameplay Pillar (Phase 4) - Coaching Support amplifies
+  // the Player Development Coach's own quality, same "amplifies staff you
+  // already hired" identity as its Head Coach effect in simulation.ts.
+  const coachingSupportByTeam = new Map(league.teams.map((lt) => [lt.id, lt.coachingSupportLevel]));
   const developmentCoachQualityByTeam = new Map(
     allStaff
       .filter((s) => s.role === "PLAYER_DEVELOPMENT_COACH" && s.leagueTeamId)
+      .map((s) => [
+        s.leagueTeamId as string,
+        effectiveStaffQuality(
+          s.quality,
+          coachingSupportByTeam.get(s.leagueTeamId as string) ?? "STANDARD",
+        )!,
+      ]),
+  );
+  // Player Morale & Personality System - a competitiveness-driven player
+  // notices the Head Coach's quality, distinct from the Dev Coach's own
+  // rating-development effect above.
+  const headCoachQualityByTeam = new Map(
+    allStaff
+      .filter((s) => s.role === "HEAD_COACH" && s.leagueTeamId)
       .map((s) => [s.leagueTeamId as string, s.quality]),
+  );
+  // Finances as a Gameplay Pillar (Phase 4) - the Player Development
+  // department feeds player development, same modest neutral-anchored
+  // shape as the dev-coach effect. Was facilitiesInvestment. Phase 5 -
+  // a completed G-League Affiliate/Practice Facility stacks a permanent
+  // flat bonus on top of the department's own level.
+  const playerDevelopmentDeltaByTeam = new Map(
+    league.teams.map((lt) => [
+      lt.id,
+      departmentQualityDelta(lt.playerDevelopmentLevel) +
+        (completedEffectsByTeam.get(lt.id)?.playerDevelopmentBonus ?? 0),
+    ]),
   );
 
   // GM accountability (Phase 10d): the outgoing season's expectation and
@@ -214,12 +420,36 @@ export async function advanceSeasonAction(leagueId: string) {
     // is left untouched.
     rotationSlot?: null;
     targetMinutesPerGame?: null;
+    // Player Morale & Personality System - only set for players who went
+    // through the seasonal morale pass below (staying rostered) or a CPU
+    // re-signing resolution; absent for anyone else, same "don't touch it
+    // unless something actually changed" convention as rotationSlot above.
+    morale?: number;
+    tradeRequestActive?: boolean;
   }[] = [];
   const contractIdsToDelete: string[] = [];
   const retirementEvents: {
     description: string;
     importance: NewsImportance;
     teamIds: string[];
+  }[] = [];
+  // Player Morale & Personality System - season-boundary contract-
+  // situation/coach-fit/decay pass, only for players actually staying
+  // rostered (see the loop below).
+  const moraleNewsEvents: {
+    description: string;
+    importance: NewsImportance;
+    teamIds: string[];
+    subjectLeaguePlayerId: string;
+  }[] = [];
+  // CPU Autonomous GM Intelligence (Phase 1) - a CPU team's own expiring
+  // player isn't pushed to playerUpdates immediately; it's decided in Pass 2
+  // below (after this loop) once every team's "sure roster" is fully known.
+  const pendingCpuReSignings: {
+    leaguePlayerId: string;
+    teamId: string;
+    finalRating: number;
+    newAge: number;
   }[] = [];
 
   const rng = createSeededRandom(`${leagueId}-${season}-offseason`);
@@ -287,8 +517,12 @@ export async function advanceSeasonAction(leagueId: string) {
         ? developmentCoachQualityByTeam.get(lp.leagueTeamId)
         : undefined,
       minutesPerGame: seasonMinutesPerGame,
+      morale: lp.morale,
+      playerDevelopmentDelta: lp.leagueTeamId
+        ? playerDevelopmentDeltaByTeam.get(lp.leagueTeamId)
+        : undefined,
     });
-    const retiring = shouldRetire(newAge, developedRating, rng);
+    const retiring = shouldRetire(newAge, developedRating, rng, lp.morale);
     const finalRating = retiring ? oldRating : developedRating;
 
     developmentSnapshots.push({
@@ -318,7 +552,86 @@ export async function advanceSeasonAction(leagueId: string) {
       });
     }
 
+    // CPU Autonomous GM Intelligence (Phase 1) - the user's own expiring
+    // players are untouched (they re-sign manually via the free-agents
+    // page, exactly as before); a CPU team's expiring player gets a real
+    // retention decision in Pass 2 instead of unconditional release.
+    const isCpuContractExpiry =
+      contractExpired && !!lp.leagueTeamId && lp.leagueTeamId !== userLeagueTeamId;
+
+    if (isCpuContractExpiry) {
+      pendingCpuReSignings.push({
+        leaguePlayerId: lp.id,
+        teamId: lp.leagueTeamId!,
+        finalRating,
+        newAge,
+      });
+      continue;
+    }
+
     const leftTeam = retiring || contractExpired;
+
+    // Player Morale & Personality System - only for players actually
+    // staying with the same team: leaving players' morale is moot (a
+    // free agent's or retiree's "situation" no longer exists), and
+    // players about to be re-decided in the CPU re-signing pass below get
+    // their own resolution there instead.
+    let moraleUpdate: { morale: number; tradeRequestActive: boolean } | null = null;
+    if (!leftTeam && lp.leagueTeamId && lp.personalityProfile) {
+      const decayedMorale = decayMoraleTowardBaseline(lp.morale, lp.personalityProfile.loyalty);
+      const currentSeasonSalaryCents = lp.contract?.years[0]?.salaryCents ?? 0n;
+      const seasonsRemaining = lp.contract ? Math.max(1, lp.contract.endSeason - season) : 1;
+      const contractDelta = lp.contract
+        ? computeContractSituationMoraleDelta({
+            personality: lp.personalityProfile,
+            currentSeasonSalaryCents,
+            marketValueCents: computeReSigningMaxOfferCents(finalRating, newSeason),
+            seasonsRemaining,
+          })
+        : 0;
+      const coachDelta = computeCoachFitMoraleDelta({
+        personality: lp.personalityProfile,
+        coachQuality: headCoachQualityByTeam.get(lp.leagueTeamId) ?? 72,
+      });
+      const result = applyMoraleChange(
+        decayedMorale,
+        contractDelta + coachDelta,
+        lp.personalityProfile.loyalty,
+        lp.tradeRequestActive,
+      );
+      moraleUpdate = { morale: result.morale, tradeRequestActive: result.tradeRequestActive };
+
+      const teamLabel = teamById.get(lp.leagueTeamId)?.team;
+      const teamLabelStr = teamLabel ? `${teamLabel.city} ${teamLabel.name}` : "their team";
+      const totalDelta = contractDelta + coachDelta;
+      if (Math.abs(totalDelta) >= MORALE_NEWS_THRESHOLD) {
+        // Contract underpayment is always <=0; the coach-fit delta can run
+        // either direction - whichever contributed more to this delta is
+        // the one worth naming in the story.
+        const reason =
+          Math.abs(contractDelta) >= Math.abs(coachDelta) ? "CONTRACT_UNDERPAID" : "COACH_QUALITY";
+        moraleNewsEvents.push({
+          description: describePlayerMoraleEvent(
+            lp.player.fullName,
+            teamLabelStr,
+            reason,
+            totalDelta > 0 ? "up" : "down",
+          ),
+          importance: importanceForRating(finalRating),
+          teamIds: [lp.leagueTeamId],
+          subjectLeaguePlayerId: lp.id,
+        });
+      }
+      if (result.justActivated) {
+        moraleNewsEvents.push({
+          description: describeTradeRequest(lp.player.fullName, teamLabelStr),
+          importance: importanceForRating(finalRating),
+          teamIds: [lp.leagueTeamId],
+          subjectLeaguePlayerId: lp.id,
+        });
+      }
+    }
+
     playerUpdates.push({
       id: lp.id,
       overallRating: finalRating,
@@ -326,7 +639,150 @@ export async function advanceSeasonAction(leagueId: string) {
       leagueTeamId: leftTeam ? null : lp.leagueTeamId,
       retiredSeason: retiring ? season : null,
       ...(leftTeam ? { rotationSlot: null, targetMinutesPerGame: null } : {}),
+      ...(moraleUpdate ?? {}),
     });
+  }
+
+  // --- CPU Autonomous GM Intelligence (Phase 1): CPU re-signing ---
+  // Runs after the loop above so every "sure roster" (everyone NOT still
+  // pending a re-signing decision) is fully known - computeTeamIdentity and
+  // computeTeamNeeds should see each team the way it will actually look next
+  // season, not mid-decision. Reuses computePlayerTradeValue,
+  // computeTeamIdentity, computeTeamNeeds, and computeReSigningMaxOfferCents
+  // exactly as the rest of the GM-intelligence layer does - the only new
+  // logic is evaluateReSigningDecision itself (src/lib/gm/reSigningDecision.ts).
+  const cpuReSignings: {
+    leaguePlayerId: string;
+    leagueTeamId: string;
+    finalRating: number;
+    offerSalaryCents: bigint;
+  }[] = [];
+
+  if (pendingCpuReSignings.length > 0) {
+    const percentileByTeam = await computeCompetitivenessPercentiles(
+      league.teams.map((t) => ({ id: t.id, wins: t.wins, losses: t.losses })),
+    );
+
+    // The "sure roster" - everyone confirmed staying, built from
+    // playerUpdates already pushed above (which naturally excludes every
+    // pending re-signing candidate, no extra filtering needed).
+    const sureRosterByTeam = new Map<string, (TeamNeedRosterPlayer & { age: number })[]>();
+    for (const u of playerUpdates) {
+      if (!u.leagueTeamId || u.retiredSeason !== null) continue;
+      const lp = leaguePlayerById.get(u.id);
+      if (!lp) continue;
+      const list = sureRosterByTeam.get(u.leagueTeamId) ?? [];
+      list.push({
+        position: lp.player.position,
+        overallRating: u.overallRating,
+        age: estimateAge(lp.player.draftYear, newSeason),
+      });
+      sureRosterByTeam.set(u.leagueTeamId, list);
+    }
+
+    const pendingByTeam = new Map<string, typeof pendingCpuReSignings>();
+    for (const p of pendingCpuReSignings) {
+      const list = pendingByTeam.get(p.teamId) ?? [];
+      list.push(p);
+      pendingByTeam.set(p.teamId, list);
+    }
+
+    for (const [teamId, pending] of pendingByTeam) {
+      const sureRoster = sureRosterByTeam.get(teamId) ?? [];
+      const avgAge =
+        sureRoster.length > 0
+          ? sureRoster.reduce((sum, p) => sum + p.age, 0) / sureRoster.length
+          : 27;
+      const identity = computeTeamIdentity(percentileByTeam.get(teamId) ?? 0.5, avgAge);
+      const needs = computeTeamNeeds(sureRoster);
+      const personality = teamById.get(teamId)?.gmPersonality ?? "BALANCED";
+
+      // Best assets get first claim on the roster-ceiling headroom.
+      const ordered = [...pending].sort((a, b) => {
+        const lpA = leaguePlayerById.get(a.leaguePlayerId)!;
+        const lpB = leaguePlayerById.get(b.leaguePlayerId)!;
+        const valueA = computePlayerTradeValue({
+          season: newSeason,
+          overallRating: a.finalRating,
+          potentialRating: lpA.potentialRating,
+          age: a.newAge,
+          currentSalaryCents: computeReSigningMaxOfferCents(a.finalRating, newSeason),
+          injuryStatus: "HEALTHY",
+          careerGamesMissedToInjury: lpA.careerGamesMissedToInjury,
+        });
+        const valueB = computePlayerTradeValue({
+          season: newSeason,
+          overallRating: b.finalRating,
+          potentialRating: lpB.potentialRating,
+          age: b.newAge,
+          currentSalaryCents: computeReSigningMaxOfferCents(b.finalRating, newSeason),
+          injuryStatus: "HEALTHY",
+          careerGamesMissedToInjury: lpB.careerGamesMissedToInjury,
+        });
+        return valueB > valueA ? 1 : valueB < valueA ? -1 : 0;
+      });
+
+      let rosterSize = sureRoster.length;
+      for (const p of ordered) {
+        const lp = leaguePlayerById.get(p.leaguePlayerId)!;
+        const offerSalaryCents = computeReSigningMaxOfferCents(p.finalRating, newSeason);
+        const result = evaluateReSigningDecision({
+          team: { identity, needs, personality, rosterSizeBeforeThisDecision: rosterSize },
+          currentSeason: newSeason,
+          player: {
+            position: lp.player.position,
+            overallRating: p.finalRating,
+            potentialRating: lp.potentialRating,
+            age: p.newAge,
+            careerGamesMissedToInjury: lp.careerGamesMissedToInjury,
+            hasStandingTradeRequest: lp.tradeRequestActive,
+          },
+          offerSalaryCents,
+          // Franchise Finances (Phase C) - a CPU team bleeding cash gets
+          // pickier about adding salary. Keyed off cash reserve through the
+          // prior season (the finances pass for the completing season runs
+          // later in this function); salary-normalized scoring means this
+          // only cuts expensive marginal re-signings, never bargains.
+          financialThresholdMultiplier: financialSpendingResistance(
+            Number(teamById.get(teamId)?.cashReserveCents ?? 0n),
+          ),
+        });
+
+        if (result.decision === "RESIGN") {
+          rosterSize += 1;
+          // Staying on the exact same team in the exact same roster spot -
+          // unlike a trade or a fresh signing, their existing depth-chart
+          // slot carries over untouched (no rotationSlot/targetMinutesPerGame
+          // reset). A new deal resolves any standing trade request, whether
+          // or not it was a factor - the offseason answered the "will he
+          // stay" question either way.
+          playerUpdates.push({
+            id: p.leaguePlayerId,
+            overallRating: p.finalRating,
+            isActive: true,
+            leagueTeamId: teamId,
+            retiredSeason: null,
+            tradeRequestActive: false,
+          });
+          cpuReSignings.push({
+            leaguePlayerId: p.leaguePlayerId,
+            leagueTeamId: teamId,
+            finalRating: p.finalRating,
+            offerSalaryCents,
+          });
+        } else {
+          playerUpdates.push({
+            id: p.leaguePlayerId,
+            overallRating: p.finalRating,
+            isActive: true,
+            leagueTeamId: null,
+            retiredSeason: null,
+            rotationSlot: null,
+            targetMinutesPerGame: null,
+          });
+        }
+      }
+    }
   }
 
   // --- Staff season progression (Phase 15a) ---
@@ -417,8 +873,15 @@ export async function advanceSeasonAction(leagueId: string) {
   // before the owner-confidence nudge below, since it needs `verdict`) and
   // every CPU team (computed in the persistence loop further down) share
   // the same inputs without querying twice.
+  // Fan Engagement Deepening (Phase 1) - these categories now apply their
+  // own dedicated sentiment delta the moment they actually happen (trades,
+  // signings, staff moves, rotation changes, win/loss streaks, injuries,
+  // awards, All-Star), so they're excluded here to avoid double-counting;
+  // this bulk pass is narrowed to the remaining ambient long tail
+  // (retirements, individual game milestones/results).
+  const SEASON_END_ONLY_SENTIMENT_TYPES = ["RETIREMENT", "GAME_MILESTONE", "GAME_RESULT"] as const;
   const seasonTransactions = await prisma.leagueTransaction.findMany({
-    where: { leagueId, season },
+    where: { leagueId, season, type: { in: [...SEASON_END_ONLY_SENTIMENT_TYPES] } },
     select: { type: true, importance: true, teamIds: true, description: true },
   });
   const transactionsByTeam = new Map<
@@ -434,10 +897,16 @@ export async function advanceSeasonAction(leagueId: string) {
   }
 
   const bestRatingByTeam = new Map<string, number>();
+  // Franchise Finances (Phase D) - also track the best player themself per
+  // team, for the franchise-icon value premium in the finances pass below.
+  const bestPlayerByTeam = new Map<string, (typeof leaguePlayers)[number]>();
   for (const lp of leaguePlayers) {
     if (!lp.leagueTeamId) continue;
     const current = bestRatingByTeam.get(lp.leagueTeamId) ?? 0;
-    if (lp.overallRating > current) bestRatingByTeam.set(lp.leagueTeamId, lp.overallRating);
+    if (lp.overallRating > current) {
+      bestRatingByTeam.set(lp.leagueTeamId, lp.overallRating);
+      bestPlayerByTeam.set(lp.leagueTeamId, lp);
+    }
   }
   const starPowerTierByTeam = new Map(
     Array.from(bestRatingByTeam.entries()).map(([teamId, rating]) => [
@@ -445,6 +914,26 @@ export async function advanceSeasonAction(leagueId: string) {
       getPlayerValueTier(rating),
     ]),
   );
+  // Per-team franchise-icon value premium: the marquee player's icon score
+  // (star tier + tenure + homegrown; awards omitted here to avoid a per-team
+  // query on this path) lifts franchise value - a beloved homegrown legend
+  // makes the whole franchise more valuable than an equal-rated newcomer.
+  const iconPremiumByTeam = new Map<string, number>();
+  // Fans Page Redesign (Phase 3) - the same icon score, kept directly (not
+  // just its derived value-premium fraction) as Fan Culture's "does this
+  // team currently have a real icon" input.
+  const iconScoreByTeam = new Map<string, number>();
+  for (const [teamId, lp] of bestPlayerByTeam) {
+    const tenure = lp.joinedTeamSeason != null ? Math.max(0, season - lp.joinedTeamSeason) : 0;
+    const iconScore = computeFranchiseIconScore({
+      starTier: getPlayerValueTier(lp.overallRating),
+      tenureSeasons: tenure,
+      homegrown: lp.homegrown,
+      careerAwards: 0,
+    });
+    iconPremiumByTeam.set(teamId, iconValuePremiumFraction(iconScore));
+    iconScoreByTeam.set(teamId, iconScore);
+  }
 
   const headCoachStyleByTeam = new Map(
     allStaff
@@ -456,6 +945,11 @@ export async function advanceSeasonAction(leagueId: string) {
   // computed inside the owner-accountability block); every other team is
   // computed fresh in the persistence loop near the end of this function.
   const fanHappinessByTeam = new Map<string, number>();
+  // Fan Engagement Deepening (Phase 1) - award-driven deltas, added on top
+  // of whichever base each team resolves to below (see fanHappinessUpdates).
+  const awardFanHappinessDeltaByTeam = new Map<string, number>();
+  // Fans Page Redesign (Phase 1).
+  const awardSentimentRows: SentimentRecord[] = [];
 
   function fallbackFanHappinessInputs(leagueTeamId: string): FanHappinessInputs {
     return {
@@ -464,6 +958,190 @@ export async function advanceSeasonAction(leagueId: string) {
       transactionSentiment: computeTransactionSentiment(transactionsByTeam.get(leagueTeamId) ?? []),
       starPowerTier: starPowerTierByTeam.get(leagueTeamId) ?? null,
       coachStyle: headCoachStyleByTeam.get(leagueTeamId) ?? null,
+    };
+  }
+
+  // Franchise Finances & Business Operations - shared per-team season P&L,
+  // used both by the owner-confidence block below (user team, for the
+  // financial-health nudge) and by the league-wide finances pass near the
+  // end (all 30 teams). Deterministic in its inputs, so both call sites get
+  // an identical result for a given team without threading a value through.
+  const financeTaxLineCents = Number(getSeasonCapRules(season).luxuryTaxCents);
+  // Finances as a Gameplay Pillar (Phase 1) - this season's resolved
+  // business-decision/business-event ledger, summed per team+category so it
+  // folds into the P&L exactly like every other bucket (see
+  // BusinessLedgerEntry). Rows are left in place afterward as permanent
+  // history, not deleted.
+  const businessLedgerTotals = await prisma.businessLedgerEntry.groupBy({
+    by: ["leagueTeamId", "category"],
+    where: { leagueId, season },
+    _sum: { amountCents: true },
+  });
+  const otherIncomeByTeam = new Map<string, number>();
+  const otherExpenseByTeam = new Map<string, number>();
+  for (const row of businessLedgerTotals) {
+    const amount = Number(row._sum.amountCents ?? 0n);
+    if (row.category === "EVENT_INCOME") {
+      otherIncomeByTeam.set(row.leagueTeamId, amount);
+    } else {
+      otherExpenseByTeam.set(row.leagueTeamId, amount);
+    }
+  }
+  // Finances as a Gameplay Pillar (Phase 2) - this season's ACTIVE
+  // SponsorshipDeal income, per team. Only the user's team ever has real
+  // signed deals; every other team falls back to the CPU formula baseline
+  // below (Tier 2 abstraction - CPU teams never "shop" for an offer).
+  const activeSponsorshipDeals = await prisma.sponsorshipDeal.findMany({
+    where: {
+      leagueId,
+      status: "ACTIVE",
+      startSeason: { lte: season },
+      endSeason: { gte: season },
+    },
+  });
+  const sponsorshipRevenueByTeam = new Map<string, number>();
+  const sponsorshipUpsideByTeam = new Map<string, number>();
+  for (const deal of activeSponsorshipDeals) {
+    sponsorshipRevenueByTeam.set(
+      deal.leagueTeamId,
+      (sponsorshipRevenueByTeam.get(deal.leagueTeamId) ?? 0) + Number(deal.annualValueCents),
+    );
+    if (deal.franchiseValueUpsideFraction > 0) {
+      sponsorshipUpsideByTeam.set(
+        deal.leagueTeamId,
+        (sponsorshipUpsideByTeam.get(deal.leagueTeamId) ?? 0) + deal.franchiseValueUpsideFraction,
+      );
+    }
+  }
+  const dealsExpiringThisSeason = activeSponsorshipDeals.filter((d) => d.endSeason === season);
+
+  const staffCentsByTeam = new Map<string, bigint>();
+  for (const s of allStaff) {
+    if (!s.leagueTeamId || !s.contract) continue;
+    staffCentsByTeam.set(
+      s.leagueTeamId,
+      (staffCentsByTeam.get(s.leagueTeamId) ?? 0n) + s.contract.annualSalaryCents,
+    );
+  }
+  // Per-team committed salary for the completed season, aggregated from the
+  // already-loaded leaguePlayers - correct even after the DB contract-expiry
+  // cleanup above, since this reads the in-memory snapshot (contract.years is
+  // filtered to `season` at the top-of-function query).
+  const financeContractsByTeam = new Map<string, { playerId: string; salaryCents: bigint }[]>();
+  for (const lp of leaguePlayers) {
+    if (!lp.leagueTeamId) continue;
+    const salaryCents = lp.contract?.years[0]?.salaryCents;
+    if (salaryCents === undefined) continue;
+    const list = financeContractsByTeam.get(lp.leagueTeamId) ?? [];
+    list.push({ playerId: lp.id, salaryCents });
+    financeContractsByTeam.set(lp.leagueTeamId, list);
+  }
+
+  // Finances as a Gameplay Pillar (Phase 4) - reads a LeagueTeam row's 6
+  // department-level columns into the DepartmentBudget shape
+  // computeTeamSeasonFinances/departments.ts expect.
+  function teamDepartmentBudget(lt: {
+    scoutingLevel: DepartmentBudget["scouting"];
+    playerDevelopmentLevel: DepartmentBudget["playerDevelopment"];
+    sportsScienceLevel: DepartmentBudget["sportsScience"];
+    analyticsLevel: DepartmentBudget["analytics"];
+    marketingLevel: DepartmentBudget["marketing"];
+    coachingSupportLevel: DepartmentBudget["coachingSupport"];
+  }): DepartmentBudget {
+    return {
+      scouting: lt.scoutingLevel,
+      playerDevelopment: lt.playerDevelopmentLevel,
+      sportsScience: lt.sportsScienceLevel,
+      analytics: lt.analyticsLevel,
+      marketing: lt.marketingLevel,
+      coachingSupport: lt.coachingSupportLevel,
+    };
+  }
+
+  function computeTeamSeasonFinances(args: {
+    leagueTeamId: string;
+    marketSize: MarketSize;
+    fanHappiness: number;
+    starTier: PlayerValueTier | null;
+    ticketPosture: TicketPricingPosture;
+    departmentBudget: DepartmentBudget;
+    seasonTicketBase: number;
+    arenaQualityIndex: number;
+    debtCents: bigint;
+    playoffHomeGames: number;
+    wonChampionship: boolean;
+  }) {
+    const projectEffects =
+      completedEffectsByTeam.get(args.leagueTeamId) ?? sumCompletedProjectEffects([]);
+    const constructionPenalty = computeConstructionAttendancePenalty(
+      stillInProgressKindsByTeam.get(args.leagueTeamId) ?? [],
+    );
+    // Finances as a Gameplay Pillar (Phase 4/5) - the season-ticket base is
+    // a floor under the existing attendance model; arena quality adds a
+    // small bonus on top; an in-progress arena project under construction
+    // costs real usable capacity. Never lets attendance leave [0,1].
+    const attendancePct = Math.max(
+      0,
+      Math.min(
+        1,
+        Math.max(
+          computeAttendancePct(args.fanHappiness, args.marketSize),
+          computeAttendanceFloor(args.seasonTicketBase),
+        ) +
+          computeArenaAttendanceBonus(args.arenaQualityIndex) -
+          constructionPenalty,
+      ),
+    );
+    // Finances as a Gameplay Pillar (Phase 4/5) - Marketing grows
+    // popularity faster; a completed International Academy stacks a
+    // permanent flat bonus on top.
+    const franchisePopularity = computeFranchisePopularity(
+      args.fanHappiness,
+      args.starTier,
+      args.marketSize,
+      departmentQualityDelta(args.departmentBudget.marketing) + projectEffects.popularityBonus,
+    );
+    const capSheet = computeCapSheet({
+      season,
+      contracts: financeContractsByTeam.get(args.leagueTeamId) ?? [],
+    });
+    // Finances as a Gameplay Pillar (Phase 2) - the user's team draws on
+    // its real signed SponsorshipDeal total; every other team (CPU, never
+    // shops for a deal) gets the formula baseline instead.
+    const sponsorshipRevenueCents =
+      args.leagueTeamId === league.userControlledTeamId
+        ? (sponsorshipRevenueByTeam.get(args.leagueTeamId) ?? 0)
+        : computeCpuSponsorshipRevenueCents(args.marketSize, args.starTier);
+    const revenue = computeSeasonRevenue({
+      marketSize: args.marketSize,
+      attendancePct,
+      franchisePopularity,
+      starTier: args.starTier,
+      ticketPosture: args.ticketPosture,
+      playoffHomeGames: args.playoffHomeGames,
+      wonChampionship: args.wonChampionship,
+      // Finances as a Gameplay Pillar (Phase 5) - a completed Real Estate &
+      // Media arm adds permanent recurring income here.
+      otherIncomeCents:
+        (otherIncomeByTeam.get(args.leagueTeamId) ?? 0) + projectEffects.recurringIncomeCents,
+      sponsorshipCents: sponsorshipRevenueCents,
+    });
+    const expenses = computeSeasonExpenses({
+      marketSize: args.marketSize,
+      payrollCents: Number(capSheet.totalSalaryCents),
+      luxuryTaxLineCents: financeTaxLineCents,
+      staffCents: Number(staffCentsByTeam.get(args.leagueTeamId) ?? 0n),
+      departmentBudgetCostCents: totalDepartmentBudgetCostCents(args.departmentBudget),
+      otherExpenseCents: otherExpenseByTeam.get(args.leagueTeamId) ?? 0,
+      // Finances as a Gameplay Pillar (Phase 5) - debt interest, charged
+      // every season on the full outstanding balance.
+      interestExpenseCents: computeAnnualInterestCents(Number(args.debtCents)),
+    });
+    return {
+      revenue,
+      expenses,
+      netIncome: computeNetIncome(revenue, expenses),
+      franchisePopularity,
     };
   }
 
@@ -502,6 +1180,8 @@ export async function advanceSeasonAction(leagueId: string) {
             retiredSeason: u.retiredSeason,
             rotationSlot: u.rotationSlot,
             targetMinutesPerGame: u.targetMinutesPerGame,
+            morale: u.morale,
+            tradeRequestActive: u.tradeRequestActive,
             // A new season starts with everyone healthy - team wins/losses
             // reset to 0 too, so an in-season injury's `returnsAt` (measured
             // in that team's own games played) would otherwise never
@@ -523,6 +1203,61 @@ export async function advanceSeasonAction(leagueId: string) {
       data: { wins: 0, losses: 0, currentStreak: 0 },
     }),
   ]);
+
+  // CPU Autonomous GM Intelligence (Phase 1) - a fresh Contract/ContractYear
+  // pair per CPU re-signing, mirroring the exact shape maybeExecuteCpuSigning
+  // (src/lib/actions/leagueEvents.ts) already uses, with a Re-Signing-Rights
+  // mechanism tag and a short 2-year term (a 1-year-only cycle would just
+  // recreate the churn this phase exists to fix) instead of that function's
+  // 1-year veteran-minimum deal.
+  const CPU_RESIGNING_YEARS = 2;
+  const cpuReSigningNewsRows = cpuReSignings.map((r) => {
+    const team = teamById.get(r.leagueTeamId)?.team;
+    const player = leaguePlayerById.get(r.leaguePlayerId)!.player;
+    return {
+      leagueId,
+      season: newSeason,
+      type: "SIGNING" as const,
+      description: team
+        ? describeSigning(
+            `${team.city} ${team.name}`,
+            player.fullName,
+            CPU_RESIGNING_YEARS,
+            r.offerSalaryCents * BigInt(CPU_RESIGNING_YEARS),
+          )
+        : `${player.fullName} re-signs for another ${CPU_RESIGNING_YEARS} seasons.`,
+      importance: importanceForRating(r.finalRating),
+      teamIds: [r.leagueTeamId],
+    };
+  });
+
+  if (cpuReSignings.length > 0) {
+    await Promise.all(
+      cpuReSignings.map(async (r) => {
+        const contract = await prisma.contract.create({
+          data: {
+            leaguePlayerId: r.leaguePlayerId,
+            leagueTeamId: r.leagueTeamId,
+            signedSeason: newSeason,
+            startSeason: newSeason,
+            endSeason: newSeason + CPU_RESIGNING_YEARS - 1,
+            signedUsing: "BIRD_RIGHTS",
+          },
+        });
+        await prisma.contractYear.createMany({
+          data: Array.from({ length: CPU_RESIGNING_YEARS }, (_, i) => ({
+            contractId: contract.id,
+            season: newSeason + i,
+            salaryCents: r.offerSalaryCents,
+            guaranteedCents: r.offerSalaryCents,
+          })),
+        });
+      }),
+    );
+  }
+  if (cpuReSigningNewsRows.length > 0) {
+    await prisma.leagueTransaction.createMany({ data: cpuReSigningNewsRows });
+  }
 
   // --- Staff persistence (Phase 15a) ---
   // CPU auto-backfill: give every CPU vacancy the best available candidate
@@ -655,9 +1390,8 @@ export async function advanceSeasonAction(leagueId: string) {
   }
 
   // Real news, not a new source of truth - announces the exact SeasonAward
-  // rows just written above, using data already fetched (leaguePlayers)
-  // rather than a second query.
-  const leaguePlayerById = new Map(leaguePlayers.map((lp) => [lp.id, lp]));
+  // rows just written above, using data already fetched (leaguePlayers,
+  // leaguePlayerById built earlier) rather than a second query.
   const awardNewsRows = awardRows
     .map((a) => {
       const winner = leaguePlayerById.get(a.leaguePlayerId);
@@ -675,6 +1409,44 @@ export async function advanceSeasonAction(leagueId: string) {
 
   if (awardNewsRows.length > 0) {
     await prisma.leagueTransaction.createMany({ data: awardNewsRows });
+  }
+
+  // Fan Engagement Deepening (Phase 1) - awards are only ever knowable
+  // right here (season end), so they get their own dedicated delta at this
+  // natural determination point. Accumulated into awardFanHappinessDeltaByTeam
+  // (declared earlier, alongside the other per-team maps) rather than
+  // written immediately - the actual write happens once, later, in the
+  // same unified fanHappinessUpdates pass every other team's season-end
+  // adjustment already goes through, so this can never race with or be
+  // silently overwritten by that pass reading a stale snapshot.
+  for (const a of awardRows) {
+    const winner = leaguePlayerById.get(a.leaguePlayerId);
+    if (!winner?.leagueTeamId) continue;
+    const rawDelta = computeAwardSentimentDelta(a.category);
+    // Fans Page Redesign (Phase 3) - award deltas are always positive, so
+    // only Loyalty's bidirectional dampening applies here (Patience only
+    // scales negative deltas).
+    const winnerTeam = teamById.get(winner.leagueTeamId);
+    const delta = applyScaledFanHappinessDelta(
+      winnerTeam?.fanHappiness ?? 65,
+      rawDelta,
+      winnerTeam?.fanCulture ?? null,
+    ).scaledDelta;
+    awardFanHappinessDeltaByTeam.set(
+      winner.leagueTeamId,
+      (awardFanHappinessDeltaByTeam.get(winner.leagueTeamId) ?? 0) + delta,
+    );
+    // Fans Page Redesign (Phase 1) - one row per award, not just the
+    // per-team aggregate, so the page can name whose trophy it was.
+    awardSentimentRows.push({
+      leagueId,
+      leagueTeamId: winner.leagueTeamId,
+      season,
+      kind: "AWARD",
+      delta,
+      description: describeAwardSentiment(winner.player.fullName, AWARD_NEWS_LABEL[a.category]),
+      leaguePlayerId: winner.id,
+    });
   }
 
   // Coach of the Year (Phase 15b) - separate StaffAward model/table, not a
@@ -721,6 +1493,20 @@ export async function advanceSeasonAction(leagueId: string) {
     });
   }
 
+  if (moraleNewsEvents.length > 0) {
+    await prisma.leagueTransaction.createMany({
+      data: moraleNewsEvents.map((event) => ({
+        leagueId,
+        season,
+        type: "PLAYER_MORALE" as const,
+        description: event.description,
+        importance: event.importance,
+        teamIds: event.teamIds,
+        subjectLeaguePlayerId: event.subjectLeaguePlayerId,
+      })),
+    });
+  }
+
   const schedule = generateRoundRobinSchedule(
     league.teams.map((t) => ({
       leagueTeamId: t.id,
@@ -754,34 +1540,75 @@ export async function advanceSeasonAction(leagueId: string) {
   let ownerConfidence = league.ownerConfidence;
   let payrollReductionTargetCents: bigint | null = null;
   let payrollDirectiveSeason: number | null = null;
+  // Franchise Finances (Phase D) - an outstanding "return to profitability"
+  // mandate carries forward untouched unless the owner block below issues,
+  // resolves, or clears it.
+  let financialMandateSeason: number | null = league.financialMandateSeason;
+  // Finances as a Gameplay Pillar (Phase 3) - whether the currently
+  // outstanding directive/mandate was a negotiated, higher-stakes one (see
+  // OWNERSHIP_PAYROLL_NEGOTIATION/OWNERSHIP_FINANCIAL_NEGOTIATION) - read
+  // at the resolution point below, then cleared either way.
+  let payrollDirectiveStaked = league.payrollDirectiveStaked;
+  let financialMandateStaked = league.financialMandateStaked;
+  // Phase 6 - ownerArchetype now lives on the user's own LeagueTeam row, not
+  // League. userLeagueTeamId can be null before a team's been picked; the
+  // schema default covers that transient state, never persisted meaningfully.
+  const userLeagueTeamForArchetype = userLeagueTeamId ? teamById.get(userLeagueTeamId) : undefined;
+  let ownerArchetype = userLeagueTeamForArchetype?.ownerArchetype ?? "PATIENT_BUILDER";
+  let ownerArchetypeSince = userLeagueTeamForArchetype?.ownerArchetypeSince ?? newSeason;
   const ownershipMessages: string[] = [];
+  // Finances as a Gameplay Pillar (Phase 3) - negotiation cards created this
+  // pass (payroll directive / financial mandate), created alongside the
+  // standard directive so the user can push back on it - see the
+  // OWNERSHIP_PAYROLL_NEGOTIATION/OWNERSHIP_FINANCIAL_NEGOTIATION kinds.
+  const negotiationDecisions: ReturnType<typeof buildPayrollDirectiveNegotiation>[] = [];
 
   if (userLeagueTeamId && priorExpectation) {
     // `newSeasonContractYears` doesn't depend on anything computed below (only
     // on `newSeason`/`userLeagueTeamId`, both already known) - fetched here
     // alongside the other independent queries rather than later in its own
     // round trip.
-    const [series, playInGame, newSeasonContractYears] = await Promise.all([
-      prisma.playoffSeries.findMany({
-        where: {
-          leagueId,
-          season,
-          OR: [{ higherSeedTeamId: userLeagueTeamId }, { lowerSeedTeamId: userLeagueTeamId }],
-        },
-      }),
-      prisma.game.findFirst({
-        where: {
-          leagueId,
-          season,
-          type: "PLAY_IN",
-          OR: [{ homeLeagueTeamId: userLeagueTeamId }, { awayLeagueTeamId: userLeagueTeamId }],
-        },
-      }),
-      prisma.contractYear.findMany({
-        where: { season: newSeason, contract: { leagueTeamId: userLeagueTeamId } },
-        select: { salaryCents: true, contract: { select: { leaguePlayerId: true } } },
-      }),
-    ]);
+    const [series, playInGame, newSeasonContractYears, userPlayoffHomeGames, recentSnapshots] =
+      await Promise.all([
+        prisma.playoffSeries.findMany({
+          where: {
+            leagueId,
+            season,
+            OR: [{ higherSeedTeamId: userLeagueTeamId }, { lowerSeedTeamId: userLeagueTeamId }],
+          },
+        }),
+        prisma.game.findFirst({
+          where: {
+            leagueId,
+            season,
+            type: "PLAY_IN",
+            OR: [{ homeLeagueTeamId: userLeagueTeamId }, { awayLeagueTeamId: userLeagueTeamId }],
+          },
+        }),
+        prisma.contractYear.findMany({
+          where: { season: newSeason, contract: { leagueTeamId: userLeagueTeamId } },
+          select: { salaryCents: true, contract: { select: { leaguePlayerId: true } } },
+        }),
+        // Franchise Finances - home playoff/play-in games this postseason, for
+        // the user team's gate revenue (and thus the financial-health nudge).
+        prisma.game.count({
+          where: {
+            leagueId,
+            season,
+            type: { in: ["PLAYOFF", "PLAY_IN"] },
+            homeLeagueTeamId: userLeagueTeamId,
+          },
+        }),
+        // Franchise Finances (Phase D) - the two most recent completed seasons'
+        // net income, for the multi-season financial standing (this season's
+        // net income is computed inline below and prepended).
+        prisma.financialSnapshot.findMany({
+          where: { leagueId, leagueTeamId: userLeagueTeamId },
+          orderBy: { season: "desc" },
+          take: 2,
+          select: { netIncomeCents: true },
+        }),
+      ]);
 
     const actualOutcome = computeActualOutcome(userLeagueTeamId, !!playInGame, series);
     const verdict = evaluateSeason(priorExpectation.expectationLevel, actualOutcome);
@@ -816,7 +1643,58 @@ export async function advanceSeasonAction(leagueId: string) {
     );
     fanHappinessByTeam.set(userLeagueTeamId, newUserFanHappiness);
 
-    const confidenceDelta = computeConfidenceDelta(verdict, oldPayrollTier, newUserFanHappiness);
+    // Franchise Finances - the money->owner feedback loop. Compute the user
+    // team's season P&L (same deterministic helper the league-wide pass uses),
+    // then fold it into a multi-season financial *standing* ownership reacts
+    // to. Strong standing buys patience + tax-spending backing; sustained
+    // losses bring escalating pressure. Cap/CBA rules are untouched.
+    const userLeagueTeam = teamById.get(userLeagueTeamId);
+    let financialStanding: FinancialStanding = "STABLE";
+    let userNetIncome = 0;
+    let userNewCash = 0;
+    if (userLeagueTeam) {
+      const userFinances = computeTeamSeasonFinances({
+        leagueTeamId: userLeagueTeamId,
+        marketSize: userLeagueTeam.marketSizeOverride ?? userLeagueTeam.team.marketSize,
+        fanHappiness: newUserFanHappiness,
+        starTier: starPowerTierByTeam.get(userLeagueTeamId) ?? null,
+        ticketPosture: userLeagueTeam.ticketPricingPosture,
+        departmentBudget: teamDepartmentBudget(userLeagueTeam),
+        seasonTicketBase: userLeagueTeam.seasonTicketBase,
+        arenaQualityIndex: userLeagueTeam.arenaQualityIndex,
+        debtCents: userLeagueTeam.debtCents,
+        playoffHomeGames: userPlayoffHomeGames,
+        wonChampionship: finals.winnerTeamId === userLeagueTeamId,
+      });
+      userNetIncome = userFinances.netIncome;
+      userNewCash = Number(userLeagueTeam.cashReserveCents) + userNetIncome;
+      financialStanding = computeFinancialStanding(
+        [userNetIncome, ...recentSnapshots.map((s) => Number(s.netIncomeCents))],
+        userNewCash,
+        Number(userLeagueTeam.debtCents),
+      );
+    }
+
+    // Verdict-driven base swing, then financial standing modulates it: a well-
+    // financed franchise gets patience on a down year (never dampens a good
+    // one), and standing applies a small ongoing goodwill/erosion nudge.
+    const baseConfidenceDelta = computeConfidenceDelta(
+      verdict,
+      oldPayrollTier,
+      newUserFanHappiness,
+    );
+    const patienceAdjusted =
+      baseConfidenceDelta < 0
+        ? Math.round(baseConfidenceDelta * financialStandingPatienceFactor(financialStanding))
+        : baseConfidenceDelta;
+    // Finances as a Gameplay Pillar (Phase 3) - "Ownership as a Character":
+    // a second, archetype-level multiplier on top of the verdict/payroll/
+    // fan-happiness/financial-standing swing already computed above - a
+    // Meddler feels a bad season much more than an Absentee does.
+    const confidenceDelta = Math.round(
+      (patienceAdjusted + financialStandingConfidenceBonus(financialStanding)) *
+        archetypeConfidenceDeltaMultiplier(ownerArchetype),
+    );
     ownerConfidence = ownerConfidence + confidenceDelta;
 
     ownershipMessages.push(
@@ -827,6 +1705,13 @@ export async function advanceSeasonAction(leagueId: string) {
         oldPayrollTier,
       ),
     );
+    // A financially strong franchise gets an explicit note that ownership will
+    // back tax spending - the positive reinforcement side of the loop. The
+    // DISTRESSED side is covered by the mandate messaging below.
+    if (financialStanding === "STRONG") {
+      const standingMessage = describeFinancialStandingMessage(financialStanding);
+      if (standingMessage) ownershipMessages.push(standingMessage);
+    }
 
     await prisma.seasonExpectation.update({
       where: { id: priorExpectation.id },
@@ -842,8 +1727,31 @@ export async function advanceSeasonAction(leagueId: string) {
     // once its deadline season arrives.
     if (league.payrollReductionTargetCents != null && league.payrollDirectiveSeason === season) {
       const complied = oldCapSheet.totalSalaryCents <= league.payrollReductionTargetCents;
-      ownerConfidence = ownerConfidence + (complied ? 5 : -15);
+      // Finances as a Gameplay Pillar (Phase 3) - a staked directive
+      // (the user pushed back and bet on delivering it) swings harder both
+      // ways than the standard +5/-15.
+      const [metReward, missedPenalty] = payrollDirectiveStaked ? [12, -30] : [5, -15];
+      ownerConfidence = ownerConfidence + (complied ? metReward : missedPenalty);
       ownershipMessages.push(describeDirectiveCompliance(complied));
+      payrollDirectiveStaked = false;
+    }
+
+    // Franchise Finances (Phase D) - resolve an outstanding "return to
+    // profitability" mandate that targeted this season. Met when the franchise
+    // is back in the black (positive cash and a non-losing season); ignored
+    // otherwise, with a heavy confidence hit that can push the GM toward the
+    // firing band. Cleared either way - a one-time check like the payroll one.
+    if (financialMandateSeason === season) {
+      const met = userNewCash >= 0 && userNetIncome >= 0;
+      // Finances as a Gameplay Pillar (Phase 3) - a staked mandate doubles
+      // both the reward and the penalty versus the standard terms.
+      const [metReward, missedPenalty] = financialMandateStaked
+        ? [FINANCIAL_MANDATE_MET_REWARD * 2, FINANCIAL_MANDATE_IGNORED_PENALTY * 2]
+        : [FINANCIAL_MANDATE_MET_REWARD, FINANCIAL_MANDATE_IGNORED_PENALTY];
+      ownerConfidence = ownerConfidence + (met ? metReward : missedPenalty);
+      ownershipMessages.push(describeFinancialMandateResolution(met, userNewCash));
+      financialMandateSeason = null;
+      financialMandateStaked = false;
     }
 
     ownerConfidence = Math.max(
@@ -867,17 +1775,40 @@ export async function advanceSeasonAction(leagueId: string) {
     });
     const newPayrollTier = computePayrollTier(newCapSheet.apronLevel);
     const newTeamStrength = computeTeamStrength(newSeasonRoster.map((u) => u.overallRating));
-    const newExpectationLevel = computeExpectationLevel(newPayrollTier, newTeamStrength);
+    const baseExpectationLevel = computeExpectationLevel(newPayrollTier, newTeamStrength);
+    // Finances as a Gameplay Pillar (Phase 3) - the same roster reads as a
+    // higher or lower bar depending on who owns the team.
+    const baseExpectationIndex = EXPECTATION_LEVEL_ORDER.indexOf(baseExpectationLevel);
+    const shiftedIndex = Math.max(
+      0,
+      Math.min(
+        EXPECTATION_LEVEL_ORDER.length - 1,
+        baseExpectationIndex + archetypeExpectationLevelShift(ownerArchetype),
+      ),
+    );
+    const newExpectationLevel = EXPECTATION_LEVEL_ORDER[shiftedIndex];
 
     await prisma.seasonExpectation.create({
       data: { leagueId, season: newSeason, expectationLevel: newExpectationLevel },
     });
     ownershipMessages.push(describeNewExpectation(newExpectationLevel));
 
-    // A fresh directive only fires when ownership is already unhappy and
-    // the team is still spending heavily - see the constants' comments.
+    // A fresh payroll directive only fires when ownership is already unhappy
+    // and the team is still spending heavily - AND (Phase D) the owner isn't
+    // financially backing the spend. This is the emergent tax tolerance: a
+    // financially strong franchise never gets nagged to cut payroll, so its
+    // accumulated success translates into runway to keep an expensive
+    // contender together. Cap rules are unchanged - only the owner's reaction.
     const stillHeavySpend = newPayrollTier === "SIGNIFICANT" || newPayrollTier === "EXTREME";
-    if (ownerConfidence < DIRECTIVE_CONFIDENCE_THRESHOLD && stillHeavySpend) {
+    if (
+      // Finances as a Gameplay Pillar (Phase 3) - archetype-adjusted
+      // effective threshold (a Penny-Pincher's is higher, easier to fall
+      // under; an Absentee's is much lower, rarely triggers).
+      ownerConfidence <
+        archetypeDirectiveConfidenceThreshold(ownerArchetype, DIRECTIVE_CONFIDENCE_THRESHOLD) &&
+      stillHeavySpend &&
+      !ownerBacksTaxSpending(financialStanding)
+    ) {
       payrollReductionTargetCents = BigInt(
         Math.round(Number(newCapSheet.totalSalaryCents) * DIRECTIVE_PAYROLL_REDUCTION_FRACTION),
       );
@@ -885,6 +1816,49 @@ export async function advanceSeasonAction(leagueId: string) {
       ownershipMessages.push(
         describePayrollDirective(payrollReductionTargetCents, payrollDirectiveSeason),
       );
+      // Finances as a Gameplay Pillar (Phase 3) - the companion negotiation
+      // card: accept the standard terms above, or push back and stake a
+      // bigger swing on delivering more.
+      negotiationDecisions.push(
+        buildPayrollDirectiveNegotiation({
+          payrollReductionTargetCents: Number(payrollReductionTargetCents),
+          deadlineSeason: payrollDirectiveSeason,
+        }),
+      );
+    }
+
+    // Escalating loss pressure - sustained losses (DISTRESSED standing) issue a
+    // "return to profitability" mandate if one isn't already outstanding.
+    if (
+      financialMandateSeason === null &&
+      archetypeShouldIssueFinancialMandate(
+        ownerArchetype,
+        financialStanding,
+        shouldIssueFinancialMandate(financialStanding),
+      )
+    ) {
+      financialMandateSeason = newSeason + FINANCIAL_MANDATE_DEADLINE_YEARS;
+      ownerConfidence = ownerConfidence + FINANCIAL_MANDATE_ISSUE_PENALTY;
+      ownershipMessages.push(describeFinancialMandate(financialMandateSeason));
+      negotiationDecisions.push(
+        buildFinancialMandateNegotiation({ deadlineSeason: financialMandateSeason }),
+      );
+    }
+
+    // Finances as a Gameplay Pillar (Phase 3) - the highest-value
+    // replayability mechanic in the design brief: occasionally the
+    // franchise sells, and the new owner brings their own personality.
+    // Not something the user opts into or out of - it happens TO them,
+    // announced as a season-boundary news beat, same as any other
+    // ownership development.
+    if (shouldOwnershipChange(newSeason - ownerArchetypeSince)) {
+      const newArchetype = rollOwnerArchetype();
+      ownerConfidence = confidenceAfterOwnershipChange(ownerConfidence);
+      ownerArchetype = newArchetype;
+      ownerArchetypeSince = newSeason;
+      payrollDirectiveStaked = false;
+      financialMandateStaked = false;
+      ownershipMessages.push(describeOwnershipChange(newArchetype));
     }
   }
 
@@ -894,37 +1868,103 @@ export async function advanceSeasonAction(leagueId: string) {
   // (computed above, alongside the owner-confidence nudge); every other
   // team falls back to the win%-based path, same split already
   // established for Head Coach reputation drift.
+  // Fans Page Redesign (Phase 1) - the season-result and ticket-posture
+  // deltas below were previously folded straight into one number with no
+  // record of either cause; captured here so the ledger can name them
+  // separately from the award deltas already collected above.
+  const seasonResultSentimentRows: SentimentRecord[] = [];
   const fanHappinessUpdates = league.teams.map((lt) => {
-    const newFanHappiness =
-      fanHappinessByTeam.get(lt.id) ??
-      Math.max(
-        0,
-        Math.min(
-          100,
-          lt.fanHappiness + computeFanHappinessDelta(fallbackFanHappinessInputs(lt.id)),
-        ),
-      );
+    const rawSeasonResultDelta = fanHappinessByTeam.has(lt.id)
+      ? fanHappinessByTeam.get(lt.id)! - lt.fanHappiness
+      : computeFanHappinessDelta(fallbackFanHappinessInputs(lt.id));
+    // Fans Page Redesign (Phase 3).
+    const seasonResultDelta = applyScaledFanHappinessDelta(
+      lt.fanHappiness,
+      rawSeasonResultDelta,
+      lt.fanCulture,
+    ).scaledDelta;
+    const baseFanHappiness = Math.max(0, Math.min(100, lt.fanHappiness + seasonResultDelta));
+    if (seasonResultDelta !== 0) {
+      seasonResultSentimentRows.push({
+        leagueId,
+        leagueTeamId: lt.id,
+        season,
+        kind: "SEASON_RESULT",
+        delta: seasonResultDelta,
+        description:
+          seasonResultDelta > 0
+            ? "The season lived up to what fans expected, or exceeded it."
+            : "The season fell short of what fans expected.",
+      });
+    }
+    // Fan Engagement Deepening (Phase 1) - award deltas layer on top of
+    // whichever base this team resolved to above, applied here (not
+    // written immediately when the award was determined) so this is the
+    // one place fanHappiness is actually persisted for the season boundary,
+    // avoiding any race with this same unified pass.
+    // Franchise Finances (Phase B) - ticket-pricing posture is the long-term
+    // half of the pricing tradeoff: premium pricing quietly sours the fanbase
+    // each season, fan-friendly pricing wins a little goodwill. Small and
+    // bounded (STANDARD is 0), applied to every team since CPU teams price
+    // too. The revenue half of the tradeoff is already applied in the P&L pass.
+    // Fans Page Redesign (Phase 3) - scaled against the post-season-result
+    // baseline, since it's applied on top of that base below.
+    const ticketPostureDelta = applyScaledFanHappinessDelta(
+      baseFanHappiness,
+      TICKET_POSTURE_FAN_DELTA[lt.ticketPricingPosture],
+      lt.fanCulture,
+    ).scaledDelta;
+    if (ticketPostureDelta !== 0) {
+      seasonResultSentimentRows.push({
+        leagueId,
+        leagueTeamId: lt.id,
+        season,
+        kind: "BUSINESS_DECISION",
+        delta: ticketPostureDelta,
+        description:
+          ticketPostureDelta > 0
+            ? "Fan-friendly pricing earned some goodwill this season."
+            : "Premium ticket pricing quietly soured the fanbase this season.",
+      });
+    }
+    const newFanHappiness = applyFanHappinessDelta(
+      baseFanHappiness,
+      (awardFanHappinessDeltaByTeam.get(lt.id) ?? 0) + ticketPostureDelta,
+    );
     const starPowerTier = starPowerTierByTeam.get(lt.id) ?? null;
+    // Finances as a Gameplay Pillar (Phase 4) - matches computeTeamSeasonFinances'
+    // own attendance-floor/Marketing-boost treatment exactly, so this
+    // persisted snapshot (the trend-chart numbers) never disagrees with
+    // what actually drove that season's P&L.
+    const attendancePct = Math.max(
+      computeAttendancePct(newFanHappiness, lt.team.marketSize),
+      computeAttendanceFloor(lt.seasonTicketBase),
+    );
     return {
       leagueTeamId: lt.id,
       fanHappiness: newFanHappiness,
-      attendancePct: computeAttendancePct(newFanHappiness, lt.team.marketSize),
+      attendancePct,
       franchisePopularity: computeFranchisePopularity(
         newFanHappiness,
         starPowerTier,
         lt.team.marketSize,
+        departmentQualityDelta(lt.marketingLevel),
       ),
     };
   });
 
-  await Promise.all(
-    fanHappinessUpdates.map((u) =>
+  await Promise.all([
+    ...fanHappinessUpdates.map((u) =>
       prisma.leagueTeam.update({
         where: { id: u.leagueTeamId },
         data: { fanHappiness: u.fanHappiness },
       }),
     ),
-  );
+    // Fans Page Redesign (Phase 1) - the season-result, ticket-posture, and
+    // award attributions collected above, committed alongside the season
+    // boundary they belong to.
+    recordFanSentimentMany([...seasonResultSentimentRows, ...awardSentimentRows]),
+  ]);
   await prisma.fanHappinessSnapshot.createMany({
     data: fanHappinessUpdates.map((u) => ({
       leagueId,
@@ -936,6 +1976,583 @@ export async function advanceSeasonAction(leagueId: string) {
     })),
   });
 
+  // Fans Page Redesign (Phase 3) - Fan Culture, recomputed wholesale for
+  // every team right after this season's snapshot lands, so the window it
+  // recomputes from already includes the season that just finished.
+  const teamCultureContexts = league.teams.map((lt) => ({
+    leagueTeamId: lt.id,
+    marketSize: lt.team.marketSize,
+    ticketPricingPosture: lt.ticketPricingPosture,
+    hasRelocated: lt.relocatedCityName != null,
+    iconScore: iconScoreByTeam.get(lt.id) ?? 0,
+  }));
+  const { traitsByTeam: cultureTraitsByTeam, inputsByTeam: cultureInputsByTeam } =
+    await recomputeFanCultures(leagueId, season, teamCultureContexts);
+
+  // Fans Page Redesign (Phase 4) - What the City Wants, computed right after
+  // Fan Culture since the mandate depends on this same pass's Patience/
+  // Expectation Ceiling. Reuses the culture history inputs already fetched
+  // above and franchisePopularity already computed in fanHappinessUpdates,
+  // rather than re-querying either.
+  const franchisePopularityByTeam = new Map(
+    fanHappinessUpdates.map((u) => [u.leagueTeamId, u.franchisePopularity]),
+  );
+  const mandatePrimaryByTeam = await recomputeFanMandates(
+    leagueId,
+    season,
+    teamCultureContexts.map((t) => ({
+      ...t,
+      franchisePopularity: franchisePopularityByTeam.get(t.leagueTeamId) ?? 50,
+    })),
+    cultureTraitsByTeam,
+    cultureInputsByTeam,
+  );
+
+  // Fans Page Redesign (Phase 5) - trajectory narratives (Rebuild Progress
+  // Watch, Championship Window Watch), opened/updated/closed only here at
+  // the season boundary since both depend on the mandate just recomputed
+  // above. Event-driven narratives (icon-departure fallout) already opened
+  // immediately in trade.ts, at the moment of the actual trade.
+  await progressFanNarratives(
+    leagueId,
+    league.teams.map((lt) => ({
+      leagueTeamId: lt.id,
+      season,
+      fanHappiness:
+        fanHappinessUpdates.find((u) => u.leagueTeamId === lt.id)?.fanHappiness ?? lt.fanHappiness,
+      primaryMandate: mandatePrimaryByTeam.get(lt.id) ?? "BE_PATIENT_WITH_THE_KIDS",
+      wonChampionshipThisSeason: finals.winnerTeamId === lt.id,
+    })),
+  );
+
+  // ---- Franchise Finances & Business Operations (league-wide season P&L) ----
+  // A coarse profit-and-loss for every one of the 30 teams, consuming the
+  // fan happiness / attendance / popularity just finalized above, the
+  // in-memory per-team payroll + staff salaries, and this season's playoff
+  // results. Net income rolls into each team's cash reserve; franchise value
+  // is recomputed as a slow-moving asset. Playoff Game/PlayoffSeries rows are
+  // permanent history, so they're still present at this point.
+  const [financeSeries, financePlayoffGames] = await Promise.all([
+    prisma.playoffSeries.findMany({
+      where: { leagueId, season },
+      select: {
+        round: true,
+        higherSeedTeamId: true,
+        lowerSeedTeamId: true,
+        winnerTeamId: true,
+      },
+    }),
+    prisma.game.findMany({
+      where: { leagueId, season, type: { in: ["PLAYOFF", "PLAY_IN"] } },
+      select: { homeLeagueTeamId: true, awayLeagueTeamId: true, type: true },
+    }),
+  ]);
+  const playoffHomeGamesByTeam = new Map<string, number>();
+  const playInTeamIds = new Set<string>();
+  for (const g of financePlayoffGames) {
+    playoffHomeGamesByTeam.set(
+      g.homeLeagueTeamId,
+      (playoffHomeGamesByTeam.get(g.homeLeagueTeamId) ?? 0) + 1,
+    );
+    if (g.type === "PLAY_IN") {
+      playInTeamIds.add(g.homeLeagueTeamId);
+      playInTeamIds.add(g.awayLeagueTeamId);
+    }
+  }
+  const fanUpdateByTeam = new Map(fanHappinessUpdates.map((u) => [u.leagueTeamId, u]));
+  const priorLeagueTeamById = new Map(league.teams.map((lt) => [lt.id, lt]));
+
+  const financeResults = league.teams.map((lt) => {
+    const fan = fanUpdateByTeam.get(lt.id);
+    const fanHappiness = fan?.fanHappiness ?? lt.fanHappiness;
+    // Finances as a Gameplay Pillar (Phase 5) - a relocated team's real
+    // market resolves through its override, never the canonical (shared,
+    // immutable) Team fixture directly.
+    const marketSize = lt.marketSizeOverride ?? lt.team.marketSize;
+    const outcome = computeActualOutcome(lt.id, playInTeamIds.has(lt.id), financeSeries);
+    const fin = computeTeamSeasonFinances({
+      leagueTeamId: lt.id,
+      marketSize,
+      fanHappiness,
+      starTier: starPowerTierByTeam.get(lt.id) ?? null,
+      ticketPosture: lt.ticketPricingPosture,
+      departmentBudget: teamDepartmentBudget(lt),
+      seasonTicketBase: lt.seasonTicketBase,
+      arenaQualityIndex: lt.arenaQualityIndex,
+      debtCents: lt.debtCents,
+      playoffHomeGames: playoffHomeGamesByTeam.get(lt.id) ?? 0,
+      wonChampionship: finals.winnerTeamId === lt.id,
+    });
+    const priorCash = Number(priorLeagueTeamById.get(lt.id)?.cashReserveCents ?? 0n);
+    const newCash = priorCash + fin.netIncome;
+    const priorValue = Number(priorLeagueTeamById.get(lt.id)?.franchiseValueCents ?? 0n);
+    const newValue = computeFranchiseValue({
+      marketSize,
+      franchisePopularity: fin.franchisePopularity,
+      playoffOutcomeIndex: outcome.index,
+      cashReserveCents: newCash,
+      priorValueCents: priorValue,
+      // Finances as a Gameplay Pillar (Phase 2) - the "equity swap"
+      // sponsorship option's franchiseValueUpsideFraction stacks with the
+      // existing icon premium; both are bounded value-premium fractions,
+      // so summing them is the same reuse computeFranchiseValue already
+      // expects (see its own iconPremiumFraction doc comment).
+      iconPremiumFraction:
+        (iconPremiumByTeam.get(lt.id) ?? 0) + (sponsorshipUpsideByTeam.get(lt.id) ?? 0),
+    });
+    // Finances as a Gameplay Pillar (Phase 4) - the season-ticket base
+    // evolves at the same season boundary its own floor effect (above)
+    // just fed into this season's attendance/gate revenue.
+    const seasonTicketDelta = computeSeasonTicketBaseDelta({
+      winPct: teamWinPctById.get(lt.id) ?? 0.5,
+      ticketPosture: lt.ticketPricingPosture,
+      fanHappiness,
+    });
+    const newSeasonTicketBase = applySeasonTicketBaseDelta(lt.seasonTicketBase, seasonTicketDelta);
+
+    // Finances as a Gameplay Pillar (Phase 5) - a project completing this
+    // pass applies its permanent arena bump/reset/lease-extension; a team
+    // with nothing completing this season instead ages, same "either
+    // invest or slowly decline" shape the design calls for.
+    const completingProjects = completingThisPassByTeam.get(lt.id) ?? [];
+    const completingEffects = sumCompletedProjectEffects(completingProjects.map((p) => p.kind));
+    const agingDelta =
+      completingProjects.length > 0 ? 0 : computeArenaAgingDelta(lt.arenaQualityIndex);
+    const newArenaQualityIndex = applyArenaQualityDelta(
+      lt.arenaQualityIndex,
+      completingEffects.arenaQualityBonus + agingDelta,
+    );
+    const newArenaAgeSeasons = completingEffects.resetsArenaAge ? 0 : lt.arenaAgeSeasons + 1;
+    const newArenaLeaseExpiresSeason =
+      lt.arenaLeaseExpiresSeason + completingEffects.extendsLeaseYears;
+
+    return {
+      lt,
+      fin,
+      newCash: Math.round(newCash),
+      newValue: Math.round(newValue),
+      newSeasonTicketBase,
+      newArenaQualityIndex,
+      newArenaAgeSeasons,
+      newArenaLeaseExpiresSeason,
+      completingProjects,
+      priorValue,
+      health: computeFinancialHealth(newCash, fin.netIncome),
+    };
+  });
+
+  await prisma.financialSnapshot.createMany({
+    data: financeResults.map(({ lt, fin, newCash, newValue }) => ({
+      leagueId,
+      leagueTeamId: lt.id,
+      season,
+      ticketRevenueCents: BigInt(fin.revenue.ticketCents),
+      mediaRevenueCents: BigInt(fin.revenue.mediaCents),
+      playoffRevenueCents: BigInt(fin.revenue.playoffCents),
+      leagueRevenueCents: BigInt(fin.revenue.leagueCents),
+      otherIncomeCents: BigInt(fin.revenue.otherIncomeCents),
+      sponsorshipRevenueCents: BigInt(fin.revenue.sponsorshipCents),
+      payrollExpenseCents: BigInt(fin.expenses.payrollCents),
+      luxuryTaxExpenseCents: BigInt(fin.expenses.luxuryTaxCents),
+      staffExpenseCents: BigInt(fin.expenses.staffCents),
+      investmentExpenseCents: BigInt(fin.expenses.investmentCents),
+      operatingExpenseCents: BigInt(fin.expenses.operatingCents),
+      otherExpenseCents: BigInt(fin.expenses.otherExpenseCents),
+      interestExpenseCents: BigInt(fin.expenses.interestExpenseCents),
+      netIncomeCents: BigInt(fin.netIncome),
+      cashReserveCents: BigInt(newCash),
+      franchiseValueCents: BigInt(newValue),
+    })),
+  });
+
+  // Finances as a Gameplay Pillar (Phase 2) - a deal counted toward
+  // revenue for its final season above; now that the season's actually
+  // closing out, transition it so next season's boundary stops counting
+  // it. VOIDED deals (traded-away condition player) already left ACTIVE
+  // at trade time, so they're never in this set.
+  if (dealsExpiringThisSeason.length > 0) {
+    await prisma.sponsorshipDeal.updateMany({
+      where: { id: { in: dealsExpiringThisSeason.map((d) => d.id) } },
+      data: { status: "EXPIRED" },
+    });
+  }
+
+  await Promise.all(
+    financeResults.map(
+      ({
+        lt,
+        fin,
+        newCash,
+        newValue,
+        newSeasonTicketBase,
+        newArenaQualityIndex,
+        newArenaAgeSeasons,
+        newArenaLeaseExpiresSeason,
+      }) =>
+        prisma.leagueTeam.update({
+          where: { id: lt.id },
+          data: {
+            cashReserveCents: BigInt(newCash),
+            franchiseValueCents: BigInt(newValue),
+            // Finances as a Gameplay Pillar (Phase 4).
+            seasonTicketBase: newSeasonTicketBase,
+            // Finances as a Gameplay Pillar (Phase 5).
+            arenaQualityIndex: newArenaQualityIndex,
+            arenaAgeSeasons: newArenaAgeSeasons,
+            arenaLeaseExpiresSeason: newArenaLeaseExpiresSeason,
+            // GM Career Mode - accumulate this completed season's payroll into the
+            // running career-earnings total. Must happen incrementally (here, at
+            // the season boundary): expired Contract/ContractYear rows are deleted
+            // in this same function, so it can't be reconstructed after the fact.
+            totalPayrollPaidCents: { increment: BigInt(fin.expenses.payrollCents) },
+          },
+        }),
+    ),
+  );
+
+  // Finances as a Gameplay Pillar (Phase 5) - mark every project that
+  // completed this pass, and post a news beat per completion.
+  const completedProjectIds = financeResults.flatMap((r) => r.completingProjects.map((p) => p.id));
+  if (completedProjectIds.length > 0) {
+    await prisma.capitalProject.updateMany({
+      where: { id: { in: completedProjectIds } },
+      data: { status: "COMPLETE" },
+    });
+    await prisma.leagueTransaction.createMany({
+      data: financeResults.flatMap((r) =>
+        r.completingProjects.map((p) => ({
+          leagueId,
+          season: newSeason,
+          type: "FRANCHISE_MILESTONE" as const,
+          description: `${CAPITAL_PROJECT_LABEL[p.kind]} complete - a permanent upgrade to the franchise.`,
+          importance: "MAJOR" as const,
+          teamIds: [r.lt.id],
+        })),
+      ),
+    });
+  }
+
+  // Finances as a Gameplay Pillar (Phase 5) - relocation eligibility, the
+  // deliberately near-unreachable last resort. Checked only for the user's
+  // own team (Tier 1 - a franchise-defining moment, never a CPU-abstracted
+  // one), once per season boundary, and only if nothing is already
+  // pending. Every gate must hold simultaneously - see arena.ts.
+  if (userLeagueTeamId) {
+    const [userResult, existingRelocationNegotiation] = await Promise.all([
+      Promise.resolve(financeResults.find((r) => r.lt.id === userLeagueTeamId)),
+      prisma.negotiation.findFirst({
+        where: {
+          leagueId,
+          leagueTeamId: userLeagueTeamId,
+          kind: "RELOCATION_DECISION",
+          status: "IN_PROGRESS",
+        },
+      }),
+    ]);
+    if (userResult && !existingRelocationNegotiation) {
+      const recentSnapshotsForRelocation = await prisma.financialSnapshot.findMany({
+        where: { leagueId, leagueTeamId: userLeagueTeamId },
+        orderBy: { season: "desc" },
+        take: 2,
+        select: { netIncomeCents: true },
+      });
+      const recentNetIncomes = [
+        userResult.fin.netIncome,
+        ...recentSnapshotsForRelocation.map((s) => Number(s.netIncomeCents)),
+      ];
+      const eligible = isRelocationEligible({
+        recentNetIncomesCents: recentNetIncomes,
+        currentCashCents: userResult.newCash,
+        failedArenaNegotiations: userResult.lt.failedArenaNegotiations,
+        leaseExpiresSeason: userResult.newArenaLeaseExpiresSeason,
+        currentSeason: newSeason,
+        ownerConfidence,
+      });
+      if (eligible) {
+        const negotiation = await prisma.negotiation.create({
+          data: {
+            leagueId,
+            leagueTeamId: userLeagueTeamId,
+            kind: "RELOCATION_DECISION",
+            season: newSeason,
+            totalRounds: RELOCATION_DECISION_TOTAL_ROUNDS,
+          },
+        });
+        const content = buildNegotiationRound("RELOCATION_DECISION", 1, 50);
+        await prisma.businessDecision.create({
+          data: {
+            leagueId,
+            leagueTeamId: userLeagueTeamId,
+            season: newSeason,
+            dayIndex: 1,
+            kind: "NEGOTIATION_ROUND",
+            severity: "BREAKING",
+            headline: content.headline,
+            body: content.body,
+            options: content.options as unknown as object,
+            defaultOptionId: content.defaultOptionId,
+            deadlineDayIndex: 1 + content.deadlineDays,
+            negotiationId: negotiation.id,
+          },
+        });
+      }
+    }
+  }
+
+  // Phase 6 - CPU capital-project + financing policy (formula-driven, not a
+  // parallel confidence/negotiation system - see
+  // docs/FINANCES_PILLAR_DESIGN.md Part 8.2). Runs once per CPU team per
+  // season boundary, seeded so re-running an unrelated part of the offseason
+  // pass never reshuffles which CPU teams renovate/borrow this season.
+  const cpuPolicyRng = createSeededRandom(`${leagueId}-${newSeason}-cpuPolicy`);
+  const cpuPolicyNewsRows: { leagueId: string; season: number; description: string }[] = [];
+  const cpuPolicyProjectCreates: {
+    leagueId: string;
+    leagueTeamId: string;
+    kind: "ARENA_RENOVATION";
+    startSeason: number;
+    completionSeason: number;
+    totalCostCents: bigint;
+  }[] = [];
+  const cpuPolicyCashUpdates = new Map<string, bigint>();
+  const cpuPolicyDebtUpdates = new Map<string, bigint>();
+
+  for (const result of financeResults) {
+    if (result.lt.id === userLeagueTeamId) continue;
+
+    let cash = BigInt(result.newCash);
+    const hasProjectInProgress = allCapitalProjects.some(
+      (p) =>
+        p.leagueTeamId === result.lt.id &&
+        p.status === "IN_PROGRESS" &&
+        ARENA_PROJECT_KINDS.includes(p.kind) &&
+        !completingThisPassByTeam.get(result.lt.id)?.some((c) => c.id === p.id),
+    );
+
+    if (
+      shouldCpuRenovateArena(
+        {
+          arenaQualityIndex: result.newArenaQualityIndex,
+          cashReserveCents: Number(cash),
+          ownerArchetype: result.lt.ownerArchetype,
+          hasProjectInProgress,
+        },
+        cpuPolicyRng,
+      )
+    ) {
+      const costCents = capitalProjectCostCents("ARENA_RENOVATION");
+      cash -= BigInt(costCents);
+      cpuPolicyProjectCreates.push({
+        leagueId,
+        leagueTeamId: result.lt.id,
+        kind: "ARENA_RENOVATION",
+        startSeason: newSeason,
+        completionSeason: capitalProjectCompletionSeason("ARENA_RENOVATION", newSeason),
+        totalCostCents: BigInt(costCents),
+      });
+      cpuPolicyNewsRows.push({
+        leagueId,
+        season: newSeason,
+        description: `The ${result.lt.team.city} ${result.lt.team.name} have committed to an arena renovation.`,
+      });
+    } else if (
+      shouldCpuTakeLoan(
+        { cashReserveCents: Number(cash), ownerArchetype: result.lt.ownerArchetype },
+        cpuPolicyRng,
+      )
+    ) {
+      const amountCents = loanAmountCents("SMALL");
+      cash += BigInt(amountCents);
+      cpuPolicyDebtUpdates.set(result.lt.id, result.lt.debtCents + BigInt(amountCents));
+      cpuPolicyNewsRows.push({
+        leagueId,
+        season: newSeason,
+        description: `The ${result.lt.team.city} ${result.lt.team.name} have taken out a loan to shore up the books.`,
+      });
+    }
+
+    if (cash !== BigInt(result.newCash)) {
+      cpuPolicyCashUpdates.set(result.lt.id, cash);
+    }
+  }
+
+  if (cpuPolicyProjectCreates.length > 0) {
+    await prisma.capitalProject.createMany({ data: cpuPolicyProjectCreates });
+  }
+  await Promise.all([
+    ...Array.from(cpuPolicyCashUpdates.entries()).map(([leagueTeamId, cashReserveCents]) =>
+      prisma.leagueTeam.update({ where: { id: leagueTeamId }, data: { cashReserveCents } }),
+    ),
+    ...Array.from(cpuPolicyDebtUpdates.entries()).map(([leagueTeamId, debtCents]) =>
+      prisma.leagueTeam.update({ where: { id: leagueTeamId }, data: { debtCents } }),
+    ),
+  ]);
+  if (cpuPolicyNewsRows.length > 0) {
+    await prisma.leagueTransaction.createMany({
+      data: cpuPolicyNewsRows.map((row) => ({
+        leagueId: row.leagueId,
+        season: row.season,
+        type: "BUSINESS_DECISION" as const,
+        description: row.description,
+        importance: "MINOR" as const,
+        teamIds: [],
+      })),
+    });
+  }
+
+  // Phase 6 - CPU relocation. A simplified, single-weighted-outcome version
+  // of the user's multi-round Negotiation - there's no one for a CPU team
+  // to negotiate with. Same near-unreachable rarity target as the user's
+  // own gate (isCpuRelocationEligible substitutes CPU-available signals for
+  // the two gates that depend on interactive owner confidence - see
+  // docs/FINANCES_PILLAR_DESIGN.md Part 8.2), checked once per CPU team per
+  // season boundary, after the capital-project/financing policy above so a
+  // team that just took on debt or renovated is judged on its actual
+  // resulting state, not a stale snapshot.
+  const cpuRelocationCandidates = financeResults.filter((r) => r.lt.id !== userLeagueTeamId);
+  if (cpuRelocationCandidates.length > 0) {
+    const cpuRecentSnapshots = await prisma.financialSnapshot.findMany({
+      where: {
+        leagueId,
+        leagueTeamId: { in: cpuRelocationCandidates.map((r) => r.lt.id) },
+      },
+      orderBy: { season: "desc" },
+      select: { leagueTeamId: true, season: true, netIncomeCents: true },
+    });
+    const recentNetIncomesByTeam = new Map<string, number[]>();
+    for (const snap of cpuRecentSnapshots) {
+      const list = recentNetIncomesByTeam.get(snap.leagueTeamId) ?? [];
+      list.push(Number(snap.netIncomeCents));
+      recentNetIncomesByTeam.set(snap.leagueTeamId, list);
+    }
+    const cpuRelocationRng = createSeededRandom(`${leagueId}-${newSeason}-cpuRelocation`);
+
+    for (const result of cpuRelocationCandidates) {
+      const cpuCash = cpuPolicyCashUpdates.get(result.lt.id) ?? BigInt(result.newCash);
+      const recentNetIncomes = [
+        result.fin.netIncome,
+        ...(recentNetIncomesByTeam.get(result.lt.id) ?? []),
+      ];
+      const eligible = isCpuRelocationEligible({
+        recentNetIncomesCents: recentNetIncomes,
+        currentCashCents: Number(cpuCash),
+        arenaQualityIndex: result.newArenaQualityIndex,
+        leaseExpiresSeason: result.newArenaLeaseExpiresSeason,
+        currentSeason: newSeason,
+      });
+      if (!eligible || !shouldCpuRelocate(cpuRelocationRng)) continue;
+
+      const destIndex = pickCpuRelocationDestinationIndex(
+        RELOCATION_DESTINATIONS.length,
+        cpuRelocationRng,
+      );
+      const destination = RELOCATION_DESTINATIONS[destIndex];
+      const oldTeamLabel = `${result.lt.team.city} ${result.lt.team.name}`;
+      const currentFanHappiness =
+        fanUpdateByTeam.get(result.lt.id)?.fanHappiness ?? result.lt.fanHappiness;
+      const newFanHappiness = Math.max(
+        0,
+        Math.min(100, currentFanHappiness + computeRelocationFanHappinessHit("SEVERE")),
+      );
+      const newFranchiseValue = BigInt(
+        Math.round(result.newValue * computeRelocationFranchiseValueMultiplier()),
+      );
+
+      await prisma.$transaction([
+        prisma.leagueTeam.update({
+          where: { id: result.lt.id },
+          data: {
+            marketSizeOverride: destination.marketSize,
+            relocatedCityName: destination.cityName,
+            relocatedAtSeason: newSeason,
+            fanHappiness: newFanHappiness,
+            franchiseValueCents: newFranchiseValue,
+            failedArenaNegotiations: 0,
+            arenaLeaseExpiresSeason: newSeason + 20,
+          },
+        }),
+        prisma.leagueTransaction.create({
+          data: {
+            leagueId,
+            season: newSeason,
+            type: "FRANCHISE_MILESTONE",
+            description: `${oldTeamLabel} have relocated to ${destination.cityName} after years of financial struggle and a neglected arena - a permanent, franchise-defining moment.`,
+            importance: "BREAKING",
+            teamIds: [result.lt.id],
+          },
+        }),
+      ]);
+    }
+  }
+
+  // News: the user's own business recap every season (relevant to them, like
+  // the ownership recap); a franchise-value milestone for any team only on a
+  // genuine billion-dollar crossing (rare, real league news - not per-team
+  // spam). Posted at newSeason alongside the ownership recap so it's visible
+  // in the feed the user lands on.
+  const ONE_BILLION_CENTS = 1_000_000_000 * 100;
+  type FinanceNewsRow = {
+    leagueId: string;
+    season: number;
+    type: "FINANCIAL_REPORT" | "FRANCHISE_MILESTONE";
+    description: string;
+    importance: NewsImportance;
+    teamIds: string[];
+  };
+  const financeNewsRows = financeResults.flatMap(({ lt, fin, newValue, priorValue, health }) => {
+    const rows: FinanceNewsRow[] = [];
+    const teamLabel = `${lt.team.city} ${lt.team.name}`;
+    if (lt.id === userLeagueTeamId) {
+      rows.push({
+        leagueId,
+        season: newSeason,
+        type: "FINANCIAL_REPORT",
+        description: describeSeasonFinancialReport({
+          teamLabel,
+          netIncomeCents: fin.netIncome,
+          health,
+        }),
+        importance: "STANDARD",
+        teamIds: [lt.id],
+      });
+    }
+    if (priorValue > 0) {
+      const priorB = Math.floor(priorValue / ONE_BILLION_CENTS);
+      const newB = Math.floor(newValue / ONE_BILLION_CENTS);
+      if (newB > priorB) {
+        rows.push({
+          leagueId,
+          season: newSeason,
+          type: "FRANCHISE_MILESTONE",
+          description: describeFranchiseValueMilestone({
+            teamLabel,
+            valueCents: newValue,
+            direction: "up",
+          }),
+          importance: "MAJOR",
+          teamIds: [lt.id],
+        });
+      } else if (newB < priorB) {
+        rows.push({
+          leagueId,
+          season: newSeason,
+          type: "FRANCHISE_MILESTONE",
+          description: describeFranchiseValueMilestone({
+            teamLabel,
+            valueCents: newValue,
+            direction: "down",
+          }),
+          importance: "STANDARD",
+          teamIds: [lt.id],
+        });
+      }
+    }
+    return rows;
+  });
+  if (financeNewsRows.length > 0) {
+    await prisma.leagueTransaction.createMany({ data: financeNewsRows });
+  }
+
   await prisma.league.update({
     where: { id: leagueId },
     data: {
@@ -943,8 +2560,21 @@ export async function advanceSeasonAction(leagueId: string) {
       ownerConfidence,
       payrollReductionTargetCents,
       payrollDirectiveSeason,
+      financialMandateSeason,
+      payrollDirectiveStaked,
+      financialMandateStaked,
     },
   });
+
+  // Phase 6 - ownerArchetype lives on the user's own LeagueTeam row now, a
+  // separate small update rather than folding into the bulk financeResults
+  // write above (that map runs for every team; this only ever concerns one).
+  if (userLeagueTeamId) {
+    await prisma.leagueTeam.update({
+      where: { id: userLeagueTeamId },
+      data: { ownerArchetype, ownerArchetypeSince },
+    });
+  }
 
   if (ownershipMessages.length > 0) {
     await prisma.leagueTransaction.createMany({
@@ -961,6 +2591,89 @@ export async function advanceSeasonAction(leagueId: string) {
     });
   }
 
+  // Finances as a Gameplay Pillar (Phase 3) - the negotiation cards land in
+  // the same Front Office Inbox every other BusinessDecision uses, dated to
+  // the very start of the new season.
+  if (userLeagueTeamId && negotiationDecisions.length > 0) {
+    await prisma.businessDecision.createMany({
+      data: negotiationDecisions.map((content) => ({
+        leagueId,
+        leagueTeamId: userLeagueTeamId,
+        season: newSeason,
+        dayIndex: 1,
+        kind: content.kind,
+        severity: content.severity,
+        headline: content.headline,
+        body: content.body,
+        options: content.options as unknown as object,
+        defaultOptionId: content.defaultOptionId,
+        deadlineDayIndex: 1 + content.deadlineDays,
+      })),
+    });
+  }
+
+  // GM Career Mode - the firing. Owner confidence hitting the hard floor (0)
+  // after this season ends the tenure. It takes several bad seasons to reach
+  // the literal floor, so this reads as a real endpoint, not a cheap gotcha.
+  // The career is snapshotted permanently onto the User now (league deletion
+  // later is a hard cascading delete - nothing survives to reconstruct it),
+  // GM reputation moves, and the league is marked ended (read-only from here).
+  let fired = false;
+  if (userLeagueTeamId && ownerConfidence <= MIN_OWNER_CONFIDENCE) {
+    const userLeagueTeam = teamById.get(userLeagueTeamId);
+    if (userLeagueTeam) {
+      const [snapshot, freshTeam, owner] = await Promise.all([
+        computeCareerRecordSnapshot(leagueId, userLeagueTeamId),
+        prisma.leagueTeam.findUnique({
+          where: { id: userLeagueTeamId },
+          select: { totalPayrollPaidCents: true },
+        }),
+        prisma.user.findUnique({
+          where: { id: league.ownerId },
+          select: { gmReputation: true },
+        }),
+      ]);
+      const reputationDelta = computeReputationDelta({
+        seasons: snapshot.seasons,
+        wins: snapshot.wins,
+        losses: snapshot.losses,
+        championships: snapshot.championships,
+        playoffAppearances: snapshot.playoffAppearances,
+        endReason: "FIRED",
+      });
+      const newReputation = Math.max(
+        0,
+        Math.min(100, (owner?.gmReputation ?? 50) + reputationDelta),
+      );
+      await prisma.$transaction([
+        prisma.careerRecord.create({
+          data: {
+            userId: league.ownerId,
+            leagueId,
+            teamLabel: `${userLeagueTeam.team.city} ${userLeagueTeam.team.name}`,
+            seasons: snapshot.seasons,
+            wins: snapshot.wins,
+            losses: snapshot.losses,
+            championships: snapshot.championships,
+            playoffAppearances: snapshot.playoffAppearances,
+            bestPlayoffFinish: snapshot.bestPlayoffFinish,
+            careerEarningsCents: freshTeam?.totalPayrollPaidCents ?? 0n,
+            notableTradeDescription: snapshot.notableTradeDescription,
+            endReason: "FIRED",
+            finalOwnerConfidence: ownerConfidence,
+            reputationDelta,
+          },
+        }),
+        prisma.user.update({
+          where: { id: league.ownerId },
+          data: { gmReputation: newReputation },
+        }),
+        prisma.league.update({ where: { id: leagueId }, data: { endedAt: new Date() } }),
+      ]);
+      fired = true;
+    }
+  }
+
   revalidatePath(`/leagues/${leagueId}`);
   revalidatePath(`/leagues/${leagueId}/standings`);
   revalidatePath(`/leagues/${leagueId}/playoffs`);
@@ -970,5 +2683,6 @@ export async function advanceSeasonAction(leagueId: string) {
   return {
     newSeason,
     retiredCount: playerUpdates.filter((u) => u.retiredSeason !== null).length,
+    fired,
   };
 }

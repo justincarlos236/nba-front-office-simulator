@@ -22,7 +22,10 @@ test("simulate games and see standings update", async ({ page }) => {
   await page.getByText("Standings").click();
   await expect(page.getByText("Eastern Conference")).toBeVisible();
   await expect(page.getByText("Western Conference")).toBeVisible();
-  await expect(page.getByText("Boston Celtics")).toBeVisible();
+  // Scoped to the standings table cell specifically - the persistent
+  // in-league nav's own team-name link also renders "Boston Celtics" on
+  // every page now, so a bare text match is ambiguous here.
+  await expect(page.getByRole("cell", { name: "Boston Celtics" })).toBeVisible();
 
   const remainingBefore = await page.getByText(/games remaining on your schedule/).textContent();
   const gamesBefore = Number(remainingBefore?.match(/(\d+) games/)?.[1]);

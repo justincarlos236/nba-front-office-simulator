@@ -11,6 +11,19 @@ import {
 } from "@/lib/actions/leagueTeamStrength";
 import { importanceForRating } from "@/lib/transactions/newsImportance";
 import {
+  applyFanHappinessDelta,
+  applyScaledFanHappinessDelta,
+  computeAllStarSelectionSentimentDelta,
+  computeAllStarSnubSentimentDelta,
+  computeAllStarResultSentimentDelta,
+} from "@/lib/fans/sentimentEvents";
+import { recordFanSentimentMany, type SentimentRecord } from "@/lib/fans/recordSentiment";
+import {
+  describeAllStarSelectionSentiment,
+  describeAllStarSnubSentiment,
+  describeAllStarResultSentiment,
+} from "@/lib/fans/describeSentiment";
+import {
   selectAllStars,
   type PlayerSeasonPerformanceSnapshot,
   type AllStarSelectionResult,
@@ -28,6 +41,11 @@ import {
 } from "@/lib/allstar/dunkContest";
 import { simulateAllStarGame } from "@/lib/allstar/allStarGame";
 import { draftTeams } from "@/lib/allstar/draftTeams";
+import {
+  classifyDraftHindsight,
+  describeDraftHindsight,
+  type DraftHindsightType,
+} from "@/lib/draft/draftHindsight";
 import type { NewsImportance } from "@/generated/prisma/client";
 
 // A real sample by the break - same floor selection.ts uses for All-Star
@@ -436,6 +454,49 @@ export async function generateAllStarWeekend(
     return teamId ? [teamId] : [];
   };
 
+  // Fan Engagement Deepening (Phase 1) - only ever knowable right here (the
+  // break), so applied directly rather than deferred to season end. The
+  // generic "rosters are set" headline below is skipped for sentiment
+  // purposes - it would double-credit a captain's team alongside their own
+  // individual selection row in the loop right after it.
+  const fanHappinessDeltaByTeam = new Map<string, number>();
+  // Fans Page Redesign (Phase 1).
+  const allStarSentimentRows: SentimentRecord[] = [];
+  // Fans Page Redesign (Phase 3) - fetched once, up front, so every call to
+  // addFanHappinessDelta below can scale by this team's Fan Culture.
+  const involvedTeamIds = [...new Set(teamIdById.values())];
+  const teamFanState = await prisma.leagueTeam.findMany({
+    where: { id: { in: involvedTeamIds } },
+    select: {
+      id: true,
+      fanHappiness: true,
+      fanCulture: { select: { patience: true, loyalty: true } },
+    },
+  });
+  const fanHappinessById = new Map(teamFanState.map((t) => [t.id, t.fanHappiness]));
+  const cultureById = new Map(teamFanState.map((t) => [t.id, t.fanCulture]));
+  // Scouting Pillar Redesign (Phase 5) - team display labels for the
+  // hindsight beat below. Batched alongside teamFanState's team set rather
+  // than queried per-selectee.
+  const teamLabelRows = await prisma.leagueTeam.findMany({
+    where: { id: { in: involvedTeamIds } },
+    select: { id: true, team: { select: { city: true, name: true } } },
+  });
+  const teamLabelById = new Map(teamLabelRows.map((t) => [t.id, `${t.team.city} ${t.team.name}`]));
+  function addFanHappinessDelta(
+    teamId: string,
+    rawDelta: number,
+    ledger: Omit<SentimentRecord, "leagueId" | "leagueTeamId" | "season" | "delta">,
+  ) {
+    const delta = applyScaledFanHappinessDelta(
+      fanHappinessById.get(teamId) ?? 65,
+      rawDelta,
+      cultureById.get(teamId) ?? null,
+    ).scaledDelta;
+    fanHappinessDeltaByTeam.set(teamId, (fanHappinessDeltaByTeam.get(teamId) ?? 0) + delta);
+    allStarSentimentRows.push({ leagueId, leagueTeamId: teamId, season, delta, ...ledger });
+  }
+
   const eastCaptainName = asgDraft ? (fullNameById.get(asgDraft.captainAId) ?? "A player") : null;
   const westCaptainName = asgDraft ? (fullNameById.get(asgDraft.captainBId) ?? "A player") : null;
   if (asgDraft && eastCaptainName && westCaptainName) {
@@ -445,6 +506,47 @@ export async function generateAllStarWeekend(
       importance: "MAJOR",
       teamIds: [...teamIdsFor(asgDraft.captainAId), ...teamIdsFor(asgDraft.captainBId)],
     });
+  }
+
+  // Scouting Pillar Redesign (Phase 5) - the long-tail payoff
+  // (docs/SCOUTING_PILLAR_DESIGN.md Part 3.5, "years later, via existing
+  // systems"). Only ever checked for a first-time selectee (the loop below
+  // already filters to that), and only ever queried for the handful of
+  // first-timers rather than the whole roster - this stays cheap even in a
+  // 25-year save with a large All-Star history. Walks
+  // LeaguePlayer -> Player -> DraftProspect, the durable link Phase 5 added
+  // specifically to make this reachable years after the draft.
+  const firstTimeLeaguePlayerIds = selections
+    .filter((s) => s.role !== "INJURY_REPLACEMENT" && !priorSelectionIds.has(s.leaguePlayerId))
+    .map((s) => s.leaguePlayerId);
+  const userTeamId = (
+    await prisma.league.findUnique({
+      where: { id: leagueId },
+      select: { userControlledTeamId: true },
+    })
+  )?.userControlledTeamId;
+  const hindsightByLeaguePlayerId = new Map<
+    string,
+    { type: DraftHindsightType; scoutingDepthAtDraft: number }
+  >();
+  if (firstTimeLeaguePlayerIds.length > 0) {
+    const withDraftHistory = await prisma.leaguePlayer.findMany({
+      where: { id: { in: firstTimeLeaguePlayerIds } },
+      select: {
+        id: true,
+        leagueTeamId: true,
+        player: { select: { draftProspect: { select: { scoutingDepth: true } } } },
+      },
+    });
+    for (const lp of withDraftHistory) {
+      const depth = lp.player.draftProspect?.scoutingDepth;
+      if (depth == null) continue; // never drafted in this league (imported/free agent), or pre-Phase-5 save with no link
+      const type = classifyDraftHindsight({
+        scoutingDepthAtDraft: depth,
+        isOnUserTeam: lp.leagueTeamId === userTeamId,
+      });
+      if (type) hindsightByLeaguePlayerId.set(lp.id, { type, scoutingDepthAtDraft: depth });
+    }
   }
 
   for (const s of selections) {
@@ -458,6 +560,29 @@ export async function generateAllStarWeekend(
       importance: importanceForRating(rating),
       teamIds: teamIdsFor(s.leaguePlayerId),
     });
+    const teamId = teamIdById.get(s.leaguePlayerId);
+    if (teamId) {
+      addFanHappinessDelta(teamId, computeAllStarSelectionSentimentDelta(), {
+        kind: "ALL_STAR_SELECTION",
+        description: describeAllStarSelectionSentiment(name),
+        leaguePlayerId: s.leaguePlayerId,
+      });
+    }
+    const hindsight = hindsightByLeaguePlayerId.get(s.leaguePlayerId);
+    if (hindsight && teamId) {
+      const currentTeamLabel = teamLabelById.get(teamId) ?? "their team";
+      newsRows.push({
+        type: "ALL_STAR_SELECTION",
+        description: describeDraftHindsight(
+          hindsight.type,
+          name,
+          hindsight.scoutingDepthAtDraft,
+          currentTeamLabel,
+        ),
+        importance: "MAJOR",
+        teamIds: teamIdsFor(s.leaguePlayerId),
+      });
+    }
   }
 
   for (const snub of snubs) {
@@ -471,6 +596,14 @@ export async function generateAllStarWeekend(
       importance: importanceForRating(rating),
       teamIds: teamIdsFor(snub.leaguePlayerId),
     });
+    const teamId = teamIdById.get(snub.leaguePlayerId);
+    if (teamId) {
+      addFanHappinessDelta(teamId, computeAllStarSnubSentimentDelta(), {
+        kind: "ALL_STAR_SNUB",
+        description: describeAllStarSnubSentiment(name),
+        leaguePlayerId: snub.leaguePlayerId,
+      });
+    }
   }
 
   if (threePointResult.championId) {
@@ -481,6 +614,14 @@ export async function generateAllStarWeekend(
       importance: "STANDARD",
       teamIds: teamIdsFor(threePointResult.championId),
     });
+    const teamId = teamIdById.get(threePointResult.championId);
+    if (teamId) {
+      addFanHappinessDelta(teamId, computeAllStarResultSentimentDelta(), {
+        kind: "ALL_STAR_RESULT",
+        description: describeAllStarResultSentiment(threePointChampName),
+        leaguePlayerId: threePointResult.championId,
+      });
+    }
   }
 
   if (dunkResult.championId) {
@@ -491,6 +632,14 @@ export async function generateAllStarWeekend(
       importance: "STANDARD",
       teamIds: teamIdsFor(dunkResult.championId),
     });
+    const teamId = teamIdById.get(dunkResult.championId);
+    if (teamId) {
+      addFanHappinessDelta(teamId, computeAllStarResultSentimentDelta(), {
+        kind: "ALL_STAR_RESULT",
+        description: describeAllStarResultSentiment(dunkChampName),
+        leaguePlayerId: dunkResult.championId,
+      });
+    }
   }
 
   if (risingStarsResult) {
@@ -501,6 +650,14 @@ export async function generateAllStarWeekend(
       importance: "STANDARD",
       teamIds: teamIdsFor(risingStarsResult.mvpLeaguePlayerId),
     });
+    const teamId = teamIdById.get(risingStarsResult.mvpLeaguePlayerId);
+    if (teamId) {
+      addFanHappinessDelta(teamId, computeAllStarResultSentimentDelta(), {
+        kind: "ALL_STAR_RESULT",
+        description: describeAllStarResultSentiment(risingStarsMvpName),
+        leaguePlayerId: risingStarsResult.mvpLeaguePlayerId,
+      });
+    }
   }
 
   if (asgResult && eastCaptainName && westCaptainName) {
@@ -511,6 +668,14 @@ export async function generateAllStarWeekend(
       importance: "MAJOR",
       teamIds: teamIdsFor(asgResult.mvpLeaguePlayerId),
     });
+    const teamId = teamIdById.get(asgResult.mvpLeaguePlayerId);
+    if (teamId) {
+      addFanHappinessDelta(teamId, computeAllStarResultSentimentDelta(), {
+        kind: "ALL_STAR_RESULT",
+        description: describeAllStarResultSentiment(asgMvpName),
+        leaguePlayerId: asgResult.mvpLeaguePlayerId,
+      });
+    }
   }
 
   await prisma.leagueTransaction.createMany({
@@ -523,6 +688,24 @@ export async function generateAllStarWeekend(
       teamIds: row.teamIds,
     })),
   });
+
+  // Fan Engagement Deepening (Phase 1) - one flush for everything accumulated
+  // above, reusing the fanHappiness snapshot fetched up front (Phase 3) -
+  // it's read-only for this whole pass, no event in this function re-reads
+  // a team's happiness mid-way through.
+  if (fanHappinessDeltaByTeam.size > 0) {
+    await Promise.all([
+      ...[...fanHappinessDeltaByTeam.entries()].map(([teamId, delta]) =>
+        prisma.leagueTeam.update({
+          where: { id: teamId },
+          data: {
+            fanHappiness: applyFanHappinessDelta(fanHappinessById.get(teamId) ?? 65, delta),
+          },
+        }),
+      ),
+      recordFanSentimentMany(allStarSentimentRows),
+    ]);
+  }
 
   return { allStarWeekendId: weekend.id };
 }

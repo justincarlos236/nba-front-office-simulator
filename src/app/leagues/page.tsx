@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { MAX_LEAGUES_PER_USER } from "@/lib/league/constants";
+import { computeLeaguePhase, type LeaguePhase } from "@/lib/league/leaguePhase";
 import { DeleteLeagueButton } from "@/components/leagues/DeleteLeagueButton";
 
 export const dynamic = "force-dynamic";
@@ -30,26 +31,17 @@ const TXN_TYPE_BADGE_CLASS: Record<string, string> = {
   OWNERSHIP_MESSAGE: "bg-purple-500/15 text-purple-400",
 };
 
-async function describeStatus(leagueId: string, season: number): Promise<string> {
-  const [gamesRemaining, champion, pendingDraftPicks, totalDraftPicks] = await Promise.all([
-    prisma.game.count({
-      where: { leagueId, season, type: "REGULAR_SEASON", playedAt: null },
-    }),
-    prisma.playoffSeries.findFirst({
-      where: { leagueId, season, round: 4, winnerTeamId: { not: null } },
-    }),
-    // A future-pick placeholder always exists by now (Phase 11a);
-    // `overallPickNumber` is the real "draft started" signal.
-    prisma.draftPick.count({
-      where: { leagueId, season, overallPickNumber: { not: null }, selectedProspectId: null },
-    }),
-    prisma.draftPick.count({ where: { leagueId, season, overallPickNumber: { not: null } } }),
-  ]);
+const PHASE_LABEL: Record<LeaguePhase, string> = {
+  "regular-season": "Regular season in progress",
+  "playoffs-incomplete": "Playoffs underway",
+  "pre-draft": "Pre-draft scouting",
+  "draft-incomplete": "Draft pending",
+  ready: "Ready for next season",
+};
 
-  if (gamesRemaining > 0) return "Regular season in progress";
-  if (!champion) return "Playoffs underway";
-  if (totalDraftPicks === 0 || pendingDraftPicks > 0) return "Draft pending";
-  return "Ready for next season";
+async function describeStatus(leagueId: string, season: number): Promise<string> {
+  const phase = await computeLeaguePhase(leagueId, season);
+  return PHASE_LABEL[phase];
 }
 
 export default async function DashboardPage() {
@@ -243,12 +235,13 @@ export default async function DashboardPage() {
             </p>
           </Link>
           <Link
-            href="/#engineering"
+            href="/guide"
             className="rounded-xl border border-border bg-surface p-5 transition hover:border-accent/40"
           >
-            <h3 className="font-semibold text-foreground">How this is built</h3>
+            <h3 className="font-semibold text-foreground">Learn the Rules</h3>
             <p className="mt-1 text-sm text-muted">
-              The cap engine, simulation model, and data sourcing decisions behind the simulator.
+              How the salary cap, rotations, and the season actually work - the strategy behind the
+              numbers.
             </p>
           </Link>
         </div>

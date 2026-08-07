@@ -5,8 +5,24 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveRotation } from "@/lib/rotation/resolveRotation";
+import { rotationRoleForRank } from "@/lib/rotation/roleLabel";
 import { importanceForRating } from "@/lib/transactions/newsImportance";
-import { describeRotationChange } from "@/lib/transactions/describeTransaction";
+import {
+  describeRotationChange,
+  describePlayerMoraleEvent,
+  describeTradeRequest,
+} from "@/lib/transactions/describeTransaction";
+import { getPlayerValueTier } from "@/lib/valuation/playerValueTier";
+import {
+  applyFanHappinessDelta,
+  applyScaledFanHappinessDelta,
+  computeRotationChangeSentimentDelta,
+} from "@/lib/fans/sentimentEvents";
+import { fanSentimentCreateOps, type SentimentRecord } from "@/lib/fans/recordSentiment";
+import { describeRotationSentiment } from "@/lib/fans/describeSentiment";
+import { computeRoleChangeMoraleDelta, MORALE_NEWS_THRESHOLD } from "@/lib/morale/moraleEvents";
+import { applyMoraleChange } from "@/lib/morale/moraleLevel";
+import { estimateAge } from "@/lib/players/age";
 import type { RosterPlayerForSimulation } from "@/lib/actions/leagueTeamStrength";
 import type { NewsImportance } from "@/generated/prisma/client";
 
@@ -81,7 +97,7 @@ export async function updateRotationAction(
   }
   const userLeagueTeam = await prisma.leagueTeam.findUnique({
     where: { id: league.userControlledTeamId },
-    include: { team: true },
+    include: { team: true, fanCulture: { select: { patience: true, loyalty: true } } },
   });
   const teamLabel = userLeagueTeam
     ? `${userLeagueTeam.team.city} ${userLeagueTeam.team.name}`
@@ -94,7 +110,17 @@ export async function updateRotationAction(
       overallRating: true,
       rotationSlot: true,
       targetMinutesPerGame: true,
-      player: { select: { fullName: true, position: true } },
+      morale: true,
+      tradeRequestActive: true,
+      personalityProfile: {
+        select: {
+          competitiveness: true,
+          roleSensitivity: true,
+          loyalty: true,
+          financialMotivation: true,
+        },
+      },
+      player: { select: { fullName: true, position: true, draftYear: true } },
     },
   });
   const rosterIds = new Set(roster.map((r) => r.id));
@@ -128,26 +154,122 @@ export async function updateRotationAction(
     resolveRotation(afterRoster).map((e) => [e.player.leaguePlayerId, e.rank]),
   );
 
-  const newsRows: { description: string; importance: NewsImportance; teamIds: string[] }[] = [];
+  const newsRows: {
+    description: string;
+    importance: NewsImportance;
+    teamIds: string[];
+    type: "ROTATION_CHANGE" | "PLAYER_MORALE";
+    subjectLeaguePlayerId?: string;
+  }[] = [];
+  // Fan Engagement Deepening (Phase 1) - summed across every player whose
+  // starter/bench status actually flipped this call (usually one, but a
+  // full reshuffle can cross more than one boundary at once).
+  let fanHappinessDelta = 0;
+  const rotationSentimentRows: SentimentRecord[] = [];
+  // Player Morale & Personality System - keyed separately from the
+  // starter/bench-only fan-happiness loop above, since a player's own
+  // morale reacts to any Starter/Sixth Man/Rotation/Bench category change,
+  // not just crossing the starting-five line.
+  const moraleUpdateById = new Map<string, { morale: number; tradeRequestActive: boolean }>();
   for (const r of roster) {
     const wasStarting = (beforeRankById.get(r.id) ?? Infinity) < STARTER_RANK_CEILING;
     const isStarting = (afterRankById.get(r.id) ?? Infinity) < STARTER_RANK_CEILING;
-    if (wasStarting === isStarting) continue;
-    newsRows.push({
-      description: describeRotationChange(teamLabel, r.player.fullName, isStarting),
-      importance: importanceForRating(r.overallRating),
-      teamIds: [league.userControlledTeamId],
+    if (wasStarting !== isStarting) {
+      newsRows.push({
+        description: describeRotationChange(teamLabel, r.player.fullName, isStarting),
+        importance: importanceForRating(r.overallRating),
+        teamIds: [league.userControlledTeamId],
+        type: "ROTATION_CHANGE",
+      });
+      const rawRotationDelta = computeRotationChangeSentimentDelta({
+        starTier: getPlayerValueTier(r.overallRating),
+        promoted: isStarting,
+      });
+      // Fans Page Redesign (Phase 3) - scaled by culture before it's summed
+      // or recorded. Each player's delta is small, so the pre-loop
+      // happiness value is a fine reference point for the scale even though
+      // several may apply in one call.
+      const rotationDelta = userLeagueTeam
+        ? applyScaledFanHappinessDelta(
+            userLeagueTeam.fanHappiness,
+            rawRotationDelta,
+            userLeagueTeam.fanCulture,
+          ).scaledDelta
+        : rawRotationDelta;
+      fanHappinessDelta += rotationDelta;
+      // Fans Page Redesign (Phase 1) - one ledger row per player whose
+      // starter status actually flipped, rather than a single lumped total,
+      // so the page can name who the fanbase reacted to.
+      rotationSentimentRows.push({
+        leagueId,
+        leagueTeamId: league.userControlledTeamId,
+        season: league.currentSeason,
+        kind: "ROTATION_CHANGE",
+        delta: rotationDelta,
+        description: describeRotationSentiment(r.player.fullName, isStarting),
+        leaguePlayerId: r.id,
+      });
+    }
+
+    const previousRole = rotationRoleForRank(beforeRankById.get(r.id) ?? null);
+    const newRole = rotationRoleForRank(afterRankById.get(r.id) ?? null);
+    if (previousRole === newRole || !r.personalityProfile) continue;
+
+    const moraleDelta = computeRoleChangeMoraleDelta({
+      personality: r.personalityProfile,
+      previousRole,
+      newRole,
+      valueTier: getPlayerValueTier(r.overallRating),
+      age: estimateAge(r.player.draftYear, league.currentSeason),
     });
+    if (moraleDelta === 0) continue;
+
+    const result = applyMoraleChange(
+      r.morale,
+      moraleDelta,
+      r.personalityProfile.loyalty,
+      r.tradeRequestActive,
+    );
+    moraleUpdateById.set(r.id, {
+      morale: result.morale,
+      tradeRequestActive: result.tradeRequestActive,
+    });
+
+    if (Math.abs(moraleDelta) >= MORALE_NEWS_THRESHOLD) {
+      newsRows.push({
+        description: describePlayerMoraleEvent(
+          r.player.fullName,
+          teamLabel,
+          moraleDelta > 0 ? "ROLE_INCREASE" : "ROLE_DECREASE",
+          moraleDelta > 0 ? "up" : "down",
+        ),
+        importance: importanceForRating(r.overallRating),
+        teamIds: [league.userControlledTeamId],
+        type: "PLAYER_MORALE",
+        subjectLeaguePlayerId: r.id,
+      });
+    }
+    if (result.justActivated) {
+      newsRows.push({
+        description: describeTradeRequest(r.player.fullName, teamLabel),
+        importance: importanceForRating(r.overallRating),
+        teamIds: [league.userControlledTeamId],
+        type: "PLAYER_MORALE",
+        subjectLeaguePlayerId: r.id,
+      });
+    }
   }
 
   await prisma.$transaction([
     ...roster.map((r) => {
       const override = afterOverrides.get(r.id)!;
+      const moraleUpdate = moraleUpdateById.get(r.id);
       return prisma.leaguePlayer.update({
         where: { id: r.id },
         data: {
           rotationSlot: override.rotationSlot,
           targetMinutesPerGame: override.targetMinutesPerGame,
+          ...(moraleUpdate ?? {}),
         },
       });
     }),
@@ -157,14 +279,28 @@ export async function updateRotationAction(
             data: newsRows.map((row) => ({
               leagueId,
               season: league.currentSeason,
-              type: "ROTATION_CHANGE" as const,
+              type: row.type,
               description: row.description,
               importance: row.importance,
               teamIds: row.teamIds,
+              subjectLeaguePlayerId: row.subjectLeaguePlayerId,
             })),
           }),
         ]
       : []),
+    ...(fanHappinessDelta !== 0 && userLeagueTeam
+      ? [
+          prisma.leagueTeam.update({
+            where: { id: league.userControlledTeamId },
+            data: {
+              fanHappiness: applyFanHappinessDelta(userLeagueTeam.fanHappiness, fanHappinessDelta),
+            },
+          }),
+        ]
+      : []),
+    // Fans Page Redesign (Phase 1) - committed in the same transaction as the
+    // happiness change they explain.
+    ...(userLeagueTeam ? fanSentimentCreateOps(rotationSentimentRows) : []),
   ]);
 
   revalidatePath(`/leagues/${leagueId}/rotation`);

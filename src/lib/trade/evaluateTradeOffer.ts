@@ -70,11 +70,15 @@ export interface EvaluateTradeOfferResult {
 const ACCEPT_THRESHOLD = 0.95;
 const COUNTER_THRESHOLD = 0.75;
 
-const YOUNG_AGE_THRESHOLD = 25;
-const VETERAN_AGE_THRESHOLD = 30;
-const CONTENDER_VETERAN_BONUS = 1.15;
-const REBUILDING_YOUTH_PICK_BONUS = 1.15;
-const NEED_FIT_BONUS_MULTIPLIER = 1.25;
+// Exported for reuse by src/lib/gm/reSigningDecision.ts, which applies the
+// exact same identity/age/need-fit weighting to a retention decision rather
+// than an asset-for-asset trade - see that file for why it can't just call
+// evaluateTradeOffer itself.
+export const YOUNG_AGE_THRESHOLD = 25;
+export const VETERAN_AGE_THRESHOLD = 30;
+export const CONTENDER_VETERAN_BONUS = 1.15;
+export const REBUILDING_YOUTH_PICK_BONUS = 1.15;
+export const NEED_FIT_BONUS_MULTIPLIER = 1.25;
 
 const UNTOUCHABLE_COUNT = 2;
 const UNTOUCHABLE_IDENTITIES: TeamIdentity[] = ["CONTENDER", "PLAYOFF_TEAM"];
@@ -107,7 +111,7 @@ function isUntouchable(
   return topThreshold !== undefined && player.overallRating >= topThreshold;
 }
 
-function playerFillsNeed(player: TradePlayerAsset, need: TeamNeed): boolean {
+export function playerFillsNeed(player: TradePlayerAsset, need: TeamNeed): boolean {
   switch (need) {
     case "STAR_SCORER": {
       const tier = getPlayerValueTier(player.overallRating);

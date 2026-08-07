@@ -63,6 +63,82 @@ export function describeRotationChange(
     : `${playerName} moves to the bench for the ${teamLabel}`;
 }
 
+/** Only fired for a genuine, threshold-clearing reach - see src/lib/draft/draftNightNarrative.ts. */
+export function describeDraftReach(
+  teamLabel: string,
+  playerName: string,
+  pickNumber: number,
+  expectedRank: number,
+): string {
+  return `${teamLabel} reach for ${playerName} at pick ${pickNumber} - most boards had him closer to No. ${expectedRank}`;
+}
+
+// Steals get a pathway clause for the three lower-visibility origins only -
+// a Power Conference prospect sliding is just as real a story, but doesn't
+// need an explanatory "out of the X ranks" clause the way an under-scouted
+// pathway does.
+const STEAL_PATHWAY_CLAUSE_LABEL: Partial<Record<string, string>> = {
+  MID_MAJOR: "Mid-Major",
+  INTERNATIONAL_PROFESSIONAL: "international",
+  DEVELOPMENT_PATHWAY: "Development Pathway",
+};
+
+/**
+ * Only fired for a genuine, threshold-clearing slide - see
+ * src/lib/draft/draftNightNarrative.ts. `pathway`, if given (Scouting
+ * Pillar Redesign, Phase 4), adds a one-clause reason a low-visibility
+ * pathway can plausibly explain a real slide.
+ */
+export function describeDraftSteal(
+  teamLabel: string,
+  playerName: string,
+  pickNumber: number,
+  expectedRank: number,
+  pathway?: string | null,
+): string {
+  const clauseLabel = pathway ? STEAL_PATHWAY_CLAUSE_LABEL[pathway] : undefined;
+  const pathwayClause = clauseLabel ? ` out of the ${clauseLabel} ranks` : "";
+  return `${playerName}${pathwayClause}, projected around No. ${expectedRank}, falls all the way to pick ${pickNumber} - a real steal for ${teamLabel}`;
+}
+
+/** The category of event behind a PLAYER_MORALE story - only fired for a meaningfully-sized delta, see MORALE_NEWS_THRESHOLD in src/lib/morale/moraleEvents.ts. */
+export type MoraleEventReason =
+  | "ROLE_INCREASE"
+  | "ROLE_DECREASE"
+  | "MINUTES_SHORTFALL"
+  | "TEAM_PERFORMANCE_UP"
+  | "TEAM_PERFORMANCE_DOWN"
+  | "CONTRACT_UNDERPAID"
+  | "COACH_QUALITY";
+
+const MORALE_EVENT_REASON_PHRASE: Record<MoraleEventReason, string> = {
+  ROLE_INCREASE: "an expanded role",
+  ROLE_DECREASE: "a reduced role",
+  MINUTES_SHORTFALL: "not getting the minutes he was promised",
+  TEAM_PERFORMANCE_UP: "the team's strong recent play",
+  TEAM_PERFORMANCE_DOWN: "the team's recent struggles",
+  CONTRACT_UNDERPAID: "feeling underpaid relative to his market value",
+  COACH_QUALITY: "the quality of his coaching staff",
+};
+
+/** "X is pleased with an expanded role in Boston" / "X is growing frustrated with a reduced role in Boston." */
+export function describePlayerMoraleEvent(
+  playerName: string,
+  teamLabel: string,
+  reason: MoraleEventReason,
+  direction: "up" | "down",
+): string {
+  const phrase = MORALE_EVENT_REASON_PHRASE[reason];
+  return direction === "up"
+    ? `${playerName} is pleased with ${phrase} on the ${teamLabel}`
+    : `${playerName} is growing frustrated with ${phrase} on the ${teamLabel}`;
+}
+
+/** Fired once, when sustained dissatisfaction actually escalates - see shouldActivateTradeRequest. */
+export function describeTradeRequest(playerName: string, teamLabel: string): string {
+  return `${playerName} has requested a trade away from ${teamLabel}`;
+}
+
 function joinNames(names: string[]): string {
   if (names.length <= 1) return names[0] ?? "";
   if (names.length === 2) return `${names[0]} and ${names[1]}`;

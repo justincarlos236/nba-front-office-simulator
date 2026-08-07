@@ -8,16 +8,20 @@ export function SimulateControls({
   leagueId,
   gamesRemaining,
   allStarWeekendPending = false,
+  businessDecisionPending = false,
 }: {
   leagueId: string;
   gamesRemaining: number;
   /** A PENDING AllStarWeekend already exists for the current season - mirrors the server-side block in simulateGamesAction so buttons don't invite a click that will just no-op. */
   allStarWeekendPending?: boolean;
+  /** A BREAKING BusinessDecision already sits PENDING - mirrors simulateGamesAction's own gate. */
+  businessDecisionPending?: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
   const [lastResult, setLastResult] = useState<string | null>(null);
   const [remaining, setRemaining] = useState(gamesRemaining);
   const [weekendPending, setWeekendPending] = useState(allStarWeekendPending);
+  const [decisionPending, setDecisionPending] = useState(businessDecisionPending);
 
   function handleSimulate(target: SimulateTarget) {
     startTransition(async () => {
@@ -32,6 +36,15 @@ export function SimulateControls({
         );
         return;
       }
+      if (result.businessDecisionPending) {
+        setDecisionPending(true);
+        setLastResult(
+          result.userGamesCompleted > 0
+            ? `Played ${result.userGamesCompleted} of your team's game${result.userGamesCompleted > 1 ? "s" : ""} - the front office needs your call on something.`
+            : "Ownership needs your call on something before the season continues.",
+        );
+        return;
+      }
       setLastResult(
         result.userGamesCompleted === 0
           ? "Season complete - no games left to simulate."
@@ -40,7 +53,7 @@ export function SimulateControls({
     });
   }
 
-  const disabled = isPending || remaining === 0 || weekendPending;
+  const disabled = isPending || remaining === 0 || weekendPending || decisionPending;
 
   return (
     <div className="rounded-xl border border-border bg-surface p-6">
@@ -49,6 +62,15 @@ export function SimulateControls({
           <span className="text-foreground">All-Star Weekend has arrived.</span>{" "}
           <Link href={`/leagues/${leagueId}/all-star`} className="text-accent hover:underline">
             View the weekend
+          </Link>{" "}
+          <span className="text-muted">to continue the season.</span>
+        </div>
+      )}
+      {!weekendPending && decisionPending && (
+        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm">
+          <span className="text-foreground">The front office needs your call on something.</span>{" "}
+          <Link href={`/leagues/${leagueId}/finances`} className="text-accent hover:underline">
+            Open the inbox
           </Link>{" "}
           <span className="text-muted">to continue the season.</span>
         </div>

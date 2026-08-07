@@ -75,3 +75,19 @@ export function generateProspectName(rng: () => number): string {
   const last = LAST_NAMES[Math.floor(rng() * LAST_NAMES.length)];
   return `${first} ${last}`;
 }
+
+// 30 first names x 30 last names = 900 combinations; a 60-prospect class
+// draws enough of those that plain collisions are common (birthday
+// paradox), not a rare edge case - a full class reliably produced 2-4
+// duplicate names before this. Retries within the same rng stream rather
+// than reseeding, so class generation stays fully deterministic.
+const MAX_UNIQUE_NAME_ATTEMPTS = 20;
+
+export function generateUniqueProspectName(rng: () => number, taken: Set<string>): string {
+  let name = generateProspectName(rng);
+  for (let attempt = 0; attempt < MAX_UNIQUE_NAME_ATTEMPTS && taken.has(name); attempt++) {
+    name = generateProspectName(rng);
+  }
+  taken.add(name);
+  return name;
+}

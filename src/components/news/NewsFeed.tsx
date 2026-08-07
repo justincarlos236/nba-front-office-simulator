@@ -18,6 +18,7 @@ const CATEGORIES = [
   "STAFF",
   "ALL_STAR",
   "ROTATION",
+  "DRAFT",
   "RETIREMENT",
   "INJURY",
   "AWARD",
@@ -25,6 +26,8 @@ const CATEGORIES = [
   "WIN_STREAK",
   "GAME_RESULT",
   "OWNERSHIP_MESSAGE",
+  "MORALE",
+  "FINANCES",
 ] as const;
 
 const CATEGORY_LABEL: Record<(typeof CATEGORIES)[number], string> = {
@@ -34,6 +37,7 @@ const CATEGORY_LABEL: Record<(typeof CATEGORIES)[number], string> = {
   STAFF: "Staff",
   ALL_STAR: "All-Star",
   ROTATION: "Rotation",
+  DRAFT: "Draft",
   RETIREMENT: "Retirements",
   INJURY: "Injuries",
   AWARD: "Awards",
@@ -41,6 +45,8 @@ const CATEGORY_LABEL: Record<(typeof CATEGORIES)[number], string> = {
   WIN_STREAK: "Streaks",
   GAME_RESULT: "Games",
   OWNERSHIP_MESSAGE: "Ownership",
+  MORALE: "Morale",
+  FINANCES: "Finances",
 };
 
 // Every other category maps 1:1 to a single TransactionType - STAFF and
@@ -54,6 +60,7 @@ const CATEGORY_TYPES: Record<(typeof CATEGORIES)[number], string[] | null> = {
   STAFF: ["STAFF_HIRE", "STAFF_FIRE"],
   ALL_STAR: ["ALL_STAR_SELECTION", "ALL_STAR_SNUB", "ALL_STAR_RESULT"],
   ROTATION: ["ROTATION_CHANGE"],
+  DRAFT: ["DRAFT_LOTTERY", "DRAFT_SELECTION"],
   RETIREMENT: ["RETIREMENT"],
   INJURY: ["INJURY"],
   AWARD: ["AWARD"],
@@ -61,6 +68,8 @@ const CATEGORY_TYPES: Record<(typeof CATEGORIES)[number], string[] | null> = {
   WIN_STREAK: ["WIN_STREAK"],
   GAME_RESULT: ["GAME_RESULT"],
   OWNERSHIP_MESSAGE: ["OWNERSHIP_MESSAGE"],
+  MORALE: ["PLAYER_MORALE"],
+  FINANCES: ["FINANCIAL_REPORT", "FRANCHISE_MILESTONE"],
 };
 
 const TYPE_LABEL: Record<string, string> = {
@@ -72,6 +81,8 @@ const TYPE_LABEL: Record<string, string> = {
   ALL_STAR_SNUB: "All-Star Snub",
   ALL_STAR_RESULT: "All-Star Weekend",
   ROTATION_CHANGE: "Rotation",
+  DRAFT_LOTTERY: "Draft Lottery",
+  DRAFT_SELECTION: "Draft",
   RETIREMENT: "Retirement",
   INJURY: "Injury",
   OWNERSHIP_MESSAGE: "Ownership",
@@ -79,6 +90,9 @@ const TYPE_LABEL: Record<string, string> = {
   WIN_STREAK: "Streak",
   GAME_RESULT: "Game",
   AWARD: "Award",
+  PLAYER_MORALE: "Morale",
+  FINANCIAL_REPORT: "Finances",
+  FRANCHISE_MILESTONE: "Franchise Value",
 };
 
 const TYPE_BADGE_CLASS: Record<string, string> = {
@@ -90,6 +104,8 @@ const TYPE_BADGE_CLASS: Record<string, string> = {
   ALL_STAR_SNUB: "bg-muted/20 text-muted",
   ALL_STAR_RESULT: "bg-indigo-500/15 text-indigo-400",
   ROTATION_CHANGE: "bg-teal-500/15 text-teal-400",
+  DRAFT_LOTTERY: "bg-orange-500/15 text-orange-400",
+  DRAFT_SELECTION: "bg-orange-500/15 text-orange-400",
   RETIREMENT: "bg-muted/20 text-muted",
   INJURY: "bg-red-500/15 text-red-400",
   OWNERSHIP_MESSAGE: "bg-purple-500/15 text-purple-400",
@@ -97,6 +113,9 @@ const TYPE_BADGE_CLASS: Record<string, string> = {
   WIN_STREAK: "bg-orange-500/15 text-orange-400",
   GAME_RESULT: "bg-yellow-500/15 text-yellow-400",
   AWARD: "bg-pink-500/15 text-pink-400",
+  PLAYER_MORALE: "bg-rose-500/15 text-rose-400",
+  FINANCIAL_REPORT: "bg-green-500/15 text-green-400",
+  FRANCHISE_MILESTONE: "bg-green-500/15 text-green-400",
 };
 
 // Only BREAKING/MAJOR get a visual callout - MINOR/STANDARD read as the

@@ -8,6 +8,12 @@ import { importanceForRating } from "@/lib/transactions/newsImportance";
 import { formatCentsCompact } from "@/lib/money";
 import { STAFF_ROLE_LABEL } from "@/lib/staff/labels";
 import { computeMinAcceptableStaffOfferCents } from "@/lib/staff/hireValidation";
+import {
+  applyScaledFanHappinessDelta,
+  computeStaffChangeSentimentDelta,
+} from "@/lib/fans/sentimentEvents";
+import { recordFanSentimentManyTx } from "@/lib/fans/recordSentiment";
+import { describeStaffSentiment } from "@/lib/fans/describeSentiment";
 
 const MIN_CONTRACT_YEARS = 1;
 const MAX_CONTRACT_YEARS = 4;
@@ -98,6 +104,40 @@ export async function hireStaffAction(input: HireStaffInput) {
         teamIds: [myLeagueTeamId],
       },
     });
+
+    // Fan Engagement Deepening (Phase 1).
+    const teamFans = await tx.leagueTeam.findUnique({
+      where: { id: myLeagueTeamId },
+      select: { fanHappiness: true, fanCulture: { select: { patience: true, loyalty: true } } },
+    });
+    if (teamFans) {
+      const rawDelta = computeStaffChangeSentimentDelta({
+        role: staff.role,
+        quality: staff.quality,
+        isHire: true,
+      });
+      // Fans Page Redesign (Phase 3).
+      const { newFanHappiness, scaledDelta: delta } = applyScaledFanHappinessDelta(
+        teamFans.fanHappiness,
+        rawDelta,
+        teamFans.fanCulture,
+      );
+      await tx.leagueTeam.update({
+        where: { id: myLeagueTeamId },
+        data: { fanHappiness: newFanHappiness },
+      });
+      // Fans Page Redesign (Phase 1) - persist why, not just the result.
+      await recordFanSentimentManyTx(tx, [
+        {
+          leagueId: league.id,
+          leagueTeamId: myLeagueTeamId,
+          season: league.currentSeason,
+          kind: "STAFF_CHANGE",
+          delta,
+          description: describeStaffSentiment(staff.fullName, true, delta),
+        },
+      ]);
+    }
   });
 
   redirect(`/leagues/${league.id}/staff`);
@@ -157,6 +197,40 @@ export async function fireStaffAction(input: FireStaffInput) {
         teamIds: [myLeagueTeamId],
       },
     });
+
+    // Fan Engagement Deepening (Phase 1).
+    const teamFans = await tx.leagueTeam.findUnique({
+      where: { id: myLeagueTeamId },
+      select: { fanHappiness: true, fanCulture: { select: { patience: true, loyalty: true } } },
+    });
+    if (teamFans) {
+      const rawDelta = computeStaffChangeSentimentDelta({
+        role: staff.role,
+        quality: staff.quality,
+        isHire: false,
+      });
+      // Fans Page Redesign (Phase 3).
+      const { newFanHappiness, scaledDelta: delta } = applyScaledFanHappinessDelta(
+        teamFans.fanHappiness,
+        rawDelta,
+        teamFans.fanCulture,
+      );
+      await tx.leagueTeam.update({
+        where: { id: myLeagueTeamId },
+        data: { fanHappiness: newFanHappiness },
+      });
+      // Fans Page Redesign (Phase 1) - persist why, not just the result.
+      await recordFanSentimentManyTx(tx, [
+        {
+          leagueId: league.id,
+          leagueTeamId: myLeagueTeamId,
+          season: league.currentSeason,
+          kind: "STAFF_CHANGE",
+          delta,
+          description: describeStaffSentiment(staff.fullName, false, delta),
+        },
+      ]);
+    }
   });
 
   redirect(`/leagues/${league.id}/staff`);

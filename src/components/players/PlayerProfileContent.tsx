@@ -4,6 +4,7 @@ import { useState } from "react";
 import { formatCentsCompact } from "@/lib/money";
 import { getPlayerValueTier, PLAYER_VALUE_TIER_LABEL } from "@/lib/valuation/playerValueTier";
 import type { PlayerProfileData } from "@/lib/players/profileData";
+import { PROSPECT_PATHWAY_LABEL } from "@/lib/draft/prospectBio";
 
 const AWARD_LABELS: Record<string, string> = {
   MVP: "Most Valuable Player",
@@ -20,7 +21,16 @@ const INJURY_LABELS: Record<string, string> = {
   SEASON_ENDING: "Season-Ending",
 };
 
-const TABS = ["Overview", "Ratings", "Stats", "Contract", "Career", "Awards", "Injuries"] as const;
+const TABS = [
+  "Overview",
+  "Personality",
+  "Ratings",
+  "Stats",
+  "Contract",
+  "Career",
+  "Awards",
+  "Injuries",
+] as const;
 type Tab = (typeof TABS)[number];
 
 function heightLabel(heightInches: number | null): string | null {
@@ -86,6 +96,9 @@ export function PlayerProfileContent({ data }: { data: PlayerProfileData }) {
                 label="Drafted"
                 value={identity.draftYear ? String(identity.draftYear) : "Undrafted"}
               />
+              {identity.pathway && (
+                <StatBox label="Pathway" value={PROSPECT_PATHWAY_LABEL[identity.pathway]} />
+              )}
             </div>
             {leagueContext && (
               <div className="rounded-lg border border-border bg-surface p-4">
@@ -100,8 +113,99 @@ export function PlayerProfileContent({ data }: { data: PlayerProfileData }) {
                   <span className="text-sm text-muted">
                     {INJURY_LABELS[leagueContext.injuryStatus]}
                   </span>
+                  <span className="text-sm text-muted">
+                    Morale: {leagueContext.morale.level} ({leagueContext.morale.score})
+                  </span>
+                  {leagueContext.morale.tradeRequestActive && (
+                    <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-semibold text-red-400">
+                      Trade Request
+                    </span>
+                  )}
+                  {leagueContext.icon && leagueContext.icon.level !== "REGULAR" && (
+                    <span
+                      className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-400"
+                      title={`${leagueContext.icon.tenureSeasons}-season tenure${leagueContext.icon.homegrown ? ", homegrown" : ""} - franchise-icon score ${leagueContext.icon.score}/100`}
+                    >
+                      {leagueContext.icon.label}
+                      {leagueContext.icon.homegrown ? " · Homegrown" : ""}
+                    </span>
+                  )}
                 </div>
               </div>
+            )}
+          </div>
+        )}
+
+        {tab === "Personality" && (
+          <div className="space-y-4">
+            {leagueContext ? (
+              <>
+                <div className="rounded-lg border border-border bg-surface p-4">
+                  <p className="text-xs tracking-wide text-muted uppercase">
+                    {leagueContext.morale.personality.label}
+                  </p>
+                  <p className="mt-1 text-sm text-muted">
+                    {leagueContext.morale.personality.description}
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <StatBox
+                      label="Competitiveness"
+                      value={String(leagueContext.morale.personality.competitiveness)}
+                    />
+                    <StatBox
+                      label="Role Sensitivity"
+                      value={String(leagueContext.morale.personality.roleSensitivity)}
+                    />
+                    <StatBox
+                      label="Loyalty"
+                      value={String(leagueContext.morale.personality.loyalty)}
+                    />
+                    <StatBox
+                      label="Financial Motivation"
+                      value={String(leagueContext.morale.personality.financialMotivation)}
+                    />
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border bg-surface p-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <p className="text-xs tracking-wide text-muted uppercase">Current morale</p>
+                    <span className="font-mono text-lg text-accent">
+                      {leagueContext.morale.score}
+                    </span>
+                    <span className="text-sm text-foreground">{leagueContext.morale.level}</span>
+                    {leagueContext.morale.tradeRequestActive && (
+                      <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-semibold text-red-400">
+                        Trade Request
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-2 text-sm text-muted">{leagueContext.morale.levelDescription}</p>
+                </div>
+                <div>
+                  <p className="text-xs tracking-wide text-muted uppercase">Recent concerns</p>
+                  {leagueContext.morale.recentNews.length === 0 ? (
+                    <p className="mt-2 text-sm text-muted">
+                      Nothing notable yet - concerns and reactions will show up here as they happen.
+                    </p>
+                  ) : (
+                    <div className="mt-2 space-y-1.5">
+                      {leagueContext.morale.recentNews.map((n, i) => (
+                        <div
+                          key={i}
+                          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
+                        >
+                          {n.description}
+                          <span className="ml-2 text-xs text-muted">{n.season}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-muted">
+                No personality/morale profile outside an active league save.
+              </p>
             )}
           </div>
         )}

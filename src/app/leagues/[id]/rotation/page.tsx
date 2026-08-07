@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -53,14 +52,13 @@ export default async function RotationPage({ params }: PageProps) {
     injuryStatus: lp.injuryStatus,
     rank: rankById.get(lp.id) ?? null,
     targetMinutesPerGame: lp.targetMinutesPerGame,
+    morale: lp.morale,
+    tradeRequestActive: lp.tradeRequestActive,
   }));
 
   return (
     <main className="mx-auto max-w-4xl flex-1 px-6 py-16">
-      <Link href={`/leagues/${league.id}`} className="text-sm text-muted hover:text-foreground">
-        &larr; Back to team
-      </Link>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">Rotation</h1>
+      <h1 className="text-3xl font-bold tracking-tight text-foreground">Rotation</h1>
       <p className="mt-2 max-w-2xl text-muted">
         Set your starting five, bench order, and expected minutes - the simulation guides actual
         playing time toward these targets, with natural game-to-game variance from matchups,

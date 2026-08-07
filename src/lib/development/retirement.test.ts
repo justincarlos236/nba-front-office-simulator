@@ -29,6 +29,20 @@ describe("retirementProbability", () => {
   it("never exceeds 1", () => {
     expect(retirementProbability(60, 20)).toBeLessThanOrEqual(1);
   });
+
+  it("is higher for a demoralized aging veteran than a happy one at the same age/rating", () => {
+    const miserable = retirementProbability(35, 75, 5);
+    const happy = retirementProbability(35, 75, 95);
+    expect(miserable).toBeGreaterThan(happy);
+  });
+
+  it("never goes negative even for an extremely happy player", () => {
+    expect(retirementProbability(33, 90, 100)).toBeGreaterThanOrEqual(0);
+  });
+
+  it("has no effect on a young player regardless of morale", () => {
+    expect(retirementProbability(25, 80, 5)).toBe(0);
+  });
 });
 
 describe("shouldRetire", () => {

@@ -1,6 +1,7 @@
 import type { ExpectationLevel } from "./expectationLevel";
 import { EXPECTATION_LEVEL_ORDER } from "./expectationLevel";
 import type { PayrollTier } from "./payrollTier";
+import type { FinancialHealth } from "@/lib/finances/finances";
 
 export type EvaluationVerdict = "EXCEEDED" | "MET" | "FELL_SHORT" | "DRASTICALLY_FELL_SHORT";
 
@@ -102,15 +103,31 @@ const PAYROLL_DELTA_MULTIPLIER: Record<PayrollTier, number> = {
 const FAN_HAPPINESS_NUDGE_SCALE = 0.08;
 const FAN_HAPPINESS_NEUTRAL = 65;
 
+// Franchise Finances - a modest nudge on top of the verdict, same spirit as
+// the fan-happiness one: ownership rewards a franchise that spends
+// responsibly and makes money, and sours faster on one bleeding cash. Small
+// next to the verdict swings, and omitted entirely (not just neutral) for
+// callers that don't pass it, so existing behavior is unchanged.
+const FINANCIAL_HEALTH_NUDGE: Record<FinancialHealth, number> = {
+  THRIVING: 2,
+  HEALTHY: 1,
+  STABLE: 0,
+  STRAINED: -2,
+  IN_THE_RED: -4,
+};
+
 export function computeConfidenceDelta(
   verdict: EvaluationVerdict,
   payrollTier: PayrollTier,
   fanHappiness?: number,
+  financialHealth?: FinancialHealth,
 ): number {
   const base = BASE_CONFIDENCE_DELTA[verdict] * PAYROLL_DELTA_MULTIPLIER[payrollTier];
   const fanNudge =
     fanHappiness !== undefined
       ? (fanHappiness - FAN_HAPPINESS_NEUTRAL) * FAN_HAPPINESS_NUDGE_SCALE
       : 0;
-  return Math.round(base + fanNudge);
+  const financialNudge =
+    financialHealth !== undefined ? FINANCIAL_HEALTH_NUDGE[financialHealth] : 0;
+  return Math.round(base + fanNudge + financialNudge);
 }

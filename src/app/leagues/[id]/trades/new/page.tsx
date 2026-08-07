@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
 import { prisma } from "@/lib/prisma";
 import { TradeBuilder } from "@/components/trades/TradeBuilder";
+import { HowDoesThisWork } from "@/components/guide/HowDoesThisWork";
 import { computeCompetitivenessPercentiles } from "@/lib/actions/competitiveness";
 import { computeTeamIdentity } from "@/lib/gm/teamIdentity";
 import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
@@ -17,14 +18,25 @@ interface PageProps {
 }
 
 async function loadRoster(leagueTeamId: string, season: number) {
-  const leaguePlayers = await prisma.leaguePlayer.findMany({
-    where: { leagueTeamId },
-    include: {
-      player: true,
-      contract: { include: { years: { where: { season } } } },
-    },
-    orderBy: { overallRating: "desc" },
-  });
+  const [leaguePlayers, sponsorshipClausePlayers] = await Promise.all([
+    prisma.leaguePlayer.findMany({
+      where: { leagueTeamId },
+      include: {
+        player: true,
+        contract: { include: { years: { where: { season } } } },
+      },
+      orderBy: { overallRating: "desc" },
+    }),
+    // Finances as a Gameplay Pillar (Phase 2) - which of this team's
+    // players currently hold a "star clause" on an active sponsorship
+    // deal, for the trade builder's non-blocking warning. Only ever
+    // non-empty for the user's own team.
+    prisma.sponsorshipDeal.findMany({
+      where: { leagueTeamId, status: "ACTIVE", conditionLeaguePlayerId: { not: null } },
+      select: { conditionLeaguePlayerId: true },
+    }),
+  ]);
+  const clausePlayerIds = new Set(sponsorshipClausePlayers.map((d) => d.conditionLeaguePlayerId));
 
   const capSheet = computeCapSheet({
     season,
@@ -47,6 +59,7 @@ async function loadRoster(leagueTeamId: string, season: number) {
       noTradeClause: lp.contract!.noTradeClause,
       injuryStatus: lp.injuryStatus,
       careerGamesMissedToInjury: lp.careerGamesMissedToInjury,
+      hasSponsorshipClause: clausePlayerIds.has(lp.id),
     }));
 
   // Team identity/needs (Phase 11b/11c) - active roster, not just the
@@ -125,10 +138,7 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
     const otherTeams = league.teams.filter((lt) => lt.id !== myLeagueTeam.id);
     return (
       <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
-        <Link href={`/leagues/${league.id}`} className="text-sm text-muted hover:text-foreground">
-          &larr; Back to your team
-        </Link>
-        <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Propose a trade with...
         </h1>
         <p className="mt-2 text-muted">
@@ -212,9 +222,11 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
       <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground">
         {myLeagueTeam.team.name} &harr; {otherLeagueTeam.team.name}
       </h1>
-      <p className="mt-2 text-muted">
-        Select players and draft picks on each side. Legality is checked live against real 2023 CBA
-        salary matching, apron, no-trade-clause, and Stepien-rule draft-pick rules.
+      <p className="mt-2 max-w-2xl text-muted">
+        Select players and draft picks on each side - every offer is checked live, in plain
+        language, against real salary-matching, no-trade, and draft-pick rules. You&apos;ll always
+        see why a trade is legal or not, never a raw rulebook.{" "}
+        <HowDoesThisWork topic="trades" className="underline hover:text-foreground" />
       </p>
 
       <div className="mt-10">
@@ -234,6 +246,7 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
             needs: mine.needs,
             personality: myLeagueTeam.gmPersonality,
             roster: mine.players.map((p) => ({ overallRating: p.overallRating, age: p.age })),
+            analyticsLevel: myLeagueTeam.analyticsLevel,
           }}
           theirTeam={{
             leagueTeamId: otherLeagueTeam.id,

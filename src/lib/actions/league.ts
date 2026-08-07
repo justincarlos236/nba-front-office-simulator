@@ -6,7 +6,12 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { planLeaguePlayer } from "@/lib/league/planLeaguePlayer";
 import { generateRoundRobinSchedule } from "@/lib/simulation/generateSchedule";
-import { estimateAge, estimateExperience } from "@/lib/players/age";
+import {
+  estimateAge,
+  estimateExperience,
+  ageFromBirthDate,
+  estimateExperienceFromAge,
+} from "@/lib/players/age";
 import { MAX_LEAGUES_PER_USER } from "@/lib/league/constants";
 import { computeCapSheet } from "@/lib/cap/capSheet";
 import { computeTeamStrength } from "@/lib/simulation/teamStrength";
@@ -16,19 +21,34 @@ import { buildFuturePickRows, FUTURE_PICK_WINDOW_YEARS } from "@/lib/draft/futur
 import { pickRandomGmPersonality } from "@/lib/gm/gmPersonality";
 import { createSeededRandom } from "@/lib/contracts/seededRandom";
 import { ensureStaffGenerated } from "@/lib/actions/staffGeneration";
+import { generatePersonalityProfile } from "@/lib/morale/generatePersonality";
+import {
+  computeFranchiseValue,
+  startingCashReserveCents,
+  pickCpuTicketPosture,
+} from "@/lib/finances/finances";
+import { computeFranchisePopularity } from "@/lib/fans/fanHappiness";
+import { rollOwnerArchetype } from "@/lib/gm/ownerArchetype";
+import { selectTopPerTeam, DEFAULT_MAX_ROSTER_SIZE } from "@/lib/data-sources/rosterConstruction";
+import {
+  computeStrengthByTeam,
+  computeStrengthPercentiles,
+  computeJobOffer,
+  JOB_SITUATION_LABEL,
+} from "@/lib/gm/jobMarket";
 
-const SEASON = 2023;
-// Tied to the ROTATION/MINIMUM tier boundary (playerValueTier.ts) on the
-// 60-99 NBA-2K-style rating scale - the same "bottom ~15%" intent the old
-// cutoff of 25 had on the old 0-100 scale.
-const FREE_AGENT_RATING_CUTOFF = 65;
+// The season a new league starts in - the season the imported NBA dataset
+// describes (2025 => the 2025-26 season). See src/lib/data-sources/.
+const SEASON = 2025;
 
 /**
- * Bootstraps a brand-new League from the reference snapshot: clones all 30
- * teams, all 497 real players (with a rating + generated contract derived
- * from their real 2023-24 stats), and puts the user in charge of one team.
- * Users can run multiple independent franchises (up to `MAX_LEAGUES_PER_USER`)
- * and switch between them from `/leagues`.
+ * Bootstraps a brand-new League from the current imported NBA dataset: clones
+ * all 30 teams and every player in the dataset onto their real current roster
+ * (trimmed to a legal 15-man roster, surplus to free agency), with each
+ * player's imported *seed* rating as their starting overall and a contract
+ * generated from their real season stats, and puts the user in charge of one
+ * team. Users can run multiple independent franchises (up to
+ * `MAX_LEAGUES_PER_USER`) and switch between them from `/leagues`.
  */
 export async function createLeagueAction(formData: FormData) {
   const session = await auth();
@@ -39,34 +59,61 @@ export async function createLeagueAction(formData: FormData) {
     throw new Error("Missing teamId");
   }
 
-  const existingCount = await prisma.league.count({ where: { ownerId: session.user.id } });
+  // GM Career Mode (Phase 2) - only ACTIVE franchises count toward the cap;
+  // an ended (fired/retired) league is a permanent record, not a live save, so
+  // it must never block taking a new job.
+  const existingCount = await prisma.league.count({
+    where: { ownerId: session.user.id, endedAt: null },
+  });
   if (existingCount >= MAX_LEAGUES_PER_USER) {
     throw new Error(`You've reached the ${MAX_LEAGUES_PER_USER}-franchise limit.`);
   }
 
-  const [teams, players, chosenTeam] = await Promise.all([
+  const [teams, players, chosenTeam, user] = await Promise.all([
     prisma.team.findMany(),
-    // Only the real, imported 497-player pool (externalId set) - fictional
-    // draft-generated prospects (externalId null) are created per-league by
-    // that league's own draft (src/lib/actions/draft.ts) and must never be
-    // swept into a *different* new league's bootstrap. Player is shared,
-    // global reference data with no per-league scoping and no cleanup when
-    // a league is deleted, so without this filter every past league's
-    // fictional rookies (accumulated indefinitely) would leak into every
-    // future league's free-agent pool.
+    // Exactly the current imported NBA dataset: `seedOverallRating` is set only
+    // on those rows (see prisma/seed.ts). This filter excludes both the
+    // fictional draft-generated prospects (externalId null) - created per-league
+    // by that league's own draft and never to be swept into a different new
+    // league's bootstrap - and any legacy/older-dataset rows a prior seed left
+    // behind. Each player's most recent real season line comes along (2025-26,
+    // or a prior season for an injured-all-season player the import fell back
+    // to). Player is shared global reference data, so this scoping is essential.
     prisma.player.findMany({
-      where: { externalId: { not: null } },
-      include: { seasonStats: { where: { season: SEASON } } },
+      where: { seedOverallRating: { not: null } },
+      include: { seasonStats: { orderBy: { season: "desc" }, take: 1 } },
     }),
     prisma.team.findUnique({ where: { id: teamId } }),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { gmReputation: true } }),
   ]);
   if (!chosenTeam) throw new Error("Unknown team");
+
+  // GM Career Mode (Phase 2) - the reputation gate. Rank all 30 teams by real
+  // roster strength (same derivation the job-market page shows), and refuse the
+  // job if the user's reputation doesn't clear the chosen team's situation.
+  // Never trust the client - the gate is authoritative here. The job's
+  // situation also sets the starting owner confidence (the "leash").
+  const gmReputation = user?.gmReputation ?? 50;
+  const teamRatings = players
+    .filter((p) => p.currentTeamId && p.seedOverallRating != null)
+    .map((p) => ({ teamId: p.currentTeamId, overallRating: p.seedOverallRating! }));
+  const strengthByTeam = computeStrengthByTeam(teamRatings);
+  const percentiles = computeStrengthPercentiles(strengthByTeam);
+  const jobOffer = computeJobOffer(percentiles.get(chosenTeam.id) ?? 0.5, gmReputation);
+  if (!jobOffer.available) {
+    throw new Error(
+      `The ${chosenTeam.city} ${chosenTeam.name} won't hire you yet - a ${JOB_SITUATION_LABEL[jobOffer.situation]} needs a GM reputation of at least ${jobOffer.reputationRequired}. Build your reputation with a more modest job first.`,
+    );
+  }
 
   const league = await prisma.league.create({
     data: {
       name: `${chosenTeam.city} ${chosenTeam.name}`,
       ownerId: session.user.id,
       currentSeason: SEASON,
+      // GM Career Mode (Phase 2) - the leash: a contender job starts you on a
+      // shorter one (lower owner confidence) than a rebuild.
+      ownerConfidence: jobOffer.startingOwnerConfidence,
     },
   });
 
@@ -74,13 +121,39 @@ export async function createLeagueAction(formData: FormData) {
   // philosophy, seeded deterministically per league+team so the same
   // league always reproduces the same personalities.
   const leagueTeams = await prisma.leagueTeam.createManyAndReturn({
-    data: teams.map((team) => ({
-      leagueId: league.id,
-      teamId: team.id,
-      gmPersonality: pickRandomGmPersonality(
-        createSeededRandom(`${league.id}-${team.id}-personality`),
-      ),
-    })),
+    data: teams.map((team) => {
+      // Franchise Finances - a market-scaled starting balance sheet so a
+      // brand-new franchise begins with a believable cash cushion and value,
+      // before season 1's P&L lands. Recomputed for real at each season
+      // boundary (src/lib/actions/offseason.ts).
+      const startingCash = startingCashReserveCents(team.marketSize);
+      const startingValue = computeFranchiseValue({
+        marketSize: team.marketSize,
+        franchisePopularity: computeFranchisePopularity(65, null, team.marketSize),
+        playoffOutcomeIndex: 0,
+        cashReserveCents: startingCash,
+        priorValueCents: 0,
+      });
+      return {
+        leagueId: league.id,
+        teamId: team.id,
+        gmPersonality: pickRandomGmPersonality(
+          createSeededRandom(`${league.id}-${team.id}-personality`),
+        ),
+        cashReserveCents: BigInt(Math.round(startingCash)),
+        franchiseValueCents: BigInt(Math.round(startingValue)),
+        // CPU teams get a market-based pricing posture for revenue variety;
+        // the user's own team starts neutral so the lever is their choice.
+        ticketPricingPosture:
+          team.id === teamId ? "STANDARD" : pickCpuTicketPosture(team.marketSize),
+        // Phase 6 - every team gets its own rolled owner personality from day
+        // one, including CPU teams (was league-wide, user-only, in Phase 3).
+        ownerArchetype: rollOwnerArchetype(
+          createSeededRandom(`${league.id}-${team.id}-owner-archetype`),
+        ),
+        ownerArchetypeSince: SEASON,
+      };
+    }),
   });
   const teamIdToLeagueTeamId = new Map(leagueTeams.map((lt) => [lt.teamId, lt.id]));
 
@@ -121,7 +194,7 @@ export async function createLeagueAction(formData: FormData) {
   // rolling window of [SEASON, SEASON + FUTURE_PICK_WINDOW_YEARS], kept
   // one season further out each time `advanceSeasonAction` runs.
   // `overallPickNumber` stays null until that season's own draft actually
-  // starts (`startDraftAction`), which updates these same rows in place
+  // starts (`runDraftLotteryAction`), which updates these same rows in place
   // rather than creating new ones - so a pick traded before its draft
   // happens keeps whichever `currentOwnerId` the trade left it with.
   await prisma.draftPick.createMany({
@@ -132,41 +205,82 @@ export async function createLeagueAction(formData: FormData) {
     ).map((row) => ({ ...row, overallPickNumber: null })),
   });
 
-  const plans = players.map((player) => {
+  // Each player's plan drives their generated contract; the LeaguePlayer's
+  // starting overall/potential come from the imported seed ratings, not the
+  // contract model. Age comes from the real birth date when available (the
+  // current dataset carries it), falling back to the draft-year estimate.
+  const enriched = players.map((player) => {
     const stat = player.seasonStats[0];
     const realTeamLeagueTeamId = player.currentTeamId
       ? (teamIdToLeagueTeamId.get(player.currentTeamId) ?? null)
       : null;
-    if (!stat) return { player, leagueTeamId: realTeamLeagueTeamId, plan: null };
-
-    const plan = planLeaguePlayer({
-      season: SEASON,
-      age: estimateAge(player.draftYear, SEASON),
-      yearsOfExperience: estimateExperience(player.draftYear, SEASON),
-      stats: { ...stat, trueShootingPct: stat.trueShootingPct ?? 0.56 },
-      seed: player.id,
-    });
-
-    // Every real player in the snapshot currently has a team, which would
-    // leave free agency permanently empty. Fringe/replacement-level
-    // players (bottom ~15% by rating - two-way/10-day caliber in reality)
-    // start as unsigned free agents instead, so the board has real content.
-    const leagueTeamId =
-      plan.overallRating < FREE_AGENT_RATING_CUTOFF ? null : realTeamLeagueTeamId;
-    return { player, leagueTeamId, plan };
+    const age = ageFromBirthDate(player.birthDate, SEASON) ?? estimateAge(player.draftYear, SEASON);
+    const yearsOfExperience = player.draftYear
+      ? estimateExperience(player.draftYear, SEASON)
+      : estimateExperienceFromAge(age);
+    const plan = stat
+      ? planLeaguePlayer({
+          season: SEASON,
+          age,
+          yearsOfExperience,
+          stats: { ...stat, trueShootingPct: stat.trueShootingPct ?? 0.56 },
+          seed: player.id,
+        })
+      : null;
+    return {
+      player,
+      realTeamLeagueTeamId,
+      plan,
+      overallRating: player.seedOverallRating ?? plan?.overallRating ?? 50,
+      potentialRating: player.seedPotentialRating ?? plan?.potentialRating ?? 50,
+    };
   });
 
+  // Roster trim: each team keeps its top 15 by seed rating; the surplus
+  // (deep-bench / two-way caliber) enters the league as free agents, so free
+  // agency has real content and every roster is a legal, playable size. Shared
+  // with the dataset validator (src/lib/data-sources/rosterConstruction.ts) so
+  // what's validated is exactly what's built.
+  const { rostered } = selectTopPerTeam(
+    enriched,
+    (e) => e.realTeamLeagueTeamId,
+    (e) => e.overallRating,
+    DEFAULT_MAX_ROSTER_SIZE,
+  );
+
+  const plans = enriched.map((e) => ({
+    player: e.player,
+    plan: e.plan,
+    overallRating: e.overallRating,
+    potentialRating: e.potentialRating,
+    leagueTeamId: rostered.has(e) ? e.realTeamLeagueTeamId : null,
+  }));
+
   const createdLeaguePlayers = await prisma.leaguePlayer.createManyAndReturn({
-    data: plans.map(({ player, leagueTeamId, plan }) => ({
+    data: plans.map(({ player, leagueTeamId, overallRating, potentialRating }) => ({
       leagueId: league.id,
       playerId: player.id,
       leagueTeamId,
       reSigningTeamId: leagueTeamId,
-      overallRating: plan?.overallRating ?? 50,
-      potentialRating: plan?.potentialRating ?? 50,
+      overallRating,
+      potentialRating,
+      // Franchise Finances (Phase D) - real players start on their team as of
+      // the league's first season (tenure counts from here); homegrown is
+      // false since the sim has no draft history for the real roster.
+      joinedTeamSeason: leagueTeamId ? SEASON : null,
     })),
   });
   const playerIdToLeaguePlayerId = new Map(createdLeaguePlayers.map((lp) => [lp.playerId, lp.id]));
+
+  // Player Morale & Personality System - every player in the league starts
+  // with a persistent personality from day one, same "no special bootstrap
+  // case" instinct as SeasonExpectation below.
+  await prisma.playerPersonalityProfile.createMany({
+    data: createdLeaguePlayers.map((lp) => ({
+      leaguePlayerId: lp.id,
+      ...generatePersonalityProfile(lp.id),
+    })),
+  });
 
   const rosteredPlans = plans.filter((p) => p.plan && p.leagueTeamId);
 
@@ -207,7 +321,7 @@ export async function createLeagueAction(formData: FormData) {
       salaryCents: p.plan!.contract.years.find((y) => y.season === SEASON)!.salaryCents,
     })),
   });
-  const userTeamStrength = computeTeamStrength(userRosteredPlans.map((p) => p.plan!.overallRating));
+  const userTeamStrength = computeTeamStrength(userRosteredPlans.map((p) => p.overallRating));
   await prisma.seasonExpectation.create({
     data: {
       leagueId: league.id,

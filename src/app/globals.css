@@ -29,3 +29,74 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
+
+/* Draft Lottery Experience - a handful of small, purely presentational
+   keyframes. Nothing here touches simulation/reveal timing logic; these
+   just give each revealed pick and special moment (a big jump, the user's
+   team, pick #1) a bit of real motion instead of static rows appearing. */
+@keyframes lottery-card-in {
+  from {
+    opacity: 0;
+    transform: scale(0.88) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+@keyframes lottery-glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--lottery-glow, var(--accent)) 55%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 32px 6px color-mix(in srgb, var(--lottery-glow, var(--accent)) 55%, transparent);
+  }
+}
+@keyframes lottery-banner-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-lottery-card-in {
+  animation: lottery-card-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-lottery-glow-pulse {
+  animation: lottery-glow-pulse 1.6s ease-in-out infinite;
+}
+.animate-lottery-banner-in {
+  animation: lottery-banner-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-lottery-card-in,
+  .animate-lottery-glow-pulse,
+  .animate-lottery-banner-in {
+    animation: none;
+  }
+}
+
+/* Homepage hero - a continuously-scrolling strip of real team logos
+   (texture/identity, not a functional carousel). The track renders the
+   logo list twice back to back and scrolls exactly one copy's width, so
+   the loop point is seamless. */
+@keyframes logo-marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-logo-marquee {
+  animation: logo-marquee-scroll 40s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-logo-marquee {
+    animation: none;
+  }
+}

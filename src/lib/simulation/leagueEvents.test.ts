@@ -69,6 +69,25 @@ describe("rollForTeamInjury", () => {
     const greatMedical = rollForTeamInjury(roster, sequence([0.0, 0.0, 0.7, 0.99]), 0.02, 99);
     expect(greatMedical!.durationGames).toBeLessThanOrEqual(uncoached!.durationGames);
   });
+
+  it("premium medical investment reduces injury frequency (Franchise Finances)", () => {
+    // Same isolation trick as the Medical Staff frequency test: a mid-range
+    // roll that only a *higher* effective chance would clear.
+    const rollValue = 0.021;
+    const neutral = rollForTeamInjury(roster, sequence([rollValue]), 0.02, null, 0);
+    const minimal = rollForTeamInjury(roster, sequence([rollValue]), 0.02, null, -6);
+    const premium = rollForTeamInjury(roster, sequence([rollValue]), 0.02, null, 8);
+    expect(neutral).toBeNull(); // 0.021 misses the unscaled 2% chance
+    expect(minimal).not.toBeNull(); // minimal investment raises the effective chance
+    expect(premium).toBeNull(); // premium investment lowers it further
+  });
+
+  it("a zero medical-investment delta behaves identically to omitting it", () => {
+    const rollValue = 0.5;
+    expect(rollForTeamInjury(roster, sequence([rollValue]), 0.02, 72)).toEqual(
+      rollForTeamInjury(roster, sequence([rollValue]), 0.02, 72, 0),
+    );
+  });
 });
 
 describe("shouldTriggerEvent", () => {
@@ -99,50 +118,148 @@ describe("rollForCpuTrade", () => {
     ownedFutureFirstRoundPickSeasons: [] as number[],
   };
 
-  function makeTeam(id: string, ratings: number[]): CpuTeam {
+  function makeTeam(
+    id: string,
+    players: {
+      rating: number;
+      age?: number;
+      position?: "PG" | "SG" | "SF" | "PF" | "C";
+      noTradeClause?: boolean;
+    }[],
+    overrides: Partial<Pick<CpuTeam, "identity" | "needs" | "personality">> = {},
+  ): CpuTeam {
     return {
       leagueTeamId: id,
       teamLabel: id,
-      roster: ratings.map((rating, i) => ({
+      roster: players.map((p, i) => ({
         leaguePlayerId: `${id}-p${i}`,
         playerName: `${id} Player ${i}`,
-        rating,
+        rating: p.rating,
+        potentialRating: p.rating,
+        age: p.age ?? 27,
+        position: p.position ?? "SF",
         salaryCents: 5_000_000_00n,
-        noTradeClause: false,
+        noTradeClause: p.noTradeClause ?? false,
+        injuryStatus: "HEALTHY" as const,
+        careerGamesMissedToInjury: 0,
       })),
       capState,
+      identity: overrides.identity ?? "PLAY_IN_TEAM",
+      needs: overrides.needs ?? [],
+      personality: overrides.personality ?? "BALANCED",
     };
   }
 
   it("returns null with fewer than two teams", () => {
-    expect(rollForCpuTrade([makeTeam("A", [80])], 2024, () => 0)).toBeNull();
+    expect(rollForCpuTrade([makeTeam("A", [{ rating: 80 }])], 2024, () => 0)).toBeNull();
   });
 
   it("returns null when every player has a no-trade clause", () => {
-    const teamA = makeTeam("A", [80]);
-    teamA.roster[0].noTradeClause = true;
-    const teamB = makeTeam("B", [75]);
-    teamB.roster[0].noTradeClause = true;
+    const teamA = makeTeam("A", [{ rating: 80, noTradeClause: true }]);
+    const teamB = makeTeam("B", [{ rating: 75, noTradeClause: true }]);
     expect(rollForCpuTrade([teamA, teamB], 2024, () => 0.4, 3)).toBeNull();
   });
 
-  it("finds a legal swap between two teams with matching bench salaries", () => {
-    const teamA = makeTeam("A", [90, 70, 65]);
-    const teamB = makeTeam("B", [88, 68, 60]);
-    const result = rollForCpuTrade([teamA, teamB], 2024, sequence([0, 0.9, 0, 0.1]), 5);
+  it("finds a mutually-agreeable, legal swap between two evenly-matched teams", () => {
+    const teamA = makeTeam("A", [{ rating: 88 }, { rating: 75 }, { rating: 68 }]);
+    const teamB = makeTeam("B", [{ rating: 88 }, { rating: 75 }, { rating: 68 }]);
+    const result = rollForCpuTrade([teamA, teamB], 2024, () => 0, 5);
     expect(result).not.toBeNull();
     expect([teamA.leagueTeamId, teamB.leagueTeamId]).toContain(result!.teamA.leagueTeamId);
     expect(result!.teamA.leagueTeamId).not.toBe(result!.teamB.leagueTeamId);
   });
 
   it("never proposes the same team trading with itself", () => {
-    const teamA = makeTeam("A", [80, 70]);
-    const teamB = makeTeam("B", [78, 68]);
+    const teamA = makeTeam("A", [{ rating: 80 }, { rating: 70 }]);
+    const teamB = makeTeam("B", [{ rating: 78 }, { rating: 68 }]);
     // Force both index rolls toward the same team - the function must still
     // resolve to two distinct teams.
     const result = rollForCpuTrade([teamA, teamB], 2024, sequence([0, 0, 0, 0]), 5);
     if (result) {
       expect(result.teamA.leagueTeamId).not.toBe(result.teamB.leagueTeamId);
+    }
+  });
+
+  it("targets a player who fills the seeking team's recognized need, not a random one", () => {
+    const teamA = makeTeam(
+      "A",
+      [
+        { rating: 80, position: "C" },
+        { rating: 70, position: "SF" },
+      ],
+      {
+        needs: ["POINT_GUARD"],
+      },
+    );
+    const teamB = makeTeam("B", [
+      { rating: 78, position: "PG" },
+      { rating: 66, position: "SF" },
+    ]);
+    const result = rollForCpuTrade([teamA, teamB], 2024, () => 0, 5);
+    expect(result).not.toBeNull();
+    // Team A's own player, B-p0 (the recognized-need-filling PG), moves to A.
+    expect(result!.teamB.player.leaguePlayerId).toBe("B-p0");
+  });
+
+  it("a WIN_NOW/CONTENDER seeker targets an older player and a REBUILDING/PROSPECT_LOVER seeker targets a younger one, from the same candidate pool", () => {
+    const targetPool = [
+      { rating: 65, age: 34 },
+      { rating: 65, age: 22 },
+    ];
+    const winNowSeeker = makeTeam(
+      "A",
+      [
+        { rating: 85, age: 29 },
+        { rating: 80, age: 30 },
+        { rating: 64, age: 27 },
+        { rating: 58, age: 26 },
+      ],
+      { identity: "CONTENDER", personality: "WIN_NOW" },
+    );
+    const rebuildingSeeker = makeTeam(
+      "A2",
+      [
+        { rating: 70, age: 27 },
+        { rating: 66, age: 28 },
+        { rating: 65, age: 26 },
+        { rating: 55, age: 25 },
+      ],
+      { identity: "REBUILDING", personality: "PROSPECT_LOVER" },
+    );
+
+    const winNowResult = rollForCpuTrade(
+      [winNowSeeker, makeTeam("B", targetPool)],
+      2024,
+      () => 0,
+      5,
+    );
+    const rebuildingResult = rollForCpuTrade(
+      [rebuildingSeeker, makeTeam("B2", targetPool)],
+      2024,
+      () => 0,
+      5,
+    );
+
+    expect(winNowResult).not.toBeNull();
+    expect(winNowResult!.teamB.player.age).toBe(34);
+    expect(rebuildingResult).not.toBeNull();
+    expect(rebuildingResult!.teamB.player.age).toBe(22);
+  });
+
+  it("never executes an objectively lopsided trade, even across many rng values", () => {
+    const teamA = makeTeam("A", [{ rating: 65, age: 30 }], { needs: ["STAR_SCORER"] });
+    const teamB = makeTeam("B", [{ rating: 96, age: 24 }], { identity: "CONTENDER" });
+    for (const rngVal of [0, 0.1, 0.3, 0.5, 0.7, 0.9]) {
+      const result = rollForCpuTrade(
+        [teamA, teamB],
+        2024,
+        sequence([rngVal, rngVal, rngVal, rngVal]),
+        5,
+      );
+      expect(
+        result,
+        `rng=${rngVal} should not execute a bench-guy-for-a-superstar trade`,
+      ).toBeNull();
     }
   });
 });

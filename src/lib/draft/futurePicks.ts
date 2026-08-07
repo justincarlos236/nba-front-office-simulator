@@ -20,7 +20,7 @@ export interface FuturePickRow {
  * Every team's own round-1 and round-2 pick for each of the given seasons,
  * ready for `prisma.draftPick.createMany` (with `overallPickNumber: null`
  * added by the caller - the draft order for a season isn't known until
- * that season's own draft actually starts, see `startDraftAction`). Both
+ * that season's own draft actually starts, see `runDraftLotteryAction`). Both
  * `originalTeamId` and `currentOwnerId` start out as the same team - a
  * pick only diverges from its original team once it's traded.
  */

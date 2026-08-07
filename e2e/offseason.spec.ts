@@ -43,7 +43,18 @@ test("play through the playoffs, then advance to the next season", async ({ page
   await page.goto(`/leagues/${leagueId}/playoffs`);
   await page.getByText("Start playoffs (simulate play-in)").click();
   await expect(page.getByText(/Round 1 matchups are set/)).toBeVisible({ timeout: 30_000 });
-  for (let i = 0; i < 4; i++) {
+  // Advance the bracket, playing the user's own series game-by-game via the
+  // live flow whenever it's pending (see playoffs.spec.ts for the full
+  // explanation), and bulk-resolving every other series via "Simulate next
+  // round"/"Simulate other series" - until a champion is crowned. A
+  // generous iteration cap (not "1 per round") because each "Play Game"
+  // cycle now consumes one iteration too (a best-of-7 series can take up
+  // to 7), and at the Finals the user's own series is the *only* one in
+  // the round, so a bulk click there is a no-op message that still needs
+  // a follow-up cycle to actually play the pending game. Worst realistic
+  // case: up to 7 games/round across all 4 rounds plus a handful of
+  // bulk-resolve clicks - 40 leaves comfortable headroom.
+  for (let i = 0; i < 40; i++) {
     if (
       await page
         .getByText("League Champion", { exact: true })
@@ -51,10 +62,38 @@ test("play through the playoffs, then advance to the next season", async ({ page
         .catch(() => false)
     )
       break;
-    await page.getByText("Simulate next round").click();
-    await expect(page.getByText(/Round \d complete|championship series is decided/)).toBeVisible({
-      timeout: 30_000,
-    });
+
+    if (
+      await page
+        .getByRole("link", { name: /Play Game \d/ })
+        .isVisible()
+        .catch(() => false)
+    ) {
+      await page.getByRole("link", { name: /Play Game \d/ }).click();
+      await page.waitForURL(/\/playoffs\/live\//, { timeout: 15_000 });
+      await page.getByRole("button", { name: "Tip off" }).click();
+      await page.getByRole("button", { name: "Sim to End" }).click();
+      await expect(page.getByText("Final", { exact: true })).toBeVisible({ timeout: 30_000 });
+      await page.getByRole("link", { name: "Back to playoffs" }).click();
+      await page.waitForURL(/\/playoffs$/, { timeout: 15_000 });
+      await expect(page.getByRole("heading", { name: /Playoffs/ })).toBeVisible();
+      continue;
+    }
+
+    // Defensive: the champion can get crowned by another tab/refresh
+    // between the check above and here (e.g. the round-4 bulk-resolve
+    // itself crowns it), so confirm the button is still actually there
+    // before clicking rather than assuming it - otherwise this click hangs
+    // forever waiting for text that will never (re)appear.
+    const simButton = page.getByText(/Simulate next round|Simulate other series/);
+    if (!(await simButton.isVisible().catch(() => false))) {
+      await page.waitForTimeout(300);
+      continue;
+    }
+    await simButton.click();
+    await expect(
+      page.getByText(/Round \d complete|championship series is decided|No other series left/),
+    ).toBeVisible({ timeout: 30_000 });
   }
   await expect(page.getByText("League Champion", { exact: true })).toBeVisible();
 
@@ -62,26 +101,37 @@ test("play through the playoffs, then advance to the next season", async ({ page
   // draft.spec.ts for the full draft-flow test) - run it to completion
   // here too, since this test needs to reach the "ready to advance" state.
   await page.goto(`/leagues/${leagueId}/draft`);
-  await page.getByText("Start the draft").click();
-  await expect(page.getByText("The lottery is in and the draft class is set.")).toBeVisible({
-    timeout: 30_000,
+  await page.getByRole("link", { name: "Go to the Draft Lottery" }).click();
+  await page.waitForURL(/\/draft\/lottery$/, { timeout: 15_000 });
+  await page.getByRole("button", { name: "Start the Lottery" }).click();
+  await expect(page.getByRole("button", { name: "Skip to Results" })).toBeVisible({
+    timeout: 15_000,
   });
+  await page.getByRole("button", { name: "Skip to Results" }).click();
+  await expect(page.getByText("Lottery Complete")).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("link", { name: "Go to the Draft" }).click();
+  await page.waitForURL(/\/draft$/, { timeout: 15_000 });
   for (let i = 0; i < 15; i++) {
     if (
       await page
-        .getByText("The draft is complete")
+        .getByText("Every pick is in the books.")
         .isVisible()
         .catch(() => false)
     )
       break;
 
+    // The broadcast header's "YOU'RE ON THE CLOCK" badge - see
+    // draft.spec.ts for why this is a reliable turn signal.
     const userTurn = await page
-      .getByText(/You're on the clock/)
+      .getByText(/on the clock/i)
       .isVisible()
       .catch(() => false);
 
     if (userTurn) {
-      const draftButtons = page.getByRole("button", { name: "Draft" });
+      // exact: true - otherwise this substring-matches the "My Draft
+      // Board" bookmark-filter toggle too (which sorts earlier in the
+      // DOM), and .first() would click that instead of an actual prospect.
+      const draftButtons = page.getByRole("button", { name: "Draft", exact: true });
       await expect(draftButtons.first()).toBeVisible({ timeout: 15_000 });
       await draftButtons.first().click();
       await expect(page.getByText(/You selected/)).toBeVisible({ timeout: 15_000 });
@@ -93,13 +143,19 @@ test("play through the playoffs, then advance to the next season", async ({ page
         continue;
       }
       await advanceButton.click();
-      await expect(page.getByText(/Resolved \d+ pick|The draft is complete/).first()).toBeVisible({
+      const skipButton = page.getByRole("button", { name: "Skip Ahead" });
+      if (await skipButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
+        await skipButton.click();
+      }
+      await expect(
+        page.getByText(/Resolved \d+ pick|Every pick is in the books\./).first(),
+      ).toBeVisible({
         timeout: 20_000,
       });
       await page.waitForTimeout(500);
     }
   }
-  await expect(page.getByText("The draft is complete")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("Every pick is in the books.")).toBeVisible({ timeout: 15_000 });
 
   await page.goto(`/leagues/${leagueId}/offseason`);
   await expect(page.getByRole("heading", { name: /2023-24 Offseason/ })).toBeVisible();

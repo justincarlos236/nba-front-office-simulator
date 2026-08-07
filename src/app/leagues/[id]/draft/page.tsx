@@ -2,7 +2,13 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { computeLeaguePhase } from "@/lib/league/leaguePhase";
+import { ensureDraftClassGenerated } from "@/lib/actions/draftClass";
+import { getScoutingBudgetSummary } from "@/lib/actions/scoutingAssignments";
+import { computeTeamDraftContexts } from "@/lib/gm/teamDraftContext";
 import { DraftExperience } from "@/components/draft/DraftExperience";
+import { PreDraftScoutingView } from "@/components/draft/PreDraftScoutingView";
+import type { DraftTeamContextInfo } from "@/components/draft/types";
 
 export const dynamic = "force-dynamic";
 
@@ -24,11 +30,18 @@ export default async function DraftPage({ params }: PageProps) {
   const userTeamId = league.userControlledTeamId;
   const season = league.currentSeason;
 
-  const [regularSeasonGamesRemaining, finals, draftPicks, draftProspects] = await Promise.all([
-    prisma.game.count({
-      where: { leagueId: league.id, season, type: "REGULAR_SEASON", playedAt: null },
-    }),
-    prisma.playoffSeries.findFirst({ where: { leagueId: league.id, season, round: 4 } }),
+  const phase = await computeLeaguePhase(league.id, season);
+
+  // Scouting Pillar Redesign (Phase 1) - self-heals a save reaching the
+  // pre-draft window (or, for a save created before this shipped, the
+  // draft itself) without the class having been generated yet. Same
+  // lazy-generation convention as `ensureStaffGenerated` on the Staff
+  // page. A no-op once the class already exists.
+  if (phase === "pre-draft" || phase === "draft-incomplete") {
+    await ensureDraftClassGenerated(league.id, season);
+  }
+
+  const [draftPicks, draftProspects, bookmarks, scoutingBudget] = await Promise.all([
     // A future-pick placeholder always exists by now (Phase 11a); filter to
     // only this season's actually-started picks, which is what
     // `DraftExperience` uses to decide whether the draft has begun.
@@ -37,38 +50,59 @@ export default async function DraftPage({ params }: PageProps) {
       orderBy: { overallPickNumber: "asc" },
     }),
     prisma.draftProspect.findMany({ where: { leagueId: league.id, season } }),
+    prisma.draftProspectBookmark.findMany({
+      where: { leagueId: league.id, season },
+      orderBy: { boardRank: "asc" },
+    }),
+    // Scouting Pillar Redesign (Phase 2) - only meaningful once the class
+    // exists, but cheap enough (one extra query) to just always fetch
+    // alongside everything else rather than branching the Promise.all.
+    getScoutingBudgetSummary(league.id, season),
   ]);
 
   const gatePhase: "regular-season" | "playoffs-incomplete" | "active" =
-    regularSeasonGamesRemaining > 0
-      ? "regular-season"
-      : !finals?.winnerTeamId
-        ? "playoffs-incomplete"
-        : "active";
+    phase === "regular-season" || phase === "playoffs-incomplete" ? phase : "active";
 
-  const teamsById: Record<string, { city: string; name: string }> = {};
+  const prospectDTOs = draftProspects.map((p) => ({
+    id: p.id,
+    fullName: p.fullName,
+    position: p.position,
+    age: p.age,
+    overallRating: p.overallRating,
+    potentialRating: p.potentialRating,
+    heightInches: p.heightInches,
+    weightLbs: p.weightLbs,
+    collegeOrTeam: p.collegeOrTeam,
+    isInternational: p.isInternational,
+    nationality: p.nationality,
+    pathway: p.pathway,
+    comparisonPlayerName: p.comparisonPlayerName,
+    scoutingDepth: p.scoutingDepth,
+    resolvedHiddenTraits: p.resolvedHiddenTraits,
+    classCharacter: p.classCharacter,
+  }));
+
+  const teamsById: Record<string, { city: string; name: string; logoUrl: string | null }> = {};
   for (const lt of league.teams) {
-    teamsById[lt.id] = { city: lt.team.city, name: lt.team.name };
+    teamsById[lt.id] = { city: lt.team.city, name: lt.team.name, logoUrl: lt.team.logoUrl };
+  }
+
+  // Every team's identity (contend/rebuild) and positional needs, for the
+  // broadcast header/order rail/team-needs overview - only worth computing
+  // once the draft is actually active, not during the earlier gates.
+  const teamContextById: Record<string, DraftTeamContextInfo> = {};
+  if (gatePhase === "active") {
+    const contexts = await computeTeamDraftContexts(
+      league.id,
+      season,
+      league.teams.map((t) => ({ id: t.id, wins: t.wins, losses: t.losses })),
+    );
+    for (const [teamId, context] of contexts) teamContextById[teamId] = context;
   }
 
   return (
     <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <Link href={`/leagues/${league.id}`} className="text-sm text-muted hover:text-foreground">
-            &larr; Back to team
-          </Link>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">
-            {season} NBA Draft
-          </h1>
-        </div>
-        <Link
-          href={`/leagues/${league.id}/offseason`}
-          className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
-        >
-          Offseason
-        </Link>
-      </div>
+      <h1 className="text-3xl font-bold tracking-tight text-foreground">{season} NBA Draft</h1>
 
       <p className="mt-2 max-w-2xl text-muted">
         Picks 1-14 are decided by the real post-2019 lottery odds (the 3 worst records tied at
@@ -89,11 +123,39 @@ export default async function DraftPage({ params }: PageProps) {
           <p className="text-sm text-muted">Crown a champion in the playoffs before the draft.</p>
         </div>
       )}
-      {gatePhase === "active" && (
+      {gatePhase === "active" && draftPicks.length === 0 && (
+        <>
+          <div className="mt-8 rounded-xl border border-accent/30 bg-gradient-to-b from-accent/10 to-transparent p-6 text-center">
+            <p className="text-xs font-semibold tracking-widest text-accent uppercase">
+              Draft Lottery
+            </p>
+            <p className="mt-2 text-foreground">
+              The draft order isn&apos;t set yet - scout the class now, then run the lottery when
+              you&apos;re ready.
+            </p>
+            <Link
+              href={`/leagues/${league.id}/draft/lottery`}
+              className="mt-4 inline-block rounded-lg bg-accent px-6 py-3 text-base font-bold text-black transition hover:opacity-90"
+            >
+              Go to the Draft Lottery
+            </Link>
+          </div>
+          <PreDraftScoutingView
+            leagueId={league.id}
+            teamsById={teamsById}
+            initialProspects={prospectDTOs}
+            initialBookmarkedProspectIds={bookmarks.map((b) => b.prospectId)}
+            scoutingCapacity={scoutingBudget.capacity}
+            initialScoutingAssignmentsRemaining={scoutingBudget.remaining}
+          />
+        </>
+      )}
+      {gatePhase === "active" && draftPicks.length > 0 && (
         <DraftExperience
           leagueId={league.id}
           userTeamId={userTeamId}
           teamsById={teamsById}
+          teamContextById={teamContextById}
           initialPicks={draftPicks.map((p) => ({
             id: p.id,
             round: p.round,
@@ -101,14 +163,9 @@ export default async function DraftPage({ params }: PageProps) {
             leagueTeamId: p.currentOwnerId,
             selectedProspectId: p.selectedProspectId,
           }))}
-          initialProspects={draftProspects.map((p) => ({
-            id: p.id,
-            fullName: p.fullName,
-            position: p.position,
-            age: p.age,
-            overallRating: p.overallRating,
-            potentialRating: p.potentialRating,
-          }))}
+          initialProspects={prospectDTOs}
+          initialBookmarkedProspectIds={bookmarks.map((b) => b.prospectId)}
+          initialScoutingAssignmentsRemaining={scoutingBudget.remaining}
         />
       )}
     </main>

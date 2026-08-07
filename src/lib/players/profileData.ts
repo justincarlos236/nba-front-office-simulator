@@ -3,12 +3,28 @@ import { estimateAge, estimateExperience } from "@/lib/players/age";
 import { computePerformanceScore, scoreToCapFraction } from "@/lib/valuation/playerValue";
 import { getSeasonCapRules } from "@/lib/cap/constants";
 import { computeCareerHighs, isTripleDouble, scoringMilestone } from "@/lib/stats/milestones";
+import {
+  generatePersonalityProfile,
+  describePersonalityLabel,
+} from "@/lib/morale/generatePersonality";
+import {
+  getMoraleLevel,
+  MORALE_LEVEL_LABEL,
+  MORALE_LEVEL_DESCRIPTION,
+} from "@/lib/morale/moraleLevel";
+import { getPlayerValueTier } from "@/lib/valuation/playerValueTier";
+import {
+  computeFranchiseIconScore,
+  getFranchiseIconLevel,
+  FRANCHISE_ICON_LABEL,
+} from "@/lib/finances/franchiseIcon";
 import type {
   Position,
   InjuryStatus,
   ContractOptionType,
   ExceptionUsed,
 } from "@/generated/prisma/client";
+import type { ProspectPathway } from "@/lib/draft/prospectBio";
 
 /** Which player to load a profile for, and how much context is available. */
 export type PlayerProfileIdentity =
@@ -26,6 +42,8 @@ export interface PlayerProfileData {
     draftYear: number | null;
     draftRound: number | null;
     draftPick: number | null;
+    /** Scouting Pillar Redesign (Phase 4) - how this player entered the draft. Null for real imported historical players, which have no pathway on file. */
+    pathway: ProspectPathway | null;
     age: number;
     experience: number;
     currentTeam: {
@@ -46,6 +64,31 @@ export interface PlayerProfileData {
     careerGamesMissedToInjury: number;
     isActive: boolean;
     retiredSeason: number | null;
+    /** Player Morale & Personality System - always present alongside the rest of leagueContext (backfilled lazily on read if somehow missing). */
+    morale: {
+      score: number;
+      level: string;
+      levelDescription: string;
+      tradeRequestActive: boolean;
+      personality: {
+        competitiveness: number;
+        roleSensitivity: number;
+        loyalty: number;
+        financialMotivation: number;
+        label: string;
+        description: string;
+      };
+      /** This player's own PLAYER_MORALE news, most recent first - the "why" behind the score, not a chart. */
+      recentNews: { description: string; season: number }[];
+    };
+    /** Franchise Finances (Phase D) - derived franchise-icon status: how iconic this player has become to THIS franchise (star power + tenure + homegrown + awards). Null for a free agent / no current team. */
+    icon: {
+      score: number;
+      level: string;
+      label: string;
+      tenureSeasons: number;
+      homegrown: boolean;
+    } | null;
   } | null;
   contract: {
     signedSeason: number;
@@ -201,6 +244,7 @@ export async function loadReferencePlayerProfile(
       draftYear: player.draftYear,
       draftRound: player.draftRound,
       draftPick: player.draftPick,
+      pathway: player.pathway,
       age: estimateAge(player.draftYear, PROFILE_SEASON),
       experience: estimateExperience(player.draftYear, PROFILE_SEASON),
       currentTeam: teamDTO(player.currentTeam),
@@ -239,9 +283,20 @@ export async function loadLeaguePlayerProfile(
       leagueTeam: { include: { team: true } },
       contract: { include: { years: { orderBy: { season: "asc" } } } },
       seasonAwards: { orderBy: { season: "desc" } },
+      personalityProfile: true,
     },
   });
   if (!leaguePlayer || leaguePlayer.leagueId !== leagueId) return null;
+
+  // Player Morale & Personality System - defensive backfill for any
+  // LeaguePlayer somehow still missing a profile (the primary backfill is
+  // scripts/backfill-player-personalities.ts, run once against existing
+  // saves; this is just a safety net, not the main mechanism).
+  const personalityProfile =
+    leaguePlayer.personalityProfile ??
+    (await prisma.playerPersonalityProfile.create({
+      data: { leaguePlayerId: leaguePlayer.id, ...generatePersonalityProfile(leaguePlayer.id) },
+    }));
 
   const league = await prisma.league.findUnique({
     where: { id: leagueId },
@@ -391,6 +446,16 @@ export async function loadLeaguePlayerProfile(
         : null,
   };
 
+  // Player Morale & Personality System - this player's own news, the "why"
+  // behind the score, not a separate chart/history table (see the
+  // Out of scope section of the feature request).
+  const moraleNews = await prisma.leagueTransaction.findMany({
+    where: { leagueId, subjectLeaguePlayerId: leaguePlayerId, type: "PLAYER_MORALE" },
+    orderBy: { createdAt: "desc" },
+    take: 8,
+    select: { description: true, season: true },
+  });
+
   const stat =
     leaguePlayer.player.seasonStats.find((s) => s.season === PROFILE_SEASON) ??
     leaguePlayer.player.seasonStats[0];
@@ -422,6 +487,7 @@ export async function loadLeaguePlayerProfile(
       draftYear: leaguePlayer.player.draftYear,
       draftRound: leaguePlayer.player.draftRound,
       draftPick: leaguePlayer.player.draftPick,
+      pathway: leaguePlayer.player.pathway,
       age: estimateAge(leaguePlayer.player.draftYear, season),
       experience: estimateExperience(leaguePlayer.player.draftYear, season),
       currentTeam: teamDTO(leaguePlayer.leagueTeam?.team ?? null),
@@ -435,6 +501,45 @@ export async function loadLeaguePlayerProfile(
       careerGamesMissedToInjury: leaguePlayer.careerGamesMissedToInjury,
       isActive: leaguePlayer.isActive,
       retiredSeason: leaguePlayer.retiredSeason,
+      morale: (() => {
+        const level = getMoraleLevel(leaguePlayer.morale);
+        const label = describePersonalityLabel(personalityProfile);
+        return {
+          score: leaguePlayer.morale,
+          level: MORALE_LEVEL_LABEL[level],
+          levelDescription: MORALE_LEVEL_DESCRIPTION[level],
+          tradeRequestActive: leaguePlayer.tradeRequestActive,
+          personality: {
+            competitiveness: personalityProfile.competitiveness,
+            roleSensitivity: personalityProfile.roleSensitivity,
+            loyalty: personalityProfile.loyalty,
+            financialMotivation: personalityProfile.financialMotivation,
+            label: label.label,
+            description: label.description,
+          },
+          recentNews: moraleNews.map((n) => ({ description: n.description, season: n.season })),
+        };
+      })(),
+      icon: (() => {
+        if (!leaguePlayer.leagueTeamId) return null;
+        const tenureSeasons =
+          leaguePlayer.joinedTeamSeason != null
+            ? Math.max(0, season - leaguePlayer.joinedTeamSeason)
+            : 0;
+        const score = computeFranchiseIconScore({
+          starTier: getPlayerValueTier(leaguePlayer.overallRating),
+          tenureSeasons,
+          homegrown: leaguePlayer.homegrown,
+          careerAwards: leaguePlayer.seasonAwards.length,
+        });
+        return {
+          score,
+          level: getFranchiseIconLevel(score),
+          label: FRANCHISE_ICON_LABEL[getFranchiseIconLevel(score)],
+          tenureSeasons,
+          homegrown: leaguePlayer.homegrown,
+        };
+      })(),
     },
     contract: leaguePlayer.contract
       ? {

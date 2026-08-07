@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { estimateAge } from "@/lib/players/age";
+import { detectNotableMovement } from "@/lib/draft/lotteryPresentation";
 import { PlayerChip } from "@/components/players/PlayerChip";
 import { PlayerAvatar } from "@/components/players/PlayerAvatar";
 
@@ -36,33 +37,44 @@ export default async function HistoryPage({ params }: PageProps) {
   const league = await prisma.league.findUnique({ where: { id } });
   if (!league || league.ownerId !== session.user.id) notFound();
 
-  const [champions, awards, staffAwards, retirees, allStarWeekends] = await Promise.all([
-    prisma.playoffSeries.findMany({
-      where: { leagueId: id, round: 4, winnerTeamId: { not: null } },
-      include: { winnerTeam: { include: { team: true } } },
-      orderBy: { season: "desc" },
-    }),
-    prisma.seasonAward.findMany({
-      where: { leagueId: id },
-      include: { leaguePlayer: { include: { player: true } } },
-    }),
-    prisma.staffAward.findMany({
-      where: { leagueId: id },
-      include: { staff: true },
-    }),
-    prisma.leaguePlayer.findMany({
-      where: { leagueId: id, retiredSeason: { not: null } },
-      include: { player: true },
-    }),
-    prisma.allStarWeekend.findMany({
-      where: { leagueId: id, status: "RESOLVED" },
-      include: {
-        game: true,
-        participants: { where: { OR: [{ result: "CHAMPION" }, { result: { contains: "MVP" } }] } },
-      },
-      orderBy: { season: "desc" },
-    }),
-  ]);
+  const [champions, awards, staffAwards, retirees, allStarWeekends, lotteryResults] =
+    await Promise.all([
+      prisma.playoffSeries.findMany({
+        where: { leagueId: id, round: 4, winnerTeamId: { not: null } },
+        include: { winnerTeam: { include: { team: true } } },
+        orderBy: { season: "desc" },
+      }),
+      prisma.seasonAward.findMany({
+        where: { leagueId: id },
+        include: { leaguePlayer: { include: { player: true } } },
+      }),
+      prisma.staffAward.findMany({
+        where: { leagueId: id },
+        include: { staff: true },
+      }),
+      prisma.leaguePlayer.findMany({
+        where: { leagueId: id, retiredSeason: { not: null } },
+        include: { player: true },
+      }),
+      prisma.allStarWeekend.findMany({
+        where: { leagueId: id, status: "RESOLVED" },
+        include: {
+          game: true,
+          participants: {
+            where: { OR: [{ result: "CHAMPION" }, { result: { contains: "MVP" } }] },
+          },
+        },
+        orderBy: { season: "desc" },
+      }),
+      prisma.lotteryResult.findMany({
+        where: { leagueId: id },
+        include: {
+          currentOwner: { include: { team: true } },
+          originalTeam: { include: { team: true } },
+        },
+        orderBy: [{ season: "desc" }, { resultPickNumber: "asc" }],
+      }),
+    ]);
 
   const allStarPlayerIds = new Set<string>();
   for (const w of allStarWeekends) {
@@ -99,6 +111,12 @@ export default async function HistoryPage({ params }: PageProps) {
   }
   const allStarBySeason = new Map<number, (typeof allStarWeekends)[number]>();
   for (const w of allStarWeekends) allStarBySeason.set(w.season, w);
+  const lotteryBySeason = new Map<number, typeof lotteryResults>();
+  for (const r of lotteryResults) {
+    const list = lotteryBySeason.get(r.season) ?? [];
+    list.push(r);
+    lotteryBySeason.set(r.season, list);
+  }
 
   const EVENT_LABEL: Record<string, string> = {
     RISING_STARS: "Rising Stars MVP",
@@ -108,20 +126,7 @@ export default async function HistoryPage({ params }: PageProps) {
 
   return (
     <main className="mx-auto max-w-4xl flex-1 px-6 py-16">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <Link href={`/leagues/${league.id}`} className="text-sm text-muted hover:text-foreground">
-            &larr; Back to team
-          </Link>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">League History</h1>
-        </div>
-        <Link
-          href={`/leagues/${league.id}/transactions`}
-          className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
-        >
-          Transactions
-        </Link>
-      </div>
+      <h1 className="text-3xl font-bold tracking-tight text-foreground">League History</h1>
       <p className="mt-2 max-w-2xl text-muted">
         Champions, award winners, and retirees from every completed season in this franchise.
       </p>
@@ -141,6 +146,9 @@ export default async function HistoryPage({ params }: PageProps) {
             const seasonStaffAwards = staffAwardsBySeason.get(season) ?? [];
             const seasonRetirees = retireesBySeason.get(season) ?? [];
             const seasonAllStar = allStarBySeason.get(season);
+            const seasonLottery = lotteryBySeason.get(season) ?? [];
+            const { biggestJump, biggestFall } = detectNotableMovement(seasonLottery);
+            const lotteryWinner = seasonLottery.find((r) => r.resultPickNumber === 1);
             return (
               <section key={series.id} className="rounded-xl border border-border bg-surface p-5">
                 <div className="flex items-center justify-between gap-4">
@@ -262,6 +270,48 @@ export default async function HistoryPage({ params }: PageProps) {
                     >
                       View full weekend &rarr;
                     </Link>
+                  </div>
+                )}
+
+                {lotteryWinner && (
+                  <div className="mt-4 rounded-lg border border-accent/30 bg-accent/5 p-3">
+                    <p className="text-xs tracking-wide text-muted uppercase">Draft Lottery</p>
+                    <div className="mt-2 flex items-center gap-2 text-sm">
+                      {lotteryWinner.currentOwner.team.logoUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={lotteryWinner.currentOwner.team.logoUrl}
+                          alt=""
+                          width={20}
+                          height={20}
+                          className="shrink-0"
+                        />
+                      )}
+                      <p className="text-foreground">
+                        <span className="font-semibold">
+                          {lotteryWinner.currentOwner.team.city}{" "}
+                          {lotteryWinner.currentOwner.team.name}
+                        </span>{" "}
+                        <span className="text-muted">
+                          won the No. 1 pick (
+                          {(lotteryWinner.oddsForNumberOnePickPct * 100).toFixed(1)}% odds)
+                        </span>
+                      </p>
+                    </div>
+                    {biggestJump && (
+                      <p className="mt-1 text-xs text-emerald-400">
+                        {biggestJump.team.currentOwner.team.city}{" "}
+                        {biggestJump.team.currentOwner.team.name} jumped from a projected No.{" "}
+                        {biggestJump.team.projectedSeed} to No. {biggestJump.team.resultPickNumber}
+                      </p>
+                    )}
+                    {biggestFall && (
+                      <p className="mt-1 text-xs text-red-400">
+                        {biggestFall.team.currentOwner.team.city}{" "}
+                        {biggestFall.team.currentOwner.team.name} fell from a projected No.{" "}
+                        {biggestFall.team.projectedSeed} to No. {biggestFall.team.resultPickNumber}
+                      </p>
+                    )}
                   </div>
                 )}
               </section>

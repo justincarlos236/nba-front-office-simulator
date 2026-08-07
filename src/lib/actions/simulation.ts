@@ -5,7 +5,11 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { computeLeagueTeamStrengths } from "@/lib/actions/leagueTeamStrength";
-import { applyLeagueEvents } from "@/lib/actions/leagueEvents";
+import {
+  applyLeagueEvents,
+  applyPlayerMoraleEvents,
+  applyBusinessDecisionEvents,
+} from "@/lib/actions/leagueEvents";
 import { simulateGame } from "@/lib/simulation/simulateGame";
 import { generateBoxScore, type PlayerBoxScoreLine } from "@/lib/simulation/boxScore";
 import {
@@ -14,8 +18,19 @@ import {
   describeWinStreak,
   type DescribedEvent,
 } from "@/lib/transactions/describeGameEvents";
-import { computeCoachBoxScoreModifier, computeCoachWinBonus } from "@/lib/staff/coachModifiers";
+import {
+  computeCoachBoxScoreModifier,
+  computeCoachWinBonus,
+  effectiveStaffQuality,
+} from "@/lib/staff/coachModifiers";
 import { generateAllStarWeekend } from "@/lib/actions/allStarWeekend";
+import {
+  applyFanHappinessDelta,
+  applyScaledFanHappinessDelta,
+  computeStreakSentimentDelta,
+} from "@/lib/fans/sentimentEvents";
+import { fanSentimentCreateOps, type SentimentRecord } from "@/lib/fans/recordSentiment";
+import { describeStreakSentiment } from "@/lib/fans/describeSentiment";
 import type { NewsImportance } from "@/generated/prisma/client";
 
 interface RankedEvent {
@@ -81,13 +96,64 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
     const remaining = await prisma.game.count({
       where: { leagueId, season: league.currentSeason, type: "REGULAR_SEASON", playedAt: null },
     });
-    return { simulated: 0, remaining, userGamesCompleted: 0, allStarWeekendTriggered: true };
+    return {
+      simulated: 0,
+      remaining,
+      userGamesCompleted: 0,
+      allStarWeekendTriggered: true,
+      businessDecisionPending: false,
+      myCompletedGames: [],
+    };
+  }
+
+  // Finances as a Gameplay Pillar (Phase 1) - a BREAKING business decision
+  // already sits PENDING in the user's Front Office Inbox from a prior
+  // call. Same "must resolve before continuing" shape as the All-Star-
+  // weekend gate above; every other severity queues without blocking.
+  if (league.userControlledTeamId) {
+    const breakingPending = await prisma.businessDecision.findFirst({
+      where: {
+        leagueId,
+        leagueTeamId: league.userControlledTeamId,
+        status: "PENDING",
+        severity: "BREAKING",
+      },
+      select: { id: true },
+    });
+    if (breakingPending) {
+      const remaining = await prisma.game.count({
+        where: { leagueId, season: league.currentSeason, type: "REGULAR_SEASON", playedAt: null },
+      });
+      return {
+        simulated: 0,
+        remaining,
+        userGamesCompleted: 0,
+        allStarWeekendTriggered: false,
+        businessDecisionPending: true,
+        myCompletedGames: [],
+      };
+    }
   }
 
   const targetUserGames = TARGET_USER_GAMES[target];
   let totalSimulated = 0;
   let userGamesCompleted = 0;
   let allStarWeekendTriggered = false;
+  let businessDecisionPending = false;
+  // Animated schedule-calendar reveal - the user's own team's games,
+  // captured in day order as they're resolved below, so the client can
+  // reveal them one at a time instead of jumping straight to the final
+  // state. Every game is already computed for standings/box-score
+  // purposes; this just keeps the user-team subset instead of discarding it.
+  const myCompletedGames: {
+    dayIndex: number;
+    opponentLabel: string;
+    opponentLogoUrl: string | null;
+    isHome: boolean;
+    won: boolean;
+    teamScore: number;
+    opponentScore: number;
+  }[] = [];
 
   while (userGamesCompleted < targetUserGames) {
     // type filter matters once play-in/playoff games exist for this season -
@@ -133,7 +199,16 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
       computeLeagueTeamStrengths([...teamIds]),
       prisma.leagueTeam.findMany({
         where: { id: { in: [...teamIds] } },
-        select: { id: true, currentStreak: true, team: { select: { city: true, name: true } } },
+        select: {
+          id: true,
+          currentStreak: true,
+          fanHappiness: true,
+          // Finances as a Gameplay Pillar (Phase 4) - Coaching Support.
+          coachingSupportLevel: true,
+          // Fans Page Redesign (Phase 3).
+          fanCulture: { select: { patience: true, loyalty: true } },
+          team: { select: { city: true, name: true, logoUrl: true } },
+        },
       }),
       // Head Coach effects (Phase 15a) - a team with no coach hired yet
       // behaves exactly as it did before this phase existed (see
@@ -145,7 +220,22 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
     ]);
 
     const teamLabelById = new Map(teamInfo.map((t) => [t.id, `${t.team.city} ${t.team.name}`]));
+    const teamLogoById = new Map(teamInfo.map((t) => [t.id, t.team.logoUrl]));
+    // Finances as a Gameplay Pillar (Phase 4) - Coaching Support.
+    const coachingSupportByTeam = new Map(teamInfo.map((t) => [t.id, t.coachingSupportLevel]));
     const streakByTeam = new Map(teamInfo.map((t) => [t.id, t.currentStreak]));
+    // Fan Engagement Deepening (Phase 1) - accumulated across the whole
+    // batch and flushed once alongside the other per-team updates below,
+    // the same pattern winIncrements/lossIncrements/streakByTeam already use.
+    const fanHappinessByTeam = new Map(teamInfo.map((t) => [t.id, t.fanHappiness]));
+    // Fans Page Redesign (Phase 3).
+    const fanCultureByTeam = new Map(teamInfo.map((t) => [t.id, t.fanCulture]));
+    const fanHappinessDeltaByTeam = new Map<string, number>();
+    const streakSentimentRows: SentimentRecord[] = [];
+    function addFanHappinessDelta(teamId: string, delta: number) {
+      if (delta === 0) return;
+      fanHappinessDeltaByTeam.set(teamId, (fanHappinessDeltaByTeam.get(teamId) ?? 0) + delta);
+    }
     const headCoachByTeam = new Map(headCoaches.map((c) => [c.leagueTeamId as string, c]));
     const playerNameById = new Map<string, string>();
     for (const roster of rostersByTeam.values()) {
@@ -170,15 +260,46 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
       const awayStrength = strengthByTeam.get(game.awayLeagueTeamId) ?? 0;
       const homeCoach = headCoachByTeam.get(game.homeLeagueTeamId) ?? null;
       const awayCoach = headCoachByTeam.get(game.awayLeagueTeamId) ?? null;
+      // Finances as a Gameplay Pillar (Phase 4) - Coaching Support amplifies
+      // whichever Head Coach a team has already hired; a team with no coach
+      // stays exactly at "no effect," same as effectiveStaffQuality's null
+      // handling.
+      const homeCoachQuality = effectiveStaffQuality(
+        homeCoach?.quality ?? null,
+        coachingSupportByTeam.get(game.homeLeagueTeamId) ?? "STANDARD",
+      );
+      const awayCoachQuality = effectiveStaffQuality(
+        awayCoach?.quality ?? null,
+        coachingSupportByTeam.get(game.awayLeagueTeamId) ?? "STANDARD",
+      );
       const result = simulateGame(
         homeStrength,
         awayStrength,
         Math.random,
-        computeCoachWinBonus(homeCoach?.quality ?? null),
-        computeCoachWinBonus(awayCoach?.quality ?? null),
+        computeCoachWinBonus(homeCoachQuality),
+        computeCoachWinBonus(awayCoachQuality),
       );
 
       gameUpdates.push({ id: game.id, homeScore: result.homeScore, awayScore: result.awayScore });
+
+      if (
+        league.userControlledTeamId &&
+        (game.homeLeagueTeamId === league.userControlledTeamId ||
+          game.awayLeagueTeamId === league.userControlledTeamId) &&
+        game.dayIndex !== null
+      ) {
+        const isHome = game.homeLeagueTeamId === league.userControlledTeamId;
+        const opponentId = isHome ? game.awayLeagueTeamId : game.homeLeagueTeamId;
+        myCompletedGames.push({
+          dayIndex: game.dayIndex,
+          opponentLabel: teamLabelById.get(opponentId) ?? "Opponent",
+          opponentLogoUrl: teamLogoById.get(opponentId) ?? null,
+          isHome,
+          won: isHome ? result.homeWon : !result.homeWon,
+          teamScore: isHome ? result.homeScore : result.awayScore,
+          opponentScore: isHome ? result.awayScore : result.homeScore,
+        });
+      }
 
       const winnerId = result.homeWon ? game.homeLeagueTeamId : game.awayLeagueTeamId;
       const loserId = result.homeWon ? game.awayLeagueTeamId : game.homeLeagueTeamId;
@@ -203,10 +324,47 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
       const winnerStreakEvent = describeWinStreak(winnerLabel, winnerNewStreak);
       if (winnerStreakEvent) {
         newsRows.push({ type: "WIN_STREAK", ...winnerStreakEvent, teamIds: [winnerId] });
+        const rawWinnerDelta = computeStreakSentimentDelta(winnerStreakEvent.importance, 1);
+        // Fans Page Redesign (Phase 3).
+        const streakDelta = applyScaledFanHappinessDelta(
+          fanHappinessByTeam.get(winnerId) ?? 65,
+          rawWinnerDelta,
+          fanCultureByTeam.get(winnerId) ?? null,
+        ).scaledDelta;
+        addFanHappinessDelta(winnerId, streakDelta);
+        // Fans Page Redesign (Phase 1) - a real dayIndex here is what lets
+        // the page draw an in-season sentiment trend, which the once-a-season
+        // FanHappinessSnapshot never could.
+        streakSentimentRows.push({
+          leagueId,
+          leagueTeamId: winnerId,
+          season: league.currentSeason,
+          dayIndex: game.dayIndex ?? 0,
+          kind: "WIN_STREAK",
+          delta: streakDelta,
+          description: describeStreakSentiment(Math.abs(winnerNewStreak), true),
+        });
       }
       const loserStreakEvent = describeWinStreak(loserLabel, loserNewStreak);
       if (loserStreakEvent) {
         newsRows.push({ type: "WIN_STREAK", ...loserStreakEvent, teamIds: [loserId] });
+        const rawLoserDelta = computeStreakSentimentDelta(loserStreakEvent.importance, -1);
+        // Fans Page Redesign (Phase 3).
+        const streakDelta = applyScaledFanHappinessDelta(
+          fanHappinessByTeam.get(loserId) ?? 65,
+          rawLoserDelta,
+          fanCultureByTeam.get(loserId) ?? null,
+        ).scaledDelta;
+        addFanHappinessDelta(loserId, streakDelta);
+        streakSentimentRows.push({
+          leagueId,
+          leagueTeamId: loserId,
+          season: league.currentSeason,
+          dayIndex: game.dayIndex ?? 0,
+          kind: "LOSS_STREAK",
+          delta: streakDelta,
+          description: describeStreakSentiment(Math.abs(loserNewStreak), false),
+        });
       }
 
       const margin = Math.abs(result.homeScore - result.awayScore);
@@ -243,11 +401,11 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
           homeStrength,
           awayStrength,
           homeCoachModifier: computeCoachBoxScoreModifier(
-            homeCoach?.quality ?? null,
+            homeCoachQuality,
             homeCoach?.style ?? null,
           ),
           awayCoachModifier: computeCoachBoxScoreModifier(
-            awayCoach?.quality ?? null,
+            awayCoachQuality,
             awayCoach?.style ?? null,
           ),
         },
@@ -321,6 +479,19 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
       ...[...streakByTeam.entries()].map(([teamId, currentStreak]) =>
         prisma.leagueTeam.update({ where: { id: teamId }, data: { currentStreak } }),
       ),
+      // Fan Engagement Deepening (Phase 1) - one update per affected team,
+      // folded into this same batch flush rather than a separate query.
+      ...[...fanHappinessDeltaByTeam.entries()].map(([teamId, delta]) =>
+        prisma.leagueTeam.update({
+          where: { id: teamId },
+          data: {
+            fanHappiness: applyFanHappinessDelta(fanHappinessByTeam.get(teamId) ?? 65, delta),
+          },
+        }),
+      ),
+      // Fans Page Redesign (Phase 1) - the streak deltas above, recorded with
+      // the day they happened.
+      ...fanSentimentCreateOps(streakSentimentRows),
       prisma.playerGameStat.createMany({
         data: boxScoreRows.map((row) => ({
           ...row,
@@ -352,6 +523,23 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
         awayLeagueTeamId: g.awayLeagueTeamId,
       })),
     );
+
+    // Player Morale & Personality System - runs after applyLeagueEvents so
+    // this batch's box scores and any CPU trades are already reflected.
+    await applyPlayerMoraleEvents(leagueId, league.currentSeason);
+
+    // Finances as a Gameplay Pillar (Phase 1) - rolls/expires this batch's
+    // business decisions. lastDayIndex anchors both the new deadline and
+    // the expiry check to this batch's actual place in the season.
+    const businessDecisionResult = league.userControlledTeamId
+      ? await applyBusinessDecisionEvents(
+          leagueId,
+          league.currentSeason,
+          league.userControlledTeamId,
+          unplayedGames[unplayedGames.length - 1]?.dayIndex ?? 0,
+          unplayedGames.length,
+        )
+      : { breakingDecisionPending: false };
 
     totalSimulated += unplayedGames.length;
     if (league.userControlledTeamId) {
@@ -389,6 +577,16 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
       }
       break;
     }
+
+    // Finances as a Gameplay Pillar (Phase 1) - a BREAKING decision just
+    // landed in the inbox. Stop before pulling the next chunk so the user
+    // sees and resolves it rather than the season quietly rolling past it;
+    // the All-Star checkpoint above still takes priority if both land in
+    // the same batch.
+    if (businessDecisionResult.breakingDecisionPending) {
+      businessDecisionPending = true;
+      break;
+    }
   }
 
   const remaining = await prisma.game.count({
@@ -400,6 +598,14 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
   revalidatePath(`/leagues/${leagueId}/transactions`);
   revalidatePath(`/leagues/${leagueId}/free-agents`);
   if (allStarWeekendTriggered) revalidatePath(`/leagues/${leagueId}/all-star`);
+  revalidatePath(`/leagues/${leagueId}/finances`);
 
-  return { simulated: totalSimulated, remaining, userGamesCompleted, allStarWeekendTriggered };
+  return {
+    simulated: totalSimulated,
+    remaining,
+    userGamesCompleted,
+    allStarWeekendTriggered,
+    businessDecisionPending,
+    myCompletedGames,
+  };
 }

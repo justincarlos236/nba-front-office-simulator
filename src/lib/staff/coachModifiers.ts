@@ -1,5 +1,6 @@
-import type { CoachStyle } from "@/generated/prisma/client";
+import type { CoachStyle, DepartmentLevel } from "@/generated/prisma/client";
 import type { CoachModifier } from "@/lib/simulation/boxScore";
+import { departmentQualityDelta } from "@/lib/finances/departments";
 
 /**
  * Translates a Head Coach's quality/style into the small numeric nudges
@@ -34,6 +35,23 @@ export function computeCoachWinBonus(quality: number | null): number {
     -WIN_BONUS_CAP,
     WIN_BONUS_CAP,
   );
+}
+
+// Finances as a Gameplay Pillar (Phase 4) - Coaching Support "amplifies
+// whatever staff you've already hired" rather than being a standalone
+// number: it nudges the *effective* quality fed into every coach-quality
+// consumer below, so a MAXIMUM-funded department turns a good Head Coach
+// into a great one but does nothing for a team with no coach hired at all.
+const COACHING_SUPPORT_AMPLIFICATION = 1 / 3; // a +14 department delta -> ~+4.7 effective quality
+
+/** Null rawQuality (no coach/staff hired) passes through unchanged - Coaching Support has nothing to amplify. */
+export function effectiveStaffQuality(
+  rawQuality: number | null,
+  coachingSupportLevel: DepartmentLevel,
+): number | null {
+  if (rawQuality === null) return null;
+  const boost = departmentQualityDelta(coachingSupportLevel) * COACHING_SUPPORT_AMPLIFICATION;
+  return Math.max(0, Math.min(99, Math.round(rawQuality + boost)));
 }
 
 /** Null quality/style (no Head Coach hired) is treated as perfectly neutral - every game already behaves exactly as it did before this phase existed. */

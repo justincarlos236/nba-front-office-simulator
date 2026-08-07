@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import Link from "next/link";
+import { HowDoesThisWork } from "@/components/guide/HowDoesThisWork";
 import { formatCentsCompact } from "@/lib/money";
 import { executeTradeAction } from "@/lib/actions/trade";
 import { ApronLevel } from "@/lib/cap/apron";
@@ -18,6 +18,7 @@ import { TEAM_IDENTITY_LABEL, type TeamIdentity } from "@/lib/gm/teamIdentity";
 import { TEAM_NEED_LABEL, type TeamNeed } from "@/lib/gm/teamNeeds";
 import { GM_PERSONALITY_LABEL, type GmPersonality } from "@/lib/gm/gmPersonality";
 import { PlayerChip } from "@/components/players/PlayerChip";
+import type { DepartmentLevel } from "@/generated/prisma/client";
 
 interface RosterPlayerDTO {
   leaguePlayerId: string;
@@ -31,6 +32,8 @@ interface RosterPlayerDTO {
   noTradeClause: boolean;
   injuryStatus: "HEALTHY" | "DAY_TO_DAY" | "OUT" | "SEASON_ENDING";
   careerGamesMissedToInjury: number;
+  /** Finances as a Gameplay Pillar (Phase 2) - an active sponsorship deal's "star clause" names this player. Trading him away voids the deal with a real buyout cost - warned here, never blocked (cap/CBA legality is untouched). */
+  hasSponsorshipClause: boolean;
 }
 
 interface DraftPickDTO {
@@ -58,6 +61,8 @@ interface TeamSideDTO {
   personality: GmPersonality;
   /** Full active roster ratings/ages - the untouchable-player check's input. */
   roster: { overallRating: number; age: number }[];
+  /** Finances as a Gameplay Pillar (Phase 4) - only meaningful for myTeam (the user's own Analytics investment); undefined for theirTeam. HIGH/MAXIMUM reveals evaluateTradeOffer's precise fair-value score instead of just the ACCEPT/COUNTER/REJECT bucket. */
+  analyticsLevel?: DepartmentLevel;
 }
 
 function pickLabel(pick: DraftPickDTO): string {
@@ -315,6 +320,12 @@ export function TradeBuilder({
     setSet(next);
   }
 
+  // Finances as a Gameplay Pillar (Phase 2) - a non-blocking warning, never
+  // a hard stop (cap/CBA legality is the only thing validateTrade governs).
+  const clausePlayersSelected = myTeam.players.filter(
+    (p) => mySelected.has(p.leaguePlayerId) && p.hasSponsorshipClause,
+  );
+
   function handleSubmit() {
     setSubmitError(null);
     startTransition(async () => {
@@ -369,6 +380,19 @@ export function TradeBuilder({
         />
       </div>
 
+      {clausePlayersSelected.length > 0 && (
+        <div className="mt-6 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm">
+          <span className="text-foreground">
+            {clausePlayersSelected.map((p) => p.fullName).join(", ")}{" "}
+            {clausePlayersSelected.length === 1 ? "holds" : "hold"} an active sponsorship clause.
+          </span>{" "}
+          <span className="text-muted">
+            Trading {clausePlayersSelected.length === 1 ? "him" : "them"} away voids the deal and
+            triggers a real buyout penalty - the trade itself is still allowed.
+          </span>
+        </div>
+      )}
+
       <div className="mt-6 rounded-xl border border-border bg-surface p-6">
         {feasibility === null ? (
           <p className="text-sm text-muted">Select at least one player or pick on either side.</p>
@@ -410,6 +434,16 @@ export function TradeBuilder({
               </p>
             ))}
 
+            {/* Finances as a Gameplay Pillar (Phase 4) - Analytics reveals
+                the precise fair-value number instead of just the bucket
+                above. Real information, not better luck. */}
+            {(myTeam.analyticsLevel === "HIGH" || myTeam.analyticsLevel === "MAXIMUM") &&
+              Number.isFinite(aiPreview.score) && (
+                <p className="mt-1 text-xs text-accent-2">
+                  Analytics read: {Math.round(aiPreview.score * 100)}% of fair value
+                </p>
+              )}
+
             {counterSuggestion && counterSuggestion.action !== "NONE" && (
               <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2 p-3">
                 <p className="text-sm text-foreground">
@@ -436,23 +470,21 @@ export function TradeBuilder({
               </div>
             )}
 
-            <Link
-              href="/guide/finances#cpu-trade-decisions"
-              target="_blank"
+            <HowDoesThisWork
+              topic="cpu-trade-decisions"
+              openInNewTab
               className="mt-2 block w-fit text-xs text-muted underline hover:text-foreground"
             >
               How do CPU trade decisions work?
-            </Link>
+            </HowDoesThisWork>
           </div>
         )}
 
-        <Link
-          href="/guide/finances#trades"
-          target="_blank"
+        <HowDoesThisWork
+          topic="trades"
+          openInNewTab
           className="mt-2 block w-fit text-xs text-muted underline hover:text-foreground"
-        >
-          How does this work?
-        </Link>
+        />
 
         {submitError && <p className="mt-3 text-sm text-red-400">{submitError}</p>}
 

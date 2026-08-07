@@ -34,10 +34,7 @@ export default async function FreeAgentsPage({ params }: PageProps) {
 
   return (
     <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
-      <Link href={`/leagues/${league.id}`} className="text-sm text-muted hover:text-foreground">
-        &larr; Back to your team
-      </Link>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground">Free agents</h1>
+      <h1 className="text-3xl font-bold tracking-tight text-foreground">Free agents</h1>
       <p className="mt-2 max-w-2xl text-muted">
         {freeAgents.length} unsigned players, real 2023-24 stats. Any team can always sign a player
         to a Minimum Contract; bigger offers need Cap Space or a Signing Exception - unless you hold

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -26,22 +25,7 @@ export default async function TransactionsPage({ params }: PageProps) {
 
   return (
     <main className="mx-auto max-w-4xl flex-1 px-6 py-16">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <Link href={`/leagues/${league.id}`} className="text-sm text-muted hover:text-foreground">
-            &larr; Back to team
-          </Link>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">
-            Transactions &amp; News
-          </h1>
-        </div>
-        <Link
-          href={`/leagues/${league.id}/history`}
-          className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
-        >
-          League history
-        </Link>
-      </div>
+      <h1 className="text-3xl font-bold tracking-tight text-foreground">Transactions &amp; News</h1>
       <p className="mt-2 max-w-2xl text-muted">
         Every trade, signing, injury, retirement, award, and real on-court moment across the league
         - including the other 29 teams&apos; own - most recent first. Filter by category, your own

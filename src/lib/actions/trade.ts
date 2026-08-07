@@ -11,7 +11,29 @@ import { computeCompetitivenessPercentiles } from "@/lib/actions/competitiveness
 import { computeTeamIdentity } from "@/lib/gm/teamIdentity";
 import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
 import { estimateAge } from "@/lib/players/age";
-import { evaluateTradeOffer, type TradeAssetForEvaluation } from "@/lib/trade/evaluateTradeOffer";
+import {
+  evaluateTradeOffer,
+  playerFillsNeed,
+  type TradeAssetForEvaluation,
+  type TradePlayerAsset,
+} from "@/lib/trade/evaluateTradeOffer";
+import { getPlayerValueTier } from "@/lib/valuation/playerValueTier";
+import {
+  applyFanHappinessDelta,
+  applyScaledFanHappinessDelta,
+  computeTradeSentimentDelta,
+} from "@/lib/fans/sentimentEvents";
+import { recordFanSentimentManyTx, type SentimentRecord } from "@/lib/fans/recordSentiment";
+import { describeTradeSentiment } from "@/lib/fans/describeSentiment";
+import { openIconDepartureFalloutIfEligible } from "@/lib/actions/fanNarrative";
+import { computeMoraleAfterTrade } from "@/lib/morale/moraleEvents";
+import {
+  computeFranchiseIconScore,
+  computeIconDepartureImpact,
+} from "@/lib/finances/franchiseIcon";
+import { describeIconDeparture } from "@/lib/finances/financeNews";
+import { computeSponsorshipVoidPenaltyCents } from "@/lib/finances/sponsorship";
+import { formatCentsCompact } from "@/lib/money";
 
 export interface ExecuteTradeInput {
   leagueId: string;
@@ -93,13 +115,21 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
     fromLeagueTeam,
     toLeagueTeam,
     toTeamRoster,
+    fromTeamRoster,
     competitivenessPercentiles,
+    // Finances as a Gameplay Pillar (Phase 2) - "star clause" sponsorship
+    // deals whose condition player is among the players the user is
+    // sending away. Only the user's team ever has real SponsorshipDeal
+    // rows (CPU teams use a formula baseline, never a signed deal), so
+    // theirPlayers never needs the same check.
+    voidCandidateDeals,
   ] = await Promise.all([
     prisma.leaguePlayer.findMany({
       where: { id: { in: input.myPlayerIds }, leagueTeamId: input.fromTeamId },
       include: {
         player: true,
         contract: { include: { years: { where: { season: league.currentSeason } } } },
+        personalityProfile: true,
       },
     }),
     prisma.leaguePlayer.findMany({
@@ -107,6 +137,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
       include: {
         player: true,
         contract: { include: { years: { where: { season: league.currentSeason } } } },
+        personalityProfile: true,
       },
     }),
     prisma.draftPick.findMany({
@@ -142,7 +173,23 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
       where: { leagueTeamId: input.toTeamId, isActive: true },
       include: { player: true },
     }),
+    // Fan Engagement Deepening (Phase 1) - the user's own roster, so their
+    // own fans' reaction can be judged from the user's own side via the
+    // same evaluateTradeOffer call the CPU side already gets, not a
+    // simplified proxy.
+    prisma.leaguePlayer.findMany({
+      where: { leagueTeamId: input.fromTeamId, isActive: true },
+      include: { player: true },
+    }),
     computeCompetitivenessPercentiles(league.teams),
+    prisma.sponsorshipDeal.findMany({
+      where: {
+        leagueId: league.id,
+        leagueTeamId: input.fromTeamId,
+        status: "ACTIVE",
+        conditionLeaguePlayerId: { in: input.myPlayerIds },
+      },
+    }),
   ]);
 
   if (myPlayers.length !== input.myPlayerIds.length) {
@@ -278,6 +325,110 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
     throw new Error(`The ${teamLabel} don't believe this trade is in their favor.`);
   }
 
+  // Fan Engagement Deepening (Phase 1) - the same evaluateTradeOffer call,
+  // asked from the user's own side too (the "ask both sides" pattern
+  // CPU-CPU trades already use), purely to judge how the user's own fans
+  // read this deal - it never gates whether the trade executes, only how
+  // much it moves fanHappiness.
+  const fromTeamAvgAge =
+    fromTeamRoster.length > 0
+      ? fromTeamRoster.reduce(
+          (sum, lp) => sum + estimateAge(lp.player.draftYear, league.currentSeason),
+          0,
+        ) / fromTeamRoster.length
+      : 27;
+  const fromTeamIdentity = computeTeamIdentity(
+    competitivenessPercentiles.get(input.fromTeamId) ?? 0.5,
+    fromTeamAvgAge,
+  );
+  const fromTeamNeeds = computeTeamNeeds(
+    fromTeamRoster.map((lp) => ({ position: lp.player.position, overallRating: lp.overallRating })),
+  );
+  const myEvaluation = evaluateTradeOffer({
+    respondingTeam: {
+      identity: fromTeamIdentity,
+      needs: fromTeamNeeds,
+      personality: fromLeagueTeam.gmPersonality,
+      roster: fromTeamRoster.map((lp) => ({
+        overallRating: lp.overallRating,
+        age: estimateAge(lp.player.draftYear, league.currentSeason),
+      })),
+    },
+    currentSeason: league.currentSeason,
+    incoming: [...theirPlayers.map(toPlayerAsset), ...theirPicks.map(toPickAsset)],
+    outgoing: [...myPlayers.map(toPlayerAsset), ...myPicks.map(toPickAsset)],
+  });
+  const bestSentRating = myPlayers.reduce((best, lp) => Math.max(best, lp.overallRating), 0);
+  const bestAcquiredRating = theirPlayers.reduce((best, lp) => Math.max(best, lp.overallRating), 0);
+  const fromTeamFanDelta = computeTradeSentimentDelta({
+    perspectiveScore: myEvaluation.score,
+    acquiredStarTier: bestAcquiredRating > 0 ? getPlayerValueTier(bestAcquiredRating) : null,
+    sentStarTier: bestSentRating > 0 ? getPlayerValueTier(bestSentRating) : null,
+  });
+  const toTeamFanDelta = computeTradeSentimentDelta({
+    perspectiveScore: evaluation.score,
+    acquiredStarTier: bestSentRating > 0 ? getPlayerValueTier(bestSentRating) : null,
+    sentStarTier: bestAcquiredRating > 0 ? getPlayerValueTier(bestAcquiredRating) : null,
+  });
+
+  // Franchise Finances (Phase D) - losing a franchise icon is a business event
+  // beyond the box score. Compute each departing player's pre-trade icon score
+  // (star tier + tenure + homegrown); a genuine icon leaving costs the team it
+  // leaves a franchise-value hit, an extra fan-happiness hit, and an "end of an
+  // era" story. fromTeam loses myPlayers; toTeam loses theirPlayers.
+  // `tradeSeason` is captured here (where `league` is narrowed non-null) because
+  // the narrowing wouldn't survive into the nested function below.
+  const tradeSeason = league.currentSeason;
+  function iconLoss(players: typeof myPlayers) {
+    let valueHitCents = 0;
+    let fanHit = 0;
+    const departedNames: string[] = [];
+    // Fans Page Redesign (Phase 1) - the per-player hit is kept alongside the
+    // aggregate so the sentiment ledger can attribute each icon's departure
+    // its own real number, rather than splitting a summed hit evenly across
+    // however many icons happened to move in the same deal.
+    const departed: { leaguePlayerId: string; name: string; fanHit: number }[] = [];
+    for (const lp of players) {
+      const tenure =
+        lp.joinedTeamSeason != null ? Math.max(0, tradeSeason - lp.joinedTeamSeason) : 0;
+      const score = computeFranchiseIconScore({
+        starTier: getPlayerValueTier(lp.overallRating),
+        tenureSeasons: tenure,
+        homegrown: lp.homegrown,
+        careerAwards: 0,
+      });
+      const impact = computeIconDepartureImpact(score);
+      if (impact.notable) {
+        valueHitCents += impact.franchiseValueHitCents;
+        fanHit += impact.fanHappinessHit;
+        departedNames.push(lp.player.fullName);
+        departed.push({
+          leaguePlayerId: lp.id,
+          name: lp.player.fullName,
+          fanHit: impact.fanHappinessHit,
+        });
+      }
+    }
+    return { valueHitCents, fanHit, departedNames, departed };
+  }
+  const fromIconLoss = iconLoss(myPlayers);
+  const toIconLoss = iconLoss(theirPlayers);
+
+  // Finances as a Gameplay Pillar (Phase 2) - trading away a "star clause"
+  // deal's condition player voids the deal: a real, understood cost for
+  // the roster flexibility the clause was pricing in the first place. Cap/
+  // CBA legality is untouched - this only ever adds a cash penalty, never
+  // blocks the move (see docs/FINANCES_PILLAR_DESIGN.md's trade-builder
+  // warning finding).
+  const sponsorshipVoids = voidCandidateDeals.map((deal) => ({
+    deal,
+    penaltyCents: computeSponsorshipVoidPenaltyCents(
+      Number(deal.annualValueCents),
+      deal.endSeason - tradeSeason + 1,
+    ),
+  }));
+  const totalVoidPenaltyCents = sponsorshipVoids.reduce((sum, v) => sum + v.penaltyCents, 0);
+
   await prisma.$transaction(async (tx) => {
     const trade = await tx.trade.create({
       data: {
@@ -301,6 +452,22 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
     });
 
     for (const lp of myPlayers) {
+      // Player Morale & Personality System - a trade is a fresh start:
+      // most of whatever grudge caused/didn't cause this trade doesn't
+      // carry over, and any standing trade request is resolved by the
+      // move itself.
+      const moraleUpdate = lp.personalityProfile
+        ? {
+            morale: computeMoraleAfterTrade(lp.morale, {
+              personality: lp.personalityProfile,
+              newTeamIdentity: toTeamIdentity,
+              fillsNeed: toTeamNeeds.some((need) =>
+                playerFillsNeed(toPlayerAsset(lp) as TradePlayerAsset, need),
+              ),
+            }),
+            tradeRequestActive: false,
+          }
+        : {};
       await tx.leaguePlayer.update({
         where: { id: lp.id },
         data: {
@@ -311,6 +478,11 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
           // numbering (see src/lib/rotation/).
           rotationSlot: null,
           targetMinutesPerGame: null,
+          // Franchise Finances (Phase D) - a traded player's tenure clock
+          // restarts on the new team, and they're no longer homegrown there.
+          joinedTeamSeason: league.currentSeason,
+          homegrown: false,
+          ...moraleUpdate,
         },
       });
       await tx.contract.update({
@@ -319,6 +491,18 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
       });
     }
     for (const lp of theirPlayers) {
+      const moraleUpdate = lp.personalityProfile
+        ? {
+            morale: computeMoraleAfterTrade(lp.morale, {
+              personality: lp.personalityProfile,
+              newTeamIdentity: fromTeamIdentity,
+              fillsNeed: fromTeamNeeds.some((need) =>
+                playerFillsNeed(toPlayerAsset(lp) as TradePlayerAsset, need),
+              ),
+            }),
+            tradeRequestActive: false,
+          }
+        : {};
       await tx.leaguePlayer.update({
         where: { id: lp.id },
         data: {
@@ -326,6 +510,9 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
           reSigningTeamId: input.fromTeamId,
           rotationSlot: null,
           targetMinutesPerGame: null,
+          joinedTeamSeason: league.currentSeason,
+          homegrown: false,
+          ...moraleUpdate,
         },
       });
       await tx.contract.update({
@@ -341,6 +528,224 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
       await tx.draftPick.update({
         where: { id: p.id },
         data: { currentOwnerId: input.fromTeamId },
+      });
+    }
+
+    // Finances as a Gameplay Pillar (Phase 2) - void every sponsorship deal
+    // whose condition player just left, and charge the buyout penalty.
+    if (sponsorshipVoids.length > 0) {
+      await Promise.all(
+        sponsorshipVoids.map(({ deal }) =>
+          tx.sponsorshipDeal.update({
+            where: { id: deal.id },
+            data: { status: "VOIDED", voidedReason: "Condition player traded away" },
+          }),
+        ),
+      );
+    }
+
+    // Fan Engagement Deepening (Phase 1) + Franchise Finances (Phase D) - the
+    // trade sentiment delta and any franchise-icon-departure hit (fan + value)
+    // are applied together in one update per team.
+    const [fromTeamState, toTeamState] = await Promise.all([
+      tx.leagueTeam.findUnique({
+        where: { id: input.fromTeamId },
+        select: {
+          fanHappiness: true,
+          franchiseValueCents: true,
+          cashReserveCents: true,
+          fanCulture: { select: { patience: true, loyalty: true } },
+        },
+      }),
+      tx.leagueTeam.findUnique({
+        where: { id: input.toTeamId },
+        select: {
+          fanHappiness: true,
+          franchiseValueCents: true,
+          fanCulture: { select: { patience: true, loyalty: true } },
+        },
+      }),
+    ]);
+
+    // Fans Page Redesign (Phase 3) - each component delta is scaled by this
+    // team's culture BEFORE it's summed for the actual fanHappiness write,
+    // and the same scaled value is what gets recorded to the ledger below -
+    // never the raw one, so a ledger row always explains the real number.
+    const tradeSentimentRows: SentimentRecord[] = [];
+    let fromScaledTotal = 0;
+    let toScaledTotal = 0;
+
+    if (fromTeamState) {
+      const tradeScaled = applyScaledFanHappinessDelta(
+        fromTeamState.fanHappiness,
+        fromTeamFanDelta,
+        fromTeamState.fanCulture,
+      ).scaledDelta;
+      fromScaledTotal += tradeScaled;
+      tradeSentimentRows.push({
+        leagueId: league.id,
+        leagueTeamId: input.fromTeamId,
+        season: tradeSeason,
+        kind: "TRADE",
+        delta: tradeScaled,
+        description: describeTradeSentiment({
+          delta: tradeScaled,
+          sentNames: myPlayers.map((lp) => lp.player.fullName),
+          acquiredNames: theirPlayers.map((lp) => lp.player.fullName),
+        }),
+      });
+      for (const icon of fromIconLoss.departed) {
+        const iconScaled = applyScaledFanHappinessDelta(
+          fromTeamState.fanHappiness,
+          icon.fanHit,
+          fromTeamState.fanCulture,
+        ).scaledDelta;
+        fromScaledTotal += iconScaled;
+        tradeSentimentRows.push({
+          leagueId: league.id,
+          leagueTeamId: input.fromTeamId,
+          season: tradeSeason,
+          kind: "ICON_DEPARTURE",
+          delta: iconScaled,
+          description: `${icon.name} - a franchise icon - was traded away.`,
+          leaguePlayerId: icon.leaguePlayerId,
+        });
+      }
+      const fromNewFanHappiness = applyFanHappinessDelta(
+        fromTeamState.fanHappiness,
+        fromScaledTotal,
+      );
+      await tx.leagueTeam.update({
+        where: { id: input.fromTeamId },
+        data: {
+          fanHappiness: fromNewFanHappiness,
+          franchiseValueCents: BigInt(
+            Math.max(0, Number(fromTeamState.franchiseValueCents) - fromIconLoss.valueHitCents),
+          ),
+          cashReserveCents: fromTeamState.cashReserveCents - BigInt(totalVoidPenaltyCents),
+        },
+      });
+      // Fans Page Redesign (Phase 5) - "The Reed Trade Fallout" opens the
+      // moment the departure actually happens, not deferred to season end.
+      for (const icon of fromIconLoss.departed) {
+        await openIconDepartureFalloutIfEligible(tx, {
+          leagueId: league.id,
+          leagueTeamId: input.fromTeamId,
+          season: tradeSeason,
+          dayIndex: 0,
+          playerName: icon.name,
+          leaguePlayerId: icon.leaguePlayerId,
+          isTrade: true,
+          fanHappinessAfterDeparture: fromNewFanHappiness,
+        });
+      }
+    }
+    if (toTeamState) {
+      const tradeScaled = applyScaledFanHappinessDelta(
+        toTeamState.fanHappiness,
+        toTeamFanDelta,
+        toTeamState.fanCulture,
+      ).scaledDelta;
+      toScaledTotal += tradeScaled;
+      tradeSentimentRows.push({
+        leagueId: league.id,
+        leagueTeamId: input.toTeamId,
+        season: tradeSeason,
+        kind: "TRADE",
+        delta: tradeScaled,
+        description: describeTradeSentiment({
+          delta: tradeScaled,
+          sentNames: theirPlayers.map((lp) => lp.player.fullName),
+          acquiredNames: myPlayers.map((lp) => lp.player.fullName),
+        }),
+      });
+      for (const icon of toIconLoss.departed) {
+        const iconScaled = applyScaledFanHappinessDelta(
+          toTeamState.fanHappiness,
+          icon.fanHit,
+          toTeamState.fanCulture,
+        ).scaledDelta;
+        toScaledTotal += iconScaled;
+        tradeSentimentRows.push({
+          leagueId: league.id,
+          leagueTeamId: input.toTeamId,
+          season: tradeSeason,
+          kind: "ICON_DEPARTURE",
+          delta: iconScaled,
+          description: `${icon.name} - a franchise icon - was traded away.`,
+          leaguePlayerId: icon.leaguePlayerId,
+        });
+      }
+      const toNewFanHappiness = applyFanHappinessDelta(toTeamState.fanHappiness, toScaledTotal);
+      await tx.leagueTeam.update({
+        where: { id: input.toTeamId },
+        data: {
+          fanHappiness: toNewFanHappiness,
+          franchiseValueCents: BigInt(
+            Math.max(0, Number(toTeamState.franchiseValueCents) - toIconLoss.valueHitCents),
+          ),
+        },
+      });
+      for (const icon of toIconLoss.departed) {
+        await openIconDepartureFalloutIfEligible(tx, {
+          leagueId: league.id,
+          leagueTeamId: input.toTeamId,
+          season: tradeSeason,
+          dayIndex: 0,
+          playerName: icon.name,
+          leaguePlayerId: icon.leaguePlayerId,
+          isTrade: true,
+          fanHappinessAfterDeparture: toNewFanHappiness,
+        });
+      }
+    }
+
+    // Fans Page Redesign (Phase 1) - record *why* the numbers just moved.
+    // The trade reaction and the franchise-icon departure are logged
+    // separately even though they're summed into one fanHappiness write
+    // above: fans remember "we got fleeced" and "they traded our guy" as
+    // two different grievances, and the page's contributor ranking needs
+    // them apart to say which one actually drove the swing.
+    await recordFanSentimentManyTx(tx, tradeSentimentRows);
+
+    // "End of an era" news for each genuine franchise-icon departure.
+    const iconDepartureNews = [
+      ...fromIconLoss.departedNames.map((name) => ({
+        teamId: input.fromTeamId,
+        teamLabel: `${fromLeagueTeam.team.city} ${fromLeagueTeam.team.name}`,
+        name,
+      })),
+      ...toIconLoss.departedNames.map((name) => ({
+        teamId: input.toTeamId,
+        teamLabel: `${toLeagueTeam.team.city} ${toLeagueTeam.team.name}`,
+        name,
+      })),
+    ];
+    if (iconDepartureNews.length > 0) {
+      await tx.leagueTransaction.createMany({
+        data: iconDepartureNews.map((d) => ({
+          leagueId: league.id,
+          season: league.currentSeason,
+          type: "FRANCHISE_MILESTONE" as const,
+          description: describeIconDeparture(d.name, d.teamLabel),
+          importance: "MAJOR" as const,
+          teamIds: [d.teamId],
+        })),
+      });
+    }
+
+    // Finances as a Gameplay Pillar (Phase 2) - a news beat for every
+    // voided sponsorship deal, naming the real buyout cost.
+    if (sponsorshipVoids.length > 0) {
+      await tx.leagueTransaction.createMany({
+        data: sponsorshipVoids.map(({ deal, penaltyCents }) => ({
+          leagueId: league.id,
+          season: league.currentSeason,
+          type: "BUSINESS_DECISION" as const,
+          description: `The ${deal.label} deal has voided - trading away its condition player triggered a ${formatCentsCompact(penaltyCents)} buyout penalty.`,
+          importance: "MAJOR" as const,
+          teamIds: [input.fromTeamId],
+        })),
       });
     }
 

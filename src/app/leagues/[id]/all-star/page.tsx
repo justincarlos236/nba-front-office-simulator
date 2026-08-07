@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -172,13 +171,7 @@ export default async function AllStarWeekendPage({ params, searchParams }: PageP
   if (!weekend) {
     return (
       <main className="mx-auto max-w-4xl flex-1 px-6 py-16">
-        <Link
-          href={`/leagues/${id}/standings`}
-          className="text-sm text-muted hover:text-foreground"
-        >
-          &larr; Back to standings
-        </Link>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">All-Star Weekend</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">All-Star Weekend</h1>
         <div className="mt-10 rounded-xl border border-border bg-surface p-8 text-center">
           <p className="text-muted">
             No All-Star Weekend has happened yet in {seasonLabel(season)} - keep simulating toward
@@ -212,10 +205,7 @@ export default async function AllStarWeekendPage({ params, searchParams }: PageP
 
   return (
     <main className="mx-auto max-w-5xl flex-1 px-6 py-16">
-      <Link href={`/leagues/${id}/standings`} className="text-sm text-muted hover:text-foreground">
-        &larr; Back to standings
-      </Link>
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           {seasonLabel(season)} All-Star Weekend
         </h1>

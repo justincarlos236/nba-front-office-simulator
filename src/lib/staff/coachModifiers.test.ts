@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { computeCoachBoxScoreModifier, computeCoachWinBonus } from "./coachModifiers";
+import {
+  computeCoachBoxScoreModifier,
+  computeCoachWinBonus,
+  effectiveStaffQuality,
+} from "./coachModifiers";
 
 describe("computeCoachWinBonus", () => {
   it("is zero at the neutral anchor (72)", () => {
@@ -43,5 +47,29 @@ describe("computeCoachBoxScoreModifier", () => {
 
   it("defaults an unspecified style to BALANCED", () => {
     expect(computeCoachBoxScoreModifier(72, null).threePaMultiplier).toBe(1);
+  });
+});
+
+describe("effectiveStaffQuality", () => {
+  it("passes through unchanged (null) when no coach/staff is hired, regardless of department level", () => {
+    expect(effectiveStaffQuality(null, "MAXIMUM")).toBeNull();
+    expect(effectiveStaffQuality(null, "MINIMAL")).toBeNull();
+  });
+
+  it("is unchanged at STANDARD department level", () => {
+    expect(effectiveStaffQuality(80, "STANDARD")).toBe(80);
+  });
+
+  it("MAXIMUM Coaching Support raises effective quality above the raw value", () => {
+    expect(effectiveStaffQuality(80, "MAXIMUM")).toBeGreaterThan(80);
+  });
+
+  it("MINIMAL Coaching Support lowers effective quality below the raw value", () => {
+    expect(effectiveStaffQuality(80, "MINIMAL")).toBeLessThan(80);
+  });
+
+  it("clamps into the 0-99 rating range", () => {
+    expect(effectiveStaffQuality(99, "MAXIMUM")).toBeLessThanOrEqual(99);
+    expect(effectiveStaffQuality(0, "MINIMAL")).toBeGreaterThanOrEqual(0);
   });
 });

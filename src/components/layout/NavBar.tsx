@@ -14,13 +14,16 @@ export async function NavBar() {
           <Link href="/teams" className="transition hover:text-foreground">
             Teams
           </Link>
-          <Link href="/#engineering" className="transition hover:text-foreground">
-            Engineering
+          <Link href="/guide" className="transition hover:text-foreground">
+            Guide
           </Link>
           {session?.user ? (
             <>
               <Link href="/leagues" className="transition hover:text-foreground">
                 My Leagues
+              </Link>
+              <Link href="/career" className="transition hover:text-foreground">
+                Career
               </Link>
               <form
                 action={async () => {

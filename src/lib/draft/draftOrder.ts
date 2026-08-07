@@ -1,10 +1,26 @@
 import { winPct } from "@/lib/simulation/playoffSeeding";
-import { runLottery } from "./draftLottery";
+import { runLottery, type LotteryTeam } from "./draftLottery";
 
 export interface DraftOrderTeam {
   leagueTeamId: string;
   wins: number;
   losses: number;
+}
+
+/**
+ * The non-playoff teams, seeded 1 (worst record) through 14 (best) -
+ * exactly the input `runLottery` needs. Exported so the Draft Lottery
+ * Experience's pre-reveal odds overview can show real seeds/odds before
+ * the draw runs, without a second copy of this sort.
+ */
+export function getSeededLotteryTeams(
+  allTeams: DraftOrderTeam[],
+  playoffTeamIds: ReadonlySet<string>,
+): LotteryTeam[] {
+  const nonPlayoffTeams = allTeams.filter((t) => !playoffTeamIds.has(t.leagueTeamId));
+  return [...nonPlayoffTeams]
+    .sort((a, b) => winPct(a) - winPct(b))
+    .map((t, i) => ({ leagueTeamId: t.leagueTeamId, seed: i + 1 }));
 }
 
 /**
@@ -20,12 +36,9 @@ export function computeDraftOrder(
   playoffTeamIds: ReadonlySet<string>,
   rng: () => number = Math.random,
 ): string[] {
-  const nonPlayoffTeams = allTeams.filter((t) => !playoffTeamIds.has(t.leagueTeamId));
   const playoffTeams = allTeams.filter((t) => playoffTeamIds.has(t.leagueTeamId));
 
-  const seededLotteryTeams = [...nonPlayoffTeams]
-    .sort((a, b) => winPct(a) - winPct(b))
-    .map((t, i) => ({ leagueTeamId: t.leagueTeamId, seed: i + 1 }));
+  const seededLotteryTeams = getSeededLotteryTeams(allTeams, playoffTeamIds);
   const lotteryOrder = runLottery(seededLotteryTeams, rng);
 
   const playoffOrder = [...playoffTeams]

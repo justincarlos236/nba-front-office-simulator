@@ -111,6 +111,20 @@ describe("developPlayerRating", () => {
     );
   });
 
+  it("a well-funded Player Development department boosts young-player growth vs. a starved one", () => {
+    const withInvestment = { overallRating: 65, potentialRating: 90, age: 21, rng: fixedRng(0.1) };
+    const maximum = developPlayerRating({ ...withInvestment, playerDevelopmentDelta: 14 });
+    const minimal = developPlayerRating({ ...withInvestment, playerDevelopmentDelta: -10 });
+    expect(maximum).toBeGreaterThanOrEqual(minimal);
+  });
+
+  it("an unspecified or zero Player Development delta behaves identically to today's curve", () => {
+    const input = { overallRating: 70, potentialRating: 88, age: 22, rng: fixedRng(0.4) };
+    expect(developPlayerRating(input)).toBe(
+      developPlayerRating({ ...input, playerDevelopmentDelta: 0 }),
+    );
+  });
+
   it("a high-quality coach dampens an aging player's decline", () => {
     const uncoached = developPlayerRating({
       overallRating: 80,
@@ -147,5 +161,24 @@ describe("developPlayerRating", () => {
     const heavyMinutes = developPlayerRating({ ...base, minutesPerGame: 34 });
     const benched = developPlayerRating({ ...base, minutesPerGame: 4 });
     expect(heavyMinutes).toBeGreaterThanOrEqual(benched);
+  });
+
+  it("an unspecified morale behaves identically to before the Morale system existed", () => {
+    const input = { overallRating: 70, potentialRating: 88, age: 22, rng: fixedRng(0.4) };
+    expect(developPlayerRating(input)).toBe(developPlayerRating({ ...input, morale: undefined }));
+  });
+
+  it("a young happy player grows faster than an equally young miserable one", () => {
+    const base = { overallRating: 65, potentialRating: 90, age: 21, rng: fixedRng(0.1) };
+    const happy = developPlayerRating({ ...base, morale: 95 });
+    const miserable = developPlayerRating({ ...base, morale: 5 });
+    expect(happy).toBeGreaterThanOrEqual(miserable);
+  });
+
+  it("good morale dampens an aging player's decline", () => {
+    const base = { overallRating: 80, potentialRating: 80, age: 35, rng: fixedRng(0.5) };
+    const happy = developPlayerRating({ ...base, morale: 95 });
+    const miserable = developPlayerRating({ ...base, morale: 5 });
+    expect(happy).toBeGreaterThanOrEqual(miserable);
   });
 });

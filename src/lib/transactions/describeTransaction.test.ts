@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { describeRetirement, describeSigning, describeTrade } from "./describeTransaction";
+import {
+  describeRetirement,
+  describeSigning,
+  describeTrade,
+  describeDraftReach,
+  describeDraftSteal,
+} from "./describeTransaction";
 
 describe("describeTrade", () => {
   it("names both sides when it's a player-for-player trade", () => {
@@ -66,5 +72,40 @@ describe("describeRetirement", () => {
 
   it("omits team when unrostered", () => {
     expect(describeRetirement("X", null)).toBe("X has announced their retirement");
+  });
+});
+
+describe("describeDraftReach", () => {
+  it("names the team, player, pick, and expected rank", () => {
+    expect(describeDraftReach("Chicago Bulls", "X", 10, 40)).toBe(
+      "Chicago Bulls reach for X at pick 10 - most boards had him closer to No. 40",
+    );
+  });
+});
+
+describe("describeDraftSteal", () => {
+  it("names the player, expected rank, actual pick, and the team that found them", () => {
+    expect(describeDraftSteal("Chicago Bulls", "X", 25, 3)).toBe(
+      "X, projected around No. 3, falls all the way to pick 25 - a real steal for Chicago Bulls",
+    );
+  });
+
+  it("adds no pathway clause when pathway is omitted or Power Conference", () => {
+    expect(describeDraftSteal("Chicago Bulls", "X", 25, 3, null)).not.toContain("ranks");
+    expect(describeDraftSteal("Chicago Bulls", "X", 25, 3, "POWER_CONFERENCE")).not.toContain(
+      "ranks",
+    );
+  });
+
+  it("adds a pathway clause for the three lower-visibility pathways", () => {
+    expect(describeDraftSteal("Chicago Bulls", "X", 25, 3, "MID_MAJOR")).toContain(
+      "out of the Mid-Major ranks",
+    );
+    expect(describeDraftSteal("Chicago Bulls", "X", 25, 3, "INTERNATIONAL_PROFESSIONAL")).toContain(
+      "out of the international ranks",
+    );
+    expect(describeDraftSteal("Chicago Bulls", "X", 25, 3, "DEVELOPMENT_PATHWAY")).toContain(
+      "out of the Development Pathway ranks",
+    );
   });
 });

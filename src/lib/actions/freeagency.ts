@@ -9,6 +9,13 @@ import { computeReSigningMaxOfferCents } from "@/lib/freeagency/reSigningRights"
 import { getSigningExceptionUsage } from "@/lib/actions/signingException";
 import { describeSigning } from "@/lib/transactions/describeTransaction";
 import { importanceForRating } from "@/lib/transactions/newsImportance";
+import { getPlayerValueTier } from "@/lib/valuation/playerValueTier";
+import {
+  applyScaledFanHappinessDelta,
+  computeSigningSentimentDelta,
+} from "@/lib/fans/sentimentEvents";
+import { recordFanSentimentManyTx } from "@/lib/fans/recordSentiment";
+import { describeSigningSentiment } from "@/lib/fans/describeSentiment";
 
 export interface SignFreeAgentInput {
   leagueId: string;
@@ -98,6 +105,10 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
         // reset so it doesn't collide with this team's own numbering.
         rotationSlot: null,
         targetMinutesPerGame: null,
+        // Franchise Finances (Phase D) - a signed free agent starts fresh:
+        // tenure clock resets, not homegrown (they weren't drafted here).
+        joinedTeamSeason: league.currentSeason,
+        homegrown: false,
       },
     });
 
@@ -149,6 +160,46 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
         teamIds: [myLeagueTeamId],
       },
     });
+
+    // Fan Engagement Deepening (Phase 1).
+    const teamFans = await tx.leagueTeam.findUnique({
+      where: { id: myLeagueTeamId },
+      select: { fanHappiness: true, fanCulture: { select: { patience: true, loyalty: true } } },
+    });
+    if (teamFans) {
+      const isReSigning = freeAgent.reSigningTeamId === myLeagueTeamId;
+      const rawDelta = computeSigningSentimentDelta({
+        signedStarTier: getPlayerValueTier(freeAgent.overallRating),
+        isReSigning,
+      });
+      // Fans Page Redesign (Phase 3) - scaled by this team's Fan Culture
+      // before it's applied or recorded.
+      const { newFanHappiness, scaledDelta: delta } = applyScaledFanHappinessDelta(
+        teamFans.fanHappiness,
+        rawDelta,
+        teamFans.fanCulture,
+      );
+      await tx.leagueTeam.update({
+        where: { id: myLeagueTeamId },
+        data: { fanHappiness: newFanHappiness },
+      });
+      // Fans Page Redesign (Phase 1) - persist why, not just the result.
+      await recordFanSentimentManyTx(tx, [
+        {
+          leagueId: league.id,
+          leagueTeamId: myLeagueTeamId,
+          season: league.currentSeason,
+          kind: "SIGNING",
+          delta,
+          description: describeSigningSentiment({
+            playerName: freeAgent.player.fullName,
+            isReSigning,
+            delta,
+          }),
+          leaguePlayerId: freeAgent.id,
+        },
+      ]);
+    }
   });
 
   redirect(`/leagues/${league.id}`);

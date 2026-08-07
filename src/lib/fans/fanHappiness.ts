@@ -97,14 +97,23 @@ const MARKET_SIZE_POPULARITY_MULTIPLIER: Record<MarketSize, number> = {
   SMALL: 0.9,
 };
 
-/** A derived, presentational 0-100 index - not independently simulated (see docs/ARCHITECTURE.md). Half fan happiness, half star power, market-size-adjusted. */
+// Finances as a Gameplay Pillar (Phase 4) - the Marketing department grows
+// the brand faster, on top of whatever winning/star-power/market already
+// earns. Scales departmentQualityDelta (roughly -10..+14) down into a
+// modest, bounded popularity nudge - Marketing accelerates growth, it
+// doesn't replace having a good team.
+const MARKETING_POPULARITY_SCALE = 0.5;
+
+/** A derived, presentational 0-100 index - not independently simulated (see docs/ARCHITECTURE.md). Half fan happiness, half star power, market-size-adjusted, with an optional Marketing-department nudge. */
 export function computeFranchisePopularity(
   fanHappiness: number,
   starPowerTier: PlayerValueTier | null,
   marketSize: MarketSize,
+  marketingQualityDelta = 0,
 ): number {
   const starScore = STAR_POWER_SCORE[starPowerTier ?? "STARTER"];
-  const base = fanHappiness * 0.6 + starScore * 0.4;
+  const base =
+    fanHappiness * 0.6 + starScore * 0.4 + marketingQualityDelta * MARKETING_POPULARITY_SCALE;
   return Math.round(clamp(base * MARKET_SIZE_POPULARITY_MULTIPLIER[marketSize], 0, 100));
 }
 

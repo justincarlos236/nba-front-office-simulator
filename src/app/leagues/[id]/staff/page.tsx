@@ -58,10 +58,7 @@ export default async function StaffPage({ params }: PageProps) {
 
   return (
     <main className="mx-auto max-w-5xl flex-1 px-6 py-16">
-      <Link href={`/leagues/${league.id}`} className="text-sm text-muted hover:text-foreground">
-        &larr; Back to your team
-      </Link>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground">Staff</h1>
+      <h1 className="text-3xl font-bold tracking-tight text-foreground">Staff</h1>
       <p className="mt-2 max-w-2xl text-muted">
         Your coaching and support staff have real effects on the court, not just cosmetics - hire
         and fire carefully.

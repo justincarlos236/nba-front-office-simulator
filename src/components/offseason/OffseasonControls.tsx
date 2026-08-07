@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { advanceSeasonAction } from "@/lib/actions/offseason";
-
-type Phase = "regular-season" | "playoffs-incomplete" | "draft-incomplete" | "ready";
+import type { LeaguePhase } from "@/lib/league/leaguePhase";
 
 export function OffseasonControls({
   leagueId,
@@ -12,7 +11,7 @@ export function OffseasonControls({
   nextSeasonLabel,
 }: {
   leagueId: string;
-  phase: Phase;
+  phase: LeaguePhase;
   nextSeasonLabel: string;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -47,6 +46,16 @@ export function OffseasonControls({
       {phase === "playoffs-incomplete" && (
         <p className="text-sm text-muted">
           Crown a champion in the playoffs before advancing to the next season.
+        </p>
+      )}
+      {phase === "pre-draft" && (
+        <p className="text-sm text-muted">
+          Scouting the class and running the draft lottery comes before advancing to the next season
+          - head to the{" "}
+          <Link href={`/leagues/${leagueId}/draft`} className="text-accent hover:underline">
+            Draft page
+          </Link>{" "}
+          to scout prospects; the lottery is one click from there once you&apos;re ready.
         </p>
       )}
       {phase === "draft-incomplete" && (
