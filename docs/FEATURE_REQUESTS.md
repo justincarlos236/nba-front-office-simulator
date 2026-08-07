@@ -1,12 +1,10 @@
 # Feature requests
 
 Verbatim (or near-verbatim) records of extensive, detailed feature-request
-prompts the user has given, preserved so they survive conversation
-compaction, session boundaries, or a fresh machine/clone - unlike chat
-history, this file is part of the repo. Each entry keeps the original ask
-intact and tracks what was actually built against it, so a later session
-can tell "did the user ask for X, or did Claude infer that?" without
-re-deriving it from code or memory.
+notes, preserved here so they're durable across machines and don't rely on
+memory. Each entry keeps the original ask intact and tracks what was
+actually built against it, so it's always possible to check the request
+against the implementation without re-deriving it from code alone.
 
 This is different from `docs/FEATURE_ROADMAP.md` (a long-standing list of
 ~100 possible features drafted early in the project) - entries here are
@@ -1529,9 +1527,7 @@ sub-system, not a small add-on.
 
 Full design (schema, the firing trigger inside `advanceSeasonAction`, the
 ended-league view reusing `leagues/[id]/layout.tsx`, and the new `/career`
-page) is captured in the approved plan file
-(`.claude/plans/tender-orbiting-scone.md` at planning time) and summarized
-in this doc's Status section below as it's built.
+page) is summarized in this doc's Status section below as it's built.
 
 ### Status
 

@@ -48,3 +48,7 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# Claude Code local config - not for the public repo
+CLAUDE.md
+.claude/
