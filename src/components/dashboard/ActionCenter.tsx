@@ -79,10 +79,19 @@ function ActionCenterItemRow({ item }: { item: ActionCenterItem }) {
 export function ActionCenter({
   items,
   didYouKnowTip,
+  hiddenCount = 0,
 }: {
   items: ActionCenterItem[];
   /** Onboarding Philosophy Phase 2 (docs/ONBOARDING_DESIGN.md Part 4B.5) - only ever passed when `items` is empty, so it never competes with a real recommendation. */
   didYouKnowTip?: DidYouKnowTip | null;
+  /**
+   * How many recommendations were ranked below the display cap. Sixteen rules
+   * can fire and only three ever render; without this the rest are discarded
+   * silently, which is the same "the product knows something and does not say
+   * so" failure the notification audit found elsewhere. The cap itself stays -
+   * a wall of sixteen items is what it exists to prevent.
+   */
+  hiddenCount?: number;
 }) {
   return (
     <section className="border-t-2 border-team-accent bg-field p-6 sm:p-8">
@@ -108,6 +117,11 @@ export function ActionCenter({
           {items.map((item) => (
             <ActionCenterItemRow key={item.id} item={item} />
           ))}
+          {hiddenCount > 0 && (
+            <p className="pt-1 text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase">
+              {hiddenCount} more {hiddenCount === 1 ? "item" : "items"} ranked below these
+            </p>
+          )}
         </div>
       )}
     </section>

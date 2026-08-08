@@ -409,6 +409,7 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
             <ActionCenter
               items={actionCenterItems}
               didYouKnowTip={actionCenterItems.length === 0 ? pickDidYouKnowTip(league.id) : null}
+              hiddenCount={allActionCenterItems.length - actionCenterItems.length}
             />
 
             {dashboardGamesRemaining > 0 && (
