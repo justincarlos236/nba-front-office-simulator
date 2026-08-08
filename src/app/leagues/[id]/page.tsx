@@ -40,6 +40,7 @@ import { estimateAge } from "@/lib/players/age";
 import { PlayerChip } from "@/components/players/PlayerChip";
 import { ActionCenter } from "@/components/dashboard/ActionCenter";
 import { SinceYouLeft } from "@/components/dashboard/SinceYouLeft";
+import { FormLine } from "@/components/dashboard/FormLine";
 import { SimulateControls } from "@/components/simulation/SimulateControls";
 import { pickDidYouKnowTip } from "@/lib/gm/didYouKnow";
 import { computeLeaguePhase, type LeaguePhase } from "@/lib/league/leaguePhase";
@@ -260,7 +261,14 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
   // signal rather than a second "is this day 0" query.
   const isBrandNewSeason = allActionCenterItems.some((i) => i.id === "first-games-not-simulated");
 
-  const [phase, continuity, dashboardGamesRemaining, dashboardWeekend, dashboardBreakingDecision] =
+  const [
+    phase,
+    continuity,
+    dashboardGamesRemaining,
+    dashboardWeekend,
+    dashboardBreakingDecision,
+    recentTeamGames,
+  ] =
     await Promise.all([
       computeLeaguePhase(league.id, season),
       // Read the diff BEFORE advancing the visit clock below - marking the save
@@ -289,6 +297,26 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
           severity: "BREAKING",
         },
         select: { id: true },
+      }),
+      // The team's own last ten. The decision column had nothing to say about
+      // how the team is actually playing, which is the first thing a GM looks
+      // at - and the real reason the column read as empty.
+      prisma.game.findMany({
+        where: {
+          leagueId: league.id,
+          season,
+          playedAt: { not: null },
+          OR: [
+            { homeLeagueTeamId: userLeagueTeam.id },
+            { awayLeagueTeamId: userLeagueTeam.id },
+          ],
+        },
+        include: {
+          homeTeam: { include: { team: true } },
+          awayTeam: { include: { team: true } },
+        },
+        orderBy: { playedAt: "desc" },
+        take: 10,
       }),
     ]);
 
@@ -391,6 +419,23 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
                 businessDecisionPending={!!dashboardBreakingDecision}
               />
             )}
+
+            <FormLine
+              leagueId={league.id}
+              games={[...recentTeamGames].reverse().map((g) => {
+                const isHome = g.homeLeagueTeamId === userLeagueTeam.id;
+                const own = (isHome ? g.homeScore : g.awayScore) ?? 0;
+                const other = (isHome ? g.awayScore : g.homeScore) ?? 0;
+                const opponent = isHome ? g.awayTeam : g.homeTeam;
+                return {
+                  id: g.id,
+                  won: own > other,
+                  margin: own - other,
+                  opponentAbbreviation: opponent.team.abbreviation,
+                  home: isHome,
+                };
+              })}
+            />
           </div>
 
           {/* FIGURE RAIL. Cap position only. Everything else that used to live
