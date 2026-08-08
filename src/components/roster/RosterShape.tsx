@@ -63,27 +63,34 @@ export function RosterShape({
           const isGap = columnMinutes[i] === thinnest && columnMinutes[i] < REFERENCE_MINUTES;
           return (
             <div key={column.position} className="flex min-w-0 flex-col">
-              {/* Blocks build upward from the floor, tallest minutes at the base. */}
-              <div className="flex min-h-[104px] flex-col justify-end gap-px">
+              {/* Blocks build upward from a shared floor. Every column is the
+                  same height so the columns are comparable as *shapes* - an
+                  uneven ragged top reads as broken layout, a consistent frame
+                  with different fills reads as information. */}
+              <div className="relative flex h-32 flex-col justify-end gap-px bg-raised/30">
                 {column.players.map((p) => {
                   const minutes = p.targetMinutesPerGame ?? 0;
                   const height = Math.max(
-                    10,
-                    Math.round((minutes / REFERENCE_MINUTES) * 72),
+                    12,
+                    Math.round((minutes / REFERENCE_MINUTES) * 76),
                   );
                   return (
                     <div
                       key={p.leaguePlayerId}
                       title={`${p.fullName} - ${minutes} min`}
                       style={{ height: `${height}px` }}
-                      className="flex items-center justify-center overflow-hidden bg-team-accent/25 px-1 text-[11px] font-semibold text-ink"
+                      className="flex items-center justify-center overflow-hidden border-t border-team-accent/50 bg-team-accent/20 px-1 text-[11px] font-semibold text-ink"
                     >
                       <span className="truncate">{p.fullName.split(" ").slice(-1)[0]}</span>
                     </div>
                   );
                 })}
                 {column.players.length === 0 && (
-                  <div className="h-2.5 border-t border-dashed border-negative" />
+                  <div className="flex h-full items-center justify-center">
+                    <span className="text-[11px] font-semibold tracking-[0.09em] text-negative uppercase">
+                      None
+                    </span>
+                  </div>
                 )}
               </div>
 

@@ -39,19 +39,30 @@ export function CapThresholdGauge({
 }) {
   const rules = getSeasonCapRules(season);
 
-  // The scale runs to a little past the second apron, so a team sitting on
-  // the apron does not peg the end of the track with no room to read.
-  const headroom = (rules.secondApronCents * 108n) / 100n;
+  // The scale deliberately does NOT start at zero. Every meaningful threshold
+  // lives between roughly 80% and 100% of the second apron, so a $0-anchored
+  // track spends two thirds of its width on empty space and crushes the four
+  // lines that actually govern the rules into a sliver. The window starts a
+  // little below the cap - the first point at which anything changes - and
+  // ends a little past the second apron.
+  const floor = (rules.salaryCapCents * 88n) / 100n;
+  const ceiling = (rules.secondApronCents * 106n) / 100n;
+  const span = ceiling - floor;
 
   const bands: Band[] = [
     { key: "room", label: "Cap room", ceiling: rules.salaryCapCents },
     { key: "over", label: "Over the cap", ceiling: rules.luxuryTaxCents },
     { key: "tax", label: "Luxury tax", ceiling: rules.firstApronCents },
     { key: "first", label: "First apron", ceiling: rules.secondApronCents },
-    { key: "second", label: "Second apron", ceiling: headroom },
+    { key: "second", label: "Second apron", ceiling },
   ];
 
-  const pct = (value: bigint) => Number((value * 10000n) / headroom) / 100;
+  /** Position within the visible window, clamped so an outlier still reads. */
+  const pct = (value: bigint) => {
+    if (value <= floor) return 0;
+    if (value >= ceiling) return 100;
+    return Number(((value - floor) * 10000n) / span) / 100;
+  };
 
   // Which band the team is actually in - drives the emphasis, so the tier you
   // are standing in is the one that reads.
@@ -109,6 +120,27 @@ export function CapThresholdGauge({
           aria-hidden="true"
         />
       </div>
+
+      {/* Compact still needs to say which lines it is showing, or the bands
+          are decoration. Ticks only, no figures - the rail is narrow. */}
+      {compact && (
+        <div className="relative mt-1 h-4">
+          {[
+            { label: "Cap", value: rules.salaryCapCents },
+            { label: "Tax", value: rules.luxuryTaxCents },
+            { label: "A1", value: rules.firstApronCents },
+            { label: "A2", value: rules.secondApronCents },
+          ].map((t) => (
+            <span
+              key={t.label}
+              className="absolute top-0 -translate-x-1/2 text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase"
+              style={{ left: `${pct(t.value)}%` }}
+            >
+              {t.label}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Threshold scale. The four numbers that actually govern the rules. */}
       {!compact && (

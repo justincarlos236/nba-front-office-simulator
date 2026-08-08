@@ -59,15 +59,27 @@ export function ContractLadder({
 
           return (
             <div key={p.season} className="min-w-0">
-              {/* The column. Height is the commitment; the rule is that
-                  season's cap, so crossing it is literally visible. */}
-              <div className="relative h-28 border-b border-rule bg-raised/40">
-                <div
-                  className={`absolute inset-x-0 bottom-0 ${
-                    overCap ? "bg-caution/40" : "bg-team-accent/30"
-                  }`}
-                  style={{ height: `${barPct}%` }}
-                />
+              {/* The column. Height is the commitment; the dashed rule is that
+                  season's cap, so crossing it is literally visible. A season
+                  with nothing on the books is drawn as open space, not as an
+                  empty box that reads like missing data. */}
+              <div className="relative h-28 border-b border-rule">
+                {p.committedSalaryCents === 0n ? (
+                  <div className="absolute inset-x-0 bottom-0 flex h-full items-end justify-center pb-1">
+                    <span className="text-[11px] font-semibold tracking-[0.09em] text-positive uppercase">
+                      Open
+                    </span>
+                  </div>
+                ) : (
+                  <div
+                    className={`absolute inset-x-0 bottom-0 border-t ${
+                      overCap
+                        ? "border-caution bg-caution/25"
+                        : "border-team-accent bg-team-accent/20"
+                    }`}
+                    style={{ height: `${barPct}%` }}
+                  />
+                )}
                 <div
                   className="absolute inset-x-0 border-t border-dashed border-rule-strong"
                   style={{ bottom: `${capPct}%` }}

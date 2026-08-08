@@ -47,7 +47,9 @@ export function SeasonRibbon({
           const active = i === activeIndex;
           return (
             <div key={stage.phase} className="min-w-0 flex-1">
-              <div className="relative h-1.5 overflow-hidden bg-raised">
+              {/* Thicker than a rule on purpose - at 1.5px this read as a
+                  divider rather than as progress. */}
+              <div className="relative h-2.5 overflow-hidden bg-raised">
                 {done && <div className="absolute inset-0 bg-rule" />}
                 {active && (
                   <div
