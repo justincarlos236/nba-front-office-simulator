@@ -8,7 +8,7 @@ owns its audit findings as acceptance criteria.
 **This file is the ledger.** A finding is not "done" because a surface was
 redesigned; it is done when the redesigned surface demonstrably solves it.
 
-## Sequence
+## Sequence — the redesign (complete)
 
 | # | Step | Status |
 |---|---|---|
@@ -16,12 +16,65 @@ redesigned; it is done when the redesigned surface demonstrably solves it.
 | 2 | Revert P1 implementations built around the old dashboard composition | **done** |
 | 3 | Continuity schema (`lastSeenAt` + read state) | **done** |
 | 4 | Choose the visual world — **The Wire**, locked | **done** |
-| 5 | Primitive/component layer + focus tokens + semantic colors, in the new world | pending |
-| 6 | Dashboard redesign | pending |
-| 7 | Draft night, trade outcome, free agency, finances | pending |
-| 8 | Cross-cutting: nav regrouping, error mapping, orphan routes | pending |
-| 9 | Migration pass over remaining routes | pending |
-| 10 | P3 polish incl. stale ROADMAP.md | pending |
+| 5 | Primitive/component layer + focus tokens + semantic colors | **done** |
+| 6 | Dashboard redesign (Desk) | **done** |
+| 7 | Trade outcome, Draft Night header, free agency | **done** |
+| 8 | Cross-cutting: attention model, nav regrouping, orphan routes, error mapping | **done** |
+| 9 | Migration pass — 123 files off the legacy palette | **done** |
+| 10 | Responsive pass, boundaries (`not-found`/`error`/`loading`) | **done** |
+
+Side quest: the transactions page rebuilt as a real wire (season filing,
+four importance registers, sticky filter rail).
+
+Still open from step 10: **`docs/ROADMAP.md` is stale** — it omits roughly half
+the shipped product (Finances, Fans, Staff, Career Mode, All-Star, Morale,
+Scouting) and still lists the season simulation engine as an unbuilt stretch
+goal.
+
+## Visual richness operation (in progress)
+
+Restore point before any of this work: branch `pre-visual-richness`, tag
+`pre-visual-richness-v1`, both at commit `c34275c`.
+
+The 28-item Visual Possibility Audit is the master idea pool. **18 committed**
+across Phases A–E; 8 backlog; 2 rejected.
+
+| Phase | Contents | Status |
+|---|---|---|
+| **A** | Icon set, cap gauge, transaction stamps, roster shape, season ribbon, contract ladder | **done** (`7d1d264`, fixes `a2c8690`) |
+| **B** | Contract documents, league-office rulings, ownership letters, draft cards | next |
+| **C** | Championship banner rafters, trophy cabinet, retired numbers, franchise-memory timeline | pending |
+| **D** | Arena photography, material texture, franchise skylines, GM office framing | pending |
+| **E** | Scouting cards, physical draft-board wall | pending |
+
+**Backlog** (deliberately uncommitted): tunnel imagery, press credential,
+lower-third broadcast bars, live-game score bug, trade-value balance scale,
+playoff bracket as broadcast graphic.
+
+**Rejected**: procedurally generated prospect portraits (5,000 fictional
+players, uncanny-valley risk — monogram tiles solve it better); fan-sentiment
+crowd visual (decorative, no informational gain over the existing ledger).
+
+### Phase A lesson, worth keeping
+
+The cap gauge shipped arithmetically correct and visually useless: anchored at
+$0, two thirds of the track was empty and all four CBA thresholds crushed into
+a sliver, so a team past the first apron rendered with its marker near the left
+end. Typecheck, lint, 1,135 tests, the production build and the design detector
+all passed on it. **Only a screenshot caught it.** `capGaugeScale.test.ts` now
+locks the window. Automated checks cannot see composition — every phase needs a
+real look before it is called done.
+
+### Proposed amendments to DESIGN.md (not yet applied)
+
+1. **Flat Law exception for artifacts.** A contract sheet, draft card or
+   scouting card is a physical object and may carry material/edge; interface
+   surfaces still may not.
+2. **Broadcast imagery clause.** Broadcast surfaces may carry full-bleed
+   photography; Desk/Workbench/Ledger may not.
+3. **A sixth archetype: Artifact.** Rendered physical documents — contracts,
+   draft cards, credentials, banners. Not Broadcast (not a moment), not Record
+   (not editorial).
 
 ## Closed before the redesign
 
