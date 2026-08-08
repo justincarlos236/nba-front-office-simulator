@@ -35,20 +35,20 @@ export default async function HireStaffPage({ params }: PageProps) {
   const minAcceptableCents = computeMinAcceptableStaffOfferCents(candidate.role, candidate.quality);
 
   return (
-    <main className="mx-auto max-w-2xl flex-1 px-6 py-16">
+    <main className="mx-auto max-w-2xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
       <Link
         href={`/leagues/${league.id}/staff`}
-        className="text-sm text-muted hover:text-foreground"
+        className="text-sm text-ink-muted hover:text-ink"
       >
         &larr; All staff
       </Link>
       <div className="mt-4 flex items-center gap-4">
         <PlayerAvatar photoUrl={null} fullName={candidate.fullName} size="lg" />
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
             Hire {candidate.fullName}
           </h1>
-          <p className="mt-2 text-muted">
+          <p className="mt-2 text-ink-muted">
             {STAFF_ROLE_LABEL[candidate.role]} &middot; Age {candidate.age} &middot;{" "}
             {PLAYER_VALUE_TIER_LABEL[getPlayerValueTier(candidate.quality)]} &middot; Reputation{" "}
             {candidate.reputation}

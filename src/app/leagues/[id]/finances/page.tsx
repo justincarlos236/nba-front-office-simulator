@@ -54,25 +54,25 @@ const MARKET_SIZE_LABEL: Record<string, string> = {
 };
 
 const HEALTH_ACCENT: Record<FinancialHealth, string> = {
-  THRIVING: "text-emerald-400",
-  HEALTHY: "text-emerald-400",
-  STABLE: "text-sky-400",
-  STRAINED: "text-amber-400",
-  IN_THE_RED: "text-red-400",
+  THRIVING: "text-positive",
+  HEALTHY: "text-positive",
+  STABLE: "text-ink-muted",
+  STRAINED: "text-caution",
+  IN_THE_RED: "text-negative",
 };
 const HEALTH_DOT: Record<FinancialHealth, string> = {
-  THRIVING: "bg-emerald-400",
-  HEALTHY: "bg-emerald-400",
-  STABLE: "bg-sky-400",
-  STRAINED: "bg-amber-400",
-  IN_THE_RED: "bg-red-400",
+  THRIVING: "bg-positive",
+  HEALTHY: "bg-positive",
+  STABLE: "bg-raised",
+  STRAINED: "bg-caution",
+  IN_THE_RED: "bg-negative",
 };
 const STANDING_ACCENT: Record<FinancialStanding, string> = {
-  STRONG: "text-emerald-400",
-  SOLID: "text-emerald-400",
-  STABLE: "text-sky-400",
-  STRAINED: "text-amber-400",
-  DISTRESSED: "text-red-400",
+  STRONG: "text-positive",
+  SOLID: "text-positive",
+  STABLE: "text-ink-muted",
+  STRAINED: "text-caution",
+  DISTRESSED: "text-negative",
 };
 
 function ordinal(n: number): string {
@@ -200,13 +200,13 @@ export default async function FinancesOverviewPage({ params }: PageProps) {
 
   return (
     <div>
-      <p className="max-w-2xl text-muted">
+      <p className="max-w-2xl text-ink-muted">
         {MARKET_SIZE_LABEL[marketSize]} franchise - the business follows what happens on the court.
         Winning, star power, and full arenas drive revenue; heavy spending and the luxury tax drive
         it back down.
       </p>
       {myLeagueTeam.relocatedCityName && (
-        <p className="mt-3 rounded-lg bg-accent/10 px-3 py-2 text-sm text-accent">
+        <p className="mt-3 rounded-[2px] bg-team-accent/10 px-3 py-2 text-sm text-team-accent">
           Relocated to {myLeagueTeam.relocatedCityName} in {myLeagueTeam.relocatedAtSeason} - a
           permanent, franchise-defining chapter in this team&apos;s history.
         </p>
@@ -216,11 +216,11 @@ export default async function FinancesOverviewPage({ params }: PageProps) {
       {heroDecisions.length > 0 && (
         <section className="mt-6">
           <div className="flex items-baseline justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Needs your response</h2>
+            <h2 className="text-lg font-semibold text-ink">Needs your response</h2>
             <Link
               href={`/leagues/${league.id}/finances/inbox`}
               prefetch={false}
-              className="text-sm font-semibold text-accent hover:underline"
+              className="text-sm font-semibold text-team-accent hover:underline"
             >
               {inboxDecisions.length > heroDecisions.length
                 ? `View all ${inboxDecisions.length} →`
@@ -235,69 +235,69 @@ export default async function FinancesOverviewPage({ params }: PageProps) {
 
       {/* Headline stats */}
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-border bg-surface p-5">
-          <p className="text-xs tracking-wide text-muted uppercase">Financial Health</p>
+        <div className="rounded-[2px] border border-rule bg-field p-5">
+          <p className="text-xs tracking-wide text-ink-muted uppercase">Financial Health</p>
           <div className="mt-2 flex items-center gap-2">
             <span className={`h-2.5 w-2.5 rounded-full ${HEALTH_DOT[health]}`} />
             <p className={`text-2xl font-bold ${HEALTH_ACCENT[health]}`}>
               {FINANCIAL_HEALTH_LABEL[health]}
             </p>
           </div>
-          <p className="mt-2 text-xs text-muted">{FINANCIAL_HEALTH_DESCRIPTION[health]}</p>
+          <p className="mt-2 text-xs text-ink-muted">{FINANCIAL_HEALTH_DESCRIPTION[health]}</p>
         </div>
-        <div className="rounded-xl border border-border bg-surface p-5">
-          <p className="text-xs tracking-wide text-muted uppercase">Franchise Value</p>
-          <p className="mt-2 text-2xl font-bold text-foreground tabular-nums">
+        <div className="rounded-[2px] border border-rule bg-field p-5">
+          <p className="text-xs tracking-wide text-ink-muted uppercase">Franchise Value</p>
+          <p className="mt-2 text-2xl font-bold text-ink tabular-nums">
             {formatFinanceCents(valueCents)}
           </p>
-          <p className="mt-2 text-xs text-muted">
+          <p className="mt-2 text-xs text-ink-muted">
             {ordinal(valueRank)} most valuable of {leagueValues.length}
           </p>
         </div>
-        <div className="rounded-xl border border-border bg-surface p-5">
-          <p className="text-xs tracking-wide text-muted uppercase">Cash Reserve</p>
+        <div className="rounded-[2px] border border-rule bg-field p-5">
+          <p className="text-xs tracking-wide text-ink-muted uppercase">Cash Reserve</p>
           <p
-            className={`mt-2 text-2xl font-bold tabular-nums ${cashCents < 0 ? "text-red-400" : "text-foreground"}`}
+            className={`mt-2 text-2xl font-bold tabular-nums ${cashCents < 0 ? "text-negative" : "text-ink"}`}
           >
             {formatFinanceCents(cashCents)}
           </p>
-          <p className="mt-2 text-xs text-muted">
+          <p className="mt-2 text-xs text-ink-muted">
             {cashCents < 0 ? "Operating in debt" : "Available cushion"}
           </p>
         </div>
       </div>
 
       {/* Ownership standing */}
-      <section className="mt-6 rounded-xl border border-border bg-surface p-5">
+      <section className="mt-6 rounded-[2px] border border-rule bg-field p-5">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h2 className="font-semibold text-foreground">
+            <h2 className="font-semibold text-ink">
               Ownership standing:{" "}
               <span className={STANDING_ACCENT[standing]}>
                 {FINANCIAL_STANDING_LABEL[standing]}
               </span>
             </h2>
-            <p className="mt-1 max-w-2xl text-sm text-muted">
+            <p className="mt-1 max-w-2xl text-sm text-ink-muted">
               {FINANCIAL_STANDING_DESCRIPTION[standing]}
             </p>
           </div>
         </div>
         {mandateSeason != null && (
-          <p className="mt-3 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400">
+          <p className="mt-3 rounded-[2px] bg-negative/10 px-3 py-2 text-sm text-negative">
             Financial mandate: ownership expects the franchise back in the black by the{" "}
             {mandateSeason}-{(mandateSeason + 1).toString().slice(-2)} season. Keep losing money and
             your job is genuinely at risk.
           </p>
         )}
-        <div className="mt-4 border-t border-border pt-4">
-          <p className="text-xs tracking-wide text-muted uppercase">Your Owner</p>
-          <p className="mt-1 text-sm font-semibold text-foreground">
+        <div className="mt-4 border-t border-rule pt-4">
+          <p className="text-xs tracking-wide text-ink-muted uppercase">Your Owner</p>
+          <p className="mt-1 text-sm font-semibold text-ink">
             {OWNER_ARCHETYPE_LABEL[myLeagueTeam.ownerArchetype]}
           </p>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-1 text-sm text-ink-muted">
             {OWNER_ARCHETYPE_DESCRIPTION[myLeagueTeam.ownerArchetype]}
           </p>
-          <p className="mt-2 text-xs text-muted">
+          <p className="mt-2 text-xs text-ink-muted">
             Owner since {myLeagueTeam.ownerArchetypeSince}-
             {(myLeagueTeam.ownerArchetypeSince + 1).toString().slice(-2)}
           </p>
@@ -305,11 +305,11 @@ export default async function FinancesOverviewPage({ params }: PageProps) {
       </section>
 
       {/* Compact projection, with a link to the full report */}
-      <section className="mt-6 rounded-xl border border-border bg-surface p-5">
+      <section className="mt-6 rounded-[2px] border border-rule bg-field p-5">
         <div className="flex items-baseline justify-between">
-          <h2 className="font-semibold text-foreground">Projected this season</h2>
+          <h2 className="font-semibold text-ink">Projected this season</h2>
           <span
-            className={`text-sm font-semibold tabular-nums ${projNet < 0 ? "text-red-400" : "text-emerald-400"}`}
+            className={`text-sm font-semibold tabular-nums ${projNet < 0 ? "text-negative" : "text-positive"}`}
           >
             {projNet < 0 ? "Projected loss " : "Projected profit "}
             {formatFinanceCents(Math.abs(projNet))}
@@ -317,20 +317,20 @@ export default async function FinancesOverviewPage({ params }: PageProps) {
         </div>
         <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div>
-            <p className="text-xs tracking-wide text-muted uppercase">Revenue</p>
-            <p className="mt-1 text-base font-semibold text-emerald-400 tabular-nums">
+            <p className="text-xs tracking-wide text-ink-muted uppercase">Revenue</p>
+            <p className="mt-1 text-base font-semibold text-positive tabular-nums">
               {formatFinanceCents(projRevenue.totalCents)}
             </p>
           </div>
           <div>
-            <p className="text-xs tracking-wide text-muted uppercase">Expenses</p>
-            <p className="mt-1 text-base font-semibold text-red-400 tabular-nums">
+            <p className="text-xs tracking-wide text-ink-muted uppercase">Expenses</p>
+            <p className="mt-1 text-base font-semibold text-negative tabular-nums">
               {formatFinanceCents(projExpenses.totalCents)}
             </p>
           </div>
           <div>
-            <p className="text-xs tracking-wide text-muted uppercase">Incl. luxury tax</p>
-            <p className="mt-1 text-base font-semibold text-foreground tabular-nums">
+            <p className="text-xs tracking-wide text-ink-muted uppercase">Incl. luxury tax</p>
+            <p className="mt-1 text-base font-semibold text-ink tabular-nums">
               {formatFinanceCents(projExpenses.luxuryTaxCents)}
             </p>
           </div>
@@ -338,7 +338,7 @@ export default async function FinancesOverviewPage({ params }: PageProps) {
         <Link
           href={`/leagues/${league.id}/finances/report`}
           prefetch={false}
-          className="mt-4 inline-block text-sm font-semibold text-accent hover:underline"
+          className="mt-4 inline-block text-sm font-semibold text-team-accent hover:underline"
         >
           Full business report →
         </Link>

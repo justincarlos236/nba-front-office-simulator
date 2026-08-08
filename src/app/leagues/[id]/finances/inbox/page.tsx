@@ -39,7 +39,7 @@ export default async function FinancesInboxPage({ params }: PageProps) {
 
   return (
     <div>
-      <p className="max-w-2xl text-muted">{blurb}</p>
+      <p className="max-w-2xl text-ink-muted">{blurb}</p>
 
       <section className="mt-6">
         <BusinessDecisionInbox leagueId={league.id} decisions={inboxDecisions} />
@@ -47,8 +47,8 @@ export default async function FinancesInboxPage({ params }: PageProps) {
 
       {activeSponsorshipDeals.length > 0 && (
         <section className="mt-10">
-          <h2 className="text-lg font-semibold text-foreground">Active Sponsorships</h2>
-          <p className="mt-1 text-sm text-muted">
+          <h2 className="text-lg font-semibold text-ink">Active Sponsorships</h2>
+          <p className="mt-1 text-sm text-ink-muted">
             Recurring commercial revenue, applied each season the deal is active for - the lasting
             result of inbox decisions you&apos;ve already made.
           </p>
@@ -56,18 +56,18 @@ export default async function FinancesInboxPage({ params }: PageProps) {
             {activeSponsorshipDeals.map((deal) => (
               <div
                 key={deal.id}
-                className="flex items-center justify-between rounded-xl border border-border bg-surface p-4"
+                className="flex items-center justify-between rounded-[2px] border border-rule bg-field p-4"
               >
                 <div>
-                  <p className="text-sm font-semibold text-foreground">{deal.label}</p>
-                  <p className="mt-1 text-xs text-muted">
+                  <p className="text-sm font-semibold text-ink">{deal.label}</p>
+                  <p className="mt-1 text-xs text-ink-muted">
                     {deal.startSeason}-{(deal.startSeason + 1).toString().slice(-2)} through{" "}
                     {deal.endSeason}-{(deal.endSeason + 1).toString().slice(-2)}
                     {deal.conditionPlayer && (
                       <>
                         {" "}
                         - contingent on{" "}
-                        <span className="text-foreground">
+                        <span className="text-ink">
                           {deal.conditionPlayer.player.fullName}
                         </span>{" "}
                         staying on the roster
@@ -75,7 +75,7 @@ export default async function FinancesInboxPage({ params }: PageProps) {
                     )}
                   </p>
                 </div>
-                <p className="text-sm font-semibold text-emerald-400 tabular-nums">
+                <p className="text-sm font-semibold text-positive tabular-nums">
                   {formatFinanceCents(Number(deal.annualValueCents))}/yr
                 </p>
               </div>

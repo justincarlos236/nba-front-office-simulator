@@ -17,20 +17,20 @@ import { ScaleBar } from "@/components/dashboard/ScaleBar";
  */
 
 const MOOD_ACCENT: Record<MoodLabel, string> = {
-  EUPHORIC: "text-emerald-400",
-  BOUGHT_IN: "text-emerald-400",
-  CONTENT: "text-sky-400",
-  RESTLESS: "text-amber-400",
-  PATIENT: "text-sky-400",
-  TURNING_ON_YOU: "text-red-400",
-  HOSTILE: "text-red-400",
+  EUPHORIC: "text-positive",
+  BOUGHT_IN: "text-positive",
+  CONTENT: "text-ink-muted",
+  RESTLESS: "text-caution",
+  PATIENT: "text-ink-muted",
+  TURNING_ON_YOU: "text-negative",
+  HOSTILE: "text-negative",
 };
 
 function TrendArrow({ delta, label }: { delta: number; label: string }) {
   const direction = trendDirection(delta);
   const symbol = direction === "UP" ? "↑" : direction === "DOWN" ? "↓" : "→";
   const color =
-    direction === "UP" ? "text-emerald-400" : direction === "DOWN" ? "text-red-400" : "text-muted";
+    direction === "UP" ? "text-positive" : direction === "DOWN" ? "text-negative" : "text-ink-muted";
   return (
     <span className={`inline-flex items-center gap-1 text-xs font-medium ${color}`}>
       {symbol} {Math.abs(delta)} {label}
@@ -57,15 +57,15 @@ export function MoodSection({
 }) {
   return (
     <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <div className="rounded-xl border border-border bg-surface p-5">
-        <p className="text-xs tracking-wide text-muted uppercase">Fan Happiness</p>
+      <div className="rounded-[2px] border border-rule bg-field p-5">
+        <p className="text-xs tracking-wide text-ink-muted uppercase">Fan Happiness</p>
         <div className="mt-1 flex items-baseline gap-3">
-          <p className="text-3xl font-bold text-foreground">{fanHappiness}</p>
+          <p className="text-3xl font-bold text-ink">{fanHappiness}</p>
           <p className={`text-lg font-semibold ${MOOD_ACCENT[moodLabel]}`}>
             {MOOD_LABEL_TEXT[moodLabel]}
           </p>
         </div>
-        <p className="mt-2 text-xs text-muted">{MOOD_LABEL_DESCRIPTION[moodLabel]}</p>
+        <p className="mt-2 text-xs text-ink-muted">{MOOD_LABEL_DESCRIPTION[moodLabel]}</p>
         <ScaleBar value={fanHappiness} />
         <div className="mt-3 flex flex-wrap gap-3">
           <TrendArrow delta={recentTrendDelta} label="this stretch" />
@@ -73,14 +73,14 @@ export function MoodSection({
             <TrendArrow delta={seasonOverSeasonDelta} label="vs. last season" />
           )}
         </div>
-        <p className="mt-3 text-xs text-muted">{attendanceEvidenceLine}</p>
+        <p className="mt-3 text-xs text-ink-muted">{attendanceEvidenceLine}</p>
       </div>
-      <div className="rounded-xl border border-border bg-surface p-5">
-        <p className="text-xs tracking-wide text-muted uppercase">Franchise Popularity</p>
-        <p className="mt-1 text-3xl font-bold text-foreground">{franchisePopularity}</p>
-        <p className="mt-1 text-xs text-muted">{popularityBuzzLabel}</p>
+      <div className="rounded-[2px] border border-rule bg-field p-5">
+        <p className="text-xs tracking-wide text-ink-muted uppercase">Franchise Popularity</p>
+        <p className="mt-1 text-3xl font-bold text-ink">{franchisePopularity}</p>
+        <p className="mt-1 text-xs text-ink-muted">{popularityBuzzLabel}</p>
         <ScaleBar value={franchisePopularity} />
-        <p className="mt-3 text-xs text-muted">
+        <p className="mt-3 text-xs text-ink-muted">
           National relevance - half fan happiness, half star power, adjusted for market size.
         </p>
       </div>

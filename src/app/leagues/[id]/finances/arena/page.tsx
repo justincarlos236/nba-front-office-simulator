@@ -47,7 +47,7 @@ export default async function FinancesArenaPage({ params }: PageProps) {
 
   return (
     <div>
-      <p className="max-w-2xl text-muted">{blurb}</p>
+      <p className="max-w-2xl text-ink-muted">{blurb}</p>
 
       <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ArenaCard

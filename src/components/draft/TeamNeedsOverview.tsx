@@ -28,18 +28,18 @@ export function TeamNeedsOverview({
         return (
           <div
             key={teamId}
-            className={`flex items-center gap-3 rounded-lg border p-2.5 text-sm ${
-              isUserTeam ? "border-accent bg-accent/5" : "border-border bg-surface"
+            className={`flex items-center gap-3 rounded-[2px] border p-2.5 text-sm ${
+              isUserTeam ? "border-team-accent bg-team-accent/5" : "border-rule bg-field"
             }`}
           >
             <TeamBadge logoUrl={team.logoUrl} size="sm" />
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium text-foreground">
+              <p className="truncate font-medium text-ink">
                 {team.city} {team.name}
-                {isUserTeam && <span className="ml-2 text-xs text-accent">YOU</span>}
+                {isUserTeam && <span className="ml-2 text-xs text-team-accent">YOU</span>}
               </p>
               {context && (
-                <p className="truncate text-xs text-muted">
+                <p className="truncate text-xs text-ink-muted">
                   {TEAM_IDENTITY_LABEL[context.identity]}
                   {context.needs.length > 0 &&
                     ` · Needs: ${context.needs.map((n) => TEAM_NEED_LABEL[n]).join(", ")}`}

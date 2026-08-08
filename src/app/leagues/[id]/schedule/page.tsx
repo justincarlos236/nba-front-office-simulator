@@ -96,11 +96,11 @@ export default async function SchedulePage({ params }: PageProps) {
   );
 
   return (
-    <main className="mx-auto max-w-4xl flex-1 px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground">
+    <main className="mx-auto max-w-4xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
+      <h1 className="text-3xl font-bold tracking-tight text-ink">
         {league.currentSeason}-{(league.currentSeason + 1).toString().slice(-2)} Schedule
       </h1>
-      <p className="mt-2 max-w-2xl text-muted">
+      <p className="mt-2 max-w-2xl text-ink-muted">
         Every game on your team&apos;s regular-season calendar - faded opponent logos for games yet
         to be played, a W or L once they&apos;re simulated.
       </p>

@@ -41,8 +41,8 @@ export default async function TeamDetailPage({ params }: PageProps) {
     .sort((a, b) => (b.stat?.pointsPerGame ?? 0) - (a.stat?.pointsPerGame ?? 0));
 
   return (
-    <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
-      <Link href="/teams" className="text-sm text-muted transition hover:text-foreground">
+    <main className="mx-auto max-w-6xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
+      <Link href="/teams" className="text-sm text-ink-muted transition hover:text-ink">
         &larr; All teams
       </Link>
 
@@ -51,19 +51,19 @@ export default async function TeamDetailPage({ params }: PageProps) {
         style={{ borderLeftColor: team.primaryColor }}
       >
         <div>
-          <p className="text-sm text-muted">
+          <p className="text-sm text-ink-muted">
             {team.conference === "EAST" ? "Eastern" : "Western"} Conference &middot; {team.division}
           </p>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
             {team.city} {team.name}
           </h1>
         </div>
       </div>
 
       {roster.some((r) => r.stat) && (
-        <div className="mt-10 rounded-xl border border-border bg-surface p-6">
-          <h2 className="font-semibold text-foreground">Minutes vs. rating</h2>
-          <p className="mt-1 text-sm text-muted">
+        <div className="mt-10 rounded-[2px] border border-rule bg-field p-6">
+          <h2 className="font-semibold text-ink">Minutes vs. rating</h2>
+          <p className="mt-1 text-sm text-ink-muted">
             Bubble size is scoring volume. Top-left = efficient players not getting many minutes;
             bottom-right = heavy minutes without the rating to match.
           </p>
@@ -82,9 +82,9 @@ export default async function TeamDetailPage({ params }: PageProps) {
         </div>
       )}
 
-      <div className="mt-10 overflow-x-auto rounded-xl border border-border">
+      <div className="mt-10 overflow-x-auto rounded-[2px] border border-rule">
         <table className="w-full text-left text-sm">
-          <thead className="bg-surface-2 text-xs tracking-wide text-muted uppercase">
+          <thead className="bg-raised text-xs tracking-wide text-ink-muted uppercase">
             <tr>
               <th className="px-4 py-3">Player</th>
               <th className="px-4 py-3">Pos</th>
@@ -99,39 +99,39 @@ export default async function TeamDetailPage({ params }: PageProps) {
           </thead>
           <tbody>
             {roster.map(({ player, stat, rating }) => (
-              <tr key={player.id} className="border-t border-border hover:bg-surface/60">
+              <tr key={player.id} className="border-t border-rule hover:bg-field/60">
                 <td className="px-4 py-3">
                   <PlayerChip
                     identity={{ kind: "reference", playerId: player.id }}
                     fullName={player.fullName}
                     photoUrl={player.photoUrl}
                     teamPrimaryColor={team.primaryColor}
-                    className="font-medium text-foreground"
+                    className="font-medium text-ink"
                   />
                 </td>
-                <td className="px-4 py-3 text-muted">{player.position}</td>
-                <td className="px-4 py-3 text-right font-mono text-accent">{rating ?? "-"}</td>
-                <td className="px-4 py-3 text-right text-muted">{stat?.gamesPlayed ?? "-"}</td>
-                <td className="px-4 py-3 text-right text-muted">
+                <td className="px-4 py-3 text-ink-muted">{player.position}</td>
+                <td className="px-4 py-3 text-right font-mono text-team-accent">{rating ?? "-"}</td>
+                <td className="px-4 py-3 text-right text-ink-muted">{stat?.gamesPlayed ?? "-"}</td>
+                <td className="px-4 py-3 text-right text-ink-muted">
                   {stat?.minutesPerGame.toFixed(1) ?? "-"}
                 </td>
-                <td className="px-4 py-3 text-right text-foreground">
+                <td className="px-4 py-3 text-right text-ink">
                   {stat?.pointsPerGame.toFixed(1) ?? "-"}
                 </td>
-                <td className="px-4 py-3 text-right text-muted">
+                <td className="px-4 py-3 text-right text-ink-muted">
                   {stat?.reboundsPerGame.toFixed(1) ?? "-"}
                 </td>
-                <td className="px-4 py-3 text-right text-muted">
+                <td className="px-4 py-3 text-right text-ink-muted">
                   {stat?.assistsPerGame.toFixed(1) ?? "-"}
                 </td>
-                <td className="px-4 py-3 text-right text-muted">
+                <td className="px-4 py-3 text-right text-ink-muted">
                   {stat?.trueShootingPct ? `${(stat.trueShootingPct * 100).toFixed(1)}%` : "-"}
                 </td>
               </tr>
             ))}
             {roster.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-muted">
+                <td colSpan={9} className="px-4 py-8 text-center text-ink-muted">
                   No players seeded for this team yet.
                 </td>
               </tr>

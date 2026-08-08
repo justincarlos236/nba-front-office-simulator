@@ -76,16 +76,16 @@ export function LiveGameExperience({
       <div className="flex items-center justify-center gap-6">
         <TeamHeader team={homeTeam} align="right" />
         <div className="text-center">
-          <p className="text-xs tracking-wide text-muted uppercase">Game {gameNumber}</p>
-          <p className="text-lg font-bold text-foreground">vs</p>
+          <p className="text-xs tracking-wide text-ink-muted uppercase">Game {gameNumber}</p>
+          <p className="text-lg font-bold text-ink">vs</p>
         </div>
         <TeamHeader team={awayTeam} align="left" />
       </div>
-      <p className="mt-2 text-center text-sm text-muted">{seriesStatus}</p>
+      <p className="mt-2 text-center text-sm text-ink-muted">{seriesStatus}</p>
 
       {phase === "pregame" && (
         <div className="mt-8 space-y-4">
-          <div className="rounded-xl border border-accent/40 bg-accent/5 p-4 text-center text-sm text-foreground">
+          <div className="rounded-[2px] border border-team-accent/40 bg-team-accent/5 p-4 text-center text-sm text-ink">
             Set your rotation for Game {gameNumber} vs {opponentTeam.label}, then tip off - this is
             a live playoff game, so possessions, scoring, and player stats will play out for real as
             you watch.
@@ -100,11 +100,11 @@ export function LiveGameExperience({
               type="button"
               disabled={isPending}
               onClick={handleTipOff}
-              className="rounded-lg bg-accent px-6 py-3 text-base font-bold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-[2px] bg-team-accent px-6 py-3 text-base font-bold text-team-accent-ink transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {isPending ? "Tipping off..." : "Tip off"}
             </button>
-            {errorMessage && <p className="text-sm text-red-400">{errorMessage}</p>}
+            {errorMessage && <p className="text-sm text-negative">{errorMessage}</p>}
           </div>
         </div>
       )}
@@ -139,7 +139,7 @@ function TeamHeader({ team, align }: { team: LiveTeamInfo; align: "left" | "righ
         // eslint-disable-next-line @next/next/no-img-element
         <img src={team.logoUrl} alt="" className="h-16 w-16 object-contain" />
       )}
-      <p className="max-w-[10rem] text-lg font-bold text-foreground">{team.label}</p>
+      <p className="max-w-[10rem] text-lg font-bold text-ink">{team.label}</p>
     </div>
   );
 }

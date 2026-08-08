@@ -165,6 +165,22 @@ model League {
   userControlledTeamId        String?
   currentSeason               Int
   seasonStartedAt             DateTime                  @default(now())
+  /// When the user last opened this save, and where the news feed had been
+  /// read up to at that moment. Distinct from `updatedAt`, which moves on
+  /// every write (including CPU activity during a simulation) and so can
+  /// never answer "what happened while I was gone" - by the time the user
+  /// returns, `updatedAt` reflects the simulation, not the visit.
+  ///
+  /// `lastSeenAt` is the visit clock: read on arrival to compute the diff,
+  /// then advanced. `newsReadThroughAt` is the read boundary, advanced only
+  /// when the user actually views the feed, so unread counts survive a
+  /// dashboard glance that never opened the news.
+  ///
+  /// Null on a save that has never been opened since this field existed;
+  /// the returning-player surface degrades to "welcome back" rather than
+  /// inventing a window it cannot know.
+  lastSeenAt                  DateTime?
+  newsReadThroughAt           DateTime?
   salaryCapOverrideCents      BigInt?
   createdAt                   DateTime                  @default(now())
   updatedAt                   DateTime                  @updatedAt
@@ -238,10 +254,17 @@ model LeagueTransaction {
   importance            NewsImportance  @default(STANDARD)
   teamIds               String[]        @default([])
   subjectLeaguePlayerId String?
+  /// The executed trade that generated this row, when one did. Null for the
+  /// overwhelming majority of transactions (signings, injuries, awards,
+  /// retirements). SetNull rather than Cascade because deleting a trade must
+  /// never destroy league news - same reasoning as Player.draftProspectId.
+  tradeId               String?
   league                League          @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  trade                 Trade?          @relation(fields: [tradeId], references: [id], onDelete: SetNull)
 
   @@index([leagueId, createdAt])
   @@index([subjectLeaguePlayerId])
+  @@index([tradeId])
   @@map("league_transactions")
 }
 
@@ -687,10 +710,23 @@ model Trade {
   proposedById     String
   status           TradeStatus  @default(PROPOSED)
   validationResult Json?
+  /// Immutable cap evidence, frozen at execution. The outcome surface
+  /// (/leagues/[id]/trades/[tradeId]) must stay truthful on a revisit years
+  /// later, and cap sheets are otherwise always computed live from *current*
+  /// league state - recomputing would silently report today's cap as though it
+  /// were the cap at trade time. Shape: TradeCapSnapshot in
+  /// src/lib/trade/capSnapshot.ts. Json (not scalar columns) follows the
+  /// convention `validationResult` already sets on this model: frozen evidence
+  /// read back whole by one surface, never filtered or aggregated. This is
+  /// never a source of truth for live cap math - see computeCapSheet.
+  capSnapshot      Json?
   createdAt        DateTime     @default(now())
   resolvedAt       DateTime?
   assets           TradeAsset[]
   league           League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  /// Narrative rows (fan sentiment, icon departures, the trade headline) this
+  /// trade generated, so the outcome surface can reconstruct the story.
+  transactions     LeagueTransaction[]
 
   @@index([leagueId])
   @@map("trades")

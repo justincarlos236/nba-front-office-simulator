@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { simulateRoundAction, startPlayoffsAction } from "@/lib/actions/playoffs";
+import { ErrorNotice } from "@/components/ui/ErrorNotice";
 
 type Phase = "regular-season" | "not-started" | "in-progress" | "complete";
 
@@ -49,9 +50,9 @@ export function PlayoffControls({
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6">
+    <div className="rounded-[2px] border border-rule bg-field p-6">
       {phase === "regular-season" && (
-        <p className="text-sm text-muted">
+        <p className="text-sm text-ink-muted">
           Finish the regular season on the standings page before the playoffs can begin.
         </p>
       )}
@@ -60,7 +61,7 @@ export function PlayoffControls({
           type="button"
           disabled={isPending}
           onClick={handleStart}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-[2px] bg-team-accent px-4 py-2 text-sm font-semibold text-team-accent-ink transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isPending ? "Simulating play-in..." : "Start playoffs (simulate play-in)"}
         </button>
@@ -75,7 +76,7 @@ export function PlayoffControls({
             // earlier game in this same series instead of refetching fresh.
             <a
               href={`/leagues/${leagueId}/playoffs/live/${pendingUserGame.seriesId}`}
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90"
+              className="rounded-[2px] bg-team-accent px-4 py-2 text-sm font-semibold text-team-accent-ink transition hover:opacity-90"
             >
               Play Game {pendingUserGame.gameNumber} &rarr;
             </a>
@@ -84,10 +85,10 @@ export function PlayoffControls({
             type="button"
             disabled={isPending}
             onClick={handleSimulateRound}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${
+            className={`rounded-[2px] px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${
               pendingUserGame
-                ? "border border-border text-foreground hover:bg-surface-2"
-                : "bg-accent text-black hover:opacity-90"
+                ? "border border-rule text-ink hover:bg-raised"
+                : "bg-team-accent text-team-accent-ink hover:opacity-90"
             }`}
           >
             {isPending
@@ -99,10 +100,14 @@ export function PlayoffControls({
         </div>
       )}
       {phase === "complete" && (
-        <p className="text-sm text-muted">The playoffs are complete for this season.</p>
+        <p className="text-sm text-ink-muted">The playoffs are complete for this season.</p>
       )}
-      {message && <p className="mt-3 text-sm text-accent">{message}</p>}
-      {errorMessage && <p className="mt-3 text-sm text-red-400">{errorMessage}</p>}
+      {message && <p className="mt-3 text-sm text-team-accent">{message}</p>}
+      {errorMessage && (
+        <div className="mt-3">
+          <ErrorNotice error={errorMessage} />
+        </div>
+      )}
     </div>
   );
 }

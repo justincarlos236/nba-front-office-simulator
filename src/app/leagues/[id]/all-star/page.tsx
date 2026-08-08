@@ -50,14 +50,14 @@ function RosterColumn({
   selections: SelectionRow[];
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
-      <h3 className="font-semibold text-foreground">{title}</h3>
+    <div className="rounded-[2px] border border-rule bg-field p-4">
+      <h3 className="font-semibold text-ink">{title}</h3>
       {(["STARTER", "RESERVE", "INJURY_REPLACEMENT"] as const).map((role) => {
         const players = selections.filter((s) => s.role === role);
         if (players.length === 0) return null;
         return (
           <div key={role} className="mt-3">
-            <p className="text-xs tracking-wide text-muted uppercase">{ROLE_LABEL[role]}</p>
+            <p className="text-xs tracking-wide text-ink-muted uppercase">{ROLE_LABEL[role]}</p>
             <div className="mt-2 space-y-2">
               {players.map((s) => (
                 <div key={s.leaguePlayerId} className="flex items-center justify-between text-sm">
@@ -68,7 +68,7 @@ function RosterColumn({
                     teamPrimaryColor={s.leaguePlayer.leagueTeam?.team.primaryColor}
                     size="sm"
                   />
-                  <span className="font-mono text-xs text-muted">
+                  <span className="font-mono text-xs text-ink-muted">
                     {s.pointsPerGame.toFixed(1)}/{s.reboundsPerGame.toFixed(1)}/
                     {s.assistsPerGame.toFixed(1)}
                   </span>
@@ -102,8 +102,8 @@ function ContestSection({
   const champion = participants.find((p) => p.result === "CHAMPION");
   return (
     <section className="mt-10">
-      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-      <div className="mt-4 rounded-xl border border-border bg-surface p-4">
+      <h2 className="text-lg font-semibold text-ink">{title}</h2>
+      <div className="mt-4 rounded-[2px] border border-rule bg-field p-4">
         <div className="space-y-2">
           {[...participants]
             .sort((a, b) => b.score - a.score)
@@ -116,9 +116,9 @@ function ContestSection({
                   size="sm"
                 />
                 <span className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-muted">{p.score} pts</span>
+                  <span className="font-mono text-xs text-ink-muted">{p.score} pts</span>
                   {p.result === "CHAMPION" && (
-                    <span className="rounded-full bg-yellow-500/15 px-2 py-0.5 text-xs font-semibold text-yellow-400">
+                    <span className="rounded-full bg-caution/15 px-2 py-0.5 text-xs font-semibold text-caution">
                       Champion
                     </span>
                   )}
@@ -128,8 +128,8 @@ function ContestSection({
         </div>
       </div>
       {champion && (
-        <p className="mt-2 text-sm text-muted">
-          Champion: <span className="text-foreground">{champion.leaguePlayer.player.fullName}</span>
+        <p className="mt-2 text-sm text-ink-muted">
+          Champion: <span className="text-ink">{champion.leaguePlayer.player.fullName}</span>
         </p>
       )}
     </section>
@@ -170,10 +170,10 @@ export default async function AllStarWeekendPage({ params, searchParams }: PageP
 
   if (!weekend) {
     return (
-      <main className="mx-auto max-w-4xl flex-1 px-6 py-16">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">All-Star Weekend</h1>
-        <div className="mt-10 rounded-xl border border-border bg-surface p-8 text-center">
-          <p className="text-muted">
+      <main className="mx-auto max-w-4xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
+        <h1 className="text-3xl font-bold tracking-tight text-ink">All-Star Weekend</h1>
+        <div className="mt-10 rounded-[2px] border border-rule bg-field p-8 text-center">
+          <p className="text-ink-muted">
             No All-Star Weekend has happened yet in {seasonLabel(season)} - keep simulating toward
             the break.
           </p>
@@ -204,30 +204,30 @@ export default async function AllStarWeekendPage({ params, searchParams }: PageP
   const mvpStat = game?.stats.find((s) => s.leaguePlayerId === game.mvpLeaguePlayerId);
 
   return (
-    <main className="mx-auto max-w-5xl flex-1 px-6 py-16">
+    <main className="mx-auto max-w-5xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+        <h1 className="text-3xl font-bold tracking-tight text-ink">
           {seasonLabel(season)} All-Star Weekend
         </h1>
         {weekend.status === "PENDING" && <ResolveWeekendButton leagueId={id} />}
       </div>
       {weekend.status === "PENDING" && (
-        <p className="mt-2 text-sm text-accent">
+        <p className="mt-2 text-sm text-team-accent">
           The season is paused here until you continue - explore the weekend below, or jump ahead
           whenever you&apos;re ready.
         </p>
       )}
 
       <section className="mt-10">
-        <h2 className="text-lg font-semibold text-foreground">All-Star Rosters</h2>
+        <h2 className="text-lg font-semibold text-ink">All-Star Rosters</h2>
         <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-2">
           <RosterColumn leagueId={id} title="Eastern Conference" selections={eastSelections} />
           <RosterColumn leagueId={id} title="Western Conference" selections={westSelections} />
         </div>
         {snubNews.length > 0 && (
-          <div className="mt-4 rounded-lg border border-border bg-surface p-4">
-            <p className="text-xs tracking-wide text-muted uppercase">Notable snubs</p>
-            <div className="mt-2 space-y-1 text-sm text-muted">
+          <div className="mt-4 rounded-[2px] border border-rule bg-field p-4">
+            <p className="text-xs tracking-wide text-ink-muted uppercase">Notable snubs</p>
+            <div className="mt-2 space-y-1 text-sm text-ink-muted">
               {snubNews.map((n) => (
                 <p key={n.id}>{n.description}</p>
               ))}
@@ -238,10 +238,10 @@ export default async function AllStarWeekendPage({ params, searchParams }: PageP
 
       {risingStars.length > 0 && (
         <section className="mt-10">
-          <h2 className="text-lg font-semibold text-foreground">Rising Stars</h2>
+          <h2 className="text-lg font-semibold text-ink">Rising Stars</h2>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             {risingStarsSides.map(([side, players]) => (
-              <div key={side} className="rounded-xl border border-border bg-surface p-4">
+              <div key={side} className="rounded-[2px] border border-rule bg-field p-4">
                 <div className="space-y-2">
                   {players.map((p) => (
                     <div key={p.id} className="flex items-center justify-between text-sm">
@@ -255,7 +255,7 @@ export default async function AllStarWeekendPage({ params, searchParams }: PageP
                         photoUrl={p.leaguePlayer.player.photoUrl}
                         size="sm"
                       />
-                      <span className="font-mono text-xs text-muted">{p.score} pts</span>
+                      <span className="font-mono text-xs text-ink-muted">{p.score} pts</span>
                     </div>
                   ))}
                 </div>
@@ -263,7 +263,7 @@ export default async function AllStarWeekendPage({ params, searchParams }: PageP
             ))}
           </div>
           {risingStarsMvp && (
-            <p className="mt-3 text-sm text-foreground">
+            <p className="mt-3 text-sm text-ink">
               Rising Stars MVP:{" "}
               <span className="font-semibold">{risingStarsMvp.leaguePlayer.player.fullName}</span>
             </p>
@@ -280,14 +280,14 @@ export default async function AllStarWeekendPage({ params, searchParams }: PageP
 
       {game && (
         <section className="mt-10">
-          <h2 className="text-lg font-semibold text-foreground">All-Star Game</h2>
-          <div className="mt-4 rounded-xl border border-border bg-surface p-6 text-center">
-            <p className="text-2xl font-bold text-foreground">
+          <h2 className="text-lg font-semibold text-ink">All-Star Game</h2>
+          <div className="mt-4 rounded-[2px] border border-rule bg-field p-6 text-center">
+            <p className="text-2xl font-bold text-ink">
               {game.teamAScore} - {game.teamBScore}
             </p>
-            <p className="mt-1 text-sm text-muted">Captains&apos; draft exhibition final</p>
+            <p className="mt-1 text-sm text-ink-muted">Captains&apos; draft exhibition final</p>
             {mvpStat && (
-              <p className="mt-3 text-sm text-foreground">
+              <p className="mt-3 text-sm text-ink">
                 MVP: <span className="font-semibold">{mvpStat.leaguePlayer.player.fullName}</span>
               </p>
             )}
@@ -297,9 +297,9 @@ export default async function AllStarWeekendPage({ params, searchParams }: PageP
             {[game.teamACaptainId, game.teamBCaptainId].map((captainId, i) => {
               const sideStats = game.stats.filter((s) => s.side === captainId);
               return (
-                <div key={captainId} className="overflow-x-auto rounded-xl border border-border">
+                <div key={captainId} className="overflow-x-auto rounded-[2px] border border-rule">
                   <table className="w-full text-left text-sm">
-                    <thead className="bg-surface-2 text-xs tracking-wide text-muted uppercase">
+                    <thead className="bg-raised text-xs tracking-wide text-ink-muted uppercase">
                       <tr>
                         <th className="px-3 py-2">{i === 0 ? "Team A" : "Team B"}</th>
                         <th className="px-3 py-2 text-right">MIN</th>
@@ -312,7 +312,7 @@ export default async function AllStarWeekendPage({ params, searchParams }: PageP
                       {[...sideStats]
                         .sort((a, b) => b.points - a.points)
                         .map((s) => (
-                          <tr key={s.id} className="border-t border-border">
+                          <tr key={s.id} className="border-t border-rule">
                             <td className="px-3 py-2">
                               <PlayerChip
                                 identity={{
@@ -325,14 +325,14 @@ export default async function AllStarWeekendPage({ params, searchParams }: PageP
                                 size="xs"
                               />
                             </td>
-                            <td className="px-3 py-2 text-right text-muted">{s.minutesPlayed}</td>
-                            <td className="px-3 py-2 text-right font-mono text-foreground">
+                            <td className="px-3 py-2 text-right text-ink-muted">{s.minutesPlayed}</td>
+                            <td className="px-3 py-2 text-right font-mono text-ink">
                               {s.points}
                             </td>
-                            <td className="px-3 py-2 text-right font-mono text-muted">
+                            <td className="px-3 py-2 text-right font-mono text-ink-muted">
                               {s.rebounds}
                             </td>
-                            <td className="px-3 py-2 text-right font-mono text-muted">
+                            <td className="px-3 py-2 text-right font-mono text-ink-muted">
                               {s.assists}
                             </td>
                           </tr>

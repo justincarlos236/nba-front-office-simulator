@@ -40,16 +40,16 @@ export function ProspectCompareModal({
       onClick={onClose}
     >
       <div
-        className="max-h-[85vh] w-full max-w-4xl overflow-auto rounded-xl border border-border bg-surface p-6 shadow-xl"
+        className="max-h-[85vh] w-full max-w-4xl overflow-auto rounded-[2px] border border-rule bg-field p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-foreground">Compare Prospects</h3>
+          <h3 className="text-lg font-semibold text-ink">Compare Prospects</h3>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="text-muted transition hover:text-foreground"
+            className="text-ink-muted transition hover:text-ink"
           >
             ✕
           </button>
@@ -59,12 +59,12 @@ export function ProspectCompareModal({
           <table className="w-full min-w-[500px] border-collapse text-sm">
             <thead>
               <tr>
-                <th className="w-32 shrink-0 text-left text-xs text-muted"></th>
+                <th className="w-32 shrink-0 text-left text-xs text-ink-muted"></th>
                 {prospects.map((p) => (
                   <th key={p.id} className="p-2 text-center">
                     <div className="flex flex-col items-center gap-1.5">
                       <PlayerAvatar photoUrl={null} fullName={p.fullName} size="md" />
-                      <span className="font-medium text-foreground">{p.fullName}</span>
+                      <span className="font-medium text-ink">{p.fullName}</span>
                     </div>
                   </th>
                 ))}
@@ -72,10 +72,10 @@ export function ProspectCompareModal({
             </thead>
             <tbody>
               {ROWS.map((row) => (
-                <tr key={row.label} className="border-t border-border">
-                  <td className="py-2 pr-3 text-xs font-medium text-muted">{row.label}</td>
+                <tr key={row.label} className="border-t border-rule">
+                  <td className="py-2 pr-3 text-xs font-medium text-ink-muted">{row.label}</td>
                   {prospects.map((p) => (
-                    <td key={p.id} className="p-2 text-center text-foreground">
+                    <td key={p.id} className="p-2 text-center text-ink">
                       {row.render(p)}
                     </td>
                   ))}

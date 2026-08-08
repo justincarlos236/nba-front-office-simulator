@@ -125,15 +125,15 @@ export default async function HistoryPage({ params }: PageProps) {
   };
 
   return (
-    <main className="mx-auto max-w-4xl flex-1 px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground">League History</h1>
-      <p className="mt-2 max-w-2xl text-muted">
+    <main className="mx-auto max-w-4xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
+      <h1 className="text-3xl font-bold tracking-tight text-ink">League History</h1>
+      <p className="mt-2 max-w-2xl text-ink-muted">
         Champions, award winners, and retirees from every completed season in this franchise.
       </p>
 
       {champions.length === 0 ? (
-        <div className="mt-10 rounded-xl border border-border bg-surface p-8 text-center">
-          <p className="text-muted">
+        <div className="mt-10 rounded-[2px] border border-rule bg-field p-8 text-center">
+          <p className="text-ink-muted">
             No season has been completed yet - crown a champion and advance to the offseason to
             start building history.
           </p>
@@ -150,9 +150,9 @@ export default async function HistoryPage({ params }: PageProps) {
             const { biggestJump, biggestFall } = detectNotableMovement(seasonLottery);
             const lotteryWinner = seasonLottery.find((r) => r.resultPickNumber === 1);
             return (
-              <section key={series.id} className="rounded-xl border border-border bg-surface p-5">
+              <section key={series.id} className="rounded-[2px] border border-rule bg-field p-5">
                 <div className="flex items-center justify-between gap-4">
-                  <h2 className="text-lg font-semibold text-foreground">{seasonLabel(season)}</h2>
+                  <h2 className="text-lg font-semibold text-ink">{seasonLabel(season)}</h2>
                   <div className="flex items-center gap-2">
                     {series.winnerTeam?.team.logoUrl && (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -164,11 +164,11 @@ export default async function HistoryPage({ params }: PageProps) {
                         className="shrink-0"
                       />
                     )}
-                    <p className="text-sm font-medium text-accent">
+                    <p className="text-sm font-medium text-team-accent">
                       {series.winnerTeam
                         ? `${series.winnerTeam.team.city} ${series.winnerTeam.team.name}`
                         : "Unknown"}{" "}
-                      <span className="text-muted">- NBA Champions</span>
+                      <span className="text-ink-muted">- NBA Champions</span>
                     </p>
                   </div>
                 </div>
@@ -176,11 +176,11 @@ export default async function HistoryPage({ params }: PageProps) {
                 {(seasonAwards.length > 0 || seasonStaffAwards.length > 0) && (
                   <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
                     {seasonAwards.map((award) => (
-                      <div key={award.id} className="rounded-lg border border-border p-3 text-sm">
-                        <p className="text-xs tracking-wide text-muted uppercase">
+                      <div key={award.id} className="rounded-[2px] border border-rule p-3 text-sm">
+                        <p className="text-xs tracking-wide text-ink-muted uppercase">
                           {AWARD_LABELS[award.category] ?? award.category}
                         </p>
-                        <p className="mt-1 font-semibold text-foreground">
+                        <p className="mt-1 font-semibold text-ink">
                           <PlayerChip
                             identity={{
                               kind: "league",
@@ -194,11 +194,11 @@ export default async function HistoryPage({ params }: PageProps) {
                       </div>
                     ))}
                     {seasonStaffAwards.map((award) => (
-                      <div key={award.id} className="rounded-lg border border-border p-3 text-sm">
-                        <p className="text-xs tracking-wide text-muted uppercase">
+                      <div key={award.id} className="rounded-[2px] border border-rule p-3 text-sm">
+                        <p className="text-xs tracking-wide text-ink-muted uppercase">
                           {STAFF_AWARD_LABELS[award.category] ?? award.category}
                         </p>
-                        <p className="mt-1 flex items-center gap-2 font-semibold text-foreground">
+                        <p className="mt-1 flex items-center gap-2 font-semibold text-ink">
                           <PlayerAvatar photoUrl={null} fullName={award.staff.fullName} size="xs" />
                           {award.staff.fullName}
                         </p>
@@ -209,13 +209,13 @@ export default async function HistoryPage({ params }: PageProps) {
 
                 {seasonRetirees.length > 0 && (
                   <div className="mt-4">
-                    <p className="text-xs tracking-wide text-muted uppercase">
+                    <p className="text-xs tracking-wide text-ink-muted uppercase">
                       Retired this offseason
                     </p>
                     <div className="mt-2 space-y-1">
                       {seasonRetirees.map((r) => (
                         <div key={r.id} className="flex items-center justify-between text-sm">
-                          <span className="text-foreground">
+                          <span className="text-ink">
                             <PlayerChip
                               identity={{
                                 kind: "league",
@@ -227,7 +227,7 @@ export default async function HistoryPage({ params }: PageProps) {
                               size="xs"
                             />
                           </span>
-                          <span className="text-muted">
+                          <span className="text-ink-muted">
                             Retired at {estimateAge(r.player.draftYear, season + 1)} &middot; final
                             rating {r.overallRating}
                           </span>
@@ -238,17 +238,17 @@ export default async function HistoryPage({ params }: PageProps) {
                 )}
 
                 {seasonAllStar && (
-                  <div className="mt-4 rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-3">
-                    <p className="text-xs tracking-wide text-muted uppercase">All-Star Weekend</p>
+                  <div className="mt-4 rounded-[2px] border border-rule/30 bg-raised p-3">
+                    <p className="text-xs tracking-wide text-ink-muted uppercase">All-Star Weekend</p>
                     <div className="mt-2 space-y-1 text-sm">
                       {seasonAllStar.game && (
-                        <p className="text-foreground">
+                        <p className="text-ink">
                           {allStarPlayerById.get(seasonAllStar.game.teamACaptainId)?.player
                             .fullName ?? "Team A"}{" "}
                           {seasonAllStar.game.teamAScore} &ndash; {seasonAllStar.game.teamBScore}{" "}
                           {allStarPlayerById.get(seasonAllStar.game.teamBCaptainId)?.player
                             .fullName ?? "Team B"}
-                          <span className="ml-2 text-muted">
+                          <span className="ml-2 text-ink-muted">
                             MVP:{" "}
                             {allStarPlayerById.get(seasonAllStar.game.mvpLeaguePlayerId)?.player
                               .fullName ?? "Unknown"}
@@ -256,9 +256,9 @@ export default async function HistoryPage({ params }: PageProps) {
                         </p>
                       )}
                       {seasonAllStar.participants.map((p) => (
-                        <p key={p.id} className="text-muted">
+                        <p key={p.id} className="text-ink-muted">
                           {EVENT_LABEL[p.eventType] ?? p.eventType}:{" "}
-                          <span className="text-foreground">
+                          <span className="text-ink">
                             {allStarPlayerById.get(p.leaguePlayerId)?.player.fullName ?? "Unknown"}
                           </span>
                         </p>
@@ -266,7 +266,7 @@ export default async function HistoryPage({ params }: PageProps) {
                     </div>
                     <Link
                       href={`/leagues/${league.id}/all-star?season=${season}`}
-                      className="mt-2 inline-block text-xs text-accent hover:underline"
+                      className="mt-2 inline-block text-xs text-team-accent hover:underline"
                     >
                       View full weekend &rarr;
                     </Link>
@@ -274,8 +274,8 @@ export default async function HistoryPage({ params }: PageProps) {
                 )}
 
                 {lotteryWinner && (
-                  <div className="mt-4 rounded-lg border border-accent/30 bg-accent/5 p-3">
-                    <p className="text-xs tracking-wide text-muted uppercase">Draft Lottery</p>
+                  <div className="mt-4 rounded-[2px] border border-team-accent/30 bg-team-accent/5 p-3">
+                    <p className="text-xs tracking-wide text-ink-muted uppercase">Draft Lottery</p>
                     <div className="mt-2 flex items-center gap-2 text-sm">
                       {lotteryWinner.currentOwner.team.logoUrl && (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -287,26 +287,26 @@ export default async function HistoryPage({ params }: PageProps) {
                           className="shrink-0"
                         />
                       )}
-                      <p className="text-foreground">
+                      <p className="text-ink">
                         <span className="font-semibold">
                           {lotteryWinner.currentOwner.team.city}{" "}
                           {lotteryWinner.currentOwner.team.name}
                         </span>{" "}
-                        <span className="text-muted">
+                        <span className="text-ink-muted">
                           won the No. 1 pick (
                           {(lotteryWinner.oddsForNumberOnePickPct * 100).toFixed(1)}% odds)
                         </span>
                       </p>
                     </div>
                     {biggestJump && (
-                      <p className="mt-1 text-xs text-emerald-400">
+                      <p className="mt-1 text-xs text-positive">
                         {biggestJump.team.currentOwner.team.city}{" "}
                         {biggestJump.team.currentOwner.team.name} jumped from a projected No.{" "}
                         {biggestJump.team.projectedSeed} to No. {biggestJump.team.resultPickNumber}
                       </p>
                     )}
                     {biggestFall && (
-                      <p className="mt-1 text-xs text-red-400">
+                      <p className="mt-1 text-xs text-negative">
                         {biggestFall.team.currentOwner.team.city}{" "}
                         {biggestFall.team.currentOwner.team.name} fell from a projected No.{" "}
                         {biggestFall.team.projectedSeed} to No. {biggestFall.team.resultPickNumber}

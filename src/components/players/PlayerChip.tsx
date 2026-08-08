@@ -32,7 +32,7 @@ export function PlayerChip({
     <button
       type="button"
       onClick={() => openPlayerProfile(identity)}
-      className={`inline-flex items-center gap-3 text-left hover:text-accent ${className ?? ""}`}
+      className={`inline-flex items-center gap-3 text-left hover:text-team-accent ${className ?? ""}`}
     >
       <PlayerAvatar
         photoUrl={photoUrl}

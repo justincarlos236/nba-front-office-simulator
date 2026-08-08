@@ -79,10 +79,10 @@ export default async function SignFreeAgentPage({ params }: PageProps) {
     : rules.emptyRosterChargeCents;
 
   return (
-    <main className="mx-auto max-w-2xl flex-1 px-6 py-16">
+    <main className="mx-auto max-w-2xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
       <Link
         href={`/leagues/${league.id}/free-agents`}
-        className="text-sm text-muted hover:text-foreground"
+        className="text-sm text-ink-muted hover:text-ink"
       >
         &larr; All free agents
       </Link>
@@ -93,17 +93,17 @@ export default async function SignFreeAgentPage({ params }: PageProps) {
           size="lg"
         />
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
             Offer a contract to {freeAgent.player.fullName}
           </h1>
-          <p className="mt-2 text-muted">
+          <p className="mt-2 text-ink-muted">
             {freeAgent.player.position} &middot; Rating {freeAgent.overallRating}
             {stat ? ` · ${stat.pointsPerGame.toFixed(1)} PPG in 2023-24` : ""}
           </p>
         </div>
       </div>
       {hasReSigningRights && (
-        <p className="mt-3 inline-block rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-400">
+        <p className="mt-3 inline-block rounded-full bg-positive/15 px-3 py-1 text-xs font-semibold text-positive">
           You hold this player&apos;s Re-Signing Rights - you can exceed the cap to keep them
         </p>
       )}
@@ -113,6 +113,7 @@ export default async function SignFreeAgentPage({ params }: PageProps) {
           season={league.currentSeason}
           leagueId={league.id}
           leaguePlayerId={freeAgent.id}
+          playerName={freeAgent.player.fullName}
           suggestedSalaryCents={suggestedSalaryCents.toString()}
           team={{
             apronLevel: capSheet.apronLevel,

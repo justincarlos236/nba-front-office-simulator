@@ -24,16 +24,16 @@ export default async function PlayerDetailPage({ params }: PageProps) {
   if (!data) notFound();
 
   return (
-    <main className="mx-auto max-w-3xl flex-1 px-6 py-16">
+    <main className="mx-auto max-w-3xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
       {data.identity.currentTeam ? (
         <Link
           href={`/teams/${data.identity.currentTeam.abbreviation}`}
-          className="text-sm text-muted transition hover:text-foreground"
+          className="text-sm text-ink-muted transition hover:text-ink"
         >
           &larr; {data.identity.currentTeam.city} {data.identity.currentTeam.name}
         </Link>
       ) : (
-        <Link href="/teams" className="text-sm text-muted transition hover:text-foreground">
+        <Link href="/teams" className="text-sm text-ink-muted transition hover:text-ink">
           &larr; All teams
         </Link>
       )}
@@ -46,10 +46,10 @@ export default async function PlayerDetailPage({ params }: PageProps) {
           teamPrimaryColor={data.identity.currentTeam?.primaryColor}
         />
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
             {data.identity.fullName}
           </h1>
-          <p className="mt-1 text-muted">
+          <p className="mt-1 text-ink-muted">
             {data.identity.position}
             {data.identity.currentTeam
               ? ` · ${data.identity.currentTeam.city} ${data.identity.currentTeam.name}`

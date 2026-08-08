@@ -38,6 +38,9 @@ export interface DraftTeamInfo {
   city: string;
   name: string;
   logoUrl: string | null;
+  /** Real brand colours - the team on the clock owns the Broadcast frame. */
+  primaryColor: string | null;
+  secondaryColor: string | null;
 }
 
 export interface DraftTeamContextInfo {

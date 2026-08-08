@@ -20,20 +20,20 @@ export function GuideLayout({
 }) {
   return (
     <main className="mx-auto max-w-3xl flex-1 px-6 py-16">
-      <p className="text-xs text-muted">
-        <Link href="/guide" className="hover:text-foreground">
+      <p className="text-xs text-ink-muted">
+        <Link href="/guide" className="hover:text-ink">
           &larr; Guide
         </Link>
       </p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">{title}</h1>
-      <p className="mt-2 text-muted">{intro}</p>
+      <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink">{title}</h1>
+      <p className="mt-2 text-ink-muted">{intro}</p>
       {sections.length > 0 && (
         <nav className="mt-4 flex flex-wrap gap-2 text-sm">
           {sections.map(([href, label]) => (
             <a
               key={href}
               href={href}
-              className="rounded-full border border-border px-3 py-1 text-foreground transition hover:border-accent/40"
+              className="rounded-full border border-rule px-3 py-1 text-ink transition hover:border-team-accent/40"
             >
               {label}
             </a>
@@ -43,8 +43,8 @@ export function GuideLayout({
 
       {children}
 
-      <p className="mt-12 text-xs text-muted">
-        <Link href="/leagues" className="hover:text-foreground">
+      <p className="mt-12 text-xs text-ink-muted">
+        <Link href="/leagues" className="hover:text-ink">
           &larr; Back to My Leagues
         </Link>
       </p>
@@ -63,8 +63,8 @@ export function GuideSection({
 }) {
   return (
     <section id={id} className="mt-12 scroll-mt-20">
-      <h2 className="text-xl font-semibold text-foreground">{title}</h2>
-      <div className="mt-3 space-y-3 text-sm text-muted">{children}</div>
+      <h2 className="text-xl font-semibold text-ink">{title}</h2>
+      <div className="mt-3 space-y-3 text-sm text-ink-muted">{children}</div>
     </section>
   );
 }

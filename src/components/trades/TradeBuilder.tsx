@@ -19,6 +19,8 @@ import { TEAM_NEED_LABEL, type TeamNeed } from "@/lib/gm/teamNeeds";
 import { GM_PERSONALITY_LABEL, type GmPersonality } from "@/lib/gm/gmPersonality";
 import { PlayerChip } from "@/components/players/PlayerChip";
 import type { DepartmentLevel } from "@/generated/prisma/client";
+import { ErrorNotice } from "@/components/ui/ErrorNotice";
+import { ConfirmAction } from "@/components/ui/ConfirmAction";
 
 interface RosterPlayerDTO {
   leaguePlayerId: string;
@@ -326,6 +328,30 @@ export function TradeBuilder({
     (p) => mySelected.has(p.leaguePlayerId) && p.hasSponsorshipClause,
   );
 
+  /** Plain-language sides, so the confirmation names what actually moves. */
+  function describeSide(
+    players: RosterPlayerDTO[],
+    selectedPlayers: Set<string>,
+    picks: DraftPickDTO[],
+    selectedPicks: Set<string>,
+  ): string {
+    const names = [
+      ...players.filter((p) => selectedPlayers.has(p.leaguePlayerId)).map((p) => p.fullName),
+      ...picks.filter((p) => selectedPicks.has(p.draftPickId)).map(pickLabel),
+    ];
+    if (names.length === 0) return "nothing";
+    if (names.length === 1) return names[0];
+    return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+  }
+
+  const outgoingLabel = describeSide(myTeam.players, mySelected, myTeam.picks, mySelectedPicks);
+  const incomingLabel = describeSide(
+    theirTeam.players,
+    theirSelected,
+    theirTeam.picks,
+    theirSelectedPicks,
+  );
+
   function handleSubmit() {
     setSubmitError(null);
     startTransition(async () => {
@@ -381,41 +407,52 @@ export function TradeBuilder({
       </div>
 
       {clausePlayersSelected.length > 0 && (
-        <div className="mt-6 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm">
-          <span className="text-foreground">
+        <div className="mt-6 rounded-[2px] border border-caution/30 bg-caution/5 p-3 text-sm">
+          <span className="text-ink">
             {clausePlayersSelected.map((p) => p.fullName).join(", ")}{" "}
             {clausePlayersSelected.length === 1 ? "holds" : "hold"} an active sponsorship clause.
           </span>{" "}
-          <span className="text-muted">
+          <span className="text-ink-muted">
             Trading {clausePlayersSelected.length === 1 ? "him" : "them"} away voids the deal and
             triggers a real buyout penalty - the trade itself is still allowed.
           </span>
         </div>
       )}
 
-      <div className="mt-6 rounded-xl border border-border bg-surface p-6">
+      {/* THE WIRE - Workbench. The verdict is the whole point of this surface,
+          so it sticks to the bottom of the viewport rather than scrolling away
+          below two long roster columns while the user is still selecting. */}
+      <div className="sticky bottom-0 z-10 mt-6 border-t-2 border-team-accent bg-field p-6 shadow-none">
         {feasibility === null ? (
-          <p className="text-sm text-muted">Select at least one player or pick on either side.</p>
+          <p className="text-[15px] text-ink-muted">
+            Select at least one player or pick on either side.
+          </p>
         ) : (
           <div>
             <p
-              className={`text-sm font-semibold ${feasibility.isValid ? "text-accent" : "text-red-400"}`}
+              className={`text-[clamp(1rem,1.6vw,1.25rem)] leading-snug font-semibold ${
+                feasibility.isValid ? "text-ink" : "text-signal-red"
+              }`}
             >
               {feasibility.headline}
             </p>
-            {feasibility.detail && <p className="mt-1 text-sm text-muted">{feasibility.detail}</p>}
+            {feasibility.detail && (
+              <p className="mt-1 text-[15px] leading-relaxed text-ink-muted">
+                {feasibility.detail}
+              </p>
+            )}
           </div>
         )}
 
         {aiPreview && (
-          <div className="mt-3 border-t border-border pt-3">
+          <div className="mt-4 border-t border-hairline pt-4">
             <p
-              className={`text-sm font-semibold ${
+              className={`text-[15px] font-semibold ${
                 aiPreview.decision === "ACCEPT"
-                  ? "text-accent"
+                  ? "text-positive"
                   : aiPreview.decision === "COUNTER"
-                    ? "text-orange-400"
-                    : "text-red-400"
+                    ? "text-caution"
+                    : "text-negative"
               }`}
             >
               {theirTeam.name}:{" "}
@@ -429,7 +466,7 @@ export function TradeBuilder({
               aiPreview.reasons,
               `${theirTeam.leagueTeamId}-${aiPreview.decision}-${aiPreview.reasons.join(",")}-${Math.round(aiPreview.score * 1000)}`,
             ).map((message, i) => (
-              <p key={i} className="mt-1 text-sm text-muted">
+              <p key={i} className="mt-1 text-sm text-ink-muted">
                 {message}
               </p>
             ))}
@@ -439,14 +476,14 @@ export function TradeBuilder({
                 above. Real information, not better luck. */}
             {(myTeam.analyticsLevel === "HIGH" || myTeam.analyticsLevel === "MAXIMUM") &&
               Number.isFinite(aiPreview.score) && (
-                <p className="mt-1 text-xs text-accent-2">
+                <p className="mt-1 text-xs text-caution">
                   Analytics read: {Math.round(aiPreview.score * 100)}% of fair value
                 </p>
               )}
 
             {counterSuggestion && counterSuggestion.action !== "NONE" && (
-              <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2 p-3">
-                <p className="text-sm text-foreground">
+              <div className="mt-3 flex flex-wrap items-center gap-2 rounded-[2px] border border-rule bg-raised p-3">
+                <p className="text-sm text-ink">
                   {counterSuggestion.action === "ADD_ASSET" ? (
                     <>
                       Try sweetening the deal with{" "}
@@ -463,7 +500,7 @@ export function TradeBuilder({
                 <button
                   type="button"
                   onClick={applyCounterSuggestion}
-                  className="rounded-lg border border-accent/40 px-3 py-1 text-xs font-semibold text-accent transition hover:bg-accent/10"
+                  className="rounded-[2px] border border-team-accent/40 px-3 py-1 text-xs font-semibold text-team-accent transition hover:bg-team-accent/10"
                 >
                   {counterSuggestion.action === "ADD_ASSET" ? "Add it" : "Remove it"}
                 </button>
@@ -473,7 +510,7 @@ export function TradeBuilder({
             <HowDoesThisWork
               topic="cpu-trade-decisions"
               openInNewTab
-              className="mt-2 block w-fit text-xs text-muted underline hover:text-foreground"
+              className="mt-2 block w-fit text-xs text-ink-muted underline hover:text-ink"
             >
               How do CPU trade decisions work?
             </HowDoesThisWork>
@@ -483,19 +520,31 @@ export function TradeBuilder({
         <HowDoesThisWork
           topic="trades"
           openInNewTab
-          className="mt-2 block w-fit text-xs text-muted underline hover:text-foreground"
+          className="mt-2 block w-fit text-xs text-ink-muted underline hover:text-ink"
         />
 
-        {submitError && <p className="mt-3 text-sm text-red-400">{submitError}</p>}
+        {submitError && (
+          <div className="mt-3">
+            <ErrorNotice error={submitError} />
+          </div>
+        )}
 
-        <button
-          type="button"
-          disabled={!canSubmit}
-          onClick={handleSubmit}
-          className="mt-4 rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {isPending ? "Executing trade..." : "Execute trade"}
-        </button>
+        {/* Executing a trade is permanent and reshapes the save. It was the
+            only irreversible action in the product with no confirmation, while
+            deleting a league - recoverable by starting another - had a
+            deliberate two-step guard. */}
+        <div className="mt-4">
+          <ConfirmAction
+            label={isPending ? "Executing trade..." : "Execute trade"}
+            confirmLabel="Execute the trade"
+            pendingLabel="Executing trade..."
+            pending={isPending}
+            disabled={!canSubmit}
+            question={`Send ${outgoingLabel} to ${theirTeam.name} for ${incomingLabel}?`}
+            consequence="Players and picks change hands immediately, contracts move with them, and the deal is recorded permanently. This cannot be undone."
+            onConfirm={handleSubmit}
+          />
+        </div>
       </div>
     </div>
   );
@@ -503,15 +552,15 @@ export function TradeBuilder({
 
 function TeamIdentityCard({ team }: { team: TeamSideDTO }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
-      <p className="font-semibold text-foreground">{team.name}</p>
-      <p className="mt-1 text-sm text-muted">
-        <span className="text-foreground">{TEAM_IDENTITY_LABEL[team.identity]}</span>
+    <div className="rounded-[2px] border border-rule bg-field p-4">
+      <p className="font-semibold text-ink">{team.name}</p>
+      <p className="mt-1 text-sm text-ink-muted">
+        <span className="text-ink">{TEAM_IDENTITY_LABEL[team.identity]}</span>
         {" · "}
         {GM_PERSONALITY_LABEL[team.personality]} front office
       </p>
       {team.needs.length > 0 && (
-        <p className="mt-1 text-xs text-muted">
+        <p className="mt-1 text-xs text-ink-muted">
           Needs: {team.needs.map((n) => TEAM_NEED_LABEL[n]).join(", ")}
         </p>
       )}
@@ -541,8 +590,8 @@ function RosterColumn({
   onTogglePick: (id: string) => void;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
-      <h2 className="mb-3 font-semibold text-foreground">{title}</h2>
+    <div className="rounded-[2px] border border-rule bg-field p-4">
+      <h2 className="mb-3 font-semibold text-ink">{title}</h2>
       <div className="max-h-[480px] space-y-1 overflow-y-auto">
         {players.map((p) => (
           // A plain row (not <label>) so the PlayerChip (a nested <button>)
@@ -552,7 +601,7 @@ function RosterColumn({
           <div
             key={p.leaguePlayerId}
             onClick={() => onToggle(p.leaguePlayerId)}
-            className="flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-surface-2"
+            className="flex cursor-pointer items-center justify-between rounded-[2px] px-3 py-2 text-sm hover:bg-raised"
           >
             <span className="flex items-center gap-3">
               <input
@@ -572,13 +621,13 @@ function RosterColumn({
                   size="sm"
                 />
               </span>
-              <span className="text-xs text-muted">{p.position}</span>
-              <span className="font-mono text-xs text-accent">{p.overallRating}</span>
-              <span className="text-xs text-muted">
+              <span className="text-xs text-ink-muted">{p.position}</span>
+              <span className="font-mono text-xs text-team-accent">{p.overallRating}</span>
+              <span className="text-xs text-ink-muted">
                 {PLAYER_VALUE_TIER_LABEL[getPlayerValueTier(p.overallRating)]}
               </span>
             </span>
-            <span className="font-mono text-xs text-muted">
+            <span className="font-mono text-xs text-ink-muted">
               {formatCentsCompact(BigInt(p.salaryCents))}
             </span>
           </div>
@@ -586,13 +635,13 @@ function RosterColumn({
       </div>
 
       {picks.length > 0 && (
-        <div className="mt-3 border-t border-border pt-3">
-          <h3 className="mb-2 text-xs tracking-wide text-muted uppercase">Draft picks</h3>
+        <div className="mt-3 border-t border-rule pt-3">
+          <h3 className="mb-2 text-xs tracking-wide text-ink-muted uppercase">Draft picks</h3>
           <div className="max-h-[240px] space-y-1 overflow-y-auto">
             {picks.map((p) => (
               <label
                 key={p.draftPickId}
-                className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-surface-2"
+                className="flex cursor-pointer items-center gap-3 rounded-[2px] px-3 py-2 text-sm hover:bg-raised"
               >
                 <input
                   type="checkbox"
@@ -600,7 +649,7 @@ function RosterColumn({
                   onChange={() => onTogglePick(p.draftPickId)}
                   className="accent-orange-500"
                 />
-                <span className="text-foreground">{pickLabel(p)}</span>
+                <span className="text-ink">{pickLabel(p)}</span>
               </label>
             ))}
           </div>

@@ -36,9 +36,9 @@ function StandingsTable({
   const leader = sorted[0];
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border">
+    <div className="overflow-x-auto rounded-[2px] border border-rule">
       <table className="w-full text-left text-sm">
-        <thead className="bg-surface-2 text-xs tracking-wide text-muted uppercase">
+        <thead className="bg-raised text-xs tracking-wide text-ink-muted uppercase">
           <tr>
             <th className="px-2 py-3" colSpan={2}>
               {title}
@@ -57,14 +57,14 @@ function StandingsTable({
             return (
               <tr
                 key={team.id}
-                className={`border-t border-border ${team.id === userTeamId ? "bg-accent/10" : ""}`}
+                className={`border-t border-rule ${team.id === userTeamId ? "bg-team-accent/10" : ""}`}
               >
-                <td className="px-2 py-3 text-muted">{i + 1}</td>
-                <td className="px-2 py-3 font-medium text-foreground">{team.name}</td>
-                <td className="px-2 py-3 text-right text-foreground">{team.wins}</td>
-                <td className="px-2 py-3 text-right text-muted">{team.losses}</td>
-                <td className="px-2 py-3 text-right font-mono text-muted">{pct.toFixed(3)}</td>
-                <td className="px-2 py-3 text-right font-mono text-muted">
+                <td className="px-2 py-3 text-ink-muted">{i + 1}</td>
+                <td className="px-2 py-3 font-medium text-ink">{team.name}</td>
+                <td className="px-2 py-3 text-right text-ink">{team.wins}</td>
+                <td className="px-2 py-3 text-right text-ink-muted">{team.losses}</td>
+                <td className="px-2 py-3 text-right font-mono text-ink-muted">{pct.toFixed(3)}</td>
+                <td className="px-2 py-3 text-right font-mono text-ink-muted">
                   {gb === 0 ? "-" : gb.toFixed(1)}
                 </td>
               </tr>
@@ -145,11 +145,11 @@ export default async function StandingsPage({ params }: PageProps) {
     }));
 
   return (
-    <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground">
+    <main className="mx-auto max-w-6xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
+      <h1 className="text-3xl font-bold tracking-tight text-ink">
         {league.currentSeason}-{(league.currentSeason + 1).toString().slice(-2)} Standings
       </h1>
-      <p className="mt-2 max-w-2xl text-muted">
+      <p className="mt-2 max-w-2xl text-ink-muted">
         A simplified, strength-based simulation (not possession-by-possession) - each team&apos;s
         rotation ratings determine a win probability per game, with a small home-court edge. See
         docs/ARCHITECTURE.md for the exact model.
@@ -179,16 +179,16 @@ export default async function StandingsPage({ params }: PageProps) {
 
       {recentResults.length > 0 && (
         <div className="mt-10">
-          <h2 className="text-lg font-semibold text-foreground">Recent Results</h2>
+          <h2 className="text-lg font-semibold text-ink">Recent Results</h2>
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {recentResults.map((g) => (
-              <div key={g.id} className="rounded-lg border border-border bg-surface p-4 text-sm">
+              <div key={g.id} className="rounded-[2px] border border-rule bg-field p-4 text-sm">
                 <div className="flex items-center justify-between">
                   <span
                     className={
                       (g.homeScore ?? 0) > (g.awayScore ?? 0)
-                        ? "font-semibold text-foreground"
-                        : "text-muted"
+                        ? "font-semibold text-ink"
+                        : "text-ink-muted"
                     }
                   >
                     {g.homeTeam.team.city} {g.homeTeam.team.name}
@@ -199,8 +199,8 @@ export default async function StandingsPage({ params }: PageProps) {
                   <span
                     className={
                       (g.awayScore ?? 0) > (g.homeScore ?? 0)
-                        ? "font-semibold text-foreground"
-                        : "text-muted"
+                        ? "font-semibold text-ink"
+                        : "text-ink-muted"
                     }
                   >
                     {g.awayTeam.team.city} {g.awayTeam.team.name}
@@ -208,7 +208,7 @@ export default async function StandingsPage({ params }: PageProps) {
                   <span className="font-mono">{g.awayScore}</span>
                 </div>
                 {g.type !== "REGULAR_SEASON" && (
-                  <p className="mt-1 text-xs tracking-wide text-muted uppercase">
+                  <p className="mt-1 text-xs tracking-wide text-ink-muted uppercase">
                     {g.type === "PLAY_IN" ? "Play-in" : "Playoffs"}
                   </p>
                 )}

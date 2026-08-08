@@ -10,13 +10,37 @@ const ALL_PHASES: LeaguePhase[] = [
   "ready",
 ];
 
+/** Sections now live in drawers; flatten for the "nothing is ever hidden" checks. */
+function allSections(phase: LeaguePhase) {
+  const { primary, groups } = getSubNavSections(phase);
+  return [...primary, ...groups.flatMap((g) => g.sections)];
+}
+
 describe("getSubNavSections", () => {
-  it("never hides a section entirely - every section appears in primary or secondary for every phase", () => {
+  it("never hides a section entirely - every section appears in primary or a group for every phase", () => {
     for (const phase of ALL_PHASES) {
-      const { primary, secondary } = getSubNavSections(phase);
-      expect(primary.length + secondary.length).toBe(13);
-      const ids = new Set([...primary, ...secondary].map((s) => s.id));
-      expect(ids.size).toBe(13);
+      const sections = allSections(phase);
+      // 13 original sections plus All-Star, which previously appeared in no
+      // navigation at all despite hard-blocking season simulation.
+      expect(sections.length).toBe(14);
+      expect(new Set(sections.map((s) => s.id)).size).toBe(14);
+    }
+  });
+
+  it("assigns every section to exactly one drawer", () => {
+    for (const phase of ALL_PHASES) {
+      const { primary, groups } = getSubNavSections(phase);
+      const grouped = groups.flatMap((g) => g.sections.map((s) => s.id));
+      // A promoted section leaves its drawer, so the two sets never overlap.
+      const promoted = new Set(primary.map((s) => s.id));
+      for (const id of grouped) expect(promoted.has(id)).toBe(false);
+      expect(new Set(grouped).size).toBe(grouped.length);
+    }
+  });
+
+  it("keeps All-Star reachable in every phase", () => {
+    for (const phase of ALL_PHASES) {
+      expect(allSections(phase).map((s) => s.id)).toContain("allStar");
     }
   });
 
@@ -50,12 +74,17 @@ describe("getSubNavSections", () => {
     expect(ids).toEqual(expect.arrayContaining(["offseason", "freeAgents", "staff"]));
   });
 
-  it("every secondary section is still routable - it has a real, non-empty path", () => {
+  it("every section is still routable - it has a real, non-empty path", () => {
     for (const phase of ALL_PHASES) {
-      const { secondary } = getSubNavSections(phase);
-      for (const section of secondary) {
+      for (const section of allSections(phase)) {
         expect(section.path.startsWith("/")).toBe(true);
       }
     }
+  });
+
+  it("labels match their routes - the nav said News, the page said Transactions & News, the URL said /transactions", () => {
+    const transactions = allSections("regular-season").find((s) => s.id === "transactions");
+    expect(transactions?.label).toBe("Transactions");
+    expect(transactions?.path).toBe("/transactions");
   });
 });

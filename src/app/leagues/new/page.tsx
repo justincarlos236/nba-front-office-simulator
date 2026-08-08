@@ -56,12 +56,12 @@ export default async function NewLeaguePage() {
 
   if (activeLeagues.length >= MAX_LEAGUES_PER_USER) {
     return (
-      <main className="mx-auto max-w-2xl flex-1 px-6 py-16">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">The GM Job Market</h1>
-        <p className="mt-4 text-muted">
+      <main className="mx-auto max-w-2xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
+        <h1 className="text-3xl font-bold tracking-tight text-ink">The GM Job Market</h1>
+        <p className="mt-4 text-ink-muted">
           You&apos;re running the maximum of {MAX_LEAGUES_PER_USER} active franchises. Manage them
           from{" "}
-          <Link href="/leagues" className="text-accent hover:underline">
+          <Link href="/leagues" className="text-team-accent hover:underline">
             My Leagues
           </Link>{" "}
           - or step down from one to free up a slot.
@@ -100,25 +100,25 @@ export default async function NewLeaguePage() {
   const offeredCount = jobTeams.filter((t) => t.offer.available).length;
 
   return (
-    <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
+    <main className="mx-auto max-w-6xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">The GM Job Market</h1>
-          <p className="mt-2 max-w-2xl text-muted">
+          <h1 className="text-3xl font-bold tracking-tight text-ink">The GM Job Market</h1>
+          <p className="mt-2 max-w-2xl text-ink-muted">
             Teams hire based on your reputation. A rebuild will take a chance on anyone; a title
             contender only calls a proven executive. Where you take a job matters - a contender
             comes with a short leash, a rebuild with a patient owner.
           </p>
         </div>
-        <div className="w-48 rounded-xl border border-border bg-surface px-5 py-3 text-right">
-          <p className="text-xs tracking-wide text-muted uppercase">Your Reputation</p>
-          <p className="mt-1 text-2xl font-bold text-foreground tabular-nums">{gmReputation}</p>
-          <p className="text-xs font-semibold text-accent">{CAREER_TITLE_LABEL[title]}</p>
+        <div className="w-48 rounded-[2px] border border-rule bg-field px-5 py-3 text-right">
+          <p className="text-xs tracking-wide text-ink-muted uppercase">Your Reputation</p>
+          <p className="mt-1 text-2xl font-bold text-ink tabular-nums">{gmReputation}</p>
+          <p className="text-xs font-semibold text-team-accent">{CAREER_TITLE_LABEL[title]}</p>
           <ScaleBar value={gmReputation} />
         </div>
       </div>
 
-      <p className="mt-4 text-sm text-muted">
+      <p className="mt-4 text-sm text-ink-muted">
         {offeredCount} of {jobTeams.length} teams are willing to hire you right now. Starting a job
         clones the current NBA rosters into a fresh save; the other 29 teams are AI-controlled.
       </p>
@@ -130,26 +130,26 @@ export default async function NewLeaguePage() {
 }
 
 const SITUATION_BADGE: Record<string, string> = {
-  CONTENDER: "bg-amber-500/15 text-amber-400",
-  PLAYOFF_CONTENDER: "bg-sky-500/15 text-sky-400",
-  RETOOLING: "bg-purple-500/15 text-purple-400",
-  REBUILD: "bg-muted/20 text-muted",
-  BOTTOMING_OUT: "bg-muted/20 text-muted",
+  CONTENDER: "bg-caution/15 text-caution",
+  PLAYOFF_CONTENDER: "bg-raised text-ink-muted",
+  RETOOLING: "bg-raised text-ink-muted",
+  REBUILD: "bg-ink-muted/20 text-ink-muted",
+  BOTTOMING_OUT: "bg-ink-muted/20 text-ink-muted",
 };
 
 function JobConference({ title, teams }: { title: string; teams: JobTeam[] }) {
   return (
     <section className="mt-10">
-      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+      <h2 className="text-lg font-semibold text-ink">{title}</h2>
       <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {teams.map((team) => {
           const { offer } = team;
           const card = (
             <div
-              className={`h-full rounded-xl border bg-surface p-5 text-left transition ${
+              className={`h-full rounded-[2px] border bg-field p-5 text-left transition ${
                 offer.available
-                  ? "border-border hover:border-accent/40"
-                  : "border-border opacity-70"
+                  ? "border-rule hover:border-team-accent/40"
+                  : "border-rule opacity-70"
               }`}
               style={{ borderLeftColor: team.primaryColor, borderLeftWidth: "4px" }}
             >
@@ -159,7 +159,7 @@ function JobConference({ title, teams }: { title: string; teams: JobTeam[] }) {
                   <img src={team.logoUrl} alt="" width={32} height={32} className="shrink-0" />
                 )}
                 <div className="min-w-0">
-                  <h3 className="font-semibold text-foreground">
+                  <h3 className="font-semibold text-ink">
                     {team.city} {team.name}
                   </h3>
                   <span
@@ -169,21 +169,21 @@ function JobConference({ title, teams }: { title: string; teams: JobTeam[] }) {
                   </span>
                 </div>
               </div>
-              <p className="mt-3 text-xs text-muted">
+              <p className="mt-3 text-xs text-ink-muted">
                 {JOB_SITUATION_DESCRIPTION[offer.situation]}
               </p>
               <div className="mt-3 flex items-center justify-between text-xs">
-                <span className="text-muted">{offer.leashLabel}</span>
+                <span className="text-ink-muted">{offer.leashLabel}</span>
                 {offer.available ? (
-                  <span className="font-semibold text-accent">Take the job →</span>
+                  <span className="font-semibold text-team-accent">Take the job →</span>
                 ) : (
-                  <span className="font-semibold text-red-400">
+                  <span className="font-semibold text-negative">
                     Reach {offer.reputationRequired} rep
                   </span>
                 )}
               </div>
               {team.alreadyRunning && (
-                <p className="mt-2 text-xs text-muted">You already run this team elsewhere</p>
+                <p className="mt-2 text-xs text-ink-muted">You already run this team elsewhere</p>
               )}
             </div>
           );

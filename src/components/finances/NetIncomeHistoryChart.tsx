@@ -15,10 +15,10 @@ import {
 // Recharts SVG props can't resolve CSS var() tokens - literals, same
 // convention as the other chart components.
 const COLORS = {
-  border: "#232b36",
-  muted: "#8b97a6",
-  green: "#22c55e",
-  red: "#ef4444",
+  border: "var(--rule)",
+  muted: "var(--ink-muted)",
+  green: "var(--positive)",
+  red: "var(--negative)",
 };
 
 export interface NetIncomePoint {
@@ -46,9 +46,9 @@ function ChartTooltip({
   if (!active || !payload?.length) return null;
   const point = payload[0].payload;
   return (
-    <div className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs shadow-lg">
-      <p className="font-semibold text-foreground">{seasonLabel(point.season)}</p>
-      <p className={point.netIncome < 0 ? "text-red-400" : "text-emerald-400"}>
+    <div className="rounded-[2px] border border-rule bg-raised px-3 py-2 text-xs">
+      <p className="font-semibold text-ink">{seasonLabel(point.season)}</p>
+      <p className={point.netIncome < 0 ? "text-negative" : "text-positive"}>
         {point.netIncome < 0 ? "Net loss " : "Net profit "}
         {millionsSigned(point.netIncome)}
       </p>
@@ -60,7 +60,7 @@ function ChartTooltip({
 export function NetIncomeHistoryChart({ points }: { points: NetIncomePoint[] }) {
   if (points.length === 0) {
     return (
-      <div className="flex h-[180px] items-center justify-center rounded-xl border border-dashed border-border text-center text-sm text-muted">
+      <div className="flex h-45 items-center justify-center rounded-[2px] border border-dashed border-rule text-center text-sm text-ink-muted">
         No profit/loss history yet - advance a season to start tracking it.
       </div>
     );

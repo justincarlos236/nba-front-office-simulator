@@ -33,17 +33,17 @@ export function DraftBoard({
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6">
+    <div className="rounded-[2px] border border-rule bg-field p-6">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-foreground">Draft Board</h2>
+        <h2 className="text-sm font-semibold text-ink">Draft Board</h2>
         {userTeamId && (
           <button
             type="button"
             onClick={() => setMyPicksOnly((v) => !v)}
             className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
               myPicksOnly
-                ? "border-accent bg-accent/10 text-accent"
-                : "border-border text-muted hover:text-foreground"
+                ? "border-team-accent bg-team-accent/10 text-team-accent"
+                : "border-rule text-ink-muted hover:text-ink"
             }`}
           >
             My Picks
@@ -51,10 +51,10 @@ export function DraftBoard({
         )}
       </div>
       <div className="mt-3 max-h-[36rem] space-y-4 overflow-y-auto pr-1">
-        {decidedPicks.length === 0 && <p className="text-xs text-muted">No picks made yet.</p>}
+        {decidedPicks.length === 0 && <p className="text-xs text-ink-muted">No picks made yet.</p>}
         {[...byRound.entries()].map(([round, roundPicks]) => (
           <div key={round}>
-            <p className="mb-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
+            <p className="mb-1.5 text-xs font-semibold tracking-wide text-ink-muted uppercase">
               {ROUND_LABELS[round] ?? `Round ${round}`}
             </p>
             <div className="space-y-2">
@@ -66,8 +66,8 @@ export function DraftBoard({
                 return (
                   <div
                     key={pick.id}
-                    className={`flex items-center justify-between rounded-lg border p-3 text-sm transition ${
-                      isUserPick ? "border-accent bg-accent/5" : "border-border bg-surface-2"
+                    className={`flex items-center justify-between rounded-[2px] border p-3 text-sm transition ${
+                      isUserPick ? "border-team-accent bg-team-accent/5" : "border-rule bg-raised"
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -77,14 +77,14 @@ export function DraftBoard({
                       />
                       <PlayerAvatar photoUrl={null} fullName={prospect?.fullName ?? ""} size="sm" />
                       <div>
-                        <p className="text-xs tracking-wide text-muted uppercase">
+                        <p className="text-xs tracking-wide text-ink-muted uppercase">
                           Pick {pick.overallPickNumber} &middot;{" "}
                           {teamLabel(teamsById, pick.leagueTeamId)}
                         </p>
-                        <p className="font-medium text-foreground">{prospect?.fullName}</p>
+                        <p className="font-medium text-ink">{prospect?.fullName}</p>
                       </div>
                     </div>
-                    <span className="font-mono text-xs text-muted">
+                    <span className="font-mono text-xs text-ink-muted">
                       {prospect?.position} &middot; OVR {prospect?.overallRating}
                     </span>
                   </div>

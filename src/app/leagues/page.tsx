@@ -9,10 +9,10 @@ import { DeleteLeagueButton } from "@/components/leagues/DeleteLeagueButton";
 export const dynamic = "force-dynamic";
 
 const STATUS_BADGE_CLASS: Record<string, string> = {
-  "Regular season in progress": "bg-sky-500/15 text-sky-400",
-  "Playoffs underway": "bg-accent/15 text-accent",
-  "Draft pending": "bg-purple-500/15 text-purple-400",
-  "Ready for next season": "bg-emerald-500/15 text-emerald-400",
+  "Regular season in progress": "bg-raised text-ink-muted",
+  "Playoffs underway": "bg-team-accent/15 text-team-accent",
+  "Draft pending": "bg-raised text-ink-muted",
+  "Ready for next season": "bg-positive/15 text-positive",
 };
 
 const TXN_TYPE_LABEL: Record<string, string> = {
@@ -24,11 +24,11 @@ const TXN_TYPE_LABEL: Record<string, string> = {
 };
 
 const TXN_TYPE_BADGE_CLASS: Record<string, string> = {
-  TRADE: "bg-accent/15 text-accent",
-  SIGNING: "bg-emerald-500/15 text-emerald-400",
-  RETIREMENT: "bg-muted/20 text-muted",
-  INJURY: "bg-red-500/15 text-red-400",
-  OWNERSHIP_MESSAGE: "bg-purple-500/15 text-purple-400",
+  TRADE: "bg-team-accent/15 text-team-accent",
+  SIGNING: "bg-positive/15 text-positive",
+  RETIREMENT: "bg-ink-muted/20 text-ink-muted",
+  INJURY: "bg-negative/15 text-negative",
+  OWNERSHIP_MESSAGE: "bg-raised text-ink-muted",
 };
 
 const PHASE_LABEL: Record<LeaguePhase, string> = {
@@ -85,18 +85,18 @@ export default async function DashboardPage() {
   );
 
   return (
-    <main className="mx-auto max-w-5xl flex-1 px-6 py-16">
+    <main className="mx-auto max-w-5xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-sm text-muted">Welcome back</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight text-foreground">
+          <p className="text-sm text-ink-muted">Welcome back</p>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight text-ink">
             {session.user.name ?? "Dashboard"}
           </h1>
         </div>
         {leagues.length < MAX_LEAGUES_PER_USER && (
           <Link
             href="/leagues/new"
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90"
+            className="rounded-[2px] bg-team-accent px-4 py-2 text-sm font-semibold text-team-accent-ink transition hover:opacity-90"
           >
             Start a new franchise
           </Link>
@@ -104,11 +104,11 @@ export default async function DashboardPage() {
       </div>
 
       {leagueSummaries.length === 0 ? (
-        <div className="mt-10 rounded-xl border border-border bg-surface p-8 text-center">
-          <p className="text-muted">You haven&apos;t started a franchise yet.</p>
+        <div className="mt-10 rounded-[2px] border border-rule bg-field p-8 text-center">
+          <p className="text-ink-muted">You haven&apos;t started a franchise yet.</p>
           <Link
             href="/leagues/new"
-            className="mt-4 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90"
+            className="mt-4 inline-block rounded-[2px] bg-team-accent px-4 py-2 text-sm font-semibold text-team-accent-ink transition hover:opacity-90"
           >
             Start your first franchise
           </Link>
@@ -116,9 +116,9 @@ export default async function DashboardPage() {
       ) : (
         <>
           <section className="mt-10">
-            <h2 className="text-lg font-semibold text-foreground">
+            <h2 className="text-lg font-semibold text-ink">
               Your franchises
-              <span className="ml-2 text-sm font-normal text-muted">
+              <span className="ml-2 text-sm font-normal text-ink-muted">
                 {leagues.length}/{MAX_LEAGUES_PER_USER}
               </span>
             </h2>
@@ -130,7 +130,7 @@ export default async function DashboardPage() {
                 return (
                   <div
                     key={league.id}
-                    className="group relative rounded-xl border border-border bg-surface p-5 transition hover:border-accent/40"
+                    className="group relative rounded-[2px] border border-rule bg-field p-5 transition hover:border-team-accent/40"
                     style={
                       userTeam
                         ? { borderLeftColor: userTeam.team.primaryColor, borderLeftWidth: "4px" }
@@ -152,10 +152,10 @@ export default async function DashboardPage() {
                             />
                           )}
                           <div>
-                            <h3 className="font-semibold text-foreground transition group-hover:text-accent">
+                            <h3 className="font-semibold text-ink transition group-hover:text-team-accent">
                               {franchiseName}
                             </h3>
-                            <p className="text-xs text-muted">
+                            <p className="text-xs text-ink-muted">
                               {league.currentSeason}-
                               {(league.currentSeason + 1).toString().slice(-2)} season
                               {userTeam ? ` · ${userTeam.wins}-${userTeam.losses}` : ""}
@@ -165,7 +165,7 @@ export default async function DashboardPage() {
                       </div>
                       <span
                         className={`mt-4 inline-block rounded-full px-2 py-0.5 text-xs font-semibold tracking-wide uppercase ${
-                          STATUS_BADGE_CLASS[status] ?? "bg-muted/20 text-muted"
+                          STATUS_BADGE_CLASS[status] ?? "bg-ink-muted/20 text-ink-muted"
                         }`}
                       >
                         {status}
@@ -179,8 +179,8 @@ export default async function DashboardPage() {
 
           {recentActivity.length > 0 && (
             <section className="mt-10">
-              <h2 className="text-lg font-semibold text-foreground">Recent activity</h2>
-              <p className="mt-1 text-sm text-muted">
+              <h2 className="text-lg font-semibold text-ink">Recent activity</h2>
+              <p className="mt-1 text-sm text-ink-muted">
                 The latest trades, signings, injuries, and retirements across all your franchises.
               </p>
               <div className="mt-4 space-y-2">
@@ -188,7 +188,7 @@ export default async function DashboardPage() {
                   <Link
                     key={txn.id}
                     href={`/leagues/${txn.leagueId}/transactions`}
-                    className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3 text-sm transition hover:border-accent/40"
+                    className="flex items-center gap-3 rounded-[2px] border border-rule bg-field p-3 text-sm transition hover:border-team-accent/40"
                   >
                     {franchiseLogoByLeagueId.get(txn.leagueId) && (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -201,14 +201,14 @@ export default async function DashboardPage() {
                       />
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-foreground">{txn.description}</p>
-                      <p className="text-xs text-muted">
+                      <p className="truncate text-ink">{txn.description}</p>
+                      <p className="text-xs text-ink-muted">
                         {franchiseLabelByLeagueId.get(txn.leagueId) ?? "Unknown franchise"}
                       </p>
                     </div>
                     <span
                       className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold tracking-wide uppercase ${
-                        TXN_TYPE_BADGE_CLASS[txn.type] ?? "bg-muted/20 text-muted"
+                        TXN_TYPE_BADGE_CLASS[txn.type] ?? "bg-ink-muted/20 text-ink-muted"
                       }`}
                     >
                       {TXN_TYPE_LABEL[txn.type] ?? txn.type}
@@ -222,24 +222,24 @@ export default async function DashboardPage() {
       )}
 
       <section className="mt-10">
-        <h2 className="text-lg font-semibold text-foreground">Explore</h2>
+        <h2 className="text-lg font-semibold text-ink">Explore</h2>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Link
             href="/teams"
-            className="rounded-xl border border-border bg-surface p-5 transition hover:border-accent/40"
+            className="rounded-[2px] border border-rule bg-field p-5 transition hover:border-team-accent/40"
           >
-            <h3 className="font-semibold text-foreground">Browse NBA Teams</h3>
-            <p className="mt-1 text-sm text-muted">
+            <h3 className="font-semibold text-ink">Browse NBA Teams</h3>
+            <p className="mt-1 text-sm text-ink-muted">
               Real 2023-24 rosters, ratings, and stats for all 30 teams - the same reference data
               every franchise is cloned from.
             </p>
           </Link>
           <Link
             href="/guide"
-            className="rounded-xl border border-border bg-surface p-5 transition hover:border-accent/40"
+            className="rounded-[2px] border border-rule bg-field p-5 transition hover:border-team-accent/40"
           >
-            <h3 className="font-semibold text-foreground">Learn the Rules</h3>
-            <p className="mt-1 text-sm text-muted">
+            <h3 className="font-semibold text-ink">Learn the Rules</h3>
+            <p className="mt-1 text-sm text-ink-muted">
               How the salary cap, rotations, and the season actually work - the strategy behind the
               numbers.
             </p>

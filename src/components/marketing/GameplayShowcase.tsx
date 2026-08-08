@@ -28,13 +28,13 @@ const EXPERIENCES: Experience[] = [
 
 export function GameplayShowcase() {
   return (
-    <section className="border-b border-border bg-surface/40">
+    <section className="border-b border-rule bg-field/40">
       <div className="mx-auto max-w-6xl px-6 py-20">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">
+          <h2 className="text-3xl font-bold tracking-tight text-ink">
             This is the job. All of it.
           </h2>
-          <p className="mt-4 text-muted">
+          <p className="mt-4 text-ink-muted">
             No two franchises play out the same way - the league reacts to every call you make.
           </p>
         </div>
@@ -43,15 +43,15 @@ export function GameplayShowcase() {
           {EXPERIENCES.map((experience, i) => (
             <div
               key={experience.title}
-              className="animate-lottery-card-in relative overflow-hidden rounded-xl border border-border bg-surface p-8 transition hover:border-accent/40"
+              className="animate-lottery-card-in relative overflow-hidden rounded-[2px] border border-rule bg-field p-8 transition hover:border-team-accent/40"
               style={{ animationDelay: `${i * 90}ms` }}
             >
               <div
                 className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full opacity-20 blur-2xl"
                 style={{ background: "var(--accent)" }}
               />
-              <h3 className="text-xl font-bold text-foreground">{experience.title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-muted">{experience.description}</p>
+              <h3 className="text-xl font-bold text-ink">{experience.title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-ink-muted">{experience.description}</p>
             </div>
           ))}
         </div>

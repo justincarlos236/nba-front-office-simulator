@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -6,7 +5,14 @@ import { formatCentsCompact } from "@/lib/money";
 import { scoreToCapFraction, computePerformanceScore } from "@/lib/valuation/playerValue";
 import { getPlayerValueTier, PLAYER_VALUE_TIER_LABEL } from "@/lib/valuation/playerValueTier";
 import { getSeasonCapRules } from "@/lib/cap/constants";
-import { PlayerChip } from "@/components/players/PlayerChip";
+import { computeCapSheet } from "@/lib/cap/capSheet";
+import { CAP_STATUS_LABEL, simplifyCapStatus } from "@/lib/cap/capStatusLabel";
+import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
+import {
+  FreeAgentBoard,
+  type FreeAgentRow,
+} from "@/components/freeagency/FreeAgentBoard";
+import { Label, StatCell, Status } from "@/components/ui/primitives";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +20,14 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+/**
+ * THE WIRE - Ledger archetype. See DESIGN.md.
+ *
+ * The audit's sharpest working-memory finding lived here: the board showed a
+ * player's estimated value while the cap space that makes it meaningful was
+ * only on the dashboard, so "can I afford this?" was unanswerable without
+ * navigating away. Your own position is now pinned above the board.
+ */
 export default async function FreeAgentsPage({ params }: PageProps) {
   const { id } = await params;
   const session = await auth();
@@ -22,101 +36,131 @@ export default async function FreeAgentsPage({ params }: PageProps) {
   const league = await prisma.league.findUnique({ where: { id } });
   if (!league || league.ownerId !== session.user.id) notFound();
 
-  const freeAgents = await prisma.leaguePlayer.findMany({
-    where: { leagueId: league.id, leagueTeamId: null, isActive: true },
-    include: {
-      player: { include: { seasonStats: { where: { season: league.currentSeason } } } },
-    },
-    orderBy: { overallRating: "desc" },
+  const season = league.currentSeason;
+
+  const [freeAgents, ownRoster] = await Promise.all([
+    prisma.leaguePlayer.findMany({
+      where: { leagueId: league.id, leagueTeamId: null, isActive: true },
+      include: {
+        player: { include: { seasonStats: { where: { season } } } },
+      },
+      orderBy: { overallRating: "desc" },
+    }),
+    league.userControlledTeamId
+      ? prisma.leaguePlayer.findMany({
+          where: { leagueTeamId: league.userControlledTeamId, isActive: true },
+          include: {
+            player: true,
+            contract: { include: { years: { where: { season } } } },
+          },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const rules = getSeasonCapRules(season);
+
+  const capSheet = computeCapSheet({
+    season,
+    contracts: ownRoster
+      .filter((lp) => lp.contract?.years[0])
+      .map((lp) => ({
+        playerId: lp.playerId,
+        salaryCents: lp.contract!.years[0].salaryCents,
+      })),
   });
 
-  const rules = getSeasonCapRules(league.currentSeason);
+  const needs = computeTeamNeeds(
+    ownRoster.map((lp) => ({
+      position: lp.player.position,
+      overallRating: lp.overallRating,
+    })),
+  );
+  // computeTeamNeeds returns semantic needs (STAR_SCORER, RIM_PROTECTOR...),
+  // not position codes. Map each to the positions that would actually fill it
+  // so the board can mark those filter pills.
+  const NEED_POSITIONS: Record<string, string[]> = {
+    POINT_GUARD: ["PG"],
+    RIM_PROTECTOR: ["C"],
+    WING_DEFENDER: ["SF", "SG"],
+    STAR_SCORER: [],
+    BENCH_DEPTH: [],
+  };
+  const needPositions = [...new Set(needs.flatMap((need) => NEED_POSITIONS[need] ?? []))];
+
+  const rows: FreeAgentRow[] = freeAgents.map((fa) => {
+    const stat = fa.player.seasonStats[0];
+    const estimatedValueCents = stat
+      ? BigInt(
+          Math.round(
+            Number(rules.salaryCapCents) *
+              scoreToCapFraction(
+                computePerformanceScore({
+                  ...stat,
+                  trueShootingPct: stat.trueShootingPct ?? 0.56,
+                }),
+              ),
+          ),
+        )
+      : null;
+    return {
+      id: fa.id,
+      fullName: fa.player.fullName,
+      photoUrl: fa.player.photoUrl,
+      position: fa.player.position,
+      overallRating: fa.overallRating,
+      valueTier: PLAYER_VALUE_TIER_LABEL[getPlayerValueTier(fa.overallRating)],
+      pointsPerGame: stat?.pointsPerGame ?? null,
+      estimatedValue: estimatedValueCents ? formatCentsCompact(estimatedValueCents) : null,
+      estimatedValueCents: estimatedValueCents ? estimatedValueCents.toString() : null,
+      hasReSigningRights: fa.reSigningTeamId === league.userControlledTeamId,
+    };
+  });
+
+  const capStatus = simplifyCapStatus(capSheet.apronLevel);
 
   return (
-    <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground">Free agents</h1>
-      <p className="mt-2 max-w-2xl text-muted">
-        {freeAgents.length} unsigned players, real 2023-24 stats. Any team can always sign a player
-        to a Minimum Contract; bigger offers need Cap Space or a Signing Exception - unless you hold
-        that player&apos;s Re-Signing Rights, in which case you can exceed the cap to keep them.
-      </p>
+    <main className="mx-auto max-w-350 flex-1 px-6 pt-12 pb-24 sm:px-8">
+      <div className="flex flex-wrap items-end justify-between gap-6 border-b border-rule-strong pb-6">
+        <div>
+          <Label tone="accent">The market</Label>
+          <h1 className="mt-3 text-[clamp(1.75rem,3.5vw,2.5rem)] leading-tight font-bold tracking-[-0.02em] text-ink">
+            Free agents
+          </h1>
+          <p className="mt-3 max-w-[65ch] text-[15px] leading-relaxed text-ink-muted">
+            Any team can always sign a player to a Minimum Contract; bigger offers need cap space or
+            a Signing Exception - unless you hold that player&apos;s Re-Signing Rights, in which
+            case you can exceed the cap to keep them.
+          </p>
+        </div>
 
-      <div className="mt-10 overflow-x-auto rounded-xl border border-border">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-surface-2 text-xs tracking-wide text-muted uppercase">
-            <tr>
-              <th className="px-4 py-3">Player</th>
-              <th className="px-4 py-3">Pos</th>
-              <th className="px-4 py-3 text-right">Rating</th>
-              <th className="px-4 py-3">Value Tier</th>
-              <th className="px-4 py-3 text-right">PPG</th>
-              <th className="px-4 py-3 text-right">Est. value</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody>
-            {freeAgents.map((fa) => {
-              const stat = fa.player.seasonStats[0];
-              const estimatedValueCents = stat
-                ? BigInt(
-                    Math.round(
-                      Number(rules.salaryCapCents) *
-                        scoreToCapFraction(
-                          computePerformanceScore({
-                            ...stat,
-                            trueShootingPct: stat.trueShootingPct ?? 0.56,
-                          }),
-                        ),
-                    ),
-                  )
-                : null;
-              return (
-                <tr key={fa.id} className="border-t border-border hover:bg-surface/60">
-                  <td className="px-4 py-3 font-medium text-foreground">
-                    <PlayerChip
-                      identity={{ kind: "league", leagueId: league.id, leaguePlayerId: fa.id }}
-                      fullName={fa.player.fullName}
-                      photoUrl={fa.player.photoUrl}
-                      className="align-middle"
-                    />
-                    {fa.reSigningTeamId === league.userControlledTeamId && (
-                      <span className="ml-2 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-emerald-400 uppercase">
-                        Re-Signing Rights
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-muted">{fa.player.position}</td>
-                  <td className="px-4 py-3 text-right font-mono text-accent">{fa.overallRating}</td>
-                  <td className="px-4 py-3 text-xs text-muted">
-                    {PLAYER_VALUE_TIER_LABEL[getPlayerValueTier(fa.overallRating)]}
-                  </td>
-                  <td className="px-4 py-3 text-right text-muted">
-                    {stat?.pointsPerGame.toFixed(1) ?? "-"}
-                  </td>
-                  <td className="px-4 py-3 text-right text-muted">
-                    {estimatedValueCents ? formatCentsCompact(estimatedValueCents) : "-"}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/leagues/${league.id}/free-agents/${fa.id}`}
-                      className="rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-black transition hover:opacity-90"
-                    >
-                      Offer contract
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-            {freeAgents.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-muted">
-                  No free agents available.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        {/* YOUR POSITION. The number the whole board is judged against. */}
+        <div className="flex shrink-0 items-start gap-8">
+          <StatCell
+            label="Your cap space"
+            value={formatCentsCompact(capSheet.capSpaceCents)}
+            size="display"
+            tone={capSheet.capSpaceCents > 0n ? "accent" : "ink"}
+          />
+          <div>
+            <Label>Standing</Label>
+            <p className="mt-2">
+              <Status tone={capStatus === "LUXURY_TAX" ? "caution" : "neutral"}>
+                {CAP_STATUS_LABEL[capStatus]}
+              </Status>
+            </p>
+            <p className="mt-3 font-mono text-[15px] tabular-nums text-ink-muted">
+              {ownRoster.length} on roster
+            </p>
+          </div>
+        </div>
       </div>
+
+      <FreeAgentBoard
+        rows={rows}
+        leagueId={league.id}
+        capSpaceCents={capSheet.capSpaceCents.toString()}
+        needPositions={needPositions}
+      />
     </main>
   );
 }

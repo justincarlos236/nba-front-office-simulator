@@ -8,7 +8,7 @@ import { getScoutingBudgetSummary } from "@/lib/actions/scoutingAssignments";
 import { computeTeamDraftContexts } from "@/lib/gm/teamDraftContext";
 import { DraftExperience } from "@/components/draft/DraftExperience";
 import { PreDraftScoutingView } from "@/components/draft/PreDraftScoutingView";
-import type { DraftTeamContextInfo } from "@/components/draft/types";
+import type { DraftTeamContextInfo, DraftTeamInfo } from "@/components/draft/types";
 
 export const dynamic = "force-dynamic";
 
@@ -82,9 +82,15 @@ export default async function DraftPage({ params }: PageProps) {
     classCharacter: p.classCharacter,
   }));
 
-  const teamsById: Record<string, { city: string; name: string; logoUrl: string | null }> = {};
+  const teamsById: Record<string, DraftTeamInfo> = {};
   for (const lt of league.teams) {
-    teamsById[lt.id] = { city: lt.team.city, name: lt.team.name, logoUrl: lt.team.logoUrl };
+    teamsById[lt.id] = {
+      city: lt.team.city,
+      name: lt.team.name,
+      logoUrl: lt.team.logoUrl,
+      primaryColor: lt.team.primaryColor,
+      secondaryColor: lt.team.secondaryColor,
+    };
   }
 
   // Every team's identity (contend/rebuild) and positional needs, for the
@@ -101,10 +107,10 @@ export default async function DraftPage({ params }: PageProps) {
   }
 
   return (
-    <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground">{season} NBA Draft</h1>
+    <main className="mx-auto max-w-6xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
+      <h1 className="text-3xl font-bold tracking-tight text-ink">{season} NBA Draft</h1>
 
-      <p className="mt-2 max-w-2xl text-muted">
+      <p className="mt-2 max-w-2xl text-ink-muted">
         Picks 1-14 are decided by the real post-2019 lottery odds (the 3 worst records tied at
         14.0%); picks 15-30 go to playoff teams in reverse regular-season order; round 2 is a
         straight reverse-record sweep. Prospects are procedurally generated - no real future draft
@@ -112,30 +118,30 @@ export default async function DraftPage({ params }: PageProps) {
       </p>
 
       {gatePhase === "regular-season" && (
-        <div className="mt-8 rounded-xl border border-border bg-surface p-6">
-          <p className="text-sm text-muted">
+        <div className="mt-8 rounded-[2px] border border-rule bg-field p-6">
+          <p className="text-sm text-ink-muted">
             Finish the regular season on the standings page before the draft.
           </p>
         </div>
       )}
       {gatePhase === "playoffs-incomplete" && (
-        <div className="mt-8 rounded-xl border border-border bg-surface p-6">
-          <p className="text-sm text-muted">Crown a champion in the playoffs before the draft.</p>
+        <div className="mt-8 rounded-[2px] border border-rule bg-field p-6">
+          <p className="text-sm text-ink-muted">Crown a champion in the playoffs before the draft.</p>
         </div>
       )}
       {gatePhase === "active" && draftPicks.length === 0 && (
         <>
-          <div className="mt-8 rounded-xl border border-accent/30 bg-gradient-to-b from-accent/10 to-transparent p-6 text-center">
-            <p className="text-xs font-semibold tracking-widest text-accent uppercase">
+          <div className="mt-8 rounded-[2px] border border-team-accent/30 bg-gradient-to-b from-team-accent/10 to-transparent p-6 text-center">
+            <p className="text-xs font-semibold tracking-widest text-team-accent uppercase">
               Draft Lottery
             </p>
-            <p className="mt-2 text-foreground">
+            <p className="mt-2 text-ink">
               The draft order isn&apos;t set yet - scout the class now, then run the lottery when
               you&apos;re ready.
             </p>
             <Link
               href={`/leagues/${league.id}/draft/lottery`}
-              className="mt-4 inline-block rounded-lg bg-accent px-6 py-3 text-base font-bold text-black transition hover:opacity-90"
+              className="mt-4 inline-block rounded-[2px] bg-team-accent px-6 py-3 text-base font-bold text-team-accent-ink transition hover:opacity-90"
             >
               Go to the Draft Lottery
             </Link>

@@ -32,19 +32,19 @@ export default function ScoutingGuidePage() {
         </p>
         <ul className="list-inside list-disc space-y-2">
           <li>
-            <span className="text-foreground">Focused Look</span> (1 assignment) - raises one
+            <span className="text-ink">Focused Look</span> (1 assignment) - raises one
             prospect&apos;s Scouting Depth by one step (Unknown &rarr; Seen &rarr; Studied &rarr;
             Known). The more Depth on someone, the more reliable and precise your read on him
             becomes.
           </li>
           <li>
-            <span className="text-foreground">Regional Sweep</span> (1 assignment) - picks a pathway
+            <span className="text-ink">Regional Sweep</span> (1 assignment) - picks a pathway
             (Power Conference, Mid-Major, International Professional, or Development Pathway) and
             gives shallow Depth to several Unknown prospects who share it. It finds names you
             weren&apos;t tracking - it doesn&apos;t confirm them.
           </li>
           <li>
-            <span className="text-foreground">Private Workout</span> (2 assignments, once a prospect
+            <span className="text-ink">Private Workout</span> (2 assignments, once a prospect
             reaches Studied) - resolves his work ethic or injury outlook outright, no uncertainty.
             The one way to fully de-risk a specific bet.
           </li>
@@ -93,7 +93,7 @@ export default function ScoutingGuidePage() {
           The Big Board is a second opinion, not a correction. When it disagrees with your own
           scouting - or with a prospect&apos;s plainly visible rating - that disagreement is the
           whole point: trust the crowd, or trust what you&apos;ve actually seen. Bookmark prospects
-          to build <span className="text-foreground">My Board</span>, your own ranked list - drag to
+          to build <span className="text-ink">My Board</span>, your own ranked list - drag to
           reorder it, and it&apos;s what leads Draft Night once you&apos;re on the clock, not the
           public consensus.
         </p>
@@ -106,16 +106,16 @@ export default function ScoutingGuidePage() {
         </p>
         <ul className="list-inside list-disc space-y-2">
           <li>
-            <span className="text-foreground">Manual</span> - assign every sweep, focused look, and
+            <span className="text-ink">Manual</span> - assign every sweep, focused look, and
             workout by hand.
           </li>
           <li>
-            <span className="text-foreground">Recommend</span> - your staff propose a full
+            <span className="text-ink">Recommend</span> - your staff propose a full
             week&apos;s assignments; accept them, edit them, or override entirely. One click, still
             a real decision.
           </li>
           <li>
-            <span className="text-foreground">Delegate window</span> - pick a strategy once (Best
+            <span className="text-ink">Delegate window</span> - pick a strategy once (Best
             Player Available, Fill Our Needs, Find Sleepers, or Balanced) and let your staff run the
             entire Pre-Draft window against it.
           </li>
@@ -136,7 +136,7 @@ export default function ScoutingGuidePage() {
           open (&quot;you never got a read on his health&quot;).
         </p>
         <p>
-          It deliberately does <span className="text-foreground">not</span> reveal his true
+          It deliberately does <span className="text-ink">not</span> reveal his true
           potential, and it never says &quot;steal&quot; or &quot;bust.&quot; Revealing that on the
           spot would turn the draft into a graded quiz instead of a bet. Whether the pick was
           actually right plays out over real seasons through ordinary player development, exactly

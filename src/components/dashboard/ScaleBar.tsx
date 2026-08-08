@@ -8,9 +8,9 @@
 export function ScaleBar({ value }: { value: number }) {
   const clamped = Math.min(100, Math.max(0, value));
   return (
-    <div className="mt-2 h-1.5 w-full rounded-full bg-surface-2">
+    <div className="mt-2 h-1.5 w-full rounded-full bg-raised">
       <div
-        className="h-1.5 rounded-full bg-accent transition-all"
+        className="h-1.5 rounded-full bg-team-accent transition-all"
         style={{ width: `${clamped}%` }}
       />
     </div>

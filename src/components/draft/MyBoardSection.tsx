@@ -58,7 +58,7 @@ function SortableRow({
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2 ${
+      className={`flex items-center gap-3 rounded-[2px] border border-rule bg-field px-3 py-2 ${
         isDragging ? "opacity-50" : ""
       } ${isDrafted ? "opacity-40" : ""}`}
     >
@@ -66,28 +66,28 @@ function SortableRow({
         type="button"
         {...attributes}
         {...listeners}
-        className="cursor-grab touch-none px-1 text-muted hover:text-foreground active:cursor-grabbing"
+        className="cursor-grab touch-none px-1 text-ink-muted hover:text-ink active:cursor-grabbing"
         aria-label="Drag to reorder"
       >
         ⠿
       </button>
-      <span className="w-6 shrink-0 text-right font-mono text-xs text-muted">{rank}</span>
+      <span className="w-6 shrink-0 text-right font-mono text-xs text-ink-muted">{rank}</span>
       <button
         type="button"
         onClick={() => onOpenProfile(prospect.id)}
-        className="min-w-0 flex-1 truncate text-left text-sm text-foreground hover:text-accent"
+        className="min-w-0 flex-1 truncate text-left text-sm text-ink hover:text-team-accent"
       >
         {prospect.fullName}
       </button>
-      <span className="w-8 shrink-0 text-xs text-muted">{prospect.position}</span>
-      <span className="w-20 shrink-0 text-right text-xs text-muted">
+      <span className="w-8 shrink-0 text-xs text-ink-muted">{prospect.position}</span>
+      <span className="w-20 shrink-0 text-right text-xs text-ink-muted">
         {SCOUTING_DEPTH_LABEL[prospect.scoutingDepth] ?? "Unknown"}
       </span>
-      <span className="w-16 shrink-0 text-right font-mono text-xs text-accent">
+      <span className="w-16 shrink-0 text-right font-mono text-xs text-team-accent">
         {prospect.overallRating}
       </span>
       {isDrafted ? (
-        <span className="shrink-0 text-xs text-muted">Drafted</span>
+        <span className="shrink-0 text-xs text-ink-muted">Drafted</span>
       ) : (
         canDraft &&
         onDraft && (
@@ -95,7 +95,7 @@ function SortableRow({
             type="button"
             disabled={isBusy}
             onClick={() => onDraft(prospect.id, prospect.fullName)}
-            className="shrink-0 rounded-lg bg-accent px-3 py-1 text-xs font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            className="shrink-0 rounded-[2px] bg-team-accent px-3 py-1 text-xs font-semibold text-team-accent-ink transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Draft
           </button>
@@ -162,9 +162,9 @@ export function MyBoardSection({
 
   if (boardProspects.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-border bg-surface p-6 text-center">
-        <p className="text-sm text-foreground">My Board is empty</p>
-        <p className="mt-1 text-xs text-muted">
+      <div className="rounded-[2px] border border-dashed border-rule bg-field p-6 text-center">
+        <p className="text-sm text-ink">My Board is empty</p>
+        <p className="mt-1 text-xs text-ink-muted">
           Bookmark prospects from the board below to start building your own ranking - the order you
           set here is what leads Draft Night.
         </p>
@@ -173,13 +173,13 @@ export function MyBoardSection({
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6">
-      <h2 className="font-semibold text-foreground">My Board</h2>
-      <p className="mt-1 text-xs text-muted">
+    <div className="rounded-[2px] border border-rule bg-field p-6">
+      <h2 className="font-semibold text-ink">My Board</h2>
+      <p className="mt-1 text-xs text-ink-muted">
         Drag to reorder. This is your call, not the Big Board&apos;s - it&apos;s what you&apos;ll
         see first once you&apos;re on the clock.
       </p>
-      {errorMessage && <p className="mt-2 text-xs text-red-400">{errorMessage}</p>}
+      {errorMessage && <p className="mt-2 text-xs text-negative">{errorMessage}</p>}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext
           items={boardProspects.map((p) => p.id)}

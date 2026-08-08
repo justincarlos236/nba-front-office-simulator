@@ -10,14 +10,14 @@ import {
   YAxis,
 } from "recharts";
 
-// Recharts SVG props (stroke/fill/etc.) are plain attributes, not CSS -
-// they can't resolve var(--token) the way an inline `style` can, so the
-// theme colors are duplicated here as literals (see globals.css) - same
-// convention as RosterScatterChart.tsx.
+// Recharts SVG props (stroke/fill/etc.) accept any valid CSS colour string,
+// including var(--token) - unlike a Tailwind class, these read the live
+// custom property, so the accent line here follows the league's own
+// franchise colour rather than a fixed orange baked into the chart.
 const COLORS = {
-  border: "#232b36",
-  muted: "#8b97a6",
-  accent: "#ff7a1a",
+  border: "var(--rule)",
+  muted: "var(--ink-muted)",
+  accent: "var(--team-accent)",
 };
 
 export interface FanHappinessTrendPoint {
@@ -39,9 +39,9 @@ function ChartTooltip({
   if (!active || !payload?.length) return null;
   const point = payload[0].payload;
   return (
-    <div className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs shadow-lg">
-      <p className="font-semibold text-foreground">{seasonLabel(point.season)}</p>
-      <p className="text-muted">Fan Happiness: {point.fanHappiness}</p>
+    <div className="rounded-[2px] border border-rule bg-raised px-3 py-2 text-xs">
+      <p className="font-semibold text-ink">{seasonLabel(point.season)}</p>
+      <p className="text-ink-muted">Fan Happiness: {point.fanHappiness}</p>
     </div>
   );
 }
@@ -50,7 +50,7 @@ function ChartTooltip({
 export function FanHappinessTrendChart({ points }: { points: FanHappinessTrendPoint[] }) {
   if (points.length === 0) {
     return (
-      <div className="flex h-[220px] items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted">
+      <div className="flex h-[220px] items-center justify-center rounded-[2px] border border-dashed border-rule text-sm text-ink-muted">
         No history yet - advance a season to start tracking fan sentiment over time.
       </div>
     );

@@ -28,6 +28,8 @@ import {
 import { rotationRoleLabel } from "@/lib/rotation/roleLabel";
 import { getMoraleLevel, MORALE_LEVEL_LABEL, type MoraleLevel } from "@/lib/morale/moraleLevel";
 import type { Position, InjuryStatus } from "@/generated/prisma/client";
+import { Button } from "@/components/ui/primitives";
+import { ConfirmAction } from "@/components/ui/ConfirmAction";
 
 export interface RotationPlayer {
   leaguePlayerId: string;
@@ -45,11 +47,11 @@ export interface RotationPlayer {
 }
 
 const MORALE_DOT_CLASS: Record<MoraleLevel, string> = {
-  THRILLED: "bg-emerald-400",
-  CONTENT: "bg-emerald-400/70",
-  NEUTRAL: "bg-muted",
-  UNHAPPY: "bg-amber-400",
-  DISGRUNTLED: "bg-red-500",
+  THRILLED: "bg-positive",
+  CONTENT: "bg-positive/70",
+  NEUTRAL: "bg-ink-muted",
+  UNHAPPY: "bg-caution",
+  DISGRUNTLED: "bg-negative",
 };
 
 function MoraleIndicator({
@@ -67,7 +69,7 @@ function MoraleIndicator({
     >
       <span className={`h-2 w-2 rounded-full ${MORALE_DOT_CLASS[level]}`} />
       {tradeRequestActive && (
-        <span className="text-xs font-semibold text-red-400">Trade Request</span>
+        <span className="text-xs font-semibold text-negative">Trade Request</span>
       )}
     </span>
   );
@@ -133,7 +135,7 @@ function SortableRow({
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2 ${
+      className={`flex items-center gap-3 rounded-[2px] border border-rule bg-field px-3 py-2 ${
         isDragging ? "opacity-50" : ""
       }`}
     >
@@ -141,12 +143,12 @@ function SortableRow({
         type="button"
         {...attributes}
         {...listeners}
-        className="cursor-grab touch-none px-1 text-muted hover:text-foreground active:cursor-grabbing"
+        className="cursor-grab touch-none px-1 text-ink-muted hover:text-ink active:cursor-grabbing"
         aria-label="Drag to reorder"
       >
         ⠿
       </button>
-      <span className="w-6 text-right font-mono text-xs text-muted">
+      <span className="w-6 text-right font-mono text-xs text-ink-muted">
         {inRotation ? rank + 1 : "-"}
       </span>
       <div className="min-w-0 flex-1">
@@ -158,18 +160,18 @@ function SortableRow({
           size="sm"
         />
       </div>
-      <span className="w-10 shrink-0 text-xs text-muted">{player.position}</span>
+      <span className="w-10 shrink-0 text-xs text-ink-muted">{player.position}</span>
       <MoraleIndicator morale={player.morale} tradeRequestActive={player.tradeRequestActive} />
       {player.injuryStatus !== "HEALTHY" && (
-        <span className="shrink-0 rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-semibold text-red-400">
+        <span className="shrink-0 rounded-full bg-negative/15 px-2 py-0.5 text-xs font-semibold text-negative">
           Out
         </span>
       )}
-      <span className="w-28 shrink-0 text-right text-xs text-muted">
+      <span className="w-28 shrink-0 text-right text-xs text-ink-muted">
         {inRotation ? rotationRoleLabel(rank) : "Out of Rotation"}
       </span>
       {inRotation ? (
-        <label className="flex shrink-0 items-center gap-1 text-xs text-muted">
+        <label className="flex shrink-0 items-center gap-1 text-xs text-ink-muted">
           <input
             type="number"
             min={0}
@@ -178,12 +180,12 @@ function SortableRow({
             onChange={(e) =>
               onMinutesChange(Math.max(0, Math.min(40, Number(e.target.value) || 0)))
             }
-            className="w-14 rounded border border-border bg-surface-2 px-1.5 py-1 text-right text-foreground"
+            className="w-14 rounded border border-rule bg-raised px-1.5 py-1 text-right text-ink"
           />
           min
         </label>
       ) : (
-        <span className="w-[88px] shrink-0" />
+        <span className="w-22 shrink-0" />
       )}
     </div>
   );
@@ -191,7 +193,7 @@ function SortableRow({
 
 function SectionDivider({ label }: { label: string }) {
   return (
-    <div className="pt-3 pb-1 text-xs font-semibold tracking-wide text-muted uppercase">
+    <div className="pt-3 pb-1 text-xs font-semibold tracking-wide text-ink-muted uppercase">
       {label}
     </div>
   );
@@ -262,14 +264,8 @@ export function RotationBoard({
     });
   }
 
+  /** Confirmation is owned by the ConfirmAction wrapping the button. */
   function resetToRecommended() {
-    if (
-      !confirm(
-        "Reset the entire rotation to the recommended depth chart? This overwrites your current setup.",
-      )
-    ) {
-      return;
-    }
     const recommended = recommendedOrder(players);
     setOrder(recommended);
     const updated: Record<string, number> = {};
@@ -311,36 +307,34 @@ export function RotationBoard({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface p-4">
-        <button
-          type="button"
-          onClick={fillOpenSlots}
-          className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-surface-2"
-        >
+      {/* THE WIRE - Workbench. The minute total is the verdict this surface
+          builds toward, so it sits with the controls rather than below them. */}
+      <div className="flex flex-wrap items-center gap-3 border-t border-rule bg-field p-4">
+        <Button variant="secondary" onClick={fillOpenSlots}>
           Fill open slots
-        </button>
-        <button
-          type="button"
-          onClick={resetToRecommended}
-          className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-surface-2"
-        >
-          Reset to recommended
-        </button>
-        <button
-          type="button"
-          onClick={autoBalanceMinutes}
-          className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-surface-2"
-        >
+        </Button>
+        {/* Was a native window.confirm() - the one pattern DeleteLeagueButton's
+            own comment rejects as "jarringly inconsistent", and the only
+            confirmation in the product on an action that is trivially undoable. */}
+        <ConfirmAction
+          variant="primary"
+          label="Reset to recommended"
+          confirmLabel="Reset the rotation"
+          question="Reset the entire rotation to the recommended depth chart?"
+          consequence="This overwrites your current starting five, bench order, and every minute target. Nothing is saved until you save, so you can still walk away."
+          onConfirm={resetToRecommended}
+        />
+        <Button variant="secondary" onClick={autoBalanceMinutes}>
           Auto-balance minutes
-        </button>
+        </Button>
         <div className="ml-auto text-right">
           <p
-            className={`font-mono text-sm ${totalIsUnbalanced ? "text-amber-400" : "text-foreground"}`}
+            className={`font-mono text-[15px] tabular-nums ${totalIsUnbalanced ? "text-caution" : "text-ink"}`}
           >
             {total} / 240 minutes assigned
           </p>
           {totalIsUnbalanced && (
-            <p className="max-w-xs text-xs text-amber-400">
+            <p className="max-w-xs text-xs text-caution">
               Each player&apos;s target will be proportionally scaled to fit 240 team-minutes during
               games, so actual minutes may differ from what you entered - use Auto-balance to make
               this exact.
@@ -387,11 +381,11 @@ export function RotationBoard({
           type="button"
           disabled={isPending}
           onClick={handleSave}
-          className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-[2px] bg-team-accent px-5 py-2.5 text-sm font-semibold text-team-accent-ink transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isPending ? "Saving..." : "Save Rotation"}
         </button>
-        {lastResult && <p className="text-sm text-accent">{lastResult}</p>}
+        {lastResult && <p className="text-sm text-team-accent">{lastResult}</p>}
       </div>
     </div>
   );

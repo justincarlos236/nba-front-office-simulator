@@ -46,26 +46,26 @@ export function FinancingCard({
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-5">
-      <p className="text-xs tracking-wide text-muted uppercase">Financing</p>
+    <div className="rounded-[2px] border border-rule bg-field p-5">
+      <p className="text-xs tracking-wide text-ink-muted uppercase">Financing</p>
       <div className="mt-2 grid grid-cols-2 gap-4">
         <div>
-          <p className="text-lg font-bold text-foreground tabular-nums">
+          <p className="text-lg font-bold text-ink tabular-nums">
             {formatFinanceCents(debtCents)}
           </p>
-          <p className="text-xs text-muted">Outstanding debt</p>
+          <p className="text-xs text-ink-muted">Outstanding debt</p>
         </div>
         <div>
-          <p className="text-lg font-bold text-foreground tabular-nums">
+          <p className="text-lg font-bold text-ink tabular-nums">
             {formatFinanceCents(annualInterestCents)}/yr
           </p>
-          <p className="text-xs text-muted">Interest owed</p>
+          <p className="text-xs text-ink-muted">Interest owed</p>
         </div>
       </div>
 
       <div className="mt-4">
-        <p className="text-xs font-semibold text-foreground">Take out a loan</p>
-        <p className="text-xs text-muted">
+        <p className="text-xs font-semibold text-ink">Take out a loan</p>
+        <p className="text-xs text-ink-muted">
           Real cash now, interest-only forever until you repay it.
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
@@ -75,7 +75,7 @@ export function FinancingCard({
               type="button"
               disabled={isPending}
               onClick={() => run(() => takeOutLoanAction(leagueId, tier))}
-              className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-[2px] border border-rule px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-raised disabled:cursor-not-allowed disabled:opacity-40"
             >
               {LOAN_TIER_LABEL[tier]} ({formatFinanceCents(loanAmountCents(tier))})
             </button>
@@ -85,21 +85,21 @@ export function FinancingCard({
 
       {debtCents > 0 && (
         <div className="mt-4">
-          <p className="text-xs font-semibold text-foreground">Repay debt</p>
+          <p className="text-xs font-semibold text-ink">Repay debt</p>
           <div className="mt-2 flex items-center gap-2">
             <input
               type="number"
               min={0}
               value={repayAmount}
               onChange={(e) => setRepayAmount(Number(e.target.value))}
-              className="w-24 rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-xs text-foreground"
+              className="w-24 rounded-[2px] border border-rule bg-raised px-2 py-1.5 text-xs text-ink"
             />
-            <span className="text-xs text-muted">$M</span>
+            <span className="text-xs text-ink-muted">$M</span>
             <button
               type="button"
               disabled={isPending || repayAmount <= 0}
               onClick={() => run(() => repayDebtAction(leagueId, repayAmount * 1_000_000 * 100))}
-              className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-[2px] border border-rule px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-raised disabled:cursor-not-allowed disabled:opacity-40"
             >
               Repay
             </button>
@@ -108,8 +108,8 @@ export function FinancingCard({
       )}
 
       <div className="mt-4">
-        <p className="text-xs font-semibold text-foreground">Ask ownership for capital</p>
-        <p className="text-xs text-muted">Free money - priced entirely in owner confidence.</p>
+        <p className="text-xs font-semibold text-ink">Ask ownership for capital</p>
+        <p className="text-xs text-ink-muted">Free money - priced entirely in owner confidence.</p>
         <div className="mt-2 flex flex-wrap gap-2">
           {CAPITAL_CALL_TIERS.map((tier) => (
             <button
@@ -117,7 +117,7 @@ export function FinancingCard({
               type="button"
               disabled={isPending}
               onClick={() => run(() => requestOwnerCapitalAction(leagueId, tier))}
-              className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-[2px] border border-rule px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-raised disabled:cursor-not-allowed disabled:opacity-40"
             >
               {CAPITAL_CALL_TIER_LABEL[tier]} ({formatFinanceCents(capitalCallAmountCents(tier))}, -
               {capitalCallConfidenceCost(tier)} confidence)
@@ -127,9 +127,9 @@ export function FinancingCard({
       </div>
 
       {distressedFinancingEligible && (
-        <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/5 p-3">
-          <p className="text-xs font-semibold text-red-400">Distressed financing available</p>
-          <p className="mt-1 text-xs text-muted">
+        <div className="mt-4 rounded-[2px] border border-negative/30 bg-negative/5 p-3">
+          <p className="text-xs font-semibold text-negative">Distressed financing available</p>
+          <p className="mt-1 text-xs text-ink-muted">
             {formatFinanceCents(distressedFinancingAmountCents())} at a real reputational cost -
             only take this if you have to.
           </p>
@@ -137,7 +137,7 @@ export function FinancingCard({
             type="button"
             disabled={isPending}
             onClick={() => run(() => takeDistressedFinancingAction(leagueId))}
-            className="mt-2 rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-semibold text-red-400 transition hover:bg-red-500/30 disabled:cursor-not-allowed disabled:opacity-40"
+            className="mt-2 rounded-[2px] bg-negative/20 px-3 py-1.5 text-xs font-semibold text-negative transition hover:bg-negative/30 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Take distressed financing
           </button>

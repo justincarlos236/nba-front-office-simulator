@@ -26,7 +26,7 @@ export function ResolveWeekendButton({ leagueId }: { leagueId: string }) {
           router.refresh();
         })
       }
-      className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+      className="rounded-[2px] bg-team-accent px-5 py-2.5 text-sm font-semibold text-team-accent-ink transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
     >
       {isPending ? "Continuing..." : "Continue Season"}
     </button>

@@ -19,24 +19,24 @@ export function NarrativesSection({ narratives }: { narratives: NarrativeItem[] 
 
   return (
     <section className="mt-10">
-      <h2 className="text-lg font-semibold text-foreground">The Conversation</h2>
-      <p className="mt-1 text-sm text-muted">
+      <h2 className="text-lg font-semibold text-ink">The Conversation</h2>
+      <p className="mt-1 text-sm text-ink-muted">
         The ongoing storylines this fanbase is actually living through right now.
       </p>
       <div className="mt-4 space-y-3">
         {narratives.map((n) => (
-          <div key={n.id} className="rounded-xl border border-border bg-surface p-5">
+          <div key={n.id} className="rounded-[2px] border border-rule bg-field p-5">
             <div className="flex items-baseline justify-between gap-3">
-              <p className="font-semibold text-foreground">{n.headline}</p>
+              <p className="font-semibold text-ink">{n.headline}</p>
               {n.status === "OPEN" && (
-                <span className="shrink-0 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent">
+                <span className="shrink-0 rounded-full bg-team-accent/10 px-2 py-0.5 text-xs font-semibold text-team-accent">
                   Ongoing
                 </span>
               )}
             </div>
-            <p className="mt-1 text-sm text-muted">{n.body}</p>
+            <p className="mt-1 text-sm text-ink-muted">{n.body}</p>
             {n.resolutionBeat && (
-              <p className="mt-2 border-t border-border pt-2 text-sm text-foreground">
+              <p className="mt-2 border-t border-rule pt-2 text-sm text-ink">
                 {n.resolutionBeat}
               </p>
             )}

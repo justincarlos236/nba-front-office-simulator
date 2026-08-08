@@ -7,7 +7,9 @@ import { TradeBuilder } from "@/components/trades/TradeBuilder";
 import { HowDoesThisWork } from "@/components/guide/HowDoesThisWork";
 import { computeCompetitivenessPercentiles } from "@/lib/actions/competitiveness";
 import { computeTeamIdentity } from "@/lib/gm/teamIdentity";
-import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
+import { computeTeamNeeds, TEAM_NEED_LABEL } from "@/lib/gm/teamNeeds";
+import { formatCentsCompact } from "@/lib/money";
+import { DataTable, Label, Td, Th } from "@/components/ui/primitives";
 import { estimateAge } from "@/lib/players/age";
 
 export const dynamic = "force-dynamic";
@@ -136,29 +138,117 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
 
   if (!otherLeagueTeamId) {
     const otherTeams = league.teams.filter((lt) => lt.id !== myLeagueTeam.id);
+
+    // THE WIRE - Ledger. The audit found this as 29 identical cards showing
+    // only a division label: no cap space, no needs, no sense of who might
+    // want what you have. Finding a plausible partner was trial and error at
+    // two clicks per attempt. Every figure below already existed; none of it
+    // was being shown.
+    const rosters = await prisma.leaguePlayer.findMany({
+      where: {
+        leagueTeamId: { in: otherTeams.map((lt) => lt.id) },
+        isActive: true,
+      },
+      include: {
+        player: { select: { position: true } },
+        contract: { include: { years: { where: { season: league.currentSeason } } } },
+      },
+    });
+
+    const byTeam = new Map<string, typeof rosters>();
+    for (const lp of rosters) {
+      if (!lp.leagueTeamId) continue;
+      const list = byTeam.get(lp.leagueTeamId) ?? [];
+      list.push(lp);
+      byTeam.set(lp.leagueTeamId, list);
+    }
+
+    const partners = otherTeams.map((lt) => {
+      const roster = byTeam.get(lt.id) ?? [];
+      const capSheet = computeCapSheet({
+        season: league.currentSeason,
+        contracts: roster
+          .filter((lp) => lp.contract?.years[0])
+          .map((lp) => ({
+            playerId: lp.playerId,
+            salaryCents: lp.contract!.years[0].salaryCents,
+          })),
+      });
+      return {
+        id: lt.id,
+        label: `${lt.team.city} ${lt.team.name}`,
+        conference: lt.team.conference,
+        record: `${lt.wins}-${lt.losses}`,
+        capSpace: formatCentsCompact(capSheet.capSpaceCents),
+        hasSpace: capSheet.capSpaceCents > 0n,
+        rosterCount: roster.length,
+        needs: computeTeamNeeds(
+          roster.map((lp) => ({
+            position: lp.player.position,
+            overallRating: lp.overallRating,
+          })),
+        )
+          .slice(0, 2)
+          .map((n) => TEAM_NEED_LABEL[n]),
+      };
+    });
+
     return (
-      <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Propose a trade with...
-        </h1>
-        <p className="mt-2 text-muted">
-          Trade players and future draft picks with any other team in the league.
-        </p>
-        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {otherTeams.map((lt) => (
-            <Link
-              key={lt.id}
-              href={`/leagues/${league.id}/trades/new?with=${lt.id}`}
-              className="rounded-xl border border-border bg-surface p-5 transition hover:border-accent/40"
-              style={{ borderLeftColor: lt.team.primaryColor, borderLeftWidth: "4px" }}
-            >
-              <p className="text-xs text-muted">{lt.team.division}</p>
-              <h3 className="font-semibold text-foreground">
-                {lt.team.city} {lt.team.name}
-              </h3>
-            </Link>
-          ))}
+      <main className="mx-auto max-w-350 flex-1 px-6 pt-12 pb-24 sm:px-8">
+        <div className="border-b border-rule-strong pb-6">
+          <Label tone="accent">Work the phones</Label>
+          <h1 className="mt-3 text-[clamp(1.75rem,3.5vw,2.5rem)] leading-tight font-bold tracking-[-0.02em] text-ink">
+            Who are you calling?
+          </h1>
+          <p className="mt-3 max-w-[65ch] text-[15px] leading-relaxed text-ink-muted">
+            Every team&apos;s cap position and what their roster is thin at. A team with space can
+            absorb salary; a team with a need may pay above value to fill it.
+          </p>
         </div>
+
+        <DataTable className="mt-8">
+          <thead>
+            <tr>
+              <Th>Team</Th>
+              <Th>Conf</Th>
+              <Th numeric>Record</Th>
+              <Th numeric>Cap space</Th>
+              <Th numeric>Roster</Th>
+              <Th>Looking for</Th>
+              <Th>
+                <span className="sr-only">Open</span>
+              </Th>
+            </tr>
+          </thead>
+          <tbody>
+            {partners.map((p) => (
+              <tr key={p.id} className="transition-colors hover:bg-raised">
+                <Td className="font-semibold text-ink">{p.label}</Td>
+                <Td className="text-ink-muted">{p.conference === "EAST" ? "East" : "West"}</Td>
+                <Td numeric className="text-ink-muted">
+                  {p.record}
+                </Td>
+                <Td numeric className={p.hasSpace ? "text-positive" : "text-ink-muted"}>
+                  {p.capSpace}
+                </Td>
+                <Td numeric className="text-ink-muted">
+                  {p.rosterCount}
+                </Td>
+                <Td className="text-[15px] text-ink-muted">
+                  {p.needs.length > 0 ? p.needs.join(", ") : "Nothing obvious"}
+                </Td>
+                <Td numeric>
+                  <Link
+                    href={`/leagues/${league.id}/trades/new?with=${p.id}`}
+                    className="inline-flex rounded-[2px] border border-rule px-3 py-1.5 text-[11px] font-semibold tracking-[0.09em] text-ink uppercase transition-colors duration-120 hover:bg-raised"
+                  >
+                    Open
+                  </Link>
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        </DataTable>
       </main>
     );
   }
@@ -212,21 +302,21 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
     }));
 
   return (
-    <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
+    <main className="mx-auto max-w-6xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
       <Link
         href={`/leagues/${league.id}/trades/new`}
-        className="text-sm text-muted hover:text-foreground"
+        className="text-sm text-ink-muted hover:text-ink"
       >
         &larr; Choose a different team
       </Link>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground">
+      <h1 className="mt-4 text-3xl font-bold tracking-tight text-ink">
         {myLeagueTeam.team.name} &harr; {otherLeagueTeam.team.name}
       </h1>
-      <p className="mt-2 max-w-2xl text-muted">
+      <p className="mt-2 max-w-2xl text-ink-muted">
         Select players and draft picks on each side - every offer is checked live, in plain
         language, against real salary-matching, no-trade, and draft-pick rules. You&apos;ll always
         see why a trade is legal or not, never a raw rulebook.{" "}
-        <HowDoesThisWork topic="trades" className="underline hover:text-foreground" />
+        <HowDoesThisWork topic="trades" className="underline hover:text-ink" />
       </p>
 
       <div className="mt-10">

@@ -92,7 +92,7 @@ export function ProspectProfileModal({
       onClick={onClose}
     >
       <div
-        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-surface p-6 shadow-xl"
+        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-[2px] border border-rule bg-field p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-end">
@@ -100,19 +100,19 @@ export function ProspectProfileModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="text-muted transition hover:text-foreground"
+            className="text-ink-muted transition hover:text-ink"
           >
             ✕
           </button>
         </div>
         <ProspectProfile prospect={prospect} bigBoardRank={bigBoardRank} classSize={classSize} />
 
-        <div className="mt-4 border-t border-border pt-4">
+        <div className="mt-4 border-t border-rule pt-4">
           <button
             type="button"
             disabled={!check.allowed || isPending}
             onClick={handleFocusedLook}
-            className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            className="w-full rounded-[2px] bg-team-accent px-4 py-2.5 text-sm font-semibold text-team-accent-ink transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isPending
               ? "Scouting..."
@@ -120,18 +120,18 @@ export function ProspectProfileModal({
                 ? "Fully scouted"
                 : "Focused Look (1 assignment)"}
           </button>
-          <p className="mt-1.5 text-center text-xs text-muted">
+          <p className="mt-1.5 text-center text-xs text-ink-muted">
             {check.allowed
               ? `${remainingAssignments} assignment${remainingAssignments === 1 ? "" : "s"} remaining this window.`
               : check.reason}
           </p>
-          {errorMessage && <p className="mt-2 text-center text-xs text-red-400">{errorMessage}</p>}
+          {errorMessage && <p className="mt-2 text-center text-xs text-negative">{errorMessage}</p>}
         </div>
 
         {resolvableAxes.length > 0 && (
-          <div className="mt-4 border-t border-border pt-4">
-            <p className="text-xs tracking-wide text-muted uppercase">Private Workout</p>
-            <p className="mt-1 text-xs text-muted">
+          <div className="mt-4 border-t border-rule pt-4">
+            <p className="text-xs tracking-wide text-ink-muted uppercase">Private Workout</p>
+            <p className="mt-1 text-xs text-ink-muted">
               Resolve a hidden trait outright, no uncertainty - {PRIVATE_WORKOUT_COST} assignments
               per trait.
             </p>
@@ -142,17 +142,17 @@ export function ProspectProfileModal({
                   type="button"
                   disabled={!workoutCheck.allowed || isWorkoutPending}
                   onClick={() => handleWorkout(axis)}
-                  className="flex-1 rounded-lg border border-accent/40 px-3 py-2 text-xs font-semibold text-accent transition hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex-1 rounded-[2px] border border-team-accent/40 px-3 py-2 text-xs font-semibold text-team-accent transition hover:bg-team-accent/10 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {isWorkoutPending ? "Working out..." : `Resolve ${WORKOUT_AXIS_LABEL[axis]}`}
                 </button>
               ))}
             </div>
             {!workoutCheck.allowed && (
-              <p className="mt-1.5 text-center text-xs text-muted">{workoutCheck.reason}</p>
+              <p className="mt-1.5 text-center text-xs text-ink-muted">{workoutCheck.reason}</p>
             )}
             {workoutError && (
-              <p className="mt-2 text-center text-xs text-red-400">{workoutError}</p>
+              <p className="mt-2 text-center text-xs text-negative">{workoutError}</p>
             )}
           </div>
         )}

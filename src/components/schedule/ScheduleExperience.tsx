@@ -105,23 +105,23 @@ export function ScheduleExperience({
 
   return (
     <div>
-      <div className="rounded-xl border border-border bg-surface p-6">
+      <div className="rounded-[2px] border border-rule bg-field p-6">
         {weekendPending && (
-          <div className="mb-4 rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-3 text-sm">
-            <span className="text-foreground">All-Star Weekend has arrived.</span>{" "}
-            <Link href={`/leagues/${leagueId}/all-star`} className="text-accent hover:underline">
+          <div className="mb-4 rounded-[2px] border border-rule/30 bg-raised p-3 text-sm">
+            <span className="text-ink">All-Star Weekend has arrived.</span>{" "}
+            <Link href={`/leagues/${leagueId}/all-star`} className="text-team-accent hover:underline">
               View the weekend
             </Link>{" "}
-            <span className="text-muted">to continue the season.</span>
+            <span className="text-ink-muted">to continue the season.</span>
           </div>
         )}
         {!weekendPending && decisionPending && (
-          <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm">
-            <span className="text-foreground">The front office needs your call on something.</span>{" "}
-            <Link href={`/leagues/${leagueId}/finances`} className="text-accent hover:underline">
+          <div className="mb-4 rounded-[2px] border border-caution/30 bg-caution/5 p-3 text-sm">
+            <span className="text-ink">The front office needs your call on something.</span>{" "}
+            <Link href={`/leagues/${leagueId}/finances`} className="text-team-accent hover:underline">
               Open the inbox
             </Link>{" "}
-            <span className="text-muted">to continue the season.</span>
+            <span className="text-ink-muted">to continue the season.</span>
           </div>
         )}
         <div className="flex flex-wrap items-center gap-3">
@@ -129,7 +129,7 @@ export function ScheduleExperience({
             type="button"
             disabled={disabled}
             onClick={() => handleSimulate("NEXT_GAME")}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-[2px] bg-team-accent px-4 py-2 text-sm font-semibold text-team-accent-ink transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isRevealing ? "Simulating..." : "Sim next game"}
           </button>
@@ -137,16 +137,16 @@ export function ScheduleExperience({
             type="button"
             disabled={disabled}
             onClick={() => handleSimulate("NEXT_10_GAMES")}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-[2px] border border-rule px-4 py-2 text-sm font-semibold text-ink transition hover:bg-raised disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isRevealing ? "Simulating..." : "Sim next 10 games"}
           </button>
-          <span className="text-sm text-muted">{remaining} games remaining on your schedule</span>
+          <span className="text-sm text-ink-muted">{remaining} games remaining on your schedule</span>
         </div>
-        {lastResult && !isRevealing && <p className="mt-3 text-sm text-accent">{lastResult}</p>}
+        {lastResult && !isRevealing && <p className="mt-3 text-sm text-team-accent">{lastResult}</p>}
       </div>
 
-      <div className="mt-6 rounded-xl border border-border bg-surface p-5">
+      <div className="mt-6 rounded-[2px] border border-rule bg-field p-5">
         <MonthlyScheduleCalendar
           games={games}
           today={today}

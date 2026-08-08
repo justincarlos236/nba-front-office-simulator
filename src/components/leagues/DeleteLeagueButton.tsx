@@ -34,19 +34,19 @@ export function DeleteLeagueButton({
   if (confirming) {
     return (
       <div
-        className="absolute top-3 right-3 z-10 flex items-center gap-2 rounded-lg border border-red-500/40 bg-surface p-2 text-xs shadow-lg"
+        className="absolute top-3 right-3 z-10 flex items-center gap-2 rounded-[2px] border border-negative/40 bg-field p-2 text-xs"
         onClick={(e) => e.preventDefault()}
       >
         {error ? (
-          <span className="text-red-400">{error}</span>
+          <span className="text-negative">{error}</span>
         ) : (
           <>
-            <span className="text-muted">Delete {franchiseName}?</span>
+            <span className="text-ink-muted">Delete {franchiseName}?</span>
             <button
               type="button"
               disabled={isPending}
               onClick={handleDelete}
-              className="rounded bg-red-500/90 px-2 py-1 font-semibold text-white transition hover:bg-red-500 disabled:opacity-50"
+              className="rounded-[2px] bg-negative/90 px-2 py-1 font-semibold text-ground transition hover:opacity-90 disabled:opacity-50"
             >
               {isPending ? "Deleting..." : "Yes, delete"}
             </button>
@@ -54,7 +54,7 @@ export function DeleteLeagueButton({
               type="button"
               disabled={isPending}
               onClick={() => setConfirming(false)}
-              className="rounded border border-border px-2 py-1 text-foreground transition hover:bg-surface-2"
+              className="rounded-[2px] border border-rule px-2 py-1 text-ink transition hover:bg-raised"
             >
               Cancel
             </button>
@@ -72,7 +72,7 @@ export function DeleteLeagueButton({
         setConfirming(true);
       }}
       aria-label={`Delete ${franchiseName}`}
-      className="absolute top-3 right-3 z-10 rounded-lg border border-border bg-surface/80 p-1.5 text-muted opacity-0 transition group-hover:opacity-100 hover:border-red-500/40 hover:text-red-400"
+      className="absolute top-3 right-3 z-10 rounded-[2px] border border-rule bg-field/80 p-1.5 text-ink-muted opacity-0 transition group-hover:opacity-100 hover:border-negative/40 hover:text-negative"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

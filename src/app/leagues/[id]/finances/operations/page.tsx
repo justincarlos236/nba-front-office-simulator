@@ -25,12 +25,12 @@ export default async function FinancesOperationsPage({ params }: PageProps) {
 
   return (
     <div>
-      <p className="max-w-2xl text-muted">{blurb}</p>
+      <p className="max-w-2xl text-ink-muted">{blurb}</p>
 
       {/* Business strategy - ticket pricing */}
       <section className="mt-6">
-        <h2 className="text-lg font-semibold text-foreground">Business strategy</h2>
-        <p className="mt-1 text-sm text-muted">
+        <h2 className="text-lg font-semibold text-ink">Business strategy</h2>
+        <p className="mt-1 text-sm text-ink-muted">
           Your pricing lever. A real trade-off - there are no free wins here.
         </p>
         <div className="mt-4">
@@ -43,8 +43,8 @@ export default async function FinancesOperationsPage({ params }: PageProps) {
 
       {/* Front Office Departments */}
       <section className="mt-10">
-        <h2 className="text-lg font-semibold text-foreground">Front Office Departments</h2>
-        <p className="mt-1 text-sm text-muted">
+        <h2 className="text-lg font-semibold text-ink">Front Office Departments</h2>
+        <p className="mt-1 text-sm text-ink-muted">
           A zero-sum operations budget across 6 departments. Each has a distinct identity - see
           which trade-offs fit how you want to run the franchise.
         </p>
@@ -54,12 +54,12 @@ export default async function FinancesOperationsPage({ params }: PageProps) {
       </section>
 
       {/* Season tickets */}
-      <section className="mt-10 rounded-xl border border-border bg-surface p-5">
-        <p className="text-xs tracking-wide text-muted uppercase">Season-Ticket Base</p>
-        <p className="mt-2 text-2xl font-bold text-foreground tabular-nums">
+      <section className="mt-10 rounded-[2px] border border-rule bg-field p-5">
+        <p className="text-xs tracking-wide text-ink-muted uppercase">Season-Ticket Base</p>
+        <p className="mt-2 text-2xl font-bold text-ink tabular-nums">
           {myLeagueTeam.seasonTicketBase}/100
         </p>
-        <p className="mt-2 text-xs text-muted">
+        <p className="mt-2 text-xs text-ink-muted">
           A sticky demand floor under your attendance - grows slowly with winning, happy fans, and
           fair pricing; erodes quickly with a losing team or a pricing gouge.
         </p>

@@ -7,12 +7,26 @@ export interface NavSection {
   path: string;
 }
 
+export type NavGroupId = "team" | "league" | "business";
+
+export interface NavGroup {
+  id: NavGroupId;
+  label: string;
+  sections: NavSection[];
+}
+
 /**
  * Every section always exists and is always routable (the pages themselves
  * already show their own "not yet" message outside their active window, e.g.
  * the draft page outside the draft phase) - only which subset is promoted to
- * a prominent "primary" tab vs tucked in the "More" list changes with the
- * league's phase. Nothing is ever hard-hidden.
+ * a prominent "primary" tab changes with the league's phase. Nothing is ever
+ * hard-hidden; an earlier version collapsed sections behind a "More"
+ * disclosure and that broke real flows.
+ *
+ * THE WIRE: the audit found 14 targets in one wrapping row in every phase,
+ * 9-10 of them an undifferentiated muted list. Sections now belong to a
+ * drawer - Team / League / Business - so the secondary tier has structure
+ * instead of being a footer's worth of links pretending to be navigation.
  */
 const ALL_SECTIONS: Record<string, NavSection> = {
   rotation: { id: "rotation", label: "Rotation", path: "/rotation" },
@@ -26,8 +40,26 @@ const ALL_SECTIONS: Record<string, NavSection> = {
   fans: { id: "fans", label: "Fans", path: "/fans" },
   finances: { id: "finances", label: "Finances", path: "/finances" },
   leaders: { id: "leaders", label: "Leaders", path: "/leaders" },
-  news: { id: "news", label: "News", path: "/transactions" },
+  // The label said "News" while the page title said "Transactions & News" and
+  // the URL said /transactions. All three now agree.
+  transactions: { id: "transactions", label: "Transactions", path: "/transactions" },
   history: { id: "history", label: "History", path: "/history" },
+  // Was reachable from no navigation at all, despite being a hard block on
+  // season simulation - the worst orphan the audit found.
+  allStar: { id: "allStar", label: "All-Star", path: "/all-star" },
+};
+
+/** Which drawer each section belongs to. */
+const GROUP_MEMBERS: Record<NavGroupId, string[]> = {
+  team: ["rotation", "freeAgents", "draft", "staff"],
+  league: ["schedule", "standings", "playoffs", "allStar", "leaders", "transactions", "history"],
+  business: ["finances", "fans", "offseason"],
+};
+
+const GROUP_LABEL: Record<NavGroupId, string> = {
+  team: "Team",
+  league: "League",
+  business: "Business",
 };
 
 const PRIMARY_BY_PHASE: Record<LeaguePhase, string[]> = {
@@ -41,14 +73,38 @@ const PRIMARY_BY_PHASE: Record<LeaguePhase, string[]> = {
   ready: ["offseason", "freeAgents", "staff"],
 };
 
+/**
+ * The nav's one loud action, per phase.
+ *
+ * The audit found "Propose a trade" pinned to the right of every league page
+ * in every phase - during the lottery, during All-Star weekend, during a
+ * playoff series. `PRIMARY_BY_PHASE` correctly reordered everything except the
+ * element that shouts. Trading is not always the right next move, so the CTA
+ * now follows the phase like everything else.
+ */
+export const PRIMARY_ACTION_BY_PHASE: Record<LeaguePhase, { label: string; path: string }> = {
+  "regular-season": { label: "Propose a trade", path: "/trades/new" },
+  "playoffs-incomplete": { label: "Go to the playoffs", path: "/playoffs" },
+  "pre-draft": { label: "Scout the class", path: "/draft" },
+  "draft-incomplete": { label: "Go to the draft", path: "/draft" },
+  ready: { label: "Work the offseason", path: "/offseason" },
+};
+
 export function getSubNavSections(phase: LeaguePhase): {
   primary: NavSection[];
-  secondary: NavSection[];
+  groups: NavGroup[];
 } {
   const primaryIds = new Set(PRIMARY_BY_PHASE[phase]);
   const allIds = Object.keys(ALL_SECTIONS);
+
   return {
     primary: allIds.filter((id) => primaryIds.has(id)).map((id) => ALL_SECTIONS[id]),
-    secondary: allIds.filter((id) => !primaryIds.has(id)).map((id) => ALL_SECTIONS[id]),
+    groups: (Object.keys(GROUP_MEMBERS) as NavGroupId[]).map((groupId) => ({
+      id: groupId,
+      label: GROUP_LABEL[groupId],
+      sections: GROUP_MEMBERS[groupId]
+        .filter((id) => !primaryIds.has(id))
+        .map((id) => ALL_SECTIONS[id]),
+    })),
   };
 }

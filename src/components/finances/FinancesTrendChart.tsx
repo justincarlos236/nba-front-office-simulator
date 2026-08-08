@@ -13,9 +13,9 @@ import {
 // Recharts SVG props can't resolve CSS var() tokens, so theme colors are
 // duplicated as literals here - same convention as FanHappinessTrendChart.tsx.
 const COLORS = {
-  border: "#232b36",
-  muted: "#8b97a6",
-  green: "#22c55e",
+  border: "var(--rule)",
+  muted: "var(--ink-muted)",
+  green: "var(--positive)",
 };
 
 export interface FinancesTrendPoint {
@@ -49,10 +49,10 @@ function ChartTooltip({
   if (!active || !payload?.length) return null;
   const point = payload[0].payload;
   return (
-    <div className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs shadow-lg">
-      <p className="font-semibold text-foreground">{seasonLabel(point.season)}</p>
-      <p className="text-muted">Franchise value: {billions(point.franchiseValue)}</p>
-      <p className={point.netIncome < 0 ? "text-red-400" : "text-emerald-400"}>
+    <div className="rounded-[2px] border border-rule bg-raised px-3 py-2 text-xs">
+      <p className="font-semibold text-ink">{seasonLabel(point.season)}</p>
+      <p className="text-ink-muted">Franchise value: {billions(point.franchiseValue)}</p>
+      <p className={point.netIncome < 0 ? "text-negative" : "text-positive"}>
         Net income: {millionsSigned(point.netIncome)}
       </p>
     </div>
@@ -63,7 +63,7 @@ function ChartTooltip({
 export function FinancesTrendChart({ points }: { points: FinancesTrendPoint[] }) {
   if (points.length === 0) {
     return (
-      <div className="flex h-[220px] items-center justify-center rounded-xl border border-dashed border-border text-center text-sm text-muted">
+      <div className="flex h-55 items-center justify-center rounded-[2px] border border-dashed border-rule text-center text-sm text-ink-muted">
         No financial history yet - advance a season to start tracking franchise value over time.
       </div>
     );

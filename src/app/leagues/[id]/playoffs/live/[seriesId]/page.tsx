@@ -85,7 +85,7 @@ export default async function LivePlayoffGamePage({ params }: PageProps) {
   }));
 
   return (
-    <main className="mx-auto max-w-4xl flex-1 px-6 py-16">
+    <main className="mx-auto max-w-4xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
       <LiveGameExperience
         leagueId={league.id}
         seriesId={series.id}

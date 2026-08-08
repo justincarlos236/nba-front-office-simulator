@@ -57,9 +57,9 @@ export default async function StaffPage({ params }: PageProps) {
   }
 
   return (
-    <main className="mx-auto max-w-5xl flex-1 px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground">Staff</h1>
-      <p className="mt-2 max-w-2xl text-muted">
+    <main className="mx-auto max-w-5xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
+      <h1 className="text-3xl font-bold tracking-tight text-ink">Staff</h1>
+      <p className="mt-2 max-w-2xl text-ink-muted">
         Your coaching and support staff have real effects on the court, not just cosmetics - hire
         and fire carefully.
       </p>
@@ -71,23 +71,23 @@ export default async function StaffPage({ params }: PageProps) {
 
           return (
             <section key={role}>
-              <h2 className="text-xl font-semibold text-foreground">{STAFF_ROLE_LABEL[role]}</h2>
-              <p className="mt-1 text-sm text-muted">{ROLE_DESCRIPTION[role]}</p>
+              <h2 className="text-xl font-semibold text-ink">{STAFF_ROLE_LABEL[role]}</h2>
+              <p className="mt-1 text-sm text-ink-muted">{ROLE_DESCRIPTION[role]}</p>
 
               {current ? (
-                <div className="mt-4 flex items-center justify-between rounded-xl border border-border bg-surface p-5">
+                <div className="mt-4 flex items-center justify-between rounded-[2px] border border-rule bg-field p-5">
                   <div className="flex items-center gap-4">
                     <PlayerAvatar photoUrl={null} fullName={current.fullName} size="lg" />
                     <div>
-                      <p className="text-lg font-semibold text-foreground">{current.fullName}</p>
-                      <p className="mt-0.5 text-sm text-muted">
+                      <p className="text-lg font-semibold text-ink">{current.fullName}</p>
+                      <p className="mt-0.5 text-sm text-ink-muted">
                         Age {current.age} &middot;{" "}
                         {PLAYER_VALUE_TIER_LABEL[getPlayerValueTier(current.quality)]} &middot;{" "}
                         Reputation {current.reputation}
                         {current.style && ` · ${COACH_STYLE_LABEL[current.style]}`}
                       </p>
                       {current.contract && (
-                        <p className="mt-1 text-xs text-muted">
+                        <p className="mt-1 text-xs text-ink-muted">
                           {formatCentsCompact(current.contract.annualSalaryCents)}/yr through{" "}
                           {current.contract.endSeason}
                         </p>
@@ -97,15 +97,15 @@ export default async function StaffPage({ params }: PageProps) {
                   <FireStaffButton leagueId={league.id} staffId={current.id} />
                 </div>
               ) : (
-                <div className="mt-4 rounded-xl border border-dashed border-border p-5 text-center text-muted">
+                <div className="mt-4 rounded-[2px] border border-dashed border-rule p-5 text-center text-ink-muted">
                   Vacant - browse candidates below to hire.
                 </div>
               )}
 
               {candidates.length > 0 && (
-                <div className="mt-4 overflow-x-auto rounded-xl border border-border">
+                <div className="mt-4 overflow-x-auto rounded-[2px] border border-rule">
                   <table className="w-full text-left text-sm">
-                    <thead className="bg-surface-2 text-xs tracking-wide text-muted uppercase">
+                    <thead className="bg-raised text-xs tracking-wide text-ink-muted uppercase">
                       <tr>
                         <th className="px-4 py-3">Candidate</th>
                         <th className="px-4 py-3">Age</th>
@@ -117,22 +117,22 @@ export default async function StaffPage({ params }: PageProps) {
                     </thead>
                     <tbody>
                       {candidates.map((c) => (
-                        <tr key={c.id} className="border-t border-border hover:bg-surface/60">
-                          <td className="px-4 py-3 font-medium text-foreground">{c.fullName}</td>
-                          <td className="px-4 py-3 text-muted">{c.age}</td>
-                          <td className="px-4 py-3 text-xs text-muted">
+                        <tr key={c.id} className="border-t border-rule hover:bg-field/60">
+                          <td className="px-4 py-3 font-medium text-ink">{c.fullName}</td>
+                          <td className="px-4 py-3 text-ink-muted">{c.age}</td>
+                          <td className="px-4 py-3 text-xs text-ink-muted">
                             {PLAYER_VALUE_TIER_LABEL[getPlayerValueTier(c.quality)]}
                           </td>
-                          <td className="px-4 py-3 text-right text-muted">{c.reputation}</td>
+                          <td className="px-4 py-3 text-right text-ink-muted">{c.reputation}</td>
                           {role === "HEAD_COACH" && (
-                            <td className="px-4 py-3 text-muted">
+                            <td className="px-4 py-3 text-ink-muted">
                               {c.style ? COACH_STYLE_LABEL[c.style] : "-"}
                             </td>
                           )}
                           <td className="px-4 py-3 text-right">
                             <Link
                               href={`/leagues/${league.id}/staff/hire/${c.id}`}
-                              className="rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-black transition hover:opacity-90"
+                              className="rounded-[2px] bg-team-accent px-3 py-1.5 text-xs font-semibold text-team-accent-ink transition hover:opacity-90"
                             >
                               Hire
                             </Link>

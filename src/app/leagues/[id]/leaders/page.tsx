@@ -25,19 +25,19 @@ function LeaderboardCard({
   decimals?: number;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
-      <h2 className="mb-3 font-semibold text-foreground">{title}</h2>
+    <div className="rounded-[2px] border border-rule bg-field p-4">
+      <h2 className="mb-3 font-semibold text-ink">{title}</h2>
       {entries.length === 0 ? (
-        <p className="text-sm text-muted">Not enough games played yet.</p>
+        <p className="text-sm text-ink-muted">Not enough games played yet.</p>
       ) : (
         <div className="space-y-1">
           {entries.map((entry, i) => (
             <div
               key={entry.leaguePlayerId}
-              className="flex items-center justify-between rounded-lg px-2 py-2 text-sm hover:bg-surface-2"
+              className="flex items-center justify-between rounded-[2px] px-2 py-2 text-sm hover:bg-raised"
             >
               <span className="flex items-center gap-3">
-                <span className="w-4 text-xs text-muted">{i + 1}</span>
+                <span className="w-4 text-xs text-ink-muted">{i + 1}</span>
                 <PlayerChip
                   identity={{ kind: "league", leagueId, leaguePlayerId: entry.leaguePlayerId }}
                   fullName={entry.fullName}
@@ -46,10 +46,10 @@ function LeaderboardCard({
                   size="sm"
                 />
                 {entry.teamAbbreviation && (
-                  <span className="text-xs text-muted">{entry.teamAbbreviation}</span>
+                  <span className="text-xs text-ink-muted">{entry.teamAbbreviation}</span>
                 )}
               </span>
-              <span className="font-mono text-accent">
+              <span className="font-mono text-team-accent">
                 {entry.value.toFixed(decimals)}
                 {suffix}
               </span>
@@ -71,8 +71,8 @@ function AwardRaceCard({
   leagueId: string;
 }) {
   return (
-    <div className="rounded-xl border border-accent/30 bg-accent/5 p-4">
-      <h2 className="mb-3 text-xs tracking-wide text-muted uppercase">{title}</h2>
+    <div className="rounded-[2px] border border-team-accent/30 bg-team-accent/5 p-4">
+      <h2 className="mb-3 text-xs tracking-wide text-ink-muted uppercase">{title}</h2>
       {entry ? (
         <PlayerChip
           identity={{ kind: "league", leagueId, leaguePlayerId: entry.leaguePlayerId }}
@@ -82,7 +82,7 @@ function AwardRaceCard({
           size="md"
         />
       ) : (
-        <p className="text-sm text-muted">Not enough games played yet.</p>
+        <p className="text-sm text-ink-muted">Not enough games played yet.</p>
       )}
     </div>
   );
@@ -104,16 +104,16 @@ export default async function LeadersPage({ params }: PageProps) {
     entries.map((e) => ({ ...e, value: e.value * 100 }));
 
   return (
-    <main className="mx-auto max-w-4xl flex-1 px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground">
+    <main className="mx-auto max-w-4xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
+      <h1 className="text-3xl font-bold tracking-tight text-ink">
         {league.currentSeason}-{(league.currentSeason + 1).toString().slice(-2)} League Leaders
       </h1>
-      <p className="mt-2 max-w-2xl text-muted">
+      <p className="mt-2 max-w-2xl text-ink-muted">
         Live leaders from this league&apos;s own simulated games - not the real 2023-24 season.
         Updates as more games are simulated.
       </p>
 
-      <h2 className="mt-8 text-lg font-semibold text-foreground">
+      <h2 className="mt-8 text-lg font-semibold text-ink">
         Award race - if the season ended today
       </h2>
       <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

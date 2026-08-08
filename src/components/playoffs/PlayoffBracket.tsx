@@ -86,7 +86,7 @@ export function PlayoffBracket({
         <FinalsConnector />
 
         <div className="flex flex-col items-center justify-center gap-2 px-1">
-          <p className="text-[10px] font-semibold tracking-wide text-muted uppercase">NBA Finals</p>
+          <p className="text-[10px] font-semibold tracking-wide text-ink-muted uppercase">NBA Finals</p>
           {finals.length > 0 ? (
             <MatchupBox
               series={finals[0]}
@@ -162,14 +162,14 @@ function ConferenceBracket({
   return (
     <div className="flex flex-col">
       <p
-        className={`mb-2 text-[10px] font-semibold tracking-wide text-muted uppercase ${mirrored ? "text-right" : ""}`}
+        className={`mb-2 text-[10px] font-semibold tracking-wide text-ink-muted uppercase ${mirrored ? "text-right" : ""}`}
       >
         {conference === "EAST" ? "East" : "West"}
       </p>
       <div className="mb-2 flex gap-2">
         {roundIndexOrder.map((roundIndex, col) => (
           <div key={roundIndex} className="flex items-center gap-2">
-            <h3 className={`${BOX_WIDTH} text-center text-[9px] font-medium text-muted`}>
+            <h3 className={`${BOX_WIDTH} text-center text-[9px] font-medium text-ink-muted`}>
               {ROUND_LABELS[roundIndex]}
             </h3>
             {col < roundIndexOrder.length - 1 && <div className={CONNECTOR_WIDTH} />}
@@ -291,18 +291,18 @@ function TeamLine({
         <span
           className={`truncate ${
             isDecided && !isWinner
-              ? "text-muted/60"
+              ? "text-ink-muted/60"
               : isWinner
-                ? "font-semibold text-foreground"
-                : "text-muted"
-          } ${isUser ? "text-accent" : ""}`}
+                ? "font-semibold text-ink"
+                : "text-ink-muted"
+          } ${isUser ? "text-team-accent" : ""}`}
         >
           {team.abbreviation}
         </span>
       </div>
       {wins !== null && (
         <span
-          className={`shrink-0 font-mono ${isDecided && isWinner ? "font-semibold text-foreground" : "text-muted"}`}
+          className={`shrink-0 font-mono ${isDecided && isWinner ? "font-semibold text-ink" : "text-ink-muted"}`}
         >
           {wins}
         </span>
@@ -327,8 +327,8 @@ function MatchupBox({
 
   return (
     <div
-      className={`${BOX_WIDTH} rounded-md border p-1 text-[10px] ${
-        involvesUser ? "border-accent bg-accent/5" : "border-border bg-surface"
+      className={`${BOX_WIDTH} rounded-[2px] border p-1 text-[10px] ${
+        involvesUser ? "border-team-accent bg-team-accent/5" : "border-rule bg-field"
       }`}
     >
       <TeamLine
@@ -338,7 +338,7 @@ function MatchupBox({
         isDecided={decided}
         isUser={series.higherSeedTeamId === userTeamId}
       />
-      <div className="my-0.5 border-t border-border" />
+      <div className="my-0.5 border-t border-rule" />
       <TeamLine
         team={series.lowerSeedTeam.team}
         wins={series.lowerSeedWins}
@@ -348,16 +348,16 @@ function MatchupBox({
       />
       {games.length > 0 && (
         <details className="mt-0.5">
-          <summary className="cursor-pointer truncate text-[9px] text-muted hover:text-foreground">
+          <summary className="cursor-pointer truncate text-[9px] text-ink-muted hover:text-ink">
             {decided ? "Final" : "In progress"} &middot; {games.length}g
           </summary>
-          <ul className="mt-1 space-y-0.5 border-t border-border pt-1">
+          <ul className="mt-1 space-y-0.5 border-t border-rule pt-1">
             {games.map((g, i) => {
               const higherHome = g.homeLeagueTeamId === series.higherSeedTeamId;
               const higherScore = higherHome ? g.homeScore : g.awayScore;
               const lowerScore = higherHome ? g.awayScore : g.homeScore;
               return (
-                <li key={g.id} className="flex items-center justify-between text-[9px] text-muted">
+                <li key={g.id} className="flex items-center justify-between text-[9px] text-ink-muted">
                   <span>G{i + 1}</span>
                   <span className="font-mono">
                     {higherScore}-{lowerScore}
@@ -370,7 +370,7 @@ function MatchupBox({
         </details>
       )}
       {!decided && games.length === 0 && (
-        <p className="mt-0.5 text-[9px] text-muted">Not started</p>
+        <p className="mt-0.5 text-[9px] text-ink-muted">Not started</p>
       )}
     </div>
   );
@@ -378,10 +378,10 @@ function MatchupBox({
 
 function TbdBox() {
   return (
-    <div className={`${BOX_WIDTH} rounded-md border border-dashed border-border p-1 text-[10px]`}>
-      <p className="px-1 py-0.5 text-muted">TBD</p>
-      <div className="my-0.5 border-t border-border" />
-      <p className="px-1 py-0.5 text-muted">TBD</p>
+    <div className={`${BOX_WIDTH} rounded-[2px] border border-dashed border-rule p-1 text-[10px]`}>
+      <p className="px-1 py-0.5 text-ink-muted">TBD</p>
+      <div className="my-0.5 border-t border-rule" />
+      <p className="px-1 py-0.5 text-ink-muted">TBD</p>
     </div>
   );
 }

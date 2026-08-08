@@ -57,9 +57,9 @@ export default async function RotationPage({ params }: PageProps) {
   }));
 
   return (
-    <main className="mx-auto max-w-4xl flex-1 px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground">Rotation</h1>
-      <p className="mt-2 max-w-2xl text-muted">
+    <main className="mx-auto max-w-4xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
+      <h1 className="text-3xl font-bold tracking-tight text-ink">Rotation</h1>
+      <p className="mt-2 max-w-2xl text-ink-muted">
         Set your starting five, bench order, and expected minutes - the simulation guides actual
         playing time toward these targets, with natural game-to-game variance from matchups,
         blowouts, and your coaching staff. Drag to reorder; a player left out of the rotation

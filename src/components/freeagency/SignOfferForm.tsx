@@ -8,11 +8,14 @@ import { formatCentsCompact } from "@/lib/money";
 import { signFreeAgentAction } from "@/lib/actions/freeagency";
 import { validateSigning } from "@/lib/freeagency/validateSigning";
 import { describeSigningFeasibility } from "@/lib/freeagency/describeSigningFeasibility";
+import { ErrorNotice } from "@/components/ui/ErrorNotice";
+import { ConfirmAction } from "@/components/ui/ConfirmAction";
 
 export function SignOfferForm({
   season,
   leagueId,
   leaguePlayerId,
+  playerName,
   suggestedSalaryCents,
   team,
   reSigningRights,
@@ -20,6 +23,9 @@ export function SignOfferForm({
   season: number;
   leagueId: string;
   leaguePlayerId: string;
+  /** Named in the confirmation step, so the commitment reads as a decision
+   *  about a person rather than an anonymous form submit. */
+  playerName: string;
   suggestedSalaryCents: string;
   team: { apronLevel: string; capSpaceCents: string; signingExceptionUsedCents: string };
   reSigningRights: { held: boolean; maxOfferCents: string };
@@ -88,25 +94,25 @@ export function SignOfferForm({
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6">
+    <div className="rounded-[2px] border border-rule bg-field p-6">
       <label className="block">
-        <span className="text-sm text-muted">First-year salary</span>
+        <span className="text-sm text-ink-muted">First-year salary</span>
         <input
           type="number"
           min={0}
           step={100000}
           value={salaryDollars}
           onChange={(e) => setSalaryDollars(Number(e.target.value))}
-          className="mt-1 w-full rounded-lg border border-border bg-surface-2 px-3 py-2 font-mono text-foreground outline-none focus:border-accent"
+          className="mt-1 w-full rounded-[2px] border border-rule bg-raised px-3 py-2 font-mono text-ink outline-none focus:border-rule-strong"
         />
       </label>
 
       <label className="mt-4 block">
-        <span className="text-sm text-muted">Contract length</span>
+        <span className="text-sm text-ink-muted">Contract length</span>
         <select
           value={years}
           onChange={(e) => setYears(Number(e.target.value))}
-          className="mt-1 w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-foreground outline-none focus:border-accent"
+          className="mt-1 w-full rounded-[2px] border border-rule bg-raised px-3 py-2 text-ink outline-none focus:border-rule-strong"
         >
           {[1, 2, 3, 4].map((y) => (
             <option key={y} value={y}>
@@ -117,45 +123,56 @@ export function SignOfferForm({
       </label>
 
       {(mleType === "NON_TAXPAYER" || mleType === "TAXPAYER") && (
-        <div className="mt-4 rounded-lg border border-border bg-surface-2 p-3 text-xs">
-          <p className="tracking-wide text-muted uppercase">Signing Exception</p>
-          <div className="mt-1.5 flex justify-between text-foreground">
+        <div className="mt-4 rounded-[2px] border border-rule bg-raised p-3 text-xs">
+          <p className="tracking-wide text-ink-muted uppercase">Signing Exception</p>
+          <div className="mt-1.5 flex justify-between text-ink">
             <span>Total available</span>
             <span className="font-mono">{formatCentsCompact(exceptionTotalCents)}</span>
           </div>
-          <div className="mt-1 flex justify-between text-muted">
+          <div className="mt-1 flex justify-between text-ink-muted">
             <span>Already used this season</span>
             <span className="font-mono">{formatCentsCompact(signingExceptionUsedCents)}</span>
           </div>
-          <div className="mt-1 flex justify-between font-semibold text-accent">
+          <div className="mt-1 flex justify-between font-semibold text-team-accent">
             <span>Remaining</span>
             <span className="font-mono">{formatCentsCompact(exceptionRemainingCents)}</span>
           </div>
         </div>
       )}
 
-      <div className="mt-6 border-t border-border pt-4">
+      <div className="mt-6 border-t border-rule pt-4">
         <p
-          className={`text-sm font-medium ${feasibility.isValid ? "text-accent" : "text-red-400"}`}
+          className={`text-sm font-medium ${feasibility.isValid ? "text-team-accent" : "text-negative"}`}
         >
           {feasibility.headline}
         </p>
         <HowDoesThisWork
           topic={reSigningRights.held ? "re-signing-rights" : "signing-exception"}
           openInNewTab
-          className="mt-1 inline-block text-xs text-muted underline hover:text-foreground"
+          className="mt-1 inline-block text-xs text-ink-muted underline hover:text-ink"
         />
 
-        {submitError && <p className="mt-3 text-sm text-red-400">{submitError}</p>}
+        {submitError && (
+          <div className="mt-3">
+            <ErrorNotice error={submitError} />
+          </div>
+        )}
 
-        <button
-          type="button"
-          disabled={!result.isValid || isPending}
-          onClick={handleSubmit}
-          className="mt-4 rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {isPending ? "Signing..." : "Sign player"}
-        </button>
+        {/* Was a hand-rolled two-step from the P0 safety pass; now the shared
+            primitive, so the fifth irreversible action cannot be written
+            differently from the first four. */}
+        <div className="mt-4">
+          <ConfirmAction
+            label="Sign player"
+            confirmLabel="Confirm signing"
+            pendingLabel="Signing..."
+            pending={isPending}
+            disabled={!result.isValid}
+            question={`Sign ${playerName} for ${years} ${years === 1 ? "year" : "years"} at ${formatCentsCompact(offerSalaryCents)} per season?`}
+            consequence={`That commits ${formatCentsCompact(offerSalaryCents * BigInt(years))} in total salary against your cap through ${season + years - 1}. Contracts cannot be undone.`}
+            onConfirm={handleSubmit}
+          />
+        </div>
       </div>
     </div>
   );

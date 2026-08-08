@@ -40,15 +40,15 @@ export function DraftOrderRail({
             <div
               key={pick.id}
               ref={isCurrent ? currentRef : undefined}
-              className={`flex w-28 shrink-0 flex-col items-center gap-1 rounded-lg border p-2 text-center transition ${
+              className={`flex w-28 shrink-0 flex-col items-center gap-1 rounded-[2px] border p-2 text-center transition ${
                 isCurrent
-                  ? "border-accent bg-accent/10"
+                  ? "border-team-accent bg-team-accent/10"
                   : isUserPick
-                    ? "border-accent/50 bg-accent/5"
-                    : "border-border bg-surface"
+                    ? "border-team-accent/50 bg-team-accent/5"
+                    : "border-rule bg-field"
               } ${isDecided && !isCurrent ? "opacity-70" : ""}`}
             >
-              <span className="font-mono text-[10px] text-muted">
+              <span className="font-mono text-[10px] text-ink-muted">
                 {ROUND_LABEL[pick.round]} &middot; #{pick.overallPickNumber}
               </span>
               <TeamBadge
@@ -56,11 +56,11 @@ export function DraftOrderRail({
                 size="sm"
                 faded={isDecided && !isCurrent}
               />
-              <span className="w-full truncate text-[11px] text-foreground">
+              <span className="w-full truncate text-[11px] text-ink">
                 {team ? team.name : "Unknown"}
               </span>
               {prospect && (
-                <span className="w-full truncate text-[10px] text-accent-2">
+                <span className="w-full truncate text-[10px] text-caution">
                   {prospect.fullName}
                 </span>
               )}

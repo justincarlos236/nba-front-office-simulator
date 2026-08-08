@@ -57,28 +57,28 @@ export function ProspectProfile({
       <div className="flex items-center gap-4">
         <PlayerAvatar photoUrl={null} fullName={prospect.fullName} size="lg" />
         <div>
-          <p className="text-xl font-bold text-foreground">{prospect.fullName}</p>
-          <p className="text-sm text-muted">
+          <p className="text-xl font-bold text-ink">{prospect.fullName}</p>
+          <p className="text-sm text-ink-muted">
             {prospect.position} &middot; Age {prospect.age} &middot; Rating {prospect.overallRating}{" "}
             &middot; Potential {prospect.potentialRating}
           </p>
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-border pt-4 text-sm text-muted sm:grid-cols-3">
+      <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-rule pt-4 text-sm text-ink-muted sm:grid-cols-3">
         {height && (
           <p>
-            <span className="text-foreground">Height:</span> {height}
+            <span className="text-ink">Height:</span> {height}
           </p>
         )}
         {prospect.weightLbs != null && (
           <p>
-            <span className="text-foreground">Weight:</span> {prospect.weightLbs} lbs
+            <span className="text-ink">Weight:</span> {prospect.weightLbs} lbs
           </p>
         )}
         {prospect.collegeOrTeam && (
           <p>
-            <span className="text-foreground">
+            <span className="text-ink">
               {prospect.isInternational ? "Club:" : "Program:"}
             </span>{" "}
             {prospect.collegeOrTeam}
@@ -86,89 +86,89 @@ export function ProspectProfile({
         )}
         {prospect.nationality && (
           <p>
-            <span className="text-foreground">Nationality:</span> {prospect.nationality}
+            <span className="text-ink">Nationality:</span> {prospect.nationality}
           </p>
         )}
         {prospect.pathway && (
           <p title={PROSPECT_PATHWAY_DESCRIPTION[prospect.pathway]}>
-            <span className="text-foreground">Pathway:</span>{" "}
+            <span className="text-ink">Pathway:</span>{" "}
             {PROSPECT_PATHWAY_LABEL[prospect.pathway]}
           </p>
         )}
         {bigBoardRank != null && (
           <p>
-            <span className="text-foreground">Big Board rank:</span> #{bigBoardRank} of {classSize}
+            <span className="text-ink">Big Board rank:</span> #{bigBoardRank} of {classSize}
           </p>
         )}
         <p>
-          <span className="text-foreground">Scouting confidence:</span>{" "}
+          <span className="text-ink">Scouting confidence:</span>{" "}
           {SCOUTING_CONFIDENCE_LABEL[confidence]}
         </p>
         <p>
-          <span className="text-foreground">Scouting Depth:</span>{" "}
+          <span className="text-ink">Scouting Depth:</span>{" "}
           {SCOUTING_DEPTH_LABEL[prospect.scoutingDepth] ?? "Unknown"}
         </p>
       </div>
 
       {prospect.comparisonPlayerName && (
-        <p className="mt-3 text-sm text-accent-2">
+        <p className="mt-3 text-sm text-caution">
           Scouts compare his game to{" "}
           <span className="font-medium">{prospect.comparisonPlayerName}</span>
         </p>
       )}
 
-      <div className="mt-4 border-t border-border pt-4">
+      <div className="mt-4 border-t border-rule pt-4">
         <div className="flex items-baseline justify-between">
-          <p className="text-xs tracking-wide text-muted uppercase">Scouting Report</p>
-          <span className="text-xs text-muted">
+          <p className="text-xs tracking-wide text-ink-muted uppercase">Scouting Report</p>
+          <span className="text-xs text-ink-muted">
             {SCOUTING_REPORT_CONFIDENCE_LABEL[scoutingReport.confidence]}
           </span>
         </div>
         <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm sm:grid-cols-3">
           <p>
-            <span className="text-muted">Ceiling:</span>{" "}
-            <span className="text-foreground">{scoutingReport.ceilingRangeLabel}</span>
+            <span className="text-ink-muted">Ceiling:</span>{" "}
+            <span className="text-ink">{scoutingReport.ceilingRangeLabel}</span>
           </p>
           <p>
-            <span className="text-muted">Bust risk:</span>{" "}
-            <span className="text-foreground">{BUST_RISK_LABEL[scoutingReport.bustRisk]}</span>
+            <span className="text-ink-muted">Bust risk:</span>{" "}
+            <span className="text-ink">{BUST_RISK_LABEL[scoutingReport.bustRisk]}</span>
           </p>
           <p>
-            <span className="text-muted">Trajectory:</span>{" "}
-            <span className="text-foreground">{TRAJECTORY_LABEL[scoutingReport.trajectory]}</span>
+            <span className="text-ink-muted">Trajectory:</span>{" "}
+            <span className="text-ink">{TRAJECTORY_LABEL[scoutingReport.trajectory]}</span>
           </p>
           <p>
-            <span className="text-muted">Work ethic:</span>{" "}
-            <span className="text-foreground">{WORK_ETHIC_LABEL[scoutingReport.workEthic]}</span>
+            <span className="text-ink-muted">Work ethic:</span>{" "}
+            <span className="text-ink">{WORK_ETHIC_LABEL[scoutingReport.workEthic]}</span>
           </p>
           <p>
-            <span className="text-muted">Readiness:</span>{" "}
-            <span className="text-foreground">{READINESS_LABEL[scoutingReport.readiness]}</span>
+            <span className="text-ink-muted">Readiness:</span>{" "}
+            <span className="text-ink">{READINESS_LABEL[scoutingReport.readiness]}</span>
           </p>
           <p>
-            <span className="text-muted">Injury outlook:</span>{" "}
-            <span className="text-foreground">
+            <span className="text-ink-muted">Injury outlook:</span>{" "}
+            <span className="text-ink">
               {INJURY_OUTLOOK_LABEL[scoutingReport.injuryOutlook]}
             </span>
           </p>
         </div>
       </div>
 
-      <div className="mt-4 space-y-1.5 border-t border-border pt-4">
+      <div className="mt-4 space-y-1.5 border-t border-rule pt-4">
         {attributes.map(([label, value]) => (
           <div key={label} className="flex items-center gap-2 text-xs">
-            <span className="w-24 shrink-0 text-muted">{label}</span>
-            <div className="h-1.5 flex-1 rounded-full bg-surface-2">
-              <div className="h-1.5 rounded-full bg-accent" style={{ width: `${value}%` }} />
+            <span className="w-24 shrink-0 text-ink-muted">{label}</span>
+            <div className="h-1.5 flex-1 rounded-full bg-raised">
+              <div className="h-1.5 rounded-full bg-team-accent" style={{ width: `${value}%` }} />
             </div>
-            <span className="w-6 shrink-0 text-right font-mono text-muted">{value}</span>
+            <span className="w-6 shrink-0 text-right font-mono text-ink-muted">{value}</span>
           </div>
         ))}
       </div>
-      <p className="mt-3 text-xs text-muted">
-        <span className="text-foreground">Strengths:</span> {profile.strengths.join(", ")}
+      <p className="mt-3 text-xs text-ink-muted">
+        <span className="text-ink">Strengths:</span> {profile.strengths.join(", ")}
         <br />
-        <span className="text-foreground">Weaknesses:</span> {profile.weaknesses.join(", ")}
+        <span className="text-ink">Weaknesses:</span> {profile.weaknesses.join(", ")}
       </p>
     </div>
   );

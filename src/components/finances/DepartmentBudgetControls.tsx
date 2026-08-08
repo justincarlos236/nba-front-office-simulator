@@ -43,10 +43,10 @@ function DepartmentRow({
 }) {
   const index = departmentLevelIndex(level);
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
+    <div className="rounded-[2px] border border-rule bg-field p-4">
       <div className="flex items-baseline justify-between">
-        <p className="text-sm font-semibold text-foreground">{DEPARTMENT_LABEL[deptKey]}</p>
-        <p className="text-xs text-muted tabular-nums">
+        <p className="text-sm font-semibold text-ink">{DEPARTMENT_LABEL[deptKey]}</p>
+        <p className="text-xs text-ink-muted tabular-nums">
           {formatFinanceCents(departmentAnnualCostCents(level))}/yr
         </p>
       </div>
@@ -55,7 +55,7 @@ function DepartmentRow({
           type="button"
           disabled={disabled(-1)}
           onClick={() => onChange(departmentLevelFromIndex(index - 1))}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border text-foreground transition hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-30"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[2px] border border-rule text-ink transition hover:bg-raised disabled:cursor-not-allowed disabled:opacity-30"
           aria-label={`Decrease ${DEPARTMENT_LABEL[deptKey]}`}
         >
           &minus;
@@ -65,7 +65,7 @@ function DepartmentRow({
             (_, i) => (
               <div
                 key={i}
-                className={`h-1.5 flex-1 rounded-full ${i <= index ? "bg-accent" : "bg-surface-2"}`}
+                className={`h-1.5 flex-1 rounded-full ${i <= index ? "bg-team-accent" : "bg-raised"}`}
               />
             ),
           )}
@@ -74,16 +74,16 @@ function DepartmentRow({
           type="button"
           disabled={disabled(1)}
           onClick={() => onChange(departmentLevelFromIndex(index + 1))}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border text-foreground transition hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-30"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[2px] border border-rule text-ink transition hover:bg-raised disabled:cursor-not-allowed disabled:opacity-30"
           aria-label={`Increase ${DEPARTMENT_LABEL[deptKey]}`}
         >
           +
         </button>
-        <span className="w-16 shrink-0 text-right text-xs font-medium text-foreground">
+        <span className="w-16 shrink-0 text-right text-xs font-medium text-ink">
           {LEVEL_SHORT_LABEL[level]}
         </span>
       </div>
-      <p className="mt-2 text-xs text-muted">{DEPARTMENT_IDENTITY[deptKey]}</p>
+      <p className="mt-2 text-xs text-ink-muted">{DEPARTMENT_IDENTITY[deptKey]}</p>
     </div>
   );
 }
@@ -121,19 +121,19 @@ export function DepartmentBudgetControls({
 
   return (
     <div>
-      <div className="flex items-baseline justify-between rounded-xl border border-border bg-surface p-4">
-        <p className="text-sm font-semibold text-foreground">
+      <div className="flex items-baseline justify-between rounded-[2px] border border-rule bg-field p-4">
+        <p className="text-sm font-semibold text-ink">
           {remaining === 0
             ? "Fully allocated"
             : remaining > 0
               ? `${remaining} point${remaining === 1 ? "" : "s"} unallocated`
               : `${Math.abs(remaining)} point${Math.abs(remaining) === 1 ? "" : "s"} over budget`}
         </p>
-        <p className="text-sm font-medium text-muted tabular-nums">
+        <p className="text-sm font-medium text-ink-muted tabular-nums">
           {formatFinanceCents(totalDepartmentBudgetCostCents(budget))}/yr total
         </p>
       </div>
-      <p className="mt-2 text-xs text-muted">
+      <p className="mt-2 text-xs text-ink-muted">
         Every point you give one department has to come from another - there&apos;s no such thing as
         funding everything at once.
       </p>
@@ -165,15 +165,15 @@ export function DepartmentBudgetControls({
           type="button"
           onClick={save}
           disabled={!dirty || !valid || isPending}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-[2px] bg-team-accent px-4 py-2 text-sm font-semibold text-team-accent-ink transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isPending ? "Saving..." : "Save department budget"}
         </button>
-        {saved && !dirty && <span className="text-sm text-emerald-400">Saved.</span>}
+        {saved && !dirty && <span className="text-sm text-positive">Saved.</span>}
         {dirty && !valid && (
-          <span className="text-sm text-amber-400">Fully allocate the budget before saving.</span>
+          <span className="text-sm text-caution">Fully allocate the budget before saving.</span>
         )}
-        <span className="text-xs text-muted">
+        <span className="text-xs text-ink-muted">
           Takes effect next season - a real budget decision, not an instant fix.
         </span>
       </div>

@@ -11,13 +11,13 @@ export function AuthField({
 }) {
   return (
     <label className="block">
-      <span className="text-sm text-muted">{label}</span>
+      <span className="text-sm text-ink-muted">{label}</span>
       <input
         name={name}
         type={type}
         required
         autoComplete={autoComplete}
-        className="mt-1 w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-foreground outline-none focus:border-accent"
+        className="mt-1 w-full rounded-[2px] border border-rule bg-raised px-3 py-2 text-ink outline-none focus:border-team-accent"
       />
     </label>
   );

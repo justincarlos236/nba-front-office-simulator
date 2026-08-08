@@ -26,6 +26,7 @@ import type {
 import { teamLabel } from "./types";
 import { computeBigBoard } from "@/lib/draft/bigBoard";
 import { classCharacterModifiers } from "@/lib/draft/classCharacter";
+import { ErrorNotice } from "@/components/ui/ErrorNotice";
 
 const MAX_NIGHT_EVENTS = 20;
 
@@ -70,6 +71,16 @@ export function DraftExperience({
   const [pendingReveal, setPendingReveal] = useState<PendingReveal | null>(null);
   const [sideTab, setSideTab] = useState<"myBoard" | "prospects" | "teamNeeds">("myBoard");
   const [profileModalProspectId, setProfileModalProspectId] = useState<string | null>(null);
+  /**
+   * A draft pick is permanent and the board is a dense list of similar-looking
+   * rows, so a mis-click costs a first-rounder with no undo. The pick is
+   * confirmed by name before it lands - the one place in the draft where a
+   * second of friction is worth more than the speed it costs.
+   */
+  const [pendingDraftPick, setPendingDraftPick] = useState<{
+    id: string;
+    fullName: string;
+  } | null>(null);
   const [compareSelectedIds, setCompareSelectedIds] = useState<Set<string>>(new Set());
   const [compareModalOpen, setCompareModalOpen] = useState(false);
 
@@ -206,7 +217,15 @@ export function DraftExperience({
     }
   }
 
-  async function handleDraft(prospectId: string) {
+  function handleDraft(prospectId: string, fullName: string) {
+    setErrorMessage(null);
+    setPendingDraftPick({ id: prospectId, fullName });
+  }
+
+  async function confirmDraftPick() {
+    if (!pendingDraftPick) return;
+    const prospectId = pendingDraftPick.id;
+    setPendingDraftPick(null);
     setErrorMessage(null);
     setIsBusy(true);
     try {
@@ -245,6 +264,38 @@ export function DraftExperience({
         />
       )}
 
+      {pendingDraftPick && (
+        <div className="rounded-[2px] border border-team-accent bg-team-accent/10 p-5">
+          <p className="text-sm font-semibold text-ink">
+            Draft {pendingDraftPick.fullName} with the {nextPick?.overallPickNumber
+              ? `No. ${nextPick.overallPickNumber} pick`
+              : "next pick"}
+            ?
+          </p>
+          <p className="mt-1 text-sm text-ink-muted">
+            This is your selection. Once the card is in, it cannot be taken back.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              disabled={isBusy}
+              onClick={confirmDraftPick}
+              className="rounded-[2px] bg-team-accent px-4 py-2 text-sm font-semibold text-team-accent-ink transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {isBusy ? "Making the pick..." : "Make the pick"}
+            </button>
+            <button
+              type="button"
+              disabled={isBusy}
+              onClick={() => setPendingDraftPick(null)}
+              className="rounded-[2px] border border-rule px-4 py-2 text-sm font-semibold text-ink transition hover:bg-raised disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Keep looking
+            </button>
+          </div>
+        </div>
+      )}
+
       <DraftOrderRail
         picks={picks}
         prospectsById={prospectsById}
@@ -259,7 +310,7 @@ export function DraftExperience({
             type="button"
             disabled={isBusy}
             onClick={handleAdvance}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-[2px] bg-team-accent px-4 py-2 text-sm font-semibold text-team-accent-ink transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isBusy ? "Simulating..." : "Simulate to your next pick"}
           </button>
@@ -267,17 +318,17 @@ export function DraftExperience({
       )}
 
       {(message || errorMessage || nightEvents.length > 0) && (
-        <div className="rounded-xl border border-border bg-surface p-4">
-          {message && <p className="text-sm text-accent">{message}</p>}
-          {errorMessage && <p className="text-sm text-red-400">{errorMessage}</p>}
+        <div className="rounded-[2px] border border-rule bg-field p-4">
+          {message && <p className="text-sm text-team-accent">{message}</p>}
+          {errorMessage && <ErrorNotice error={errorMessage} />}
           {nightEvents.length > 0 && (
-            <div className={message || errorMessage ? "mt-3 border-t border-border pt-3" : ""}>
-              <p className="text-xs font-semibold tracking-wide text-muted uppercase">
+            <div className={message || errorMessage ? "mt-3 border-t border-rule pt-3" : ""}>
+              <p className="text-xs font-semibold tracking-wide text-ink-muted uppercase">
                 Draft Night
               </p>
               <div className="mt-2 space-y-1">
                 {nightEvents.map((event, i) => (
-                  <p key={i} className="text-xs text-foreground">
+                  <p key={i} className="text-xs text-ink">
                     {event}
                   </p>
                 ))}
@@ -295,13 +346,13 @@ export function DraftExperience({
           userTeamId={userTeamId}
         />
 
-        <div className="rounded-xl border border-border bg-surface p-6">
+        <div className="rounded-[2px] border border-rule bg-field p-6">
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setSideTab("myBoard")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                sideTab === "myBoard" ? "bg-accent text-black" : "text-muted hover:text-foreground"
+              className={`rounded-[2px] px-3 py-1.5 text-xs font-semibold transition ${
+                sideTab === "myBoard" ? "bg-team-accent text-team-accent-ink" : "text-ink-muted hover:text-ink"
               }`}
             >
               My Board
@@ -309,10 +360,10 @@ export function DraftExperience({
             <button
               type="button"
               onClick={() => setSideTab("prospects")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+              className={`rounded-[2px] px-3 py-1.5 text-xs font-semibold transition ${
                 sideTab === "prospects"
-                  ? "bg-accent text-black"
-                  : "text-muted hover:text-foreground"
+                  ? "bg-team-accent text-team-accent-ink"
+                  : "text-ink-muted hover:text-ink"
               }`}
             >
               Prospects
@@ -320,10 +371,10 @@ export function DraftExperience({
             <button
               type="button"
               onClick={() => setSideTab("teamNeeds")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+              className={`rounded-[2px] px-3 py-1.5 text-xs font-semibold transition ${
                 sideTab === "teamNeeds"
-                  ? "bg-accent text-black"
-                  : "text-muted hover:text-foreground"
+                  ? "bg-team-accent text-team-accent-ink"
+                  : "text-ink-muted hover:text-ink"
               }`}
             >
               Team Needs

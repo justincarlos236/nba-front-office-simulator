@@ -3,7 +3,9 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { computeLeaguePhase } from "@/lib/league/leaguePhase";
-import { getSubNavSections } from "@/lib/league/subNavSections";
+import { teamAccentStyle } from "@/lib/design/teamAccent";
+import { getSubNavSections, PRIMARY_ACTION_BY_PHASE } from "@/lib/league/subNavSections";
+import { getLeagueAttention } from "@/lib/league/attention";
 import { LeagueSubNav } from "@/components/layout/LeagueSubNav";
 import { CareerEndRecap } from "@/components/career/CareerEndRecap";
 import { computeCareerTitle } from "@/lib/gm/careerRecord";
@@ -64,28 +66,45 @@ export default async function LeagueLayout({
 
   const userTeam = league.teams.find((lt) => lt.id === league.userControlledTeamId);
   const phase = await computeLeaguePhase(league.id, league.currentSeason);
-  const { primary, secondary } = getSubNavSections(phase);
+  const { primary, groups } = getSubNavSections(phase);
+  // One source for "what needs you", so the nav can carry counts instead of
+  // the product having a single badge hidden inside the section it describes.
+  const attention = await getLeagueAttention(
+    league.id,
+    league.currentSeason,
+    league.userControlledTeamId,
+    phase,
+  );
 
   return (
-    <div className="flex-1">
-      <div className="border-b border-border bg-surface/40">
-        <div className="mx-auto max-w-6xl px-6 pt-4">
+    // THE WIRE - the franchise colours the interface. Resolved through the
+    // contrast cascade (16 of 30 real team primaries fail on this ground), set
+    // once here so every descendant inherits `--team-accent`.
+    <div className="flex-1" style={teamAccentStyle(userTeam?.team.primaryColor, userTeam?.team.secondaryColor)}>
+      <div className="border-b border-rule bg-field/40">
+        <div className="mx-auto max-w-6xl px-4 pt-4 sm:px-6">
           <Link
             href={`/leagues/${league.id}`}
             prefetch={false}
-            className="group flex items-center gap-2 text-sm text-muted transition hover:text-foreground"
+            className="group flex items-center gap-2 text-sm text-ink-muted transition hover:text-ink"
           >
             {userTeam?.team.logoUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={userTeam.team.logoUrl} alt="" className="h-6 w-6 object-contain" />
             )}
-            <span className="font-medium text-foreground">
+            <span className="font-medium text-ink">
               {userTeam ? `${userTeam.team.city} ${userTeam.team.name}` : league.name}
             </span>
           </Link>
 
           <div className="mt-3">
-            <LeagueSubNav leagueId={league.id} primary={primary} secondary={secondary} />
+            <LeagueSubNav
+              leagueId={league.id}
+              primary={primary}
+              groups={groups}
+              primaryAction={PRIMARY_ACTION_BY_PHASE[phase]}
+              attention={attention.counts}
+            />
           </div>
         </div>
       </div>

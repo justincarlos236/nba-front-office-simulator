@@ -27,7 +27,7 @@ export function HowDoesThisWork({
     <Link
       href={href}
       target={openInNewTab ? "_blank" : undefined}
-      className={className ?? "inline-block text-xs text-muted underline hover:text-foreground"}
+      className={className ?? "inline-block text-xs text-ink-muted underline hover:text-ink"}
     >
       {children ?? "How does this work?"}
     </Link>

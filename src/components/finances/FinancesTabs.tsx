@@ -20,7 +20,7 @@ export function FinancesTabs({
   const base = `/leagues/${leagueId}/finances`;
 
   return (
-    <nav className="flex flex-wrap items-center gap-1 border-b border-border">
+    <nav className="flex flex-wrap items-center gap-1 border-b border-rule">
       {FINANCES_TABS.map((tab) => {
         const href = `${base}${tab.path}`;
         // The index route must match exactly, or it would light up on every
@@ -36,13 +36,13 @@ export function FinancesTabs({
             aria-current={active ? "page" : undefined}
             className={`-mb-px flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
               active
-                ? "border-accent text-accent"
-                : "border-transparent text-muted hover:text-foreground"
+                ? "border-team-accent text-team-accent"
+                : "border-transparent text-ink-muted hover:text-ink"
             }`}
           >
             {tab.label}
             {showBadge && (
-              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500/15 px-1.5 text-xs font-bold text-red-400 tabular-nums">
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-negative/15 px-1.5 text-xs font-bold text-negative tabular-nums">
                 {pendingDecisionCount}
               </span>
             )}

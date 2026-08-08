@@ -32,18 +32,18 @@ function TraitCard({
   facts: string[];
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-5">
+    <div className="rounded-[2px] border border-rule bg-field p-5">
       <div className="flex items-baseline justify-between">
-        <p className="text-xs tracking-wide text-muted uppercase">{title}</p>
-        <p className="text-sm font-semibold tabular-nums text-foreground">{value}/100</p>
+        <p className="text-xs tracking-wide text-ink-muted uppercase">{title}</p>
+        <p className="text-sm font-semibold tabular-nums text-ink">{value}/100</p>
       </div>
-      <p className="mt-1 text-lg font-semibold text-foreground">{tierLabel}</p>
-      <p className="mt-1 text-xs text-muted">{tierDescription}</p>
+      <p className="mt-1 text-lg font-semibold text-ink">{tierLabel}</p>
+      <p className="mt-1 text-xs text-ink-muted">{tierDescription}</p>
       {facts.length > 0 && (
-        <ul className="mt-3 space-y-1 border-t border-border pt-3">
+        <ul className="mt-3 space-y-1 border-t border-rule pt-3">
           {facts.map((fact, i) => (
-            <li key={i} className="flex gap-2 text-xs text-muted">
-              <span className="text-foreground">-</span>
+            <li key={i} className="flex gap-2 text-xs text-ink-muted">
+              <span className="text-ink">-</span>
               <span>{fact}</span>
             </li>
           ))}
@@ -70,8 +70,8 @@ export function FanCultureSection({
 
   return (
     <section className="mt-10">
-      <h2 className="text-lg font-semibold text-foreground">Who This City Has Become</h2>
-      <p className="mt-1 text-sm text-muted">
+      <h2 className="text-lg font-semibold text-ink">Who This City Has Become</h2>
+      <p className="mt-1 text-sm text-ink-muted">
         Mood swings week to week. This is the fanbase&apos;s identity - built over years, and it
         changes how the same decision lands.
       </p>

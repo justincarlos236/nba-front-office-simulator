@@ -44,9 +44,9 @@ function Segmented<T extends string>({
 }) {
   const active = options.find((o) => o.value === value) ?? options[0];
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
-      <p className="text-xs tracking-wide text-muted uppercase">{title}</p>
-      <div className="mt-2 flex overflow-hidden rounded-lg border border-border">
+    <div className="rounded-[2px] border border-rule bg-field p-4">
+      <p className="text-xs tracking-wide text-ink-muted uppercase">{title}</p>
+      <div className="mt-2 flex overflow-hidden rounded-[2px] border border-rule">
         {options.map((o) => {
           const isActive = o.value === value;
           return (
@@ -56,8 +56,8 @@ function Segmented<T extends string>({
               onClick={() => onChange(o.value)}
               className={`flex-1 px-2 py-1.5 text-sm font-medium transition ${
                 isActive
-                  ? "bg-accent/15 text-accent"
-                  : "bg-transparent text-muted hover:bg-surface-2 hover:text-foreground"
+                  ? "bg-team-accent/15 text-team-accent"
+                  : "bg-transparent text-ink-muted hover:bg-raised hover:text-ink"
               }`}
             >
               {o.label}
@@ -65,7 +65,7 @@ function Segmented<T extends string>({
           );
         })}
       </div>
-      <p className="mt-2 text-xs text-muted">{active.detail}</p>
+      <p className="mt-2 text-xs text-ink-muted">{active.detail}</p>
     </div>
   );
 }
@@ -113,11 +113,11 @@ export function BusinessStrategyControls({
           type="button"
           onClick={save}
           disabled={!dirty || isPending}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-[2px] bg-team-accent px-4 py-2 text-sm font-semibold text-team-accent-ink transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isPending ? "Saving..." : "Save strategy"}
         </button>
-        {saved && !dirty && <span className="text-sm text-emerald-400">Saved.</span>}
+        {saved && !dirty && <span className="text-sm text-positive">Saved.</span>}
       </div>
     </div>
   );

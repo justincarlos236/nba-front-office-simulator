@@ -1,6 +1,19 @@
-import Link from "next/link";
 import { formatFinanceCents } from "@/lib/finances/formatFinance";
 import { CAREER_TITLE_LABEL, type CareerTitle } from "@/lib/gm/careerRecord";
+import { ButtonLink, Label, StatCell } from "@/components/ui/primitives";
+
+/**
+ * THE WIRE - Broadcast, and the deepest frame break in the product.
+ *
+ * Being fired should be the most memorable moment in a save; the audit found
+ * it rendered as a card with a red border. This is the one surface where the
+ * interface goes **achromatic**: the team accent that has coloured every page
+ * for fifteen seasons is simply gone, because you no longer have a team. Its
+ * absence is the design.
+ *
+ * Retiring is the same structure with the opposite valence - you left on your
+ * own terms, so the accent stays.
+ */
 
 export interface CareerEndRecapProps {
   endReason: "FIRED" | "RETIRED";
@@ -19,15 +32,6 @@ export interface CareerEndRecapProps {
   title: CareerTitle;
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-border bg-surface p-4">
-      <p className="text-xs tracking-wide text-muted uppercase">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-foreground tabular-nums">{value}</p>
-    </div>
-  );
-}
-
 export function CareerEndRecap(props: CareerEndRecapProps) {
   const fired = props.endReason === "FIRED";
   const games = props.wins + props.losses;
@@ -35,80 +39,98 @@ export function CareerEndRecap(props: CareerEndRecapProps) {
   const deltaText = `${props.reputationDelta >= 0 ? "+" : ""}${props.reputationDelta}`;
 
   return (
-    <main className="mx-auto max-w-3xl flex-1 px-6 py-16">
-      <div
-        className={`rounded-2xl border p-8 text-center ${
-          fired ? "border-red-500/40 bg-red-500/5" : "border-emerald-500/40 bg-emerald-500/5"
-        }`}
-      >
-        <p
-          className={`text-xs font-semibold tracking-[0.2em] uppercase ${
-            fired ? "text-red-400" : "text-emerald-400"
-          }`}
-        >
-          {fired ? "The End of the Road" : "A Tenure Concludes"}
-        </p>
-        <h1 className="mt-3 text-4xl font-bold tracking-tight text-foreground">
-          {fired ? "You've Been Fired" : "You Retired as GM"}
-        </h1>
-        <p className="mt-3 text-muted">
-          {fired
-            ? `Ownership has run out of patience. Your run with the ${props.teamLabel} is over.`
-            : `You walked away from the ${props.teamLabel} on your own terms.`}
-        </p>
-      </div>
+    <main
+      className="flex-1 pb-24"
+      // The colour drain. On a firing the accent resolves to the system's own
+      // muted rule value rather than the franchise's, so every accented element
+      // on this page - and nothing else in the product - loses its team colour.
+      style={
+        fired
+          ? ({ "--team-accent": "#748799", "--team-accent-ink": "#0b0f14" } as React.CSSProperties)
+          : undefined
+      }
+    >
+      <div className="mx-auto max-w-180 px-6 sm:px-8">
+        <header className="border-b border-rule-strong pt-24 pb-12 text-center">
+          <Label tone="accent">{fired ? "The end of the road" : "A tenure concludes"}</Label>
+          <h1 className="mt-6 text-[clamp(2.5rem,7vw,4.5rem)] leading-[0.95] font-bold tracking-[-0.02em] text-ink">
+            {fired ? "Your tenure is over" : "You walked away"}
+          </h1>
+          <p className="mx-auto mt-6 max-w-[50ch] text-[clamp(1rem,1.8vw,1.25rem)] leading-relaxed text-ink-muted">
+            {fired
+              ? `Ownership has run out of patience. Your run with the ${props.teamLabel} is over.`
+              : `You left the ${props.teamLabel} on your own terms.`}
+          </p>
+        </header>
 
-      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <Stat label="Seasons" value={String(props.seasons)} />
-        <Stat
-          label="Record"
-          value={`${props.wins}-${props.losses} (${(winPct * 100).toFixed(1)}%)`}
-        />
-        <Stat label="Championships" value={String(props.championships)} />
-        <Stat label="Playoff Trips" value={String(props.playoffAppearances)} />
-        <Stat label="Best Finish" value={props.bestPlayoffFinish} />
-        <Stat label="Career Payroll" value={formatFinanceCents(props.careerEarningsCents)} />
-      </div>
+        <section className="mt-16">
+          <Label>The record</Label>
+          <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-8 sm:grid-cols-3">
+            <StatCell label="Seasons" value={String(props.seasons)} size="display" />
+            <StatCell
+              label="Record"
+              value={`${props.wins}-${props.losses}`}
+              note={`${(winPct * 100).toFixed(1)}% winning`}
+              size="display"
+            />
+            <StatCell
+              label="Championships"
+              value={String(props.championships)}
+              size="display"
+              tone={props.championships > 0 ? "accent" : "ink"}
+            />
+            <StatCell label="Playoff trips" value={String(props.playoffAppearances)} />
+            <StatCell label="Best finish" value={props.bestPlayoffFinish} />
+            <StatCell
+              label="Career payroll"
+              value={formatFinanceCents(props.careerEarningsCents)}
+            />
+          </div>
+        </section>
 
-      {props.notableTradeDescription && (
-        <div className="mt-4 rounded-xl border border-border bg-surface p-4">
-          <p className="text-xs tracking-wide text-muted uppercase">Signature Move</p>
-          <p className="mt-1 text-sm text-foreground">{props.notableTradeDescription}</p>
-        </div>
-      )}
+        {props.notableTradeDescription && (
+          <section className="mt-16 border-t border-rule pt-6">
+            <Label>The move they&apos;ll remember</Label>
+            <p className="mt-4 text-[clamp(1.125rem,2vw,1.5rem)] leading-snug text-ink">
+              {props.notableTradeDescription}
+            </p>
+          </section>
+        )}
 
-      <div className="mt-8 rounded-xl border border-border bg-surface p-5">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs tracking-wide text-muted uppercase">GM Reputation</p>
-            <p className="mt-1 text-2xl font-bold text-foreground">
-              {props.newReputation}
-              <span
-                className={`ml-2 text-sm font-semibold ${props.reputationDelta >= 0 ? "text-emerald-400" : "text-red-400"}`}
-              >
-                {deltaText}
-              </span>
+        <section className="mt-16 border-t border-rule pt-6">
+          <div className="flex flex-wrap items-end justify-between gap-6">
+            <div>
+              <Label>Your reputation now</Label>
+              <p className="mt-3 flex items-baseline gap-3">
+                <span className="font-mono text-[clamp(2rem,4vw,3rem)] leading-none font-medium tabular-nums text-ink">
+                  {props.newReputation}
+                </span>
+                <span
+                  className={`font-mono text-[15px] tabular-nums ${
+                    props.reputationDelta >= 0 ? "text-positive" : "text-negative"
+                  }`}
+                >
+                  {deltaText}
+                </span>
+              </p>
+            </div>
+            <p className="text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase">
+              {CAREER_TITLE_LABEL[props.title]}
             </p>
           </div>
-          <span className="shrink-0 rounded-full bg-accent/15 px-3 py-1.5 text-sm font-bold text-accent">
-            {CAREER_TITLE_LABEL[props.title]}
-          </span>
-        </div>
-      </div>
+          <p className="mt-4 max-w-[60ch] text-[15px] leading-relaxed text-ink-muted">
+            {props.reputationDelta >= 0
+              ? "This follows you. The next owner who calls will know what you did here."
+              : "This follows you. It will be a harder sell the next time a job opens up."}
+          </p>
+        </section>
 
-      <div className="mt-8 flex flex-wrap justify-center gap-3">
-        <Link
-          href="/career"
-          className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface"
-        >
-          View your GM career
-        </Link>
-        <Link
-          href="/leagues/new"
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90"
-        >
-          Take a new job
-        </Link>
+        <div className="mt-20 flex flex-wrap justify-center gap-3">
+          <ButtonLink variant="secondary" href="/career">
+            View your GM career
+          </ButtonLink>
+          <ButtonLink href="/leagues/new">Take a new job</ButtonLink>
+        </div>
       </div>
     </main>
   );

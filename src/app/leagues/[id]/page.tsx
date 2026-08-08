@@ -39,33 +39,79 @@ import {
 import { estimateAge } from "@/lib/players/age";
 import { PlayerChip } from "@/components/players/PlayerChip";
 import { ActionCenter } from "@/components/dashboard/ActionCenter";
+import { SinceYouLeft } from "@/components/dashboard/SinceYouLeft";
+import { SimulateControls } from "@/components/simulation/SimulateControls";
 import { pickDidYouKnowTip } from "@/lib/gm/didYouKnow";
+import { computeLeaguePhase, type LeaguePhase } from "@/lib/league/leaguePhase";
+import { getSaveContinuity, markSaveSeen } from "@/lib/league/saveContinuity";
+import {
+  ButtonLink,
+  DataTable,
+  Field,
+  Label,
+  PhaseIndicator,
+  StatCell,
+  Status,
+  Td,
+  Th,
+  type StatusTone,
+} from "@/components/ui/primitives";
 
 const PROJECTION_YEARS_AHEAD = 4;
 
-const GRADE_BADGE_CLASS: Record<string, string> = {
-  A: "bg-emerald-500/15 text-emerald-400",
-  B: "bg-sky-500/15 text-sky-400",
-  C: "bg-purple-500/15 text-purple-400",
-  D: "bg-orange-500/15 text-orange-400",
-  F: "bg-red-500/15 text-red-400",
+/**
+ * THE WIRE - Desk archetype. See DESIGN.md.
+ *
+ * The audit found seven equal-weight sections separated only by `mt-6`/`mt-10`,
+ * with no phase name, no way to advance the season, no re-orientation for a
+ * returning player, and cap figures that lived here while the decisions
+ * needing them happened elsewhere. This surface owns those findings.
+ *
+ * Hierarchy is now explicit: the franchise header states who and when, the
+ * dispatch says what changed, "needs you" says what to do, the season control
+ * does it, and everything else is supporting material below the fold.
+ */
+
+const PHASE_LABEL: Record<LeaguePhase, string> = {
+  "regular-season": "Regular season",
+  "playoffs-incomplete": "Playoffs",
+  "pre-draft": "Pre-draft",
+  "draft-incomplete": "Draft",
+  ready: "Offseason",
 };
 
-const JOB_SECURITY_BADGE_CLASS: Record<JobSecurityLevel, string> = {
-  VERY_SECURE: "bg-emerald-500/15 text-emerald-400",
-  SECURE: "bg-sky-500/15 text-sky-400",
-  STABLE: "bg-purple-500/15 text-purple-400",
-  UNDER_PRESSURE: "bg-orange-500/15 text-orange-400",
-  HOT_SEAT: "bg-red-500/15 text-red-400",
-  CRITICAL: "bg-red-600/20 text-red-500",
+const PHASE_EXPECTATION: Record<LeaguePhase, string> = {
+  "regular-season": "Play out the schedule",
+  "playoffs-incomplete": "Finish the postseason",
+  "pre-draft": "Scout the class",
+  "draft-incomplete": "Make your picks",
+  ready: "Reshape the roster",
 };
 
-const FINANCIAL_HEALTH_BADGE_CLASS: Record<FinancialHealth, string> = {
-  THRIVING: "bg-emerald-500/15 text-emerald-400",
-  HEALTHY: "bg-emerald-500/15 text-emerald-400",
-  STABLE: "bg-sky-500/15 text-sky-400",
-  STRAINED: "bg-amber-500/15 text-amber-400",
-  IN_THE_RED: "bg-red-600/20 text-red-500",
+/** Flexibility grades and job security are state, so they read as semantic tone. */
+const GRADE_TONE: Record<string, StatusTone> = {
+  A: "positive",
+  B: "positive",
+  C: "neutral",
+  D: "caution",
+  F: "negative",
+};
+
+const JOB_SECURITY_TONE: Record<JobSecurityLevel, StatusTone> = {
+  VERY_SECURE: "positive",
+  SECURE: "positive",
+  STABLE: "neutral",
+  UNDER_PRESSURE: "caution",
+  HOT_SEAT: "negative",
+  CRITICAL: "signal",
+};
+
+const FINANCIAL_HEALTH_TONE: Record<FinancialHealth, StatusTone> = {
+  THRIVING: "positive",
+  HEALTHY: "positive",
+  STABLE: "neutral",
+  STRAINED: "caution",
+  IN_THE_RED: "negative",
 };
 
 interface PageProps {
@@ -135,7 +181,7 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
     where: { leagueId_season: { leagueId: league.id, season } },
   });
 
-  // Franchise Finances - a compact business snapshot for the dashboard card.
+  // Franchise Finances - a compact business snapshot for the dashboard.
   const latestFinancialSnapshot = await prisma.financialSnapshot.findFirst({
     where: { leagueId: league.id, leagueTeamId: userLeagueTeam.id },
     orderBy: { season: "desc" },
@@ -180,8 +226,7 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
   });
 
   // Action Center (Phase 2 of the onboarding/flow work) - reuses this
-  // page's own already-fetched roster/cap/needs data, no extra queries
-  // beyond the small set `getActionCenterItems` runs itself.
+  // page's own already-fetched roster/cap/needs data.
   const actionCenterRoster: ActionCenterRosterPlayer[] = leaguePlayers.map((lp) => ({
     fullName: lp.player.fullName,
     overallRating: lp.overallRating,
@@ -207,11 +252,43 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
     roster: actionCenterRoster,
   });
   const actionCenterItems = allActionCenterItems.slice(0, ACTION_CENTER_DISPLAY_LIMIT);
-  // Onboarding Philosophy Phase 4 (docs/ONBOARDING_DESIGN.md Part 1.4 "too
-  // early") - reuses the Action Center's own first-session signal rather
-  // than a second "is this day 0" query, so there's exactly one place that
-  // decides what counts as brand-new.
+  // Onboarding Philosophy Phase 4 - reuses the Action Center's own first-session
+  // signal rather than a second "is this day 0" query.
   const isBrandNewSeason = allActionCenterItems.some((i) => i.id === "first-games-not-simulated");
+
+  const [phase, continuity, dashboardGamesRemaining, dashboardWeekend, dashboardBreakingDecision] =
+    await Promise.all([
+      computeLeaguePhase(league.id, season),
+      // Read the diff BEFORE advancing the visit clock below - marking the save
+      // seen first would erase the very window this renders.
+      getSaveContinuity(league.id, league.lastSeenAt, league.newsReadThroughAt),
+      prisma.game.count({
+        where: {
+          leagueId: league.id,
+          season,
+          type: "REGULAR_SEASON",
+          playedAt: null,
+          OR: [
+            { homeLeagueTeamId: userLeagueTeam.id },
+            { awayLeagueTeamId: userLeagueTeam.id },
+          ],
+        },
+      }),
+      prisma.allStarWeekend.findUnique({
+        where: { leagueId_season: { leagueId: league.id, season } },
+      }),
+      prisma.businessDecision.findFirst({
+        where: {
+          leagueId: league.id,
+          leagueTeamId: userLeagueTeam.id,
+          status: "PENDING",
+          severity: "BREAKING",
+        },
+        select: { id: true },
+      }),
+    ]);
+
+  await markSaveSeen(league.id);
 
   const futureProjections = computeMultiYearProjection(
     futureContractYears,
@@ -240,312 +317,328 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
     userLeagueTeam.id,
     userLeagueTeam.team.conference,
   );
+
+  const jobSecurity = getJobSecurityLevel(league.ownerConfidence);
+  const capStatus = simplifyCapStatus(capSheet.apronLevel);
+  const seasonLabel = `${season}-${(season + 1).toString().slice(-2)}`;
+
   return (
-    <main className="mx-auto max-w-6xl flex-1 px-6 py-16">
-      <div
-        className="border-l-4 pl-4"
-        style={{ borderLeftColor: userLeagueTeam.team.primaryColor }}
-      >
-        <p className="text-sm text-muted">
-          {league.currentSeason}-{(league.currentSeason + 1).toString().slice(-2)} season &middot;{" "}
-          {userLeagueTeam.wins}-{userLeagueTeam.losses}
-        </p>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          {userLeagueTeam.team.city} {userLeagueTeam.team.name}
-        </h1>
-      </div>
-
-      <div className="mt-10">
-        <ActionCenter
-          items={actionCenterItems}
-          didYouKnowTip={actionCenterItems.length === 0 ? pickDidYouKnowTip(league.id) : null}
-        />
-      </div>
-
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <OverviewCard
-          href={`/leagues/${league.id}/standings`}
-          label="Conference rank"
-          headline={rank > 0 ? `${ordinal(rank)} in ${userLeagueTeam.team.conference}` : "-"}
-          detail={`${userLeagueTeam.wins}-${userLeagueTeam.losses}`}
-        />
-        <OverviewCard
-          href={`/leagues/${league.id}/rotation`}
-          label="Rotation"
-          headline="Set your starting five, bench, and minutes"
-        />
-        <OverviewCard
-          href={`/leagues/${league.id}/trades/new`}
-          label="Team identity"
-          headline={TEAM_IDENTITY_LABEL[teamIdentity]}
-          detail={
-            teamNeeds.length > 0
-              ? `Needs: ${teamNeeds.map((n) => TEAM_NEED_LABEL[n]).join(", ")}`
-              : "No glaring roster needs"
-          }
-        />
-      </div>
-
-      <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <CapStat
-          label="Committed salary"
-          value={formatCentsCompact(capSheet.committedSalaryCents)}
-        />
-        <CapStat label="Cap space" value={formatCentsCompact(capSheet.capSpaceCents)} />
-        <CapStat
-          label="Financial status"
-          value={CAP_STATUS_LABEL[simplifyCapStatus(capSheet.apronLevel)]}
-        />
-        <CapStat label="Roster size" value={String(leaguePlayers.length)} />
-      </div>
-      <p className="mt-3 text-sm text-muted">
-        {CAP_STATUS_DESCRIPTION[simplifyCapStatus(capSheet.apronLevel)]}{" "}
-        <HowDoesThisWork topic="financial-status" className="underline hover:text-foreground" />
-      </p>
-
-      {isBrandNewSeason ? (
-        // Onboarding Philosophy Phase 4 (docs/ONBOARDING_DESIGN.md Beat 2 /
-        // Part 1.4 "too early") - a 4-year projection with a letter grade
-        // isn't actionable before a single game or roster move has
-        // happened. Never hard-hidden (same "nothing ever hidden, only
-        // de-emphasized" rule as the sub-nav) - still visible, just not
-        // shouting for attention on day one.
-        <div className="mt-10 rounded-xl border border-dashed border-border bg-surface p-5">
-          <h2 className="font-semibold text-foreground">Future Financial Flexibility</h2>
-          <p className="mt-1 text-sm text-muted">
-            Long-term contracts will show up here once your books have some real history - nothing
-            to plan around yet on day one.{" "}
-            <HowDoesThisWork
-              topic="financial-flexibility"
-              className="underline hover:text-foreground"
-            />
+    <main className="flex-1 pb-24">
+      {/* THE FRANCHISE. A full-bleed field in the team's own colour - the
+          single largest perceptual change from the previous world, where team
+          identity was a 4px border stripe. */}
+      <header className="border-b border-rule bg-team-accent">
+        <div className="mx-auto max-w-300 px-6 py-10 sm:px-8 sm:py-14">
+          <p className="text-[11px] font-semibold tracking-[0.09em] text-team-accent-ink/70 uppercase">
+            {seasonLabel} season
           </p>
-        </div>
-      ) : (
-        <div className="mt-10 rounded-xl border border-border bg-surface p-5">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="font-semibold text-foreground">Future Financial Flexibility</h2>
-              <p className="mt-1 text-sm text-muted">{flexibilityGrade.summary}</p>
-            </div>
-            <span
-              className={`shrink-0 rounded-full px-3 py-1.5 text-lg font-bold ${GRADE_BADGE_CLASS[flexibilityGrade.grade]}`}
-            >
-              {flexibilityGrade.grade}
-            </span>
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {futureProjections.map((projection) => (
-              <div key={projection.season} className="rounded-lg border border-border p-3">
-                <p className="text-xs tracking-wide text-muted uppercase">
-                  {projection.season}-{(projection.season + 1).toString().slice(-2)}
-                </p>
-                <p className="mt-1 font-mono text-foreground">
-                  {formatCentsCompact(projection.committedSalaryCents)}
-                </p>
-                <p className="text-xs text-muted">committed</p>
-              </div>
-            ))}
-          </div>
-          <HowDoesThisWork
-            topic="financial-flexibility"
-            className="mt-3 inline-block text-xs text-muted underline hover:text-foreground"
-          />
-        </div>
-      )}
-
-      <div id="gm-job-security" className="mt-6 rounded-xl border border-border bg-surface p-5">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="font-semibold text-foreground">GM Job Security</h2>
-            <p className="mt-1 text-sm text-muted">
-              {JOB_SECURITY_DESCRIPTION[getJobSecurityLevel(league.ownerConfidence)]}
-            </p>
-          </div>
-          <span
-            className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-bold ${
-              JOB_SECURITY_BADGE_CLASS[getJobSecurityLevel(league.ownerConfidence)]
-            }`}
-          >
-            {JOB_SECURITY_LABEL[getJobSecurityLevel(league.ownerConfidence)]}
-          </span>
-        </div>
-        {currentExpectation && (
-          <p className="mt-3 text-sm text-muted">
-            This season&apos;s expectation:{" "}
-            <span className="text-foreground">
-              {EXPECTATION_LEVEL_LABEL[currentExpectation.expectationLevel]}
-            </span>
-          </p>
-        )}
-        {league.payrollReductionTargetCents != null && league.payrollDirectiveSeason != null && (
-          <p className="mt-2 text-sm text-orange-400">
-            Ownership directive: reduce payroll below{" "}
-            {formatCentsCompact(league.payrollReductionTargetCents)} before the{" "}
-            {league.payrollDirectiveSeason}-
-            {(league.payrollDirectiveSeason + 1).toString().slice(-2)} season.
-          </p>
-        )}
-        {league.financialMandateSeason != null && (
-          <p className="mt-2 text-sm text-red-400">
-            Financial mandate: return the franchise to profitability before the{" "}
-            {league.financialMandateSeason}-
-            {(league.financialMandateSeason + 1).toString().slice(-2)} season, or your job is at
-            risk.
-          </p>
-        )}
-        <div className="mt-3 flex items-center justify-between gap-4">
-          <HowDoesThisWork topic="owner-confidence" />
-          <RetireButton leagueId={league.id} />
-        </div>
-      </div>
-
-      <Link
-        href={`/leagues/${league.id}/finances`}
-        className="mt-6 block rounded-xl border border-border bg-surface p-5 transition hover:bg-surface-2"
-      >
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="font-semibold text-foreground">Franchise Finances</h2>
-            <p className="mt-1 text-sm text-muted">
-              Franchise value {formatFinanceCents(userLeagueTeam.franchiseValueCents)} · Cash{" "}
-              <span
-                className={Number(userLeagueTeam.cashReserveCents) < 0 ? "text-red-400" : undefined}
-              >
-                {formatFinanceCents(userLeagueTeam.cashReserveCents)}
+          <h1 className="mt-3 text-[clamp(2.5rem,6vw,4.25rem)] leading-[0.95] font-bold tracking-[-0.02em] text-team-accent-ink">
+            {userLeagueTeam.team.city} {userLeagueTeam.team.name}
+          </h1>
+          <p className="mt-4 flex flex-wrap items-baseline gap-x-4 font-mono text-[clamp(1.5rem,3vw,2.25rem)] tabular-nums text-team-accent-ink">
+            {userLeagueTeam.wins}&ndash;{userLeagueTeam.losses}
+            {rank > 0 && (
+              <span className="font-sans text-[15px] font-medium tracking-normal normal-case text-team-accent-ink/80">
+                {ordinal(rank)} in the{" "}
+                {userLeagueTeam.team.conference === "EAST" ? "East" : "West"}
               </span>
-              {latestFinancialSnapshot && (
-                <>
-                  {" · "}
-                  <span
-                    className={
-                      Number(latestFinancialSnapshot.netIncomeCents) < 0
-                        ? "text-red-400"
-                        : "text-emerald-400"
-                    }
-                  >
-                    {Number(latestFinancialSnapshot.netIncomeCents) < 0
-                      ? "Net loss "
-                      : "Net profit "}
-                    {formatFinanceCents(Math.abs(Number(latestFinancialSnapshot.netIncomeCents)))}
-                  </span>
-                </>
-              )}
-            </p>
-          </div>
-          <span
-            className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-bold ${FINANCIAL_HEALTH_BADGE_CLASS[financialHealth]}`}
-          >
-            {FINANCIAL_HEALTH_LABEL[financialHealth]}
-          </span>
+            )}
+          </p>
         </div>
-      </Link>
+      </header>
 
-      <div className="mt-10 overflow-x-auto rounded-xl border border-border">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-surface-2 text-xs tracking-wide text-muted uppercase">
-            <tr>
-              <th className="px-4 py-3">Player</th>
-              <th className="px-4 py-3">Pos</th>
-              <th className="px-4 py-3 text-right">Rating</th>
-              <th className="px-4 py-3 text-right">Potential</th>
-              <th className="px-4 py-3">Value Tier</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Salary ({league.currentSeason})</th>
-              <th className="px-4 py-3 text-right">Contract thru</th>
-            </tr>
-          </thead>
-          <tbody>
-            {leaguePlayers.map((lp) => {
-              const gamesRemaining =
-                lp.injuryStatus !== "HEALTHY" && lp.injuryReturnsAtGamesPlayed !== null
-                  ? Math.max(
-                      0,
-                      lp.injuryReturnsAtGamesPlayed - (userLeagueTeam.wins + userLeagueTeam.losses),
-                    )
-                  : 0;
-              return (
-                <tr key={lp.id} className="border-t border-border hover:bg-surface/60">
-                  <td className="px-4 py-3">
-                    <PlayerChip
-                      identity={{ kind: "league", leagueId: league.id, leaguePlayerId: lp.id }}
-                      fullName={lp.player.fullName}
-                      photoUrl={lp.player.photoUrl}
-                      teamPrimaryColor={userLeagueTeam.team.primaryColor}
-                      className="font-medium text-foreground"
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-muted">{lp.player.position}</td>
-                  <td className="px-4 py-3 text-right font-mono text-accent">{lp.overallRating}</td>
-                  <td className="px-4 py-3 text-right font-mono text-muted">
-                    {lp.potentialRating}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-muted">
-                    {PLAYER_VALUE_TIER_LABEL[getPlayerValueTier(lp.overallRating)]}
-                  </td>
-                  <td className="px-4 py-3">
-                    {lp.injuryStatus === "HEALTHY" ? (
-                      <span className="text-xs text-muted">Healthy</span>
-                    ) : (
-                      <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-semibold text-red-400">
-                        Out{gamesRemaining > 0 ? ` · ${gamesRemaining}g` : ""}
-                      </span>
+      <div className="mx-auto max-w-300 px-6 sm:px-8">
+        {/* WHERE THE SAVE IS. Five phases gated six systems and were never
+            named anywhere inside a league. */}
+        <PhaseIndicator
+          phase={PHASE_LABEL[phase]}
+          expectation={PHASE_EXPECTATION[phase]}
+          className="mt-0 border-t-0"
+        />
+
+        <div className="mt-8 grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_300px]">
+          {/* DECISION COLUMN */}
+          <div className="space-y-8">
+            <SinceYouLeft continuity={continuity} leagueId={league.id} />
+
+            <ActionCenter
+              items={actionCenterItems}
+              didYouKnowTip={actionCenterItems.length === 0 ? pickDidYouKnowTip(league.id) : null}
+            />
+
+            {dashboardGamesRemaining > 0 && (
+              <SimulateControls
+                leagueId={league.id}
+                gamesRemaining={dashboardGamesRemaining}
+                allStarWeekendPending={dashboardWeekend?.status === "PENDING"}
+                businessDecisionPending={!!dashboardBreakingDecision}
+              />
+            )}
+          </div>
+
+          {/* FIGURE RAIL. Cap position only. Everything else that used to live
+              here became a horizontal band below - four stacked fields in a
+              320px column read as a wall of small labels and competed with the
+              decision column they were meant to support. */}
+          <aside className="lg:sticky lg:top-6">
+            <Field label="Cap position" emphasis>
+              <StatCell
+                label="Cap space"
+                value={formatCentsCompact(capSheet.capSpaceCents)}
+                size="display"
+                tone={capSheet.capSpaceCents > 0n ? "accent" : "ink"}
+              />
+              <div className="mt-6 space-y-4 border-t border-hairline pt-4">
+                <StatCell
+                  label="Committed"
+                  value={formatCentsCompact(capSheet.committedSalaryCents)}
+                />
+                <div>
+                  <Label>Standing</Label>
+                  <p className="mt-2">
+                    <Status tone={capStatus === "LUXURY_TAX" ? "caution" : "neutral"}>
+                      {CAP_STATUS_LABEL[capStatus]}
+                    </Status>
+                  </p>
+                </div>
+                <StatCell label="Roster" value={String(leaguePlayers.length)} />
+              </div>
+              <p className="mt-4 text-[15px] leading-relaxed text-ink-muted">
+                {CAP_STATUS_DESCRIPTION[capStatus]}{" "}
+                <HowDoesThisWork
+                  topic="financial-status"
+                  className="underline decoration-rule underline-offset-4 hover:text-ink"
+                />
+              </p>
+            </Field>
+          </aside>
+        </div>
+
+        {/* THE STANDING BAND. Ownership, identity and business - the three
+            things that describe your position rather than demand an action.
+            Horizontal so they read as peers at a glance, instead of stacking
+            into a column of small labels beside the decisions they support. */}
+        <section className="mt-12 grid grid-cols-1 gap-px md:grid-cols-3">
+          <Field label="Ownership">
+            <div className="flex items-baseline justify-between gap-3">
+              <Status tone={JOB_SECURITY_TONE[jobSecurity]}>
+                {JOB_SECURITY_LABEL[jobSecurity]}
+              </Status>
+              <span className="font-mono text-[15px] tabular-nums text-ink-muted">
+                {league.ownerConfidence}
+              </span>
+            </div>
+            <p className="mt-3 text-[15px] leading-relaxed text-ink-muted">
+              {JOB_SECURITY_DESCRIPTION[jobSecurity]}
+            </p>
+            {currentExpectation && (
+              <p className="mt-3 text-[15px] text-ink-muted">
+                This season:{" "}
+                <span className="text-ink">
+                  {EXPECTATION_LEVEL_LABEL[currentExpectation.expectationLevel]}
+                </span>
+              </p>
+            )}
+            {league.payrollReductionTargetCents != null &&
+              league.payrollDirectiveSeason != null && (
+                <p className="mt-3 border-l-2 border-l-caution pl-3 text-[15px] text-ink">
+                  Reduce payroll below {formatCentsCompact(league.payrollReductionTargetCents)}{" "}
+                  before {league.payrollDirectiveSeason}-
+                  {(league.payrollDirectiveSeason + 1).toString().slice(-2)}.
+                </p>
+              )}
+            {league.financialMandateSeason != null && (
+              <p className="mt-3 border-l-2 border-l-signal-red pl-3 text-[15px] text-ink">
+                Return the franchise to profitability before {league.financialMandateSeason}-
+                {(league.financialMandateSeason + 1).toString().slice(-2)}, or your job is at risk.
+              </p>
+            )}
+            <div className="mt-4 flex items-center justify-between gap-4 border-t border-hairline pt-4">
+              <HowDoesThisWork topic="owner-confidence" />
+              <RetireButton leagueId={league.id} />
+            </div>
+          </Field>
+
+          <Field label="Identity">
+            <p className="text-[15px] font-semibold text-ink">
+              {TEAM_IDENTITY_LABEL[teamIdentity]}
+            </p>
+            <p className="mt-2 text-[15px] leading-relaxed text-ink-muted">
+              {teamNeeds.length > 0
+                ? `Needs ${teamNeeds
+                    .map((n) => TEAM_NEED_LABEL[n])
+                    .join(", ")
+                    .toLowerCase()}`
+                : "No glaring roster needs"}
+            </p>
+            <Link
+              href={`/leagues/${league.id}/trades/new`}
+              className="mt-4 inline-block text-[11px] font-semibold tracking-[0.09em] text-team-accent uppercase underline decoration-rule underline-offset-4"
+            >
+              Work the phones
+            </Link>
+          </Field>
+
+          <Link href={`/leagues/${league.id}/finances`} className="block">
+            <Field label="Business" className="h-full transition-colors hover:bg-raised">
+              <Status tone={FINANCIAL_HEALTH_TONE[financialHealth]}>
+                {FINANCIAL_HEALTH_LABEL[financialHealth]}
+              </Status>
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                <StatCell
+                  label="Franchise value"
+                  value={formatFinanceCents(userLeagueTeam.franchiseValueCents)}
+                />
+                <StatCell
+                  label="Cash"
+                  value={formatFinanceCents(userLeagueTeam.cashReserveCents)}
+                  tone={Number(userLeagueTeam.cashReserveCents) < 0 ? "negative" : "ink"}
+                />
+                {latestFinancialSnapshot && (
+                  <StatCell
+                    label={
+                      Number(latestFinancialSnapshot.netIncomeCents) < 0 ? "Net loss" : "Net profit"
+                    }
+                    value={formatFinanceCents(
+                      Math.abs(Number(latestFinancialSnapshot.netIncomeCents)),
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-right text-foreground">
-                    {lp.contract?.years[0]
-                      ? formatCentsCompact(lp.contract.years[0].salaryCents)
-                      : "-"}
-                  </td>
-                  <td className="px-4 py-3 text-right text-muted">
-                    {lp.contract?.endSeason ?? "-"}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    tone={
+                      Number(latestFinancialSnapshot.netIncomeCents) < 0 ? "negative" : "positive"
+                    }
+                  />
+                )}
+              </div>
+            </Field>
+          </Link>
+        </section>
+
+        {/* SUPPORTING MATERIAL. Below the decision layer on purpose. */}
+        <section className="mt-16">
+          <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-rule-strong pb-3">
+            <Label tone="ink">Future flexibility</Label>
+            {!isBrandNewSeason && (
+              <Status tone={GRADE_TONE[flexibilityGrade.grade] ?? "neutral"}>
+                Grade {flexibilityGrade.grade}
+              </Status>
+            )}
+          </div>
+          {isBrandNewSeason ? (
+            <p className="mt-4 max-w-[70ch] text-[15px] leading-relaxed text-ink-muted">
+              Long-term contracts will show up here once your books have some real history -
+              nothing to plan around yet on day one.{" "}
+              <HowDoesThisWork
+                topic="financial-flexibility"
+                className="underline decoration-rule underline-offset-4 hover:text-ink"
+              />
+            </p>
+          ) : (
+            <>
+              <p className="mt-4 max-w-[70ch] text-[15px] leading-relaxed text-ink-muted">
+                {flexibilityGrade.summary}{" "}
+                <HowDoesThisWork
+                  topic="financial-flexibility"
+                  className="underline decoration-rule underline-offset-4 hover:text-ink"
+                />
+              </p>
+              <div className="mt-6 grid grid-cols-2 gap-px sm:grid-cols-4">
+                {futureProjections.map((projection) => (
+                  <div key={projection.season} className="border-t border-rule bg-field p-4">
+                    <Label>
+                      {projection.season}-{(projection.season + 1).toString().slice(-2)}
+                    </Label>
+                    <p className="mt-2 font-mono text-[15px] tabular-nums text-ink">
+                      {formatCentsCompact(projection.committedSalaryCents)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </section>
+
+        <section className="mt-16">
+          <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-rule-strong pb-3">
+            <Label tone="ink">Roster</Label>
+            <span className="font-mono text-[11px] tabular-nums text-ink-muted">
+              {leaguePlayers.length} under contract
+            </span>
+          </div>
+          <DataTable className="mt-4">
+            <thead>
+              <tr>
+                <Th>Player</Th>
+                <Th>Pos</Th>
+                <Th numeric>OVR</Th>
+                <Th numeric>Pot</Th>
+                <Th>Tier</Th>
+                <Th>Status</Th>
+                <Th numeric>Salary</Th>
+                <Th numeric>Thru</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {leaguePlayers.map((lp) => {
+                const gamesOut =
+                  lp.injuryStatus !== "HEALTHY" && lp.injuryReturnsAtGamesPlayed !== null
+                    ? Math.max(
+                        0,
+                        lp.injuryReturnsAtGamesPlayed -
+                          (userLeagueTeam.wins + userLeagueTeam.losses),
+                      )
+                    : 0;
+                return (
+                  <tr key={lp.id} className="transition-colors hover:bg-raised">
+                    <Td>
+                      <PlayerChip
+                        identity={{ kind: "league", leagueId: league.id, leaguePlayerId: lp.id }}
+                        fullName={lp.player.fullName}
+                        photoUrl={lp.player.photoUrl}
+                        teamPrimaryColor={userLeagueTeam.team.primaryColor}
+                        className="font-semibold text-ink"
+                      />
+                    </Td>
+                    <Td className="text-ink-muted">{lp.player.position}</Td>
+                    <Td numeric className="text-team-accent">
+                      {lp.overallRating}
+                    </Td>
+                    <Td numeric className="text-ink-muted">
+                      {lp.potentialRating}
+                    </Td>
+                    <Td className="text-[11px] tracking-[0.09em] text-ink-muted uppercase">
+                      {PLAYER_VALUE_TIER_LABEL[getPlayerValueTier(lp.overallRating)]}
+                    </Td>
+                    <Td>
+                      {lp.injuryStatus === "HEALTHY" ? (
+                        <Status tone="neutral">Healthy</Status>
+                      ) : (
+                        <Status tone="negative">
+                          Out{gamesOut > 0 ? ` · ${gamesOut}g` : ""}
+                        </Status>
+                      )}
+                    </Td>
+                    <Td numeric>
+                      {lp.contract?.years[0]
+                        ? formatCentsCompact(lp.contract.years[0].salaryCents)
+                        : "-"}
+                    </Td>
+                    <Td numeric className="text-ink-muted">
+                      {lp.contract?.endSeason ?? "-"}
+                    </Td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </DataTable>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <ButtonLink variant="secondary" href={`/leagues/${league.id}/rotation`}>
+              Set the rotation
+            </ButtonLink>
+            <ButtonLink variant="secondary" href={`/leagues/${league.id}/trades/new`}>
+              Propose a trade
+            </ButtonLink>
+          </div>
+        </section>
       </div>
     </main>
-  );
-}
-
-function CapStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-surface p-4">
-      <p className="text-xs tracking-wide text-muted uppercase">{label}</p>
-      <p className="mt-1 font-mono text-lg text-foreground capitalize">{value}</p>
-    </div>
-  );
-}
-
-function OverviewCard({
-  href,
-  label,
-  headline,
-  detail,
-  truncate,
-}: {
-  href: string;
-  label: string;
-  headline: string;
-  detail?: string;
-  truncate?: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      className="group rounded-xl border border-border bg-surface p-4 transition hover:border-accent/40"
-    >
-      <p className="text-xs tracking-wide text-muted uppercase">{label}</p>
-      <p
-        className={`mt-1 font-semibold text-foreground transition group-hover:text-accent ${
-          truncate ? "truncate" : ""
-        }`}
-      >
-        {headline}
-      </p>
-      {detail && <p className="mt-0.5 text-xs text-muted">{detail}</p>}
-    </Link>
   );
 }

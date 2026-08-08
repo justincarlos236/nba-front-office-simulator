@@ -17,25 +17,25 @@ const AXIS_LABEL: Record<"WORK_ETHIC" | "INJURY_OUTLOOK", string> = {
  */
 export function DraftResolutionCard({ summary }: { summary: DraftResolutionSummary }) {
   return (
-    <div className="animate-lottery-banner-in mt-3 w-full max-w-sm rounded-lg border border-border bg-surface-2 p-4 text-left">
+    <div className="animate-lottery-banner-in mt-3 w-full max-w-sm rounded-[2px] border border-rule bg-raised p-4 text-left">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-semibold tracking-wide text-muted uppercase">
+        <p className="text-xs font-semibold tracking-wide text-ink-muted uppercase">
           What You Knew Going In
         </p>
         <HowDoesThisWork
           topic="draft-resolution"
-          className="text-xs text-muted underline hover:text-foreground"
+          className="text-xs text-ink-muted underline hover:text-ink"
         />
       </div>
-      <div className="mt-2 space-y-1.5 text-xs text-foreground">
+      <div className="mt-2 space-y-1.5 text-xs text-ink">
         <p>
-          <span className="text-muted">Scouted to:</span> {summary.depthLabel}
+          <span className="text-ink-muted">Scouted to:</span> {summary.depthLabel}
         </p>
         {summary.myBoardRank != null ? (
           <p>
-            <span className="text-muted">Your board had him:</span> #{summary.myBoardRank}
+            <span className="text-ink-muted">Your board had him:</span> #{summary.myBoardRank}
             {summary.rankGapFromBigBoard != null && summary.rankGapFromBigBoard !== 0 && (
-              <span className="text-muted">
+              <span className="text-ink-muted">
                 {" "}
                 ({summary.rankGapFromBigBoard > 0 ? "higher" : "lower"} than the Big Board&apos;s #
                 {summary.bigBoardRank})
@@ -43,16 +43,16 @@ export function DraftResolutionCard({ summary }: { summary: DraftResolutionSumma
             )}
           </p>
         ) : (
-          <p className="text-muted">You never added him to your own board.</p>
+          <p className="text-ink-muted">You never added him to your own board.</p>
         )}
         {summary.resolvedAxes.length > 0 && (
           <p>
-            <span className="text-muted">Resolved:</span>{" "}
+            <span className="text-ink-muted">Resolved:</span>{" "}
             {summary.resolvedAxes.map((axis) => AXIS_LABEL[axis]).join(", ")}
           </p>
         )}
         {summary.unresolvedAxes.length > 0 && (
-          <p className="text-muted">
+          <p className="text-ink-muted">
             Never got a read on: {summary.unresolvedAxes.map((axis) => AXIS_LABEL[axis]).join(", ")}
           </p>
         )}

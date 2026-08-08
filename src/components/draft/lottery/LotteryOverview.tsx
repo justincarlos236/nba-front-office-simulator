@@ -25,31 +25,31 @@ export function LotteryOverview({
 
   return (
     <div>
-      <div className="rounded-xl border border-accent/30 bg-gradient-to-b from-accent/10 to-transparent p-6 text-center">
-        <p className="text-xs font-semibold tracking-widest text-accent uppercase">
+      <div className="rounded-[2px] border border-team-accent/30 bg-gradient-to-b from-team-accent/10 to-transparent p-6 text-center">
+        <p className="text-xs font-semibold tracking-widest text-team-accent uppercase">
           NBA Draft Lottery
         </p>
-        <h2 className="mt-1 text-2xl font-bold text-foreground">
+        <h2 className="mt-1 text-2xl font-bold text-ink">
           14 teams. One night. A whole draft order on the line.
         </h2>
-        <p className="mx-auto mt-2 max-w-2xl text-sm text-muted">
+        <p className="mx-auto mt-2 max-w-2xl text-sm text-ink-muted">
           The three worst records are tied at a real 14.0% chance at the No. 1 pick - a flatter,
           fairer table than the old odds, straight from the real post-2019 reform. Everyone
           else&apos;s shot tapers off from there.
         </p>
         {userOwnTeam && (
-          <p className="mt-3 text-sm text-foreground">
+          <p className="mt-3 text-sm text-ink">
             Your odds at No. 1:{" "}
-            <span className="font-mono font-bold text-accent">
+            <span className="font-mono font-bold text-team-accent">
               {(userOwnTeam.oddsForNumberOnePickPct * 100).toFixed(1)}%
             </span>{" "}
             (projected No. {userOwnTeam.projectedSeed} in the lottery order)
           </p>
         )}
         {headlineProspect && (
-          <p className="mt-2 text-sm text-foreground">
+          <p className="mt-2 text-sm text-ink">
             This year&apos;s presumptive top prospect:{" "}
-            <span className="font-semibold text-accent-2">{headlineProspect.fullName}</span> (
+            <span className="font-semibold text-caution">{headlineProspect.fullName}</span> (
             {headlineProspect.position}) - whoever lands No. 1 gets the first crack.
           </p>
         )}
@@ -59,32 +59,32 @@ export function LotteryOverview({
         {teams.map((t) => (
           <div
             key={t.currentOwnerTeamId + t.originalTeamId}
-            className={`flex items-center gap-3 rounded-lg border p-3 text-sm transition ${
-              t.isUserTeam ? "border-accent bg-accent/5" : "border-border bg-surface"
+            className={`flex items-center gap-3 rounded-[2px] border p-3 text-sm transition ${
+              t.isUserTeam ? "border-team-accent bg-team-accent/5" : "border-rule bg-field"
             }`}
           >
-            <span className="w-6 shrink-0 text-center font-mono text-xs text-muted">
+            <span className="w-6 shrink-0 text-center font-mono text-xs text-ink-muted">
               {t.projectedSeed}
             </span>
             <TeamBadge logoUrl={t.logoUrl} size="sm" />
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium text-foreground">
+              <p className="truncate font-medium text-ink">
                 {t.currentOwnerLabel}
-                {t.isUserTeam && <span className="ml-2 text-xs text-accent">YOUR TEAM</span>}
+                {t.isUserTeam && <span className="ml-2 text-xs text-team-accent">YOUR TEAM</span>}
               </p>
               {t.ownedByAnotherTeam && (
-                <p className="truncate text-xs text-muted">via {t.originalTeamLabel}&apos;s pick</p>
+                <p className="truncate text-xs text-ink-muted">via {t.originalTeamLabel}&apos;s pick</p>
               )}
             </div>
             <div className="w-32 shrink-0 text-right">
-              <p className="font-mono text-sm font-semibold text-foreground">
+              <p className="font-mono text-sm font-semibold text-ink">
                 {(t.oddsForNumberOnePickPct * 100).toFixed(1)}%
               </p>
-              <p className="text-[10px] tracking-wide text-muted uppercase">at No. 1</p>
+              <p className="text-[10px] tracking-wide text-ink-muted uppercase">at No. 1</p>
             </div>
-            <div className="h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-surface-2">
+            <div className="h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-raised">
               <div
-                className="h-full rounded-full bg-accent"
+                className="h-full rounded-full bg-team-accent"
                 style={{ width: `${Math.min(100, t.oddsForNumberOnePickPct * 100 * (100 / 14))}%` }}
               />
             </div>
@@ -97,11 +97,17 @@ export function LotteryOverview({
           type="button"
           disabled={isStarting}
           onClick={onStart}
-          className="rounded-lg bg-accent px-6 py-3 text-base font-bold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-[2px] bg-team-accent px-6 py-3 text-base font-bold text-team-accent-ink transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isStarting ? "Drawing the lottery..." : "Start the Lottery"}
         </button>
-        {errorMessage && <p className="text-sm text-red-400">{errorMessage}</p>}
+        {/* Not a confirmation gate: the user navigated here deliberately and the
+            button says what it does. What was missing is that the draw is
+            one-time - the order it produces is the order the draft runs in. */}
+        <p className="text-xs text-ink-muted">
+          The draw happens once. Whatever order comes out is the order the draft runs in.
+        </p>
+        {errorMessage && <p className="text-sm text-negative">{errorMessage}</p>}
       </div>
     </div>
   );

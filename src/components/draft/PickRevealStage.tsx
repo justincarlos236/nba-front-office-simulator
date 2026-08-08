@@ -190,16 +190,16 @@ export function PickRevealStage({
   return (
     <div>
       <div
-        className={`relative min-h-[26rem] overflow-hidden rounded-xl border p-8 text-center transition-all ${
+        className={`relative min-h-[26rem] overflow-hidden rounded-[2px] border p-8 text-center transition-all ${
           isClimax
-            ? "border-accent bg-accent/5"
+            ? "border-team-accent bg-team-accent/5"
             : isUserPick
-              ? "border-accent/60 bg-accent/5"
-              : "border-border bg-surface"
+              ? "border-team-accent/60 bg-team-accent/5"
+              : "border-rule bg-field"
         }`}
       >
         <p
-          className={`text-xs font-semibold tracking-widest uppercase ${isClimax ? "text-accent" : "text-muted"}`}
+          className={`text-xs font-semibold tracking-widest uppercase ${isClimax ? "text-team-accent" : "text-ink-muted"}`}
         >
           {current?.overallPickNumber === 1
             ? "The No. 1 Overall Pick"
@@ -212,32 +212,32 @@ export function PickRevealStage({
           <div
             key={current.pickId}
             className={`mt-4 flex flex-col items-center gap-3 animate-lottery-card-in ${
-              isClimax ? "animate-lottery-glow-pulse rounded-xl p-4" : ""
+              isClimax ? "animate-lottery-glow-pulse rounded-[2px] p-4" : ""
             }`}
           >
             <TeamBadge logoUrl={team?.logoUrl ?? null} size={isClimax ? "xl" : "lg"} />
-            <p className={`font-bold text-foreground ${isClimax ? "text-3xl" : "text-xl"}`}>
+            <p className={`font-bold text-ink ${isClimax ? "text-3xl" : "text-xl"}`}>
               {team ? `${team.city} ${team.name}` : "Unknown team"}
             </p>
             {isUserPick && (
-              <span className="rounded-full bg-accent/15 px-3 py-1 text-xs font-bold text-accent">
+              <span className="rounded-full bg-team-accent/15 px-3 py-1 text-xs font-bold text-team-accent">
                 YOUR PICK
               </span>
             )}
             <div className="mt-1">
-              <p className="text-lg font-semibold text-foreground">{current.fullName}</p>
-              <p className="text-xs text-muted">
+              <p className="text-lg font-semibold text-ink">{current.fullName}</p>
+              <p className="text-xs text-ink-muted">
                 {current.position} &middot; OVR {current.overallRating} &middot; POT{" "}
                 {current.potentialRating}
               </p>
             </div>
 
             {current.tradedFromTeamId && (
-              <div className="animate-lottery-banner-in mt-2 rounded-lg border border-orange-400 bg-orange-400/15 px-4 py-2">
-                <p className="text-xs font-black tracking-wide text-orange-400 uppercase">
+              <div className="animate-lottery-banner-in mt-2 rounded-[2px] border border-caution bg-caution/15 px-4 py-2">
+                <p className="text-xs font-black tracking-wide text-caution uppercase">
                   Trade Alert
                 </p>
-                <p className="mt-0.5 text-xs text-foreground">
+                <p className="mt-0.5 text-xs text-ink">
                   {teamLabel(teamsById, current.tradedFromTeamId)} traded this pick to{" "}
                   {teamLabel(teamsById, current.leagueTeamId)}
                 </p>
@@ -245,16 +245,16 @@ export function PickRevealStage({
             )}
 
             {current.narrative === "REACH" && (
-              <p className="text-sm font-semibold text-orange-400">
+              <p className="text-sm font-semibold text-caution">
                 ▲ A reach - the board had someone else in mind here
               </p>
             )}
             {current.narrative === "STEAL" && (
-              <div className="animate-lottery-banner-in mt-2 rounded-lg border border-emerald-400 bg-emerald-400/15 px-4 py-2">
-                <p className="text-xs font-black tracking-wide text-emerald-400 uppercase">
+              <div className="animate-lottery-banner-in mt-2 rounded-[2px] border border-positive bg-positive/15 px-4 py-2">
+                <p className="text-xs font-black tracking-wide text-positive uppercase">
                   Hidden Gem
                 </p>
-                <p className="mt-0.5 text-xs text-foreground">
+                <p className="mt-0.5 text-xs text-ink">
                   A real slide - great value this late
                 </p>
               </div>
@@ -264,20 +264,20 @@ export function PickRevealStage({
             )}
           </div>
         ) : (
-          <p className="mt-6 text-sm text-muted">The commissioner steps to the podium...</p>
+          <p className="mt-6 text-sm text-ink-muted">The commissioner steps to the podium...</p>
         )}
       </div>
 
       {!isSingle && (
         <div className="mt-6 flex flex-col items-center gap-3">
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <div className="flex overflow-hidden rounded-lg border border-border">
+            <div className="flex overflow-hidden rounded-[2px] border border-rule">
               <button
                 type="button"
                 disabled={isFinal}
                 onClick={() => setMode("auto")}
                 className={`px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
-                  mode === "auto" ? "bg-accent text-black" : "text-foreground hover:bg-surface-2"
+                  mode === "auto" ? "bg-team-accent text-team-accent-ink" : "text-ink hover:bg-raised"
                 }`}
               >
                 Auto-play
@@ -287,7 +287,7 @@ export function PickRevealStage({
                 disabled={isFinal}
                 onClick={() => setMode("manual")}
                 className={`px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
-                  mode === "manual" ? "bg-accent text-black" : "text-foreground hover:bg-surface-2"
+                  mode === "manual" ? "bg-team-accent text-team-accent-ink" : "text-ink hover:bg-raised"
                 }`}
               >
                 Manual
@@ -304,10 +304,10 @@ export function PickRevealStage({
                     setSpeed(label);
                     setIsPaused(false);
                   }}
-                  className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
+                  className={`rounded-[2px] border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
                     speed === label && !isPaused
-                      ? "border-accent bg-accent/15 text-accent"
-                      : "border-border text-foreground hover:bg-surface-2"
+                      ? "border-team-accent bg-team-accent/15 text-team-accent"
+                      : "border-rule text-ink hover:bg-raised"
                   }`}
                 >
                   {label}
@@ -319,10 +319,10 @@ export function PickRevealStage({
                 type="button"
                 disabled={isFinal}
                 onClick={() => setIsPaused((p) => !p)}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
+                className={`rounded-[2px] border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
                   isPaused
-                    ? "border-accent bg-accent/15 text-accent"
-                    : "border-border text-foreground hover:bg-surface-2"
+                    ? "border-team-accent bg-team-accent/15 text-team-accent"
+                    : "border-rule text-ink hover:bg-raised"
                 }`}
               >
                 {isPaused ? "Resume" : "Pause"}
@@ -334,7 +334,7 @@ export function PickRevealStage({
                 type="button"
                 disabled={isFinal}
                 onClick={handleManualAdvance}
-                className="rounded-lg bg-accent px-4 py-1.5 text-xs font-bold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-[2px] bg-team-accent px-4 py-1.5 text-xs font-bold text-team-accent-ink transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Reveal Next Pick
               </button>
@@ -344,12 +344,12 @@ export function PickRevealStage({
               type="button"
               disabled={isFinal}
               onClick={handleSkipToEnd}
-              className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-30"
+              className="rounded-[2px] border border-rule px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-raised disabled:cursor-not-allowed disabled:opacity-30"
             >
               Skip Ahead
             </button>
           </div>
-          <p className="text-xs text-muted">
+          <p className="text-xs text-ink-muted">
             {revealedCount} of {resolvedPicks.length} revealed
           </p>
         </div>

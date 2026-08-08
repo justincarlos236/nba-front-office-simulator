@@ -21,7 +21,7 @@ function DeltaChip({ delta }: { delta: number }) {
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${
-        positive ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"
+        positive ? "bg-positive/10 text-positive" : "bg-negative/10 text-negative"
       }`}
     >
       {positive ? "+" : ""}
@@ -32,12 +32,12 @@ function DeltaChip({ delta }: { delta: number }) {
 
 function ContributorRow({ event }: { event: LedgerEvent }) {
   return (
-    <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-surface-2 p-3">
+    <div className="flex items-start justify-between gap-3 rounded-[2px] border border-rule bg-raised p-3">
       <div className="min-w-0">
-        <p className="text-xs font-medium tracking-wide text-muted uppercase">
+        <p className="text-xs font-medium tracking-wide text-ink-muted uppercase">
           {FAN_SENTIMENT_KIND_LABEL[event.kind as FanSentimentKind]}
         </p>
-        <p className="mt-0.5 text-sm text-foreground">{event.description}</p>
+        <p className="mt-0.5 text-sm text-ink">{event.description}</p>
       </div>
       <DeltaChip delta={event.delta} />
     </div>
@@ -51,8 +51,8 @@ export function SentimentLedgerSection({ events }: { events: LedgerEvent[] }) {
   if (events.length === 0) {
     return (
       <section className="mt-10">
-        <h2 className="text-lg font-semibold text-foreground">Why They Feel This Way</h2>
-        <div className="mt-4 rounded-xl border border-dashed border-border bg-surface p-8 text-center text-muted">
+        <h2 className="text-lg font-semibold text-ink">Why They Feel This Way</h2>
+        <div className="mt-4 rounded-[2px] border border-dashed border-rule bg-field p-8 text-center text-ink-muted">
           Nothing notable has moved the fanbase yet this season - big trades, streaks, and decisions
           will show up here as they happen.
         </div>
@@ -62,41 +62,41 @@ export function SentimentLedgerSection({ events }: { events: LedgerEvent[] }) {
 
   return (
     <section className="mt-10">
-      <h2 className="text-lg font-semibold text-foreground">Why They Feel This Way</h2>
-      <p className="mt-1 text-sm text-muted">
+      <h2 className="text-lg font-semibold text-ink">Why They Feel This Way</h2>
+      <p className="mt-1 text-sm text-ink-muted">
         The real, specific events driving fan sentiment this season - not just the number they add
         up to.
       </p>
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {themes.map((t) => (
-          <div key={t.theme} className="rounded-xl border border-border bg-surface p-4">
-            <p className="text-xs tracking-wide text-muted uppercase">
+          <div key={t.theme} className="rounded-[2px] border border-rule bg-field p-4">
+            <p className="text-xs tracking-wide text-ink-muted uppercase">
               {FAN_SENTIMENT_THEME_LABEL[t.theme]}
             </p>
             <p
               className={`mt-1 text-2xl font-bold tabular-nums ${
                 t.netDelta > 0
-                  ? "text-emerald-400"
+                  ? "text-positive"
                   : t.netDelta < 0
-                    ? "text-red-400"
-                    : "text-foreground"
+                    ? "text-negative"
+                    : "text-ink"
               }`}
             >
               {t.netDelta > 0 ? "+" : ""}
               {t.netDelta}
             </p>
-            <p className="mt-1 text-xs text-muted">{FAN_SENTIMENT_THEME_DESCRIPTION[t.theme]}</p>
+            <p className="mt-1 text-xs text-ink-muted">{FAN_SENTIMENT_THEME_DESCRIPTION[t.theme]}</p>
           </div>
         ))}
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
-          <p className="text-sm font-semibold text-emerald-400">Biggest reasons fans are happy</p>
+          <p className="text-sm font-semibold text-positive">Biggest reasons fans are happy</p>
           <div className="mt-3 space-y-2">
             {positive.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted">
+              <p className="rounded-[2px] border border-dashed border-rule p-3 text-sm text-ink-muted">
                 Nothing has genuinely lifted the fanbase this season yet.
               </p>
             ) : (
@@ -105,10 +105,10 @@ export function SentimentLedgerSection({ events }: { events: LedgerEvent[] }) {
           </div>
         </div>
         <div>
-          <p className="text-sm font-semibold text-red-400">Biggest reasons fans are upset</p>
+          <p className="text-sm font-semibold text-negative">Biggest reasons fans are upset</p>
           <div className="mt-3 space-y-2">
             {negative.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted">
+              <p className="rounded-[2px] border border-dashed border-rule p-3 text-sm text-ink-muted">
                 Nothing has genuinely soured the fanbase this season yet.
               </p>
             ) : (

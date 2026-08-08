@@ -33,7 +33,7 @@ export default function RosterGuidePage() {
           {(Object.keys(ROTATION_ROLE_LABEL) as (keyof typeof ROTATION_ROLE_LABEL)[]).map(
             (role) => (
               <p key={role}>
-                <span className="text-foreground">{ROTATION_ROLE_LABEL[role]}</span>
+                <span className="text-ink">{ROTATION_ROLE_LABEL[role]}</span>
               </p>
             ),
           )}
@@ -52,8 +52,8 @@ export default function RosterGuidePage() {
         </p>
         <div className="space-y-3">
           {(Object.keys(MORALE_LEVEL_LABEL) as (keyof typeof MORALE_LEVEL_LABEL)[]).map((level) => (
-            <div key={level} className="rounded-lg border border-border bg-surface p-4">
-              <p className="font-semibold text-foreground">{MORALE_LEVEL_LABEL[level]}</p>
+            <div key={level} className="rounded-[2px] border border-rule bg-field p-4">
+              <p className="font-semibold text-ink">{MORALE_LEVEL_LABEL[level]}</p>
               <p className="mt-1">{MORALE_LEVEL_DESCRIPTION[level]}</p>
             </div>
           ))}
@@ -68,14 +68,14 @@ export default function RosterGuidePage() {
       <GuideSection id="staff" title="Coaching Staff">
         <p>Three staff roles, each with a real effect on the court - none of them are cosmetic:</p>
         <div>
-          <p className="font-semibold text-foreground">{STAFF_ROLE_LABEL.HEAD_COACH}</p>
+          <p className="font-semibold text-ink">{STAFF_ROLE_LABEL.HEAD_COACH}</p>
           <p className="mt-1">
             Nudges your win probability every game, and their coaching style (Pace &amp; Space,
             Balanced, Grind It Out) shifts how often your team shoots threes.
           </p>
         </div>
         <div>
-          <p className="font-semibold text-foreground">
+          <p className="font-semibold text-ink">
             {STAFF_ROLE_LABEL.PLAYER_DEVELOPMENT_COACH}
           </p>
           <p className="mt-1">
@@ -84,7 +84,7 @@ export default function RosterGuidePage() {
           </p>
         </div>
         <div>
-          <p className="font-semibold text-foreground">{STAFF_ROLE_LABEL.MEDICAL_STAFF}</p>
+          <p className="font-semibold text-ink">{STAFF_ROLE_LABEL.MEDICAL_STAFF}</p>
           <p className="mt-1">
             Lowers how often your players get hurt and shortens recovery time when they do.
           </p>

@@ -66,14 +66,14 @@ function PlayerProfileDrawerBody({ identity }: { identity: PlayerProfileIdentity
   if (state.status === "loading") {
     return (
       <div className="flex h-full items-center justify-center p-10">
-        <p className="text-sm text-muted">Loading player profile...</p>
+        <p className="text-sm text-ink-muted">Loading player profile...</p>
       </div>
     );
   }
   if (state.status === "error") {
     return (
       <div className="flex h-full items-center justify-center p-10">
-        <p className="text-sm text-red-400">{state.message}</p>
+        <p className="text-sm text-negative">{state.message}</p>
       </div>
     );
   }
@@ -89,8 +89,8 @@ function PlayerProfileDrawerBody({ identity }: { identity: PlayerProfileIdentity
           teamPrimaryColor={data.identity.currentTeam?.primaryColor}
         />
         <div>
-          <h2 className="text-2xl font-bold text-foreground">{data.identity.fullName}</h2>
-          <p className="text-sm text-muted">
+          <h2 className="text-2xl font-bold text-ink">{data.identity.fullName}</h2>
+          <p className="text-sm text-ink-muted">
             {data.identity.position}
             {data.identity.currentTeam
               ? ` · ${data.identity.currentTeam.city} ${data.identity.currentTeam.name}`
@@ -155,13 +155,13 @@ export function PlayerProfileProvider({ children }: { children: React.ReactNode 
               <div
                 role="dialog"
                 aria-modal="true"
-                className="relative h-full w-full max-w-lg overflow-y-auto border-l border-border bg-background shadow-2xl"
+                className="relative h-full w-full max-w-lg overflow-y-auto border-l border-rule-strong bg-ground"
               >
                 <button
                   type="button"
                   onClick={close}
                   aria-label="Close player profile"
-                  className="absolute top-4 right-4 z-10 rounded-lg border border-border bg-surface p-2 text-muted transition hover:text-foreground"
+                  className="absolute top-4 right-4 z-10 rounded-[2px] border border-rule bg-field p-2 text-ink-muted transition hover:text-ink"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

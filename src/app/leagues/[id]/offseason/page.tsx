@@ -5,6 +5,7 @@ import { getSeasonCapRules } from "@/lib/cap/constants";
 import { formatCentsCompact } from "@/lib/money";
 import { estimateAge } from "@/lib/players/age";
 import { computeLeaguePhase } from "@/lib/league/leaguePhase";
+import { getJobSecurityLevel } from "@/lib/gm/jobSecurity";
 import { OffseasonControls } from "@/components/offseason/OffseasonControls";
 import { HowDoesThisWork } from "@/components/guide/HowDoesThisWork";
 import { PlayerChip } from "@/components/players/PlayerChip";
@@ -75,19 +76,19 @@ export default async function OffseasonPage({ params }: PageProps) {
   const nextCap = getSeasonCapRules(season + 1);
 
   return (
-    <main className="mx-auto max-w-4xl flex-1 px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground">
+    <main className="mx-auto max-w-4xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
+      <h1 className="text-3xl font-bold tracking-tight text-ink">
         {seasonLabel(season)} Offseason
       </h1>
 
-      <p className="mt-2 max-w-2xl text-muted">
+      <p className="mt-2 max-w-2xl text-ink-muted">
         Players age, develop or decline, and sometimes retire between seasons; contracts that
         expired become free agents; the salary cap grows. See docs/ARCHITECTURE.md for exactly how
         each of these is modeled.
       </p>
 
       {phase === "ready" && (
-        <div className="mt-4 rounded-lg border border-border bg-surface px-4 py-3 text-sm text-foreground">
+        <div className="mt-4 rounded-[2px] border border-rule bg-field px-4 py-3 text-sm text-ink">
           Salary cap: {formatCentsCompact(currentCap.salaryCapCents)} &rarr;{" "}
           {formatCentsCompact(nextCap.salaryCapCents)} next season
         </div>
@@ -98,17 +99,19 @@ export default async function OffseasonPage({ params }: PageProps) {
           leagueId={league.id}
           phase={phase}
           nextSeasonLabel={seasonLabel(season + 1)}
+          ownerConfidence={league.ownerConfidence}
+          jobSecurityLevel={getJobSecurityLevel(league.ownerConfidence)}
         />
       </div>
 
       {ownershipMessages.length > 0 && (
         <section className="mt-10">
-          <h2 className="text-lg font-semibold text-foreground">Ownership</h2>
+          <h2 className="text-lg font-semibold text-ink">Ownership</h2>
           <div className="mt-3 space-y-3">
             {ownershipMessages.map((msg) => (
               <div
                 key={msg.id}
-                className="rounded-lg border border-purple-500/30 bg-purple-500/5 p-4 text-sm text-foreground"
+                className="rounded-[2px] border border-rule bg-raised p-4 text-sm text-ink"
               >
                 {msg.description}
               </div>
@@ -116,14 +119,14 @@ export default async function OffseasonPage({ params }: PageProps) {
           </div>
           <HowDoesThisWork
             topic="owner-confidence"
-            className="mt-2 inline-block text-xs text-muted underline hover:text-foreground"
+            className="mt-2 inline-block text-xs text-ink-muted underline hover:text-ink"
           />
         </section>
       )}
 
       {(lastSeasonAwards.length > 0 || lastSeasonStaffAwards.length > 0) && (
         <section className="mt-10">
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-semibold text-ink">
             {seasonLabel(previousSeason)} Season Awards
           </h2>
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -132,14 +135,14 @@ export default async function OffseasonPage({ params }: PageProps) {
               return (
                 <div
                   key={award.id}
-                  className={`rounded-lg border p-4 text-sm ${
-                    isUserTeam ? "border-accent bg-accent/5" : "border-border bg-surface"
+                  className={`rounded-[2px] border p-4 text-sm ${
+                    isUserTeam ? "border-team-accent bg-team-accent/5" : "border-rule bg-field"
                   }`}
                 >
-                  <p className="text-xs tracking-wide text-muted uppercase">
+                  <p className="text-xs tracking-wide text-ink-muted uppercase">
                     {AWARD_LABELS[award.category] ?? award.category}
                   </p>
-                  <p className="mt-1 font-semibold text-foreground">
+                  <p className="mt-1 font-semibold text-ink">
                     <PlayerChip
                       identity={{
                         kind: "league",
@@ -151,7 +154,7 @@ export default async function OffseasonPage({ params }: PageProps) {
                       teamPrimaryColor={award.leaguePlayer.leagueTeam?.team.primaryColor}
                     />
                   </p>
-                  <p className="text-xs text-muted">
+                  <p className="text-xs text-ink-muted">
                     {award.leaguePlayer.leagueTeam
                       ? `${award.leaguePlayer.leagueTeam.team.city} ${award.leaguePlayer.leagueTeam.team.name}`
                       : "Free agent"}
@@ -164,18 +167,18 @@ export default async function OffseasonPage({ params }: PageProps) {
               return (
                 <div
                   key={award.id}
-                  className={`rounded-lg border p-4 text-sm ${
-                    isUserTeam ? "border-accent bg-accent/5" : "border-border bg-surface"
+                  className={`rounded-[2px] border p-4 text-sm ${
+                    isUserTeam ? "border-team-accent bg-team-accent/5" : "border-rule bg-field"
                   }`}
                 >
-                  <p className="text-xs tracking-wide text-muted uppercase">
+                  <p className="text-xs tracking-wide text-ink-muted uppercase">
                     {STAFF_AWARD_LABELS[award.category] ?? award.category}
                   </p>
-                  <p className="mt-1 flex items-center gap-2 font-semibold text-foreground">
+                  <p className="mt-1 flex items-center gap-2 font-semibold text-ink">
                     <PlayerAvatar photoUrl={null} fullName={award.staff.fullName} size="xs" />
                     {award.staff.fullName}
                   </p>
-                  <p className="text-xs text-muted">
+                  <p className="text-xs text-ink-muted">
                     {award.staff.leagueTeam
                       ? `${award.staff.leagueTeam.team.city} ${award.staff.leagueTeam.team.name}`
                       : "Unemployed"}
@@ -189,21 +192,21 @@ export default async function OffseasonPage({ params }: PageProps) {
 
       {retirees.length > 0 && (
         <section className="mt-10">
-          <h2 className="text-lg font-semibold text-foreground">Retirements</h2>
+          <h2 className="text-lg font-semibold text-ink">Retirements</h2>
           <div className="mt-3 space-y-2">
             {retirees.map((r) => (
               <div
                 key={r.id}
-                className="flex items-center justify-between rounded-lg border border-border bg-surface p-4 text-sm"
+                className="flex items-center justify-between rounded-[2px] border border-rule bg-field p-4 text-sm"
               >
-                <span className="font-medium text-foreground">
+                <span className="font-medium text-ink">
                   <PlayerChip
                     identity={{ kind: "league", leagueId: league.id, leaguePlayerId: r.id }}
                     fullName={r.player.fullName}
                     photoUrl={r.player.photoUrl}
                   />
                 </span>
-                <span className="text-muted">
+                <span className="text-ink-muted">
                   Retired at {estimateAge(r.player.draftYear, previousSeason)} &middot; final rating{" "}
                   {r.overallRating}
                 </span>

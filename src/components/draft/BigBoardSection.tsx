@@ -33,18 +33,18 @@ export function BigBoardSection({
   );
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6">
+    <div className="rounded-[2px] border border-rule bg-field p-6">
       <div className="flex items-baseline justify-between">
         <div>
-          <h2 className="font-semibold text-foreground">The Big Board</h2>
-          <p className="mt-1 text-xs text-muted">
+          <h2 className="font-semibold text-ink">The Big Board</h2>
+          <p className="mt-1 text-xs text-ink-muted">
             Public consensus - age, physical profile, competition level, and production. Never your
             own scouting, and never the truth.{" "}
-            <HowDoesThisWork topic="big-board" className="underline hover:text-foreground" />
+            <HowDoesThisWork topic="big-board" className="underline hover:text-ink" />
           </p>
         </div>
         {tournamentRevealed && (
-          <span className="shrink-0 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent">
+          <span className="shrink-0 rounded-full bg-team-accent/10 px-2.5 py-1 text-xs font-semibold text-team-accent">
             Tournament results are in
           </span>
         )}
@@ -67,20 +67,20 @@ export function BigBoardSection({
               key={entry.prospectId}
               type="button"
               onClick={() => onOpenProfile(entry.prospectId)}
-              className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm transition hover:bg-surface-2"
+              className="flex w-full items-center gap-3 rounded-[2px] px-2 py-2 text-left text-sm transition hover:bg-raised"
             >
-              <span className="w-6 shrink-0 text-right font-mono text-muted">
+              <span className="w-6 shrink-0 text-right font-mono text-ink-muted">
                 {entry.publicRank}
               </span>
-              <span className="min-w-0 flex-1 truncate text-foreground">{prospect.fullName}</span>
-              <span className="shrink-0 text-xs text-muted">{prospect.position}</span>
-              <span className="w-20 shrink-0 text-right text-xs text-muted">
+              <span className="min-w-0 flex-1 truncate text-ink">{prospect.fullName}</span>
+              <span className="shrink-0 text-xs text-ink-muted">{prospect.position}</span>
+              <span className="w-20 shrink-0 text-right text-xs text-ink-muted">
                 {SCOUTING_DEPTH_LABEL[prospect.scoutingDepth] ?? "Unknown"}
               </span>
               {Math.abs(gap) >= 5 && (
                 <span
                   className={`w-32 shrink-0 text-right text-xs font-semibold ${
-                    gap > 0 ? "text-emerald-400" : "text-red-400"
+                    gap > 0 ? "text-positive" : "text-negative"
                   }`}
                   title={`Rating ${prospect.overallRating} would rank him #${trueRank}`}
                 >
@@ -92,7 +92,7 @@ export function BigBoardSection({
         })}
       </div>
       {board.length > DISPLAY_LIMIT && (
-        <p className="mt-3 text-center text-xs text-muted">
+        <p className="mt-3 text-center text-xs text-ink-muted">
           Showing the top {DISPLAY_LIMIT} of {board.length} - use the board below to browse the full
           class.
         </p>

@@ -3,7 +3,16 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { simulateGamesAction, type SimulateTarget } from "@/lib/actions/simulation";
+import { Button, Label } from "@/components/ui/primitives";
 
+/**
+ * Advancing time - the main verb of a season simulator.
+ *
+ * The audit found this lived only on Standings and Schedule: two clicks from
+ * the page a returning player lands on, discoverable through an Action Center
+ * hint that deleted itself after the first game ever simulated. It now also
+ * renders on the dashboard, next to "what needs you".
+ */
 export function SimulateControls({
   leagueId,
   gamesRemaining,
@@ -53,48 +62,61 @@ export function SimulateControls({
     });
   }
 
-  const disabled = isPending || remaining === 0 || weekendPending || decisionPending;
+  const blocked = weekendPending || decisionPending;
+  const disabled = isPending || remaining === 0 || blocked;
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6">
+    <section className="border-t border-rule bg-field p-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <Label>Advance the season</Label>
+        <span className="font-mono text-[11px] tabular-nums text-ink-muted">
+          {remaining} games left
+        </span>
+      </div>
+
       {weekendPending && (
-        <div className="mb-4 rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-3 text-sm">
-          <span className="text-foreground">All-Star Weekend has arrived.</span>{" "}
-          <Link href={`/leagues/${leagueId}/all-star`} className="text-accent hover:underline">
+        <p className="mt-4 border-l-2 border-l-caution bg-raised px-4 py-3 text-[15px] text-ink">
+          All-Star Weekend has arrived.{" "}
+          <Link
+            href={`/leagues/${leagueId}/all-star`}
+            className="text-team-accent underline underline-offset-4"
+          >
             View the weekend
           </Link>{" "}
-          <span className="text-muted">to continue the season.</span>
-        </div>
+          <span className="text-ink-muted">to continue the season.</span>
+        </p>
       )}
       {!weekendPending && decisionPending && (
-        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm">
-          <span className="text-foreground">The front office needs your call on something.</span>{" "}
-          <Link href={`/leagues/${leagueId}/finances`} className="text-accent hover:underline">
+        <p className="mt-4 border-l-2 border-l-caution bg-raised px-4 py-3 text-[15px] text-ink">
+          The front office needs your call on something.{" "}
+          <Link
+            href={`/leagues/${leagueId}/finances/inbox`}
+            className="text-team-accent underline underline-offset-4"
+          >
             Open the inbox
           </Link>{" "}
-          <span className="text-muted">to continue the season.</span>
-        </div>
+          <span className="text-ink-muted">to continue the season.</span>
+        </p>
       )}
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => handleSimulate("NEXT_GAME")}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-        >
+
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <Button disabled={disabled} onClick={() => handleSimulate("NEXT_GAME")}>
           {isPending ? "Simulating..." : "Sim next game"}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="secondary"
           disabled={disabled}
           onClick={() => handleSimulate("NEXT_10_GAMES")}
-          className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {isPending ? "Simulating..." : "Sim next 10 games"}
-        </button>
-        <span className="text-sm text-muted">{remaining} games remaining on your schedule</span>
+          Sim next 10
+        </Button>
       </div>
-      {lastResult && <p className="mt-3 text-sm text-accent">{lastResult}</p>}
-    </div>
+
+      {lastResult && (
+        <p aria-live="polite" className="mt-3 text-[15px] text-ink-muted">
+          {lastResult}
+        </p>
+      )}
+    </section>
   );
 }

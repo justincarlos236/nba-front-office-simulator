@@ -242,12 +242,12 @@ export function LiveGameScoreboard({
 
   return (
     <div className="mt-8">
-      <div className="rounded-xl border border-border bg-surface p-6">
+      <div className="rounded-[2px] border border-rule bg-field p-6">
         <div className="flex items-center justify-center gap-8">
           <ScoreSide team={awayTeam} score={awayScore} />
           <div className="text-center">
-            <p className="font-mono text-sm text-muted">{clockLabel}</p>
-            <p className="mt-1 text-xs font-semibold tracking-wide text-accent uppercase">
+            <p className="font-mono text-sm text-ink-muted">{clockLabel}</p>
+            <p className="mt-1 text-xs font-semibold tracking-wide text-team-accent uppercase">
               {banner ?? periodLabel(periodIndex, result.quarters.length)}
             </p>
           </div>
@@ -255,19 +255,19 @@ export function LiveGameScoreboard({
         </div>
 
         {suggestion && (
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-2 text-sm">
-            <span className="text-foreground">{suggestion}</span>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 rounded-[2px] border border-caution/30 bg-caution/5 px-4 py-2 text-sm">
+            <span className="text-ink">{suggestion}</span>
             <button
               type="button"
               onClick={acceptSuggestion}
-              className="rounded-md bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-300 hover:bg-amber-500/30"
+              className="rounded-[2px] bg-caution/20 px-3 py-1 text-xs font-semibold text-caution hover:bg-caution/30"
             >
               Slow to 1x
             </button>
             <button
               type="button"
               onClick={dismissSuggestion}
-              className="text-xs text-muted hover:text-foreground"
+              className="text-xs text-ink-muted hover:text-ink"
             >
               Dismiss
             </button>
@@ -284,10 +284,10 @@ export function LiveGameScoreboard({
                 setSpeed(label);
                 setIsPaused(false);
               }}
-              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
+              className={`rounded-[2px] border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
                 speed === label && !isPaused
-                  ? "border-accent bg-accent/15 text-accent"
-                  : "border-border text-foreground hover:bg-surface-2"
+                  ? "border-team-accent bg-team-accent/15 text-team-accent"
+                  : "border-rule text-ink hover:bg-raised"
               }`}
             >
               {label}
@@ -297,10 +297,10 @@ export function LiveGameScoreboard({
             type="button"
             disabled={isFinal}
             onClick={() => setIsPaused((p) => !p)}
-            className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
+            className={`rounded-[2px] border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
               isPaused
-                ? "border-accent bg-accent/15 text-accent"
-                : "border-border text-foreground hover:bg-surface-2"
+                ? "border-team-accent bg-team-accent/15 text-team-accent"
+                : "border-rule text-ink hover:bg-raised"
             }`}
           >
             {isPaused ? "Resume" : "Pause"}
@@ -312,7 +312,7 @@ export function LiveGameScoreboard({
               simToEndRef.current = true;
               setIsPaused(false);
             }}
-            className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-30"
+            className="rounded-[2px] border border-rule px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-raised disabled:cursor-not-allowed disabled:opacity-30"
           >
             Sim to End
           </button>
@@ -320,15 +320,15 @@ export function LiveGameScoreboard({
       </div>
 
       {topPerformers.length > 0 && (
-        <div className="mt-4 rounded-xl border border-border bg-surface p-4">
-          <p className="text-xs font-semibold tracking-wide text-muted uppercase">
+        <div className="mt-4 rounded-[2px] border border-rule bg-field p-4">
+          <p className="text-xs font-semibold tracking-wide text-ink-muted uppercase">
             Leading performers
           </p>
           <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
             {topPerformers.map((p) => (
               <div key={p.leaguePlayerId} className="flex items-center justify-between text-sm">
-                <span className="text-foreground">{p.name}</span>
-                <span className="font-mono text-muted">
+                <span className="text-ink">{p.name}</span>
+                <span className="font-mono text-ink-muted">
                   {p.points}p {p.rebounds}r {p.assists}a
                 </span>
               </div>
@@ -347,10 +347,10 @@ function ScoreSide({ team, score }: { team: LiveTeamInfo; score: number }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={team.logoUrl} alt="" className="h-14 w-14 object-contain" />
       )}
-      <p className="max-w-[8rem] truncate text-center text-sm font-semibold text-foreground">
+      <p className="max-w-[8rem] truncate text-center text-sm font-semibold text-ink">
         {team.label}
       </p>
-      <p className="font-mono text-4xl font-black text-foreground tabular-nums">{score}</p>
+      <p className="font-mono text-4xl font-black text-ink tabular-nums">{score}</p>
     </div>
   );
 }

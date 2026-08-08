@@ -26,7 +26,7 @@ export function FireStaffButton({ leagueId, staffId }: { leagueId: string; staff
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted transition hover:border-red-500/50 hover:text-red-400"
+        className="rounded-[2px] border border-rule px-3 py-1.5 text-xs font-semibold text-ink-muted transition hover:border-negative/50 hover:text-negative"
       >
         Fire
       </button>
@@ -36,24 +36,24 @@ export function FireStaffButton({ leagueId, staffId }: { leagueId: string; staff
   return (
     <div className="flex flex-col items-end gap-1.5">
       <div className="flex items-center gap-2">
-        <span className="text-xs text-muted">Are you sure?</span>
+        <span className="text-xs text-ink-muted">Are you sure?</span>
         <button
           type="button"
           disabled={isPending}
           onClick={handleFire}
-          className="rounded-lg bg-red-500/15 px-3 py-1.5 text-xs font-semibold text-red-400 transition hover:bg-red-500/25 disabled:opacity-40"
+          className="rounded-[2px] bg-negative/15 px-3 py-1.5 text-xs font-semibold text-negative transition hover:bg-negative/25 disabled:opacity-40"
         >
           {isPending ? "Firing..." : "Confirm fire"}
         </button>
         <button
           type="button"
           onClick={() => setConfirming(false)}
-          className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted transition hover:bg-surface"
+          className="rounded-[2px] border border-rule px-3 py-1.5 text-xs font-semibold text-ink-muted transition hover:bg-field"
         >
           Cancel
         </button>
       </div>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-xs text-negative">{error}</p>}
     </div>
   );
 }

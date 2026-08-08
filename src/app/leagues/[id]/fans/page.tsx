@@ -242,9 +242,9 @@ export default async function FansPage({ params }: PageProps) {
   const franchiseMemory = relocationEntry ? [relocationEntry, ...memoryEntries] : memoryEntries;
 
   return (
-    <main className="mx-auto max-w-4xl flex-1 px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground">Fan Hub</h1>
-      <p className="mt-2 max-w-2xl text-muted">
+    <main className="mx-auto max-w-4xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
+      <h1 className="text-3xl font-bold tracking-tight text-ink">Fan Hub</h1>
+      <p className="mt-2 max-w-2xl text-ink-muted">
         {MARKET_SIZE_LABEL[myLeagueTeam.team.marketSize]} - your decisions shape how the fanbase
         feels about the franchise, not just the win column.
       </p>
@@ -281,20 +281,20 @@ export default async function FansPage({ params }: PageProps) {
 
       <section className="mt-10 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">Fan Happiness by season</h2>
-          <div className="mt-3 rounded-xl border border-border bg-surface p-4">
+          <h2 className="text-lg font-semibold text-ink">Fan Happiness by season</h2>
+          <div className="mt-3 rounded-[2px] border border-rule bg-field p-4">
             <FanHappinessTrendChart
               points={snapshots.map((s) => ({ season: s.season, fanHappiness: s.fanHappiness }))}
             />
           </div>
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-foreground">This season, day by day</h2>
-          <p className="mt-1 text-xs text-muted">
+          <h2 className="text-lg font-semibold text-ink">This season, day by day</h2>
+          <p className="mt-1 text-xs text-ink-muted">
             Reconstructed from every real event this season - a once-a-year snapshot can&apos;t show
             an in-season collapse or hot streak; this can.
           </p>
-          <div className="mt-3 rounded-xl border border-border bg-surface p-4">
+          <div className="mt-3 rounded-[2px] border border-rule bg-field p-4">
             <InSeasonSentimentTrendChart
               points={buildInSeasonTrend(sentimentEvents, myLeagueTeam.fanHappiness)}
             />

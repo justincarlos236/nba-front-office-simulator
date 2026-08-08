@@ -15,9 +15,9 @@ import {
 // they can't resolve var(--token) the way an inline `style` can, so the
 // theme colors are duplicated here as literals (see globals.css).
 const COLORS = {
-  border: "#232b36",
-  muted: "#8b97a6",
-  accent: "#ff7a1a",
+  border: "var(--rule)",
+  muted: "var(--ink-muted)",
+  accent: "var(--team-accent)",
 };
 
 export interface RosterChartPoint {
@@ -37,9 +37,9 @@ function ChartTooltip({
   if (!active || !payload?.length) return null;
   const point = payload[0].payload;
   return (
-    <div className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs shadow-lg">
-      <p className="font-semibold text-foreground">{point.name}</p>
-      <p className="text-muted">
+    <div className="rounded-[2px] border border-rule bg-raised px-3 py-2 text-xs">
+      <p className="font-semibold text-ink">{point.name}</p>
+      <p className="text-ink-muted">
         Rating {point.rating} &middot; {point.minutesPerGame.toFixed(1)} MPG &middot;{" "}
         {point.pointsPerGame.toFixed(1)} PPG
       </p>

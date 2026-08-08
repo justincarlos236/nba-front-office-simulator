@@ -172,12 +172,12 @@ export function LotteryReveal({
     <div>
       {/* The current reveal - the hero moment */}
       <div
-        className={`relative overflow-hidden rounded-xl border p-8 text-center transition-all ${
+        className={`relative overflow-hidden rounded-[2px] border p-8 text-center transition-all ${
           isClimax
-            ? "border-accent bg-accent/5"
+            ? "border-team-accent bg-team-accent/5"
             : current?.isUserTeam
-              ? "border-accent/60 bg-accent/5"
-              : "border-border bg-surface"
+              ? "border-team-accent/60 bg-team-accent/5"
+              : "border-rule bg-field"
         }`}
         style={
           isClimax && current
@@ -186,7 +186,7 @@ export function LotteryReveal({
         }
       >
         <p
-          className={`text-xs font-semibold tracking-widest uppercase ${isClimax ? "text-accent" : "text-muted"}`}
+          className={`text-xs font-semibold tracking-widest uppercase ${isClimax ? "text-team-accent" : "text-ink-muted"}`}
         >
           {current?.resultPickNumber === 1
             ? "The No. 1 Overall Pick"
@@ -199,25 +199,25 @@ export function LotteryReveal({
           <div
             key={current.currentOwnerTeamId + current.resultPickNumber}
             className={`mt-4 flex flex-col items-center gap-3 animate-lottery-card-in ${
-              isClimax ? "animate-lottery-glow-pulse rounded-xl p-4" : ""
+              isClimax ? "animate-lottery-glow-pulse rounded-[2px] p-4" : ""
             }`}
           >
             <TeamBadge logoUrl={current.logoUrl} size={isClimax ? "xl" : "lg"} />
-            <p className={`font-bold text-foreground ${isClimax ? "text-3xl" : "text-xl"}`}>
+            <p className={`font-bold text-ink ${isClimax ? "text-3xl" : "text-xl"}`}>
               {current.currentOwnerLabel}
             </p>
             {current.ownedByAnotherTeam && (
-              <p className="text-xs text-muted">via {current.originalTeamLabel}&apos;s pick</p>
+              <p className="text-xs text-ink-muted">via {current.originalTeamLabel}&apos;s pick</p>
             )}
             {current.isUserTeam && (
-              <span className="rounded-full bg-accent/15 px-3 py-1 text-xs font-bold text-accent">
+              <span className="rounded-full bg-team-accent/15 px-3 py-1 text-xs font-bold text-team-accent">
                 YOUR TEAM
               </span>
             )}
 
             {(isBigJump || isBigFall) && (
               <p
-                className={`text-sm font-semibold ${isBigJump ? "text-emerald-400" : "text-red-400"}`}
+                className={`text-sm font-semibold ${isBigJump ? "text-positive" : "text-negative"}`}
               >
                 {isBigJump ? "▲" : "▼"} {isBigJump ? "Jumps" : "Falls"} {Math.abs(movement)} spot
                 {Math.abs(movement) === 1 ? "" : "s"} from a projected {current.projectedSeed}
@@ -226,22 +226,22 @@ export function LotteryReveal({
             )}
 
             {isUserTopFour && (
-              <div className="animate-lottery-banner-in mt-2 rounded-lg border border-accent bg-accent/15 px-4 py-2">
-                <p className="text-sm font-black tracking-wide text-accent uppercase">
+              <div className="animate-lottery-banner-in mt-2 rounded-[2px] border border-team-accent bg-team-accent/15 px-4 py-2">
+                <p className="text-sm font-black tracking-wide text-team-accent uppercase">
                   Top-4 pick locked in!
                 </p>
               </div>
             )}
           </div>
         ) : (
-          <p className="mt-6 text-sm text-muted">The lottery balls are in the hopper...</p>
+          <p className="mt-6 text-sm text-ink-muted">The lottery balls are in the hopper...</p>
         )}
       </div>
 
       {/* Tracking the user's own picks throughout, even after they're revealed */}
       {userTrackedTeams.length > 0 && (
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
-          <span className="text-muted">Your picks:</span>
+          <span className="text-ink-muted">Your picks:</span>
           {userTrackedTeams.map((t) => {
             const isRevealed = revealed.some(
               (r) =>
@@ -252,7 +252,7 @@ export function LotteryReveal({
               <span
                 key={t.currentOwnerTeamId + t.originalTeamId}
                 className={`rounded-full border px-2.5 py-1 font-mono ${
-                  isRevealed ? "border-accent bg-accent/10 text-accent" : "border-border text-muted"
+                  isRevealed ? "border-team-accent bg-team-accent/10 text-team-accent" : "border-rule text-ink-muted"
                 }`}
               >
                 {t.ownedByAnotherTeam ? `${t.originalTeamLabel} pick` : "Your pick"}:{" "}
@@ -266,13 +266,13 @@ export function LotteryReveal({
       {/* Controls */}
       <div className="mt-6 flex flex-col items-center gap-3">
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <div className="flex overflow-hidden rounded-lg border border-border">
+          <div className="flex overflow-hidden rounded-[2px] border border-rule">
             <button
               type="button"
               disabled={isFinal}
               onClick={() => setMode("auto")}
               className={`px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
-                mode === "auto" ? "bg-accent text-black" : "text-foreground hover:bg-surface-2"
+                mode === "auto" ? "bg-team-accent text-team-accent-ink" : "text-ink hover:bg-raised"
               }`}
             >
               Auto-play
@@ -282,7 +282,7 @@ export function LotteryReveal({
               disabled={isFinal}
               onClick={() => setMode("manual")}
               className={`px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
-                mode === "manual" ? "bg-accent text-black" : "text-foreground hover:bg-surface-2"
+                mode === "manual" ? "bg-team-accent text-team-accent-ink" : "text-ink hover:bg-raised"
               }`}
             >
               Manual
@@ -299,10 +299,10 @@ export function LotteryReveal({
                   setSpeed(label);
                   setIsPaused(false);
                 }}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
+                className={`rounded-[2px] border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
                   speed === label && !isPaused
-                    ? "border-accent bg-accent/15 text-accent"
-                    : "border-border text-foreground hover:bg-surface-2"
+                    ? "border-team-accent bg-team-accent/15 text-team-accent"
+                    : "border-rule text-ink hover:bg-raised"
                 }`}
               >
                 {label}
@@ -314,10 +314,10 @@ export function LotteryReveal({
               type="button"
               disabled={isFinal}
               onClick={() => setIsPaused((p) => !p)}
-              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
+              className={`rounded-[2px] border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
                 isPaused
-                  ? "border-accent bg-accent/15 text-accent"
-                  : "border-border text-foreground hover:bg-surface-2"
+                  ? "border-team-accent bg-team-accent/15 text-team-accent"
+                  : "border-rule text-ink hover:bg-raised"
               }`}
             >
               {isPaused ? "Resume" : "Pause"}
@@ -329,7 +329,7 @@ export function LotteryReveal({
               type="button"
               disabled={isFinal}
               onClick={handleManualAdvance}
-              className="rounded-lg bg-accent px-4 py-1.5 text-xs font-bold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-[2px] bg-team-accent px-4 py-1.5 text-xs font-bold text-team-accent-ink transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Reveal Next Pick
             </button>
@@ -339,7 +339,7 @@ export function LotteryReveal({
             type="button"
             disabled={isFinal}
             onClick={handleSkipToEnd}
-            className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-30"
+            className="rounded-[2px] border border-rule px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-raised disabled:cursor-not-allowed disabled:opacity-30"
           >
             Skip to Results
           </button>
@@ -352,28 +352,28 @@ export function LotteryReveal({
           {[...revealed].reverse().map((r) => (
             <div
               key={r.currentOwnerTeamId + r.originalTeamId}
-              className={`flex items-center gap-3 rounded-lg border p-2.5 text-sm ${
-                r.isUserTeam ? "border-accent/60 bg-accent/5" : "border-border bg-surface"
+              className={`flex items-center gap-3 rounded-[2px] border p-2.5 text-sm ${
+                r.isUserTeam ? "border-team-accent/60 bg-team-accent/5" : "border-rule bg-field"
               }`}
             >
-              <span className="w-6 shrink-0 text-center font-mono text-xs font-bold text-foreground">
+              <span className="w-6 shrink-0 text-center font-mono text-xs font-bold text-ink">
                 {r.resultPickNumber}
               </span>
               <TeamBadge logoUrl={r.logoUrl} size="sm" />
-              <span className="min-w-0 flex-1 truncate text-foreground">
+              <span className="min-w-0 flex-1 truncate text-ink">
                 {r.currentOwnerLabel}
-                {r.isUserTeam && <span className="ml-2 text-xs text-accent">YOU</span>}
+                {r.isUserTeam && <span className="ml-2 text-xs text-team-accent">YOU</span>}
               </span>
               {r.movement !== 0 && (
                 <span
                   className={`shrink-0 font-mono text-xs ${
-                    r.movement > 0 ? "text-emerald-400" : "text-red-400"
+                    r.movement > 0 ? "text-positive" : "text-negative"
                   }`}
                 >
                   {r.movement > 0 ? "▲" : "▼"} {Math.abs(r.movement)}
                 </span>
               )}
-              <span className="shrink-0 font-mono text-xs text-muted">proj. {r.projectedSeed}</span>
+              <span className="shrink-0 font-mono text-xs text-ink-muted">proj. {r.projectedSeed}</span>
             </div>
           ))}
         </div>

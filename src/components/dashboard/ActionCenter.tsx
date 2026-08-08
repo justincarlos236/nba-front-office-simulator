@@ -4,11 +4,24 @@ import { useState } from "react";
 import Link from "next/link";
 import type { ActionCenterItem } from "@/lib/gm/actionCenter";
 import type { DidYouKnowTip } from "@/lib/gm/didYouKnow";
+import { Label } from "@/components/ui/primitives";
 
-const SEVERITY_DOT_CLASS: Record<ActionCenterItem["severity"], string> = {
-  critical: "bg-red-500",
-  warning: "bg-orange-400",
-  info: "bg-accent",
+/**
+ * Severity as a ruled left edge rather than a coloured dot. In The Wire a
+ * status is a semantic colour on a rule, never a decorative pip - and the
+ * previous `bg-caution` / `bg-team-accent` values were raw palette colours
+ * outside the token layer.
+ */
+const SEVERITY_EDGE: Record<ActionCenterItem["severity"], string> = {
+  critical: "border-l-signal-red",
+  warning: "border-l-caution",
+  info: "border-l-team-accent",
+};
+
+const SEVERITY_LABEL: Record<ActionCenterItem["severity"], string> = {
+  critical: "Urgent",
+  warning: "Soon",
+  info: "When you can",
 };
 
 /**
@@ -17,38 +30,42 @@ const SEVERITY_DOT_CLASS: Record<ActionCenterItem["severity"], string> = {
  * disclosure per item: the label still navigates on click, this only ever
  * reveals text. Nothing here fires without the player asking for it.
  */
-function ActionCenterCard({ item }: { item: ActionCenterItem }) {
+function ActionCenterItemRow({ item }: { item: ActionCenterItem }) {
   const [expanded, setExpanded] = useState(false);
   const hasReasoning = Boolean(item.reasoning || item.consequence);
 
   return (
-    <div className="rounded-lg border border-border transition hover:border-accent/40 hover:bg-surface-2">
-      <Link href={item.href} className="group flex items-start gap-3 p-3">
-        <span
-          className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${SEVERITY_DOT_CLASS[item.severity]}`}
-        />
-        <div className="min-w-0">
-          <p className="font-medium text-foreground transition group-hover:text-accent">
+    <div className={`border-l-2 bg-raised ${SEVERITY_EDGE[item.severity]}`}>
+      <Link
+        href={item.href}
+        className="group block px-4 py-3 transition-colors duration-120 hover:bg-field"
+      >
+        <div className="flex items-baseline justify-between gap-4">
+          <p className="text-[clamp(1.125rem,1.6vw,1.375rem)] leading-tight font-semibold tracking-[-0.01em] text-ink transition-colors group-hover:text-team-accent">
             {item.label}
           </p>
-          <p className="mt-0.5 text-xs text-muted">{item.description}</p>
+          <span className="shrink-0 text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase">
+            {SEVERITY_LABEL[item.severity]}
+          </span>
         </div>
+        <p className="mt-2 text-[15px] leading-relaxed text-ink-muted">{item.description}</p>
       </Link>
       {hasReasoning && (
-        <div className="px-3 pb-3 pl-8">
+        <div className="px-4 pb-3">
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="text-xs text-muted underline hover:text-foreground"
+            className="text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase underline decoration-rule underline-offset-4 transition-colors hover:text-ink"
           >
             {expanded ? "Hide reasoning" : "Why is this recommended?"}
           </button>
           {expanded && (
-            <div className="mt-2 space-y-1.5 rounded-lg bg-surface-2 p-3 text-xs text-muted">
+            <div className="mt-3 space-y-2 border-t border-hairline pt-3 text-[15px] leading-relaxed text-ink-muted">
               {item.reasoning && <p>{item.reasoning}</p>}
               {item.consequence && (
                 <p>
-                  <span className="text-foreground">If you don&apos;t:</span> {item.consequence}
+                  <span className="font-semibold text-ink">If you don&apos;t:</span>{" "}
+                  {item.consequence}
                 </p>
               )}
             </div>
@@ -68,31 +85,31 @@ export function ActionCenter({
   didYouKnowTip?: DidYouKnowTip | null;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-5">
-      <h2 className="font-semibold text-foreground">What&apos;s next</h2>
+    <section className="border-t-2 border-team-accent bg-field p-6 sm:p-8">
+      <Label tone="accent">Needs you</Label>
       {items.length === 0 ? (
-        <div className="mt-2 space-y-3">
-          <p className="text-sm text-muted">
-            Nothing urgent right now - explore trades, staff, or free agency to keep improving the
+        <div className="mt-4 space-y-4">
+          <p className="text-[15px] leading-relaxed text-ink-muted">
+            Nothing urgent right now. Explore trades, staff, or free agency to keep improving the
             team.
           </p>
           {didYouKnowTip && (
             <Link
               href={didYouKnowTip.href}
-              className="block rounded-lg border border-border bg-surface-2 p-3 text-xs text-muted transition hover:border-accent/40 hover:text-foreground"
+              className="block border-l-2 border-l-rule bg-raised px-4 py-3 text-[15px] text-ink-muted transition-colors duration-120 hover:border-l-team-accent hover:text-ink"
             >
-              <span className="font-semibold text-foreground">Did you know? </span>
+              <span className="font-semibold text-ink">Did you know? </span>
               {didYouKnowTip.text}
             </Link>
           )}
         </div>
       ) : (
-        <div className="mt-3 space-y-2">
+        <div className="mt-4 space-y-2">
           {items.map((item) => (
-            <ActionCenterCard key={item.id} item={item} />
+            <ActionCenterItemRow key={item.id} item={item} />
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }

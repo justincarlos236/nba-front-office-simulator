@@ -42,7 +42,7 @@ export default function SeasonFlowGuidePage() {
           Once a champion is crowned, this season&apos;s draft class is revealed and a Pre-Draft
           scouting window opens - before the lottery runs, so you&apos;re scouting without knowing
           where you&apos;ll actually pick. See{" "}
-          <a href="/guide/scouting" className="text-foreground underline hover:text-accent">
+          <a href="/guide/scouting" className="text-ink underline hover:text-team-accent">
             How Scouting Works
           </a>{" "}
           for how that window plays out.
@@ -67,7 +67,7 @@ export default function SeasonFlowGuidePage() {
           expectation - see{" "}
           <a
             href="/guide/finances#owner-confidence"
-            className="text-foreground underline hover:text-accent"
+            className="text-ink underline hover:text-team-accent"
           >
             Owner Confidence &amp; Job Security
           </a>{" "}

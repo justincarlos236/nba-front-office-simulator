@@ -30,12 +30,12 @@ function toneFor(delta: number): "POSITIVE" | "NEGATIVE" | "NEUTRAL" {
 export function ReactionFeedSection({ events }: { events: LedgerEvent[] }) {
   return (
     <section className="mt-10">
-      <h2 className="text-lg font-semibold text-foreground">Fan Reactions</h2>
-      <p className="mt-1 text-sm text-muted">
+      <h2 className="text-lg font-semibold text-ink">Fan Reactions</h2>
+      <p className="mt-1 text-sm text-ink-muted">
         What the fanbase is actually saying about your recent moves and results.
       </p>
       {events.length === 0 ? (
-        <div className="mt-4 rounded-xl border border-border bg-surface p-8 text-center text-muted">
+        <div className="mt-4 rounded-[2px] border border-rule bg-field p-8 text-center text-ink-muted">
           No fan reactions yet - they&apos;ll show up here as your season unfolds.
         </div>
       ) : (
@@ -43,9 +43,9 @@ export function ReactionFeedSection({ events }: { events: LedgerEvent[] }) {
           {events.map((e) => (
             <div
               key={e.id}
-              className={`rounded-lg border border-border bg-surface p-3 text-sm text-foreground ${REACTION_TONE_CLASS[toneFor(e.delta)]}`}
+              className={`rounded-[2px] border border-rule bg-field p-3 text-sm text-ink ${REACTION_TONE_CLASS[toneFor(e.delta)]}`}
             >
-              <p className="text-xs font-medium tracking-wide text-muted uppercase">
+              <p className="text-xs font-medium tracking-wide text-ink-muted uppercase">
                 {FAN_SENTIMENT_KIND_LABEL[e.kind as FanSentimentKind]}
               </p>
               <p className="mt-0.5">{e.description}</p>

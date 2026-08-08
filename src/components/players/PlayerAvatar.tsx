@@ -56,7 +56,7 @@ export function PlayerAvatar({
 
   return (
     <div
-      className={`relative shrink-0 overflow-hidden rounded-full border border-border ${className ?? ""}`}
+      className={`relative shrink-0 overflow-hidden rounded-full border border-rule ${className ?? ""}`}
       style={{ width: px, height: px }}
     >
       {showPhoto ? (
@@ -71,7 +71,7 @@ export function PlayerAvatar({
         />
       ) : (
         <div
-          className="flex h-full w-full items-center justify-center font-semibold text-foreground"
+          className="flex h-full w-full items-center justify-center font-semibold text-ink"
           style={{ background: gradient, fontSize: FONT_SIZE_PX[size] }}
         >
           {getInitials(fullName)}

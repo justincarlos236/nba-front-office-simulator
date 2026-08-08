@@ -62,7 +62,7 @@ export function MonthlyScheduleCalendar({
 
   if (monthRange.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-border p-8 text-center text-muted">
+      <div className="rounded-[2px] border border-dashed border-rule p-8 text-center text-ink-muted">
         Calendar available starting next season.
       </div>
     );
@@ -78,24 +78,24 @@ export function MonthlyScheduleCalendar({
           type="button"
           disabled={monthIndex === 0}
           onClick={() => onMonthChange(Math.max(0, monthIndex - 1))}
-          className="rounded-lg border border-border px-3 py-1.5 text-sm text-foreground transition hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-30"
+          className="rounded-[2px] border border-rule px-3 py-1.5 text-sm text-ink transition hover:bg-raised disabled:cursor-not-allowed disabled:opacity-30"
         >
           &larr; Prev
         </button>
-        <h3 className="text-lg font-semibold text-foreground">
+        <h3 className="text-lg font-semibold text-ink">
           {MONTH_LABEL[current.month]} {current.year}
         </h3>
         <button
           type="button"
           disabled={monthIndex === monthRange.length - 1}
           onClick={() => onMonthChange(Math.min(monthRange.length - 1, monthIndex + 1))}
-          className="rounded-lg border border-border px-3 py-1.5 text-sm text-foreground transition hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-30"
+          className="rounded-[2px] border border-rule px-3 py-1.5 text-sm text-ink transition hover:bg-raised disabled:cursor-not-allowed disabled:opacity-30"
         >
           Next &rarr;
         </button>
       </div>
 
-      <div className="mt-4 grid grid-cols-7 gap-1 text-center text-xs tracking-wide text-muted uppercase">
+      <div className="mt-4 grid grid-cols-7 gap-1 text-center text-xs tracking-wide text-ink-muted uppercase">
         {WEEKDAY_LABEL.map((d) => (
           <div key={d} className="py-1">
             {d}
@@ -106,7 +106,7 @@ export function MonthlyScheduleCalendar({
       <div className="mt-1 grid grid-cols-7 gap-1">
         {grid.flat().map((cell, i) => {
           if (!cell.date) {
-            return <div key={i} className="aspect-square rounded-lg" />;
+            return <div key={i} className="aspect-square rounded-[2px]" />;
           }
           const date = cell.date;
           const game = gamesByDate.get(
@@ -118,13 +118,13 @@ export function MonthlyScheduleCalendar({
           return (
             <div
               key={i}
-              className={`relative aspect-square overflow-hidden rounded-lg border ${
-                isToday ? "border-accent ring-2 ring-accent" : "border-border"
-              } ${isPast ? "bg-surface/50" : "bg-surface"}`}
+              className={`relative aspect-square overflow-hidden rounded-[2px] border ${
+                isToday ? "border-team-accent ring-2 ring-team-accent" : "border-rule"
+              } ${isPast ? "bg-field/50" : "bg-field"}`}
             >
               <span
                 className={`absolute top-1 left-1.5 z-10 text-xs font-medium ${
-                  isPast ? "text-muted/60" : "text-muted"
+                  isPast ? "text-ink-muted/60" : "text-ink-muted"
                 }`}
               >
                 {date.getDate()}
@@ -142,7 +142,7 @@ export function MonthlyScheduleCalendar({
                   )}
                   <span
                     className={`absolute right-1.5 bottom-1 z-10 text-[10px] font-semibold tracking-wide uppercase ${
-                      isPast ? "text-muted/60" : "text-muted"
+                      isPast ? "text-ink-muted/60" : "text-ink-muted"
                     }`}
                   >
                     {game.isHome ? "vs" : "@"}
@@ -152,12 +152,12 @@ export function MonthlyScheduleCalendar({
                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
                       <span
                         className={`text-2xl font-black ${
-                          game.won ? "text-emerald-500" : "text-red-500"
+                          game.won ? "text-positive" : "text-negative"
                         }`}
                       >
                         {game.won ? "W" : "L"}
                       </span>
-                      <span className="font-mono text-[10px] text-foreground">
+                      <span className="font-mono text-[10px] text-ink">
                         {game.teamScore}-{game.opponentScore}
                       </span>
                     </div>

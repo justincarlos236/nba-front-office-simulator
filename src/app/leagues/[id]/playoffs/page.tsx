@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { PlayoffControls } from "@/components/playoffs/PlayoffControls";
 import { PlayoffBracket, type BracketSeries } from "@/components/playoffs/PlayoffBracket";
+import { ChampionBanner } from "@/components/playoffs/ChampionBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -117,34 +117,32 @@ export default async function PlayoffsPage({ params }: PageProps) {
     : null;
 
   return (
-    <main className="mx-auto max-w-4xl flex-1 px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground">
+    <main className="mx-auto max-w-4xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
+      <h1 className="text-3xl font-bold tracking-tight text-ink">
         {league.currentSeason}-{(league.currentSeason + 1).toString().slice(-2)} Playoffs
       </h1>
 
-      <p className="mt-2 max-w-2xl text-muted">
+      <p className="mt-2 max-w-2xl text-ink-muted">
         Top 6 seeds per conference qualify directly; seeds 7-10 play into the final two spots via
         the play-in tournament. From there it&apos;s a fixed best-of-7 bracket, same as the real NBA
         - see docs/ARCHITECTURE.md.
       </p>
 
       {userStatus && (
-        <div className="mt-4 max-w-2xl rounded-lg border border-border bg-surface px-4 py-3 text-sm text-foreground">
+        <div className="mt-4 max-w-2xl rounded-[2px] border border-rule bg-field px-4 py-3 text-sm text-ink">
           {userStatus}
         </div>
       )}
 
       {champion && (
-        <div className="mx-auto mt-8 max-w-md rounded-xl border border-accent bg-accent/10 p-6 text-center">
-          <p className="text-sm tracking-wide text-muted uppercase">League Champion</p>
-          <p className="mt-1 text-2xl font-bold text-foreground">{teamName(champion.team)}</p>
-          <Link
-            href={`/leagues/${league.id}/offseason`}
-            className="mt-4 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90"
-          >
-            Continue to the offseason &rarr;
-          </Link>
-        </div>
+        <ChampionBanner
+          leagueId={league.id}
+          teamLabel={teamName(champion.team)}
+          primaryColor={champion.team.primaryColor}
+          secondaryColor={champion.team.secondaryColor}
+          season={league.currentSeason}
+          isUserTeam={champion.id === userTeamId}
+        />
       )}
 
       <div className="mt-8">
@@ -153,23 +151,23 @@ export default async function PlayoffsPage({ params }: PageProps) {
 
       {playInGames.length > 0 && (
         <section className="mt-10">
-          <h2 className="text-lg font-semibold text-foreground">Play-In Tournament</h2>
+          <h2 className="text-lg font-semibold text-ink">Play-In Tournament</h2>
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {playInGames.map((g) => (
               <div
                 key={g.id}
-                className={`rounded-lg border p-4 text-sm ${
+                className={`rounded-[2px] border p-4 text-sm ${
                   g.homeLeagueTeamId === userTeamId || g.awayLeagueTeamId === userTeamId
-                    ? "border-accent bg-accent/5"
-                    : "border-border bg-surface"
+                    ? "border-team-accent bg-team-accent/5"
+                    : "border-rule bg-field"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span
                     className={
                       (g.homeScore ?? 0) > (g.awayScore ?? 0)
-                        ? "font-semibold text-foreground"
-                        : "text-muted"
+                        ? "font-semibold text-ink"
+                        : "text-ink-muted"
                     }
                   >
                     {teamName(g.homeTeam.team)}
@@ -180,8 +178,8 @@ export default async function PlayoffsPage({ params }: PageProps) {
                   <span
                     className={
                       (g.awayScore ?? 0) > (g.homeScore ?? 0)
-                        ? "font-semibold text-foreground"
-                        : "text-muted"
+                        ? "font-semibold text-ink"
+                        : "text-ink-muted"
                     }
                   >
                     {teamName(g.awayTeam.team)}

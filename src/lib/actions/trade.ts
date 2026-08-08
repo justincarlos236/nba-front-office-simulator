@@ -5,6 +5,10 @@ import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
 import { prisma } from "@/lib/prisma";
 import { validateTrade, type TradeAssetInput } from "@/lib/trade/validateTrade";
+import {
+  buildTradeCapSnapshotSide,
+  type TradeCapSnapshot,
+} from "@/lib/trade/capSnapshot";
 import { describeTrade } from "@/lib/transactions/describeTransaction";
 import { highestImportance, importanceForRating } from "@/lib/transactions/newsImportance";
 import { computeCompetitivenessPercentiles } from "@/lib/actions/competitiveness";
@@ -73,13 +77,18 @@ async function loadCapState(leagueTeamId: string, season: number) {
     where: { leagueTeamId },
     include: { contract: { include: { years: { where: { season } } } } },
   });
-  const capSheet = computeCapSheet({
-    season,
-    contracts: leaguePlayers
-      .filter((lp) => lp.contract?.years[0])
-      .map((lp) => ({ playerId: lp.playerId, salaryCents: lp.contract!.years[0].salaryCents })),
-  });
-  return capSheet;
+  // Kept alongside the sheet so the trade cap snapshot can recompute the
+  // "after" sheet from the same contracts (with traded salary moved across)
+  // without issuing a second round of queries.
+  const contracts = leaguePlayers
+    .filter((lp) => lp.contract?.years[0])
+    .map((lp) => ({
+      leaguePlayerId: lp.id,
+      playerId: lp.playerId,
+      salaryCents: lp.contract!.years[0].salaryCents,
+    }));
+  const capSheet = computeCapSheet({ season, contracts });
+  return { capSheet, contracts };
 }
 
 /**
@@ -108,8 +117,8 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
     theirPlayers,
     myPicks,
     theirPicks,
-    myCapSheet,
-    theirCapSheet,
+    myCapState,
+    theirCapState,
     myOwnedFirstRoundSeasons,
     theirOwnedFirstRoundSeasons,
     fromLeagueTeam,
@@ -245,13 +254,13 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
     assets,
     teamCapStates: {
       [input.fromTeamId]: {
-        apronLevel: myCapSheet.apronLevel,
-        capSpaceCents: myCapSheet.capSpaceCents,
+        apronLevel: myCapState.capSheet.apronLevel,
+        capSpaceCents: myCapState.capSheet.capSpaceCents,
         ownedFutureFirstRoundPickSeasons: myOwnedFirstRoundSeasons,
       },
       [input.toTeamId]: {
-        apronLevel: theirCapSheet.apronLevel,
-        capSpaceCents: theirCapSheet.capSpaceCents,
+        apronLevel: theirCapState.capSheet.apronLevel,
+        capSpaceCents: theirCapState.capSheet.capSpaceCents,
         ownedFutureFirstRoundPickSeasons: theirOwnedFirstRoundSeasons,
       },
     },
@@ -429,7 +438,53 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
   }));
   const totalVoidPenaltyCents = sponsorshipVoids.reduce((sum, v) => sum + v.penaltyCents, 0);
 
-  await prisma.$transaction(async (tx) => {
+  // Immutable cap evidence for the trade outcome surface. The "before" sheets
+  // are the ones validation already loaded (no extra queries); the "after"
+  // sheets are recomputed from the same contracts with the traded salary moved
+  // across, which is exactly what the roster will look like once the writes
+  // below land. Frozen here because cap sheets are otherwise always computed
+  // from *current* state - see src/lib/trade/capSnapshot.ts.
+  const salaryFor = (lp: (typeof myPlayers)[number]) =>
+    lp.contract?.years[0]?.salaryCents ?? 0n;
+
+  const capSnapshot: TradeCapSnapshot = {
+    season: tradeSeason,
+    from: buildTradeCapSnapshotSide(
+      myCapState.capSheet,
+      computeCapSheet({
+        season: tradeSeason,
+        contracts: [
+          ...myCapState.contracts.filter((c) => !input.myPlayerIds.includes(c.leaguePlayerId)),
+          ...theirPlayers.map((lp) => ({
+            leaguePlayerId: lp.id,
+            playerId: lp.playerId,
+            salaryCents: salaryFor(lp),
+          })),
+        ],
+      }),
+      fromTeamRoster.length,
+      fromTeamRoster.length - myPlayers.length + theirPlayers.length,
+    ),
+    to: buildTradeCapSnapshotSide(
+      theirCapState.capSheet,
+      computeCapSheet({
+        season: tradeSeason,
+        contracts: [
+          ...theirCapState.contracts.filter(
+            (c) => !input.theirPlayerIds.includes(c.leaguePlayerId),
+          ),
+          ...myPlayers.map((lp) => ({
+            leaguePlayerId: lp.id,
+            playerId: lp.playerId,
+            salaryCents: salaryFor(lp),
+          })),
+        ],
+      }),
+      toTeamRoster.length,
+      toTeamRoster.length - theirPlayers.length + myPlayers.length,
+    ),
+  };
+  const executedTradeId = await prisma.$transaction(async (tx) => {
     const trade = await tx.trade.create({
       data: {
         leagueId: league.id,
@@ -437,6 +492,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
         status: "EXECUTED",
         resolvedAt: new Date(),
         validationResult: validation as unknown as object,
+        capSnapshot: capSnapshot as unknown as object,
       },
     });
 
@@ -730,6 +786,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
           description: describeIconDeparture(d.name, d.teamLabel),
           importance: "MAJOR" as const,
           teamIds: [d.teamId],
+          tradeId: trade.id,
         })),
       });
     }
@@ -745,6 +802,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
           description: `The ${deal.label} deal has voided - trading away its condition player triggered a ${formatCentsCompact(penaltyCents)} buyout penalty.`,
           importance: "MAJOR" as const,
           teamIds: [input.fromTeamId],
+          tradeId: trade.id,
         })),
       });
     }
@@ -776,9 +834,16 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
           [...myPlayers, ...theirPlayers].map((lp) => importanceForRating(lp.overallRating)),
         ),
         teamIds: [fromLeagueTeam.id, toLeagueTeam.id],
+        tradeId: trade.id,
       },
     });
+
+    return trade.id;
   });
 
-  redirect(`/leagues/${league.id}`);
+  // The outcome surface, not the dashboard. Every consequence this action just
+  // computed - fan reaction, icon departures, the cap move - is reconstructable
+  // from the trade row, and landing on it is what turns executing a trade into
+  // a moment rather than a silent redirect.
+  redirect(`/leagues/${league.id}/trades/${executedTradeId}?just=1`);
 }

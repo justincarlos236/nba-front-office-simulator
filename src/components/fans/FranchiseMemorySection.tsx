@@ -19,8 +19,8 @@ export function FranchiseMemorySection({ memories }: { memories: MemoryItem[] })
   if (memories.length === 0) {
     return (
       <section className="mt-10">
-        <h2 className="text-lg font-semibold text-foreground">Franchise Memory</h2>
-        <div className="mt-4 rounded-xl border border-dashed border-border bg-surface p-8 text-center text-muted">
+        <h2 className="text-lg font-semibold text-ink">Franchise Memory</h2>
+        <div className="mt-4 rounded-[2px] border border-dashed border-rule bg-field p-8 text-center text-ink-muted">
           This franchise hasn&apos;t made history yet - the defining moments will show up here as
           they happen.
         </div>
@@ -30,20 +30,20 @@ export function FranchiseMemorySection({ memories }: { memories: MemoryItem[] })
 
   return (
     <section className="mt-10">
-      <h2 className="text-lg font-semibold text-foreground">Franchise Memory</h2>
-      <p className="mt-1 text-sm text-muted">
+      <h2 className="text-lg font-semibold text-ink">Franchise Memory</h2>
+      <p className="mt-1 text-sm text-ink-muted">
         The moments this fanbase will not forget - the permanent record.
       </p>
       <div className="mt-4 space-y-2">
         {memories.map((m) => (
           <div
             key={m.id}
-            className="flex items-baseline gap-3 rounded-lg border border-border bg-surface p-3"
+            className="flex items-baseline gap-3 rounded-[2px] border border-rule bg-field p-3"
           >
-            <span className="shrink-0 text-xs font-semibold tabular-nums text-muted">
+            <span className="shrink-0 text-xs font-semibold tabular-nums text-ink-muted">
               {seasonLabel(m.season)}
             </span>
-            <span className="text-sm text-foreground">{m.description}</span>
+            <span className="text-sm text-ink">{m.description}</span>
           </div>
         ))}
       </div>

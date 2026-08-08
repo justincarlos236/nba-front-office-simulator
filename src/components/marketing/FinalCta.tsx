@@ -5,17 +5,17 @@ export async function FinalCta() {
   const primaryCta = await resolvePrimaryCta();
 
   return (
-    <section className="border-b border-border">
+    <section className="border-b border-rule">
       <div className="mx-auto max-w-3xl px-6 py-20 text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+        <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">
           The league is waiting on your first move.
         </h2>
-        <p className="mt-4 text-muted">
+        <p className="mt-4 text-ink-muted">
           Pick a franchise, take the keys, and find out what kind of GM you are.
         </p>
         <Link
           href={primaryCta.href}
-          className="mt-8 inline-block rounded-lg bg-accent px-8 py-3.5 text-base font-semibold text-black transition hover:opacity-90"
+          className="mt-8 inline-block rounded-[2px] bg-team-accent px-8 py-3.5 text-base font-semibold text-team-accent-ink transition hover:opacity-90"
         >
           {primaryCta.label}
         </Link>

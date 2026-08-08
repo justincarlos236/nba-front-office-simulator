@@ -15,7 +15,7 @@ export function TeamBadge({
   faded?: boolean;
 }) {
   if (!logoUrl) {
-    return <div className={`${SIZE_CLASS[size]} shrink-0 rounded-full bg-surface-2`} />;
+    return <div className={`${SIZE_CLASS[size]} shrink-0 rounded-full bg-raised`} />;
   }
   return (
     // eslint-disable-next-line @next/next/no-img-element

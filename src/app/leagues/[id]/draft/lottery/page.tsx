@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -103,21 +104,30 @@ export default async function DraftLotteryPage({ params }: PageProps) {
   }
 
   return (
-    <main className="mx-auto max-w-4xl flex-1 px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground">
+    <main className="mx-auto max-w-4xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
+      {/* The lottery was a dead end: once here, the only way back to the draft
+          was finding it in the sub-nav. The results view has its own forward
+          link, but the overview and reveal stages had none. */}
+      <Link
+        href={`/leagues/${id}/draft`}
+        className="text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase underline decoration-rule underline-offset-4 transition-colors hover:text-ink"
+      >
+        &larr; Back to the draft
+      </Link>
+      <h1 className="mt-4 text-3xl font-bold tracking-tight text-ink">
         {season} NBA Draft Lottery
       </h1>
 
       {gatePhase === "regular-season" && (
-        <div className="mt-8 rounded-xl border border-border bg-surface p-6">
-          <p className="text-sm text-muted">
+        <div className="mt-8 rounded-[2px] border border-rule bg-field p-6">
+          <p className="text-sm text-ink-muted">
             Finish the regular season on the standings page before the draft lottery.
           </p>
         </div>
       )}
       {gatePhase === "playoffs-incomplete" && (
-        <div className="mt-8 rounded-xl border border-border bg-surface p-6">
-          <p className="text-sm text-muted">
+        <div className="mt-8 rounded-[2px] border border-rule bg-field p-6">
+          <p className="text-sm text-ink-muted">
             Crown a champion in the playoffs before the draft lottery.
           </p>
         </div>

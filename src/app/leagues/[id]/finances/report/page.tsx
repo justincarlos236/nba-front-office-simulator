@@ -63,12 +63,12 @@ function BreakdownBars({
         return (
           <div key={row.label}>
             <div className="flex items-baseline justify-between text-sm">
-              <span className="text-foreground">{row.label}</span>
-              <span className="font-medium text-foreground tabular-nums">
+              <span className="text-ink">{row.label}</span>
+              <span className="font-medium text-ink tabular-nums">
                 {formatFinanceCents(row.cents)}
               </span>
             </div>
-            <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+            <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-raised">
               <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
             </div>
           </div>
@@ -202,14 +202,14 @@ export default async function FinancesReportPage({ params }: PageProps) {
 
   return (
     <div>
-      <p className="max-w-2xl text-muted">{blurb}</p>
+      <p className="max-w-2xl text-ink-muted">{blurb}</p>
 
       {/* Mid-season projection detail */}
-      <section className="mt-6 rounded-xl border border-border bg-surface p-5">
+      <section className="mt-6 rounded-[2px] border border-rule bg-field p-5">
         <div className="flex items-baseline justify-between">
-          <h2 className="font-semibold text-foreground">Projected this season</h2>
+          <h2 className="font-semibold text-ink">Projected this season</h2>
           <span
-            className={`text-sm font-semibold tabular-nums ${projNet < 0 ? "text-red-400" : "text-emerald-400"}`}
+            className={`text-sm font-semibold tabular-nums ${projNet < 0 ? "text-negative" : "text-positive"}`}
           >
             {projNet < 0 ? "Projected loss " : "Projected profit "}
             {formatFinanceCents(Math.abs(projNet))}
@@ -217,33 +217,33 @@ export default async function FinancesReportPage({ params }: PageProps) {
         </div>
         <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div>
-            <p className="text-xs tracking-wide text-muted uppercase">Revenue</p>
-            <p className="mt-1 text-base font-semibold text-emerald-400 tabular-nums">
+            <p className="text-xs tracking-wide text-ink-muted uppercase">Revenue</p>
+            <p className="mt-1 text-base font-semibold text-positive tabular-nums">
               {formatFinanceCents(projRevenue.totalCents)}
             </p>
           </div>
           <div>
-            <p className="text-xs tracking-wide text-muted uppercase">Expenses</p>
-            <p className="mt-1 text-base font-semibold text-red-400 tabular-nums">
+            <p className="text-xs tracking-wide text-ink-muted uppercase">Expenses</p>
+            <p className="mt-1 text-base font-semibold text-negative tabular-nums">
               {formatFinanceCents(projExpenses.totalCents)}
             </p>
           </div>
           <div>
-            <p className="text-xs tracking-wide text-muted uppercase">Incl. luxury tax</p>
-            <p className="mt-1 text-base font-semibold text-foreground tabular-nums">
+            <p className="text-xs tracking-wide text-ink-muted uppercase">Incl. luxury tax</p>
+            <p className="mt-1 text-base font-semibold text-ink tabular-nums">
               {formatFinanceCents(projExpenses.luxuryTaxCents)}
             </p>
           </div>
           <div>
-            <p className="text-xs tracking-wide text-muted uppercase">Projected end cash</p>
+            <p className="text-xs tracking-wide text-ink-muted uppercase">Projected end cash</p>
             <p
-              className={`mt-1 text-base font-semibold tabular-nums ${projEndCash < 0 ? "text-red-400" : "text-foreground"}`}
+              className={`mt-1 text-base font-semibold tabular-nums ${projEndCash < 0 ? "text-negative" : "text-ink"}`}
             >
               {formatFinanceCents(projEndCash)}
             </p>
           </div>
         </div>
-        <p className="mt-3 text-xs text-muted">
+        <p className="mt-3 text-xs text-ink-muted">
           A forward look from your current roster and settings, before advancing. Excludes any
           playoff run (extra home games add gate revenue).
         </p>
@@ -252,12 +252,12 @@ export default async function FinancesReportPage({ params }: PageProps) {
       {/* Season P&L */}
       <section className="mt-10">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-semibold text-ink">
             {reportSeasonLabel ? `${reportSeasonLabel} business report` : "Business report"}
           </h2>
           {latestSnapshot && (
             <span
-              className={`text-sm font-semibold tabular-nums ${latestNetIncome < 0 ? "text-red-400" : "text-emerald-400"}`}
+              className={`text-sm font-semibold tabular-nums ${latestNetIncome < 0 ? "text-negative" : "text-positive"}`}
             >
               {latestNetIncome < 0 ? "Net loss " : "Net profit "}
               {formatFinanceCents(Math.abs(latestNetIncome))}
@@ -267,31 +267,31 @@ export default async function FinancesReportPage({ params }: PageProps) {
 
         {latestSnapshot ? (
           <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-border bg-surface p-5">
+            <div className="rounded-[2px] border border-rule bg-field p-5">
               <div className="flex items-baseline justify-between">
-                <p className="text-sm font-semibold text-foreground">Revenue</p>
-                <p className="text-sm font-semibold text-emerald-400 tabular-nums">
+                <p className="text-sm font-semibold text-ink">Revenue</p>
+                <p className="text-sm font-semibold text-positive tabular-nums">
                   {formatFinanceCents(totalRevenue)}
                 </p>
               </div>
               <div className="mt-4">
-                <BreakdownBars rows={revenueRows} total={totalRevenue} color="bg-emerald-500/70" />
+                <BreakdownBars rows={revenueRows} total={totalRevenue} color="bg-positive/70" />
               </div>
             </div>
-            <div className="rounded-xl border border-border bg-surface p-5">
+            <div className="rounded-[2px] border border-rule bg-field p-5">
               <div className="flex items-baseline justify-between">
-                <p className="text-sm font-semibold text-foreground">Expenses</p>
-                <p className="text-sm font-semibold text-red-400 tabular-nums">
+                <p className="text-sm font-semibold text-ink">Expenses</p>
+                <p className="text-sm font-semibold text-negative tabular-nums">
                   {formatFinanceCents(totalExpenses)}
                 </p>
               </div>
               <div className="mt-4">
-                <BreakdownBars rows={expenseRows} total={totalExpenses} color="bg-red-500/60" />
+                <BreakdownBars rows={expenseRows} total={totalExpenses} color="bg-negative/60" />
               </div>
             </div>
           </div>
         ) : (
-          <div className="mt-4 rounded-xl border border-dashed border-border bg-surface p-8 text-center text-muted">
+          <div className="mt-4 rounded-[2px] border border-dashed border-rule bg-field p-8 text-center text-ink-muted">
             Your first full financial report posts when you advance to the next season. Until then,
             here&apos;s where the franchise stands financially.
           </div>
@@ -300,22 +300,22 @@ export default async function FinancesReportPage({ params }: PageProps) {
 
       {/* What drives the business */}
       <section className="mt-10">
-        <h2 className="text-lg font-semibold text-foreground">What drives your business</h2>
-        <p className="mt-1 text-sm text-muted">{demandNote}</p>
+        <h2 className="text-lg font-semibold text-ink">What drives your business</h2>
+        <p className="mt-1 text-sm text-ink-muted">{demandNote}</p>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-border bg-surface p-4">
-            <p className="text-xs tracking-wide text-muted uppercase">Attendance</p>
-            <p className="mt-1 text-lg font-semibold text-foreground">
+          <div className="rounded-[2px] border border-rule bg-field p-4">
+            <p className="text-xs tracking-wide text-ink-muted uppercase">Attendance</p>
+            <p className="mt-1 text-lg font-semibold text-ink">
               {Math.round(attendancePct * 100)}% full
             </p>
           </div>
-          <div className="rounded-xl border border-border bg-surface p-4">
-            <p className="text-xs tracking-wide text-muted uppercase">Franchise Popularity</p>
-            <p className="mt-1 text-lg font-semibold text-foreground">{franchisePopularity}/100</p>
+          <div className="rounded-[2px] border border-rule bg-field p-4">
+            <p className="text-xs tracking-wide text-ink-muted uppercase">Franchise Popularity</p>
+            <p className="mt-1 text-lg font-semibold text-ink">{franchisePopularity}/100</p>
           </div>
-          <div className="rounded-xl border border-border bg-surface p-4">
-            <p className="text-xs tracking-wide text-muted uppercase">Star Power</p>
-            <p className="mt-1 text-lg font-semibold text-foreground">
+          <div className="rounded-[2px] border border-rule bg-field p-4">
+            <p className="text-xs tracking-wide text-ink-muted uppercase">Star Power</p>
+            <p className="mt-1 text-lg font-semibold text-ink">
               {starTier ? starTier.charAt(0) + starTier.slice(1).toLowerCase() : "None"}
             </p>
           </div>
@@ -325,14 +325,14 @@ export default async function FinancesReportPage({ params }: PageProps) {
       {/* Franchise value trend + profit/loss history */}
       <section className="mt-10 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">Franchise value over time</h2>
-          <div className="mt-3 rounded-xl border border-border bg-surface p-4">
+          <h2 className="text-lg font-semibold text-ink">Franchise value over time</h2>
+          <div className="mt-3 rounded-[2px] border border-rule bg-field p-4">
             <FinancesTrendChart points={trendPoints} />
           </div>
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-foreground">Profit &amp; loss by season</h2>
-          <div className="mt-3 rounded-xl border border-border bg-surface p-4">
+          <h2 className="text-lg font-semibold text-ink">Profit &amp; loss by season</h2>
+          <div className="mt-3 rounded-[2px] border border-rule bg-field p-4">
             <NetIncomeHistoryChart points={netIncomePoints} />
           </div>
         </div>

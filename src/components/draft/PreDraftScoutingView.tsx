@@ -238,67 +238,67 @@ export function PreDraftScoutingView({
   return (
     <div className="mt-8 space-y-4">
       {showIntro && (
-        <div className="rounded-xl border border-accent bg-accent/10 p-5">
+        <div className="rounded-[2px] border border-team-accent bg-team-accent/10 p-5">
           <div className="flex items-start justify-between gap-4">
-            <p className="text-sm font-semibold text-foreground">Welcome to Pre-Draft Scouting</p>
+            <p className="text-sm font-semibold text-ink">Welcome to Pre-Draft Scouting</p>
             <button
               type="button"
               onClick={dismissIntro}
-              className="shrink-0 text-xs text-muted underline hover:text-foreground"
+              className="shrink-0 text-xs text-ink-muted underline hover:text-ink"
             >
               Got it, don&apos;t show this again
             </button>
           </div>
-          <p className="mt-2 text-sm text-muted">
+          <p className="mt-2 text-sm text-ink-muted">
             The draft class is out, but the lottery hasn&apos;t run yet - you&apos;re scouting blind
             on where you&apos;ll actually pick. You have a limited pool of{" "}
-            <span className="text-foreground">scouting assignments</span> for this whole window (set
+            <span className="text-ink">scouting assignments</span> for this whole window (set
             by your Scouting department). Spend them to learn more about specific prospects before
             Draft Night:
           </p>
-          <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-muted">
+          <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-ink-muted">
             <li>
-              <span className="text-foreground">Focused Look</span> - open a prospect and spend 1
+              <span className="text-ink">Focused Look</span> - open a prospect and spend 1
               assignment to sharpen your read on him specifically.
             </li>
             <li>
-              <span className="text-foreground">Regional Sweep</span> - spend 1 assignment to find
+              <span className="text-ink">Regional Sweep</span> - spend 1 assignment to find
               new names across a whole pathway (college tier, international, etc.) at once.
             </li>
             <li>
-              <span className="text-foreground">Private Workout</span> - spend 2 assignments to
+              <span className="text-ink">Private Workout</span> - spend 2 assignments to
               resolve one specific uncertainty (work ethic or injury outlook) outright, once
               you&apos;ve scouted him enough.
             </li>
           </ul>
-          <p className="mt-2 text-sm text-muted">
+          <p className="mt-2 text-sm text-ink-muted">
             Don&apos;t want to manage it yourself?{" "}
-            <span className="text-foreground">Get a recommendation</span> below spends your whole
+            <span className="text-ink">Get a recommendation</span> below spends your whole
             remaining budget for you, weighted to your team&apos;s needs. Once spent, assignments
             don&apos;t come back this window - what you learn (or don&apos;t) here is what you walk
             into the draft with.{" "}
-            <HowDoesThisWork topic="scouting" className="underline hover:text-foreground" />
+            <HowDoesThisWork topic="scouting" className="underline hover:text-ink" />
           </p>
         </div>
       )}
 
       {classCharacter !== "BALANCED" && (
-        <div className="rounded-xl border border-accent/30 bg-accent/5 p-5">
-          <p className="text-xs font-semibold tracking-wide text-accent uppercase">
+        <div className="rounded-[2px] border border-team-accent/30 bg-team-accent/5 p-5">
+          <p className="text-xs font-semibold tracking-wide text-team-accent uppercase">
             This Year&apos;s Class: {CLASS_CHARACTER_LABEL[classCharacter]}
           </p>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-1 text-sm text-ink-muted">
             {CLASS_CHARACTER_DESCRIPTION[classCharacter]}{" "}
-            <HowDoesThisWork topic="class-character" className="underline hover:text-foreground" />
+            <HowDoesThisWork topic="class-character" className="underline hover:text-ink" />
           </p>
         </div>
       )}
 
-      <div className="rounded-xl border border-border bg-surface p-5">
+      <div className="rounded-[2px] border border-rule bg-field p-5">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs tracking-wide text-muted uppercase">Scouting Assignments</p>
-            <p className="mt-1 text-lg font-bold text-foreground">
+            <p className="text-xs tracking-wide text-ink-muted uppercase">Scouting Assignments</p>
+            <p className="mt-1 text-lg font-bold text-ink">
               {remaining} of {scoutingCapacity} remaining
             </p>
           </div>
@@ -306,33 +306,33 @@ export function PreDraftScoutingView({
             type="button"
             disabled={isRecommending || remaining <= 0}
             onClick={handleAcceptRecommendation}
-            className="rounded-lg border border-accent/40 px-4 py-2 text-sm font-semibold text-accent transition hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-[2px] border border-team-accent/40 px-4 py-2 text-sm font-semibold text-team-accent transition hover:bg-team-accent/10 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isRecommending ? "Scouting..." : "Get a recommendation"}
           </button>
         </div>
-        <div className="mt-3 h-1.5 w-full rounded-full bg-surface-2">
+        <div className="mt-3 h-1.5 w-full rounded-full bg-raised">
           <div
-            className="h-1.5 rounded-full bg-accent transition-all"
+            className="h-1.5 rounded-full bg-team-accent transition-all"
             style={{ width: `${scoutingCapacity > 0 ? (spent / scoutingCapacity) * 100 : 0}%` }}
           />
         </div>
-        <p className="mt-2 text-xs text-muted">
+        <p className="mt-2 text-xs text-ink-muted">
           Open any prospect and use a Focused Look to spend an assignment yourself, or click{" "}
-          <span className="text-foreground">Get a recommendation</span> to spend your{" "}
-          <span className="text-foreground">entire remaining budget at once</span> - your staff will
+          <span className="text-ink">Get a recommendation</span> to spend your{" "}
+          <span className="text-ink">entire remaining budget at once</span> - your staff will
           run Focused Looks weighted toward your team&apos;s positional needs.{" "}
-          <HowDoesThisWork topic="scouting" className="underline hover:text-foreground" />
+          <HowDoesThisWork topic="scouting" className="underline hover:text-ink" />
         </p>
-        {recommendError && <p className="mt-2 text-xs text-red-400">{recommendError}</p>}
+        {recommendError && <p className="mt-2 text-xs text-negative">{recommendError}</p>}
         {lastRecommendationResult && (
-          <p className="mt-2 text-xs text-accent">{lastRecommendationResult}</p>
+          <p className="mt-2 text-xs text-team-accent">{lastRecommendationResult}</p>
         )}
       </div>
 
-      <div className="rounded-xl border border-border bg-surface p-5">
-        <p className="text-xs tracking-wide text-muted uppercase">Regional Sweep</p>
-        <p className="mt-1 text-xs text-muted">
+      <div className="rounded-[2px] border border-rule bg-field p-5">
+        <p className="text-xs tracking-wide text-ink-muted uppercase">Regional Sweep</p>
+        <p className="mt-1 text-xs text-ink-muted">
           1 assignment - shallow Depth on several Unknown prospects sharing a pathway. Finds names,
           doesn&apos;t confirm them.
         </p>
@@ -340,7 +340,7 @@ export function PreDraftScoutingView({
           <select
             value={sweepPathway}
             onChange={(e) => setSweepPathway(e.target.value as ProspectPathway)}
-            className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-foreground outline-none focus:border-accent"
+            className="rounded-[2px] border border-rule bg-raised px-3 py-2 text-sm text-ink outline-none focus:border-team-accent"
           >
             {SWEEPABLE_PATHWAYS.map((pathway) => (
               <option key={pathway} value={pathway}>
@@ -352,13 +352,13 @@ export function PreDraftScoutingView({
             type="button"
             disabled={isSweeping || remaining <= 0}
             onClick={handleSweep}
-            className="rounded-lg border border-accent/40 px-4 py-2 text-sm font-semibold text-accent transition hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-[2px] border border-team-accent/40 px-4 py-2 text-sm font-semibold text-team-accent transition hover:bg-team-accent/10 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isSweeping ? "Sweeping..." : "Run Sweep (1 assignment)"}
           </button>
         </div>
-        {lastSweepResult && <p className="mt-2 text-xs text-accent">{lastSweepResult}</p>}
-        {sweepError && <p className="mt-2 text-xs text-red-400">{sweepError}</p>}
+        {lastSweepResult && <p className="mt-2 text-xs text-team-accent">{lastSweepResult}</p>}
+        {sweepError && <p className="mt-2 text-xs text-negative">{sweepError}</p>}
       </div>
 
       <BigBoardSection
@@ -375,7 +375,7 @@ export function PreDraftScoutingView({
         onReorder={handleReorderBoard}
       />
 
-      <div className="rounded-xl border border-border bg-surface p-6">
+      <div className="rounded-[2px] border border-rule bg-field p-6">
         <ProspectBoard
           prospects={prospects}
           picks={[]}
