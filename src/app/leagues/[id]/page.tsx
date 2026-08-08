@@ -44,6 +44,10 @@ import { SimulateControls } from "@/components/simulation/SimulateControls";
 import { pickDidYouKnowTip } from "@/lib/gm/didYouKnow";
 import { computeLeaguePhase, type LeaguePhase } from "@/lib/league/leaguePhase";
 import { getSaveContinuity, markSaveSeen } from "@/lib/league/saveContinuity";
+import { CapThresholdGauge } from "@/components/cap/CapThresholdGauge";
+import { ContractLadder } from "@/components/cap/ContractLadder";
+import { SeasonRibbon } from "@/components/league/SeasonRibbon";
+import { RosterShape } from "@/components/roster/RosterShape";
 import {
   ButtonLink,
   DataTable,
@@ -356,6 +360,15 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
           className="mt-0 border-t-0"
         />
 
+        {/* The season as a spine. Games played comes from the team's own
+            record, so the fill is real without an extra query. */}
+        <SeasonRibbon
+          phase={phase}
+          gamesPlayed={userLeagueTeam.wins + userLeagueTeam.losses}
+          gamesTotal={userLeagueTeam.wins + userLeagueTeam.losses + dashboardGamesRemaining}
+          className="mt-6"
+        />
+
         <div className="mt-8 grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_300px]">
           {/* DECISION COLUMN */}
           <div className="space-y-8">
@@ -402,6 +415,13 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
                   </p>
                 </div>
                 <StatCell label="Roster" value={String(leaguePlayers.length)} />
+                {/* Compact: the rail is 300px, too narrow for the threshold
+                    scale. The full gauge lives in the decision column. */}
+                <CapThresholdGauge
+                  season={season}
+                  totalSalaryCents={capSheet.totalSalaryCents}
+                  compact
+                />
               </div>
               <p className="mt-4 text-[15px] leading-relaxed text-ink-muted">
                 {CAP_STATUS_DESCRIPTION[capStatus]}{" "}
@@ -540,20 +560,25 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
                   className="underline decoration-rule underline-offset-4 hover:text-ink"
                 />
               </p>
-              <div className="mt-6 grid grid-cols-2 gap-px sm:grid-cols-4">
-                {futureProjections.map((projection) => (
-                  <div key={projection.season} className="border-t border-rule bg-field p-4">
-                    <Label>
-                      {projection.season}-{(projection.season + 1).toString().slice(-2)}
-                    </Label>
-                    <p className="mt-2 font-mono text-[15px] tabular-nums text-ink">
-                      {formatCentsCompact(projection.committedSalaryCents)}
-                    </p>
-                  </div>
-                ))}
-              </div>
+              {/* Four figures in a row is the shape in which a cap cliff is
+                  invisible. Drawn against each season's own rising cap. */}
+              <ContractLadder projections={futureProjections} className="mt-6" />
             </>
           )}
+        </section>
+
+        {/* Where the roster is thin, as a silhouette rather than fifteen rows
+            the reader has to hold in their head. */}
+        <section className="mt-16 border-t border-rule bg-field p-6">
+          <RosterShape
+            players={leaguePlayers.map((lp) => ({
+              leaguePlayerId: lp.id,
+              fullName: lp.player.fullName,
+              position: lp.player.position,
+              overallRating: lp.overallRating,
+              targetMinutesPerGame: lp.targetMinutesPerGame,
+            }))}
+          />
         </section>
 
         <section className="mt-16">

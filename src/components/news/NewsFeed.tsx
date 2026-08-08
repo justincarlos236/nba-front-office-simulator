@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Label } from "@/components/ui/primitives";
+import { TRANSACTION_ICON } from "@/components/ui/icons";
+import { Stamp } from "@/components/ui/Stamp";
 
 export interface NewsItem {
   id: string;
@@ -142,12 +144,20 @@ function WireRow({
   // Meaningful (this is your save), not category decoration.
   const leadRule = isMine ? "border-l-team-accent" : "border-l-transparent";
 
+  const TypeIcon = TRANSACTION_ICON[item.type];
+
   if (breaking) {
     return (
-      <article className="border-t-2 border-team-accent bg-field px-4 py-5 sm:px-5">
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+      <article className="relative border-t-2 border-team-accent bg-field px-4 py-5 sm:px-5">
+        {/* The filing mark. 11 rows in a full save carry this, which is what
+            makes it mean something when one does. */}
+        <Stamp tone="signal" className="absolute top-4 right-4 hidden sm:inline-flex">
+          Breaking
+        </Stamp>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <Label tone="accent">Breaking</Label>
-          <span className="text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase">
+          <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase">
+            {TypeIcon && <TypeIcon />}
             {TYPE_LABEL[item.type] ?? item.type}
           </span>
         </div>
@@ -171,11 +181,12 @@ function WireRow({
       className={`flex gap-x-4 border-b border-l-2 border-b-hairline ${leadRule} py-2.5 pr-2 pl-3 transition-colors duration-120 hover:bg-raised`}
     >
       <span
-        className={`w-28 shrink-0 pt-0.5 text-[11px] font-semibold tracking-[0.09em] uppercase ${
+        className={`flex w-28 shrink-0 items-center gap-1.5 pt-0.5 text-[11px] font-semibold tracking-[0.09em] uppercase ${
           major ? "text-ink" : "text-ink-muted"
         }`}
       >
-        {TYPE_LABEL[item.type] ?? item.type}
+        {TypeIcon && <TypeIcon className="shrink-0" />}
+        <span className="truncate">{TYPE_LABEL[item.type] ?? item.type}</span>
       </span>
       <p
         className={`min-w-0 flex-1 ${

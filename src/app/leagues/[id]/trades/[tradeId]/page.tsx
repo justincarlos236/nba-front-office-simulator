@@ -11,6 +11,7 @@ import {
 import { resolveTeamAccent } from "@/lib/design/teamAccent";
 import { PlayerAvatar } from "@/components/players/PlayerAvatar";
 import { ButtonLink, Label, Status } from "@/components/ui/primitives";
+import { Stamp } from "@/components/ui/Stamp";
 
 export const dynamic = "force-dynamic";
 
@@ -256,9 +257,15 @@ export default async function TradeOutcomePage({ params, searchParams }: PagePro
 
       <div className="mx-auto max-w-225 px-6 sm:px-8">
         <div className={isBlockbuster ? "pt-12" : "pt-16"}>
-          <Label tone="accent">
-            {isFresh ? "Trade completed" : `${seasonLabel(snapshotSeason)} transaction`}
-          </Label>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <Label tone="accent">
+              {isFresh ? "Trade completed" : `${seasonLabel(snapshotSeason)} transaction`}
+            </Label>
+            {/* The league office has ruled on this and it is done. */}
+            <Stamp tone="positive" rotate={-4}>
+              Executed
+            </Stamp>
+          </div>
           <h1 className="mt-3 text-[clamp(1.75rem,3.5vw,2.5rem)] leading-tight font-bold tracking-[-0.02em] text-ink">
             {label(fromTeam)} and {label(toTeam)} have agreed to a deal
           </h1>
