@@ -69,10 +69,18 @@ export function SimulateControls({
     <section className="border-t border-rule bg-field p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <Label>Advance the season</Label>
-        <span className="font-mono text-[11px] tabular-nums text-ink-muted">
-          {remaining} games left
-        </span>
       </div>
+
+      {/* The main verb of a season simulator deserves more than a label and
+          two buttons. The count is the thing the player actually tracks down
+          toward zero, so it carries the weight rather than sitting in the
+          corner as an 11px aside. */}
+      <p className="mt-3 font-mono text-[clamp(2rem,4vw,3rem)] leading-none font-medium tracking-[-0.03em] text-ink tabular-nums">
+        {remaining}
+        <span className="ml-3 font-sans text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase">
+          games to play
+        </span>
+      </p>
 
       {weekendPending && (
         <p className="mt-4 border-l-2 border-l-caution bg-raised px-4 py-3 text-[15px] text-ink">

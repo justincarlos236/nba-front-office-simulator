@@ -73,12 +73,16 @@ export function CapThresholdGauge({
 
   // Tone escalates with real consequence: cap room is an opportunity, the
   // second apron is a hard-capped cliff.
+  // Escalating, and deliberately stronger than the first pass: at low opacity
+  // the bands read as one grey strip and the marker's position stops meaning
+  // anything. The tier you are standing in should be obvious without reading
+  // the label underneath.
   const BAND_TONE = [
-    "bg-positive/25",
-    "bg-raised",
-    "bg-caution/20",
+    "bg-positive/35",
+    "bg-rule/40",
     "bg-caution/35",
-    "bg-negative/30",
+    "bg-caution/60",
+    "bg-negative/55",
   ];
 
   return (
@@ -121,24 +125,15 @@ export function CapThresholdGauge({
         />
       </div>
 
-      {/* Compact still needs to say which lines it is showing, or the bands
-          are decoration. Ticks only, no figures - the rail is narrow. */}
+      {/* Compact carries no positional ticks. Tax, first apron and second
+          apron sit at 62%, 71% and 85% of the window - at rail width those
+          labels overlap into an unreadable cluster. The rail states the two
+          ends and lets the marker do the rest; the labelled scale is the
+          wide variant's job. */}
       {compact && (
-        <div className="relative mt-1 h-4">
-          {[
-            { label: "Cap", value: rules.salaryCapCents },
-            { label: "Tax", value: rules.luxuryTaxCents },
-            { label: "A1", value: rules.firstApronCents },
-            { label: "A2", value: rules.secondApronCents },
-          ].map((t) => (
-            <span
-              key={t.label}
-              className="absolute top-0 -translate-x-1/2 text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase"
-              style={{ left: `${pct(t.value)}%` }}
-            >
-              {t.label}
-            </span>
-          ))}
+        <div className="mt-1 flex justify-between text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase">
+          <span>Cap</span>
+          <span>2nd apron</span>
         </div>
       )}
 

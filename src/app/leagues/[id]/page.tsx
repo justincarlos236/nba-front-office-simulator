@@ -369,6 +369,10 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
           className="mt-6"
         />
 
+        {/* items-start, not stretch: the rail is often taller than the
+            decision column (the dispatch renders nothing on a return visit
+            with no news), and stretching would leave the shorter column
+            padded with dead space rather than simply ending. */}
         <div className="mt-8 grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_300px]">
           {/* DECISION COLUMN */}
           <div className="space-y-8">
