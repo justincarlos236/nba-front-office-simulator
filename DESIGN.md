@@ -319,6 +319,19 @@ archetype's rules are binding:
 - **Record** — read what already happened. Single narrow column, editorial,
   past tense, no controls. Container 720px. *(history, career, narratives,
   player profile)*
+- **Artifact** — a rendered physical document. Not Broadcast (it is not a
+  moment) and not Record (it is not editorial): it is the object itself, the
+  thing a real front office would file. Bounded width, its own paper tone,
+  material edges per the Artifact Exception, and typography set as *print*
+  rather than as interface — letterhead, clause numbering, signature lines,
+  filing marks. Never scrolls as a page; it sits inside one. *(contracts,
+  league-office rulings, ownership letters, draft cards, scouting cards,
+  credentials, banners)*
+
+The sixth archetype exists because the other five all describe ways of
+*presenting information*, and this product's world is one where information
+arrives as paper. A contract rendered as a form is a UI; a contract rendered as
+a contract is the world.
 
 **Spacing.** A 4px base scale concentrated in seven steps. Field interiors use
 `field` (2rem); sections separate by `section` (3.5rem). Vertical rhythm is
@@ -350,7 +363,16 @@ over content. No glows, no gradients on interactive surfaces, no glass.
 
 **The Flat Law.** Nothing floats. If an element must separate from its
 background it takes a tonal step and a rule, never a shadow. A `box-shadow`
-anywhere in this codebase is a defect.
+on an interface surface is a defect.
+
+**The Artifact Exception.** An Artifact is not an interface surface — it is a
+rendered physical object, and physical objects have edges. A contract sheet, a
+draft card, a scouting card, a credential, a banner may carry material: a cut
+or torn edge, a paper tone distinct from the field, a stamp, a fold, a rule
+printed *on* the object rather than drawn around it. This is the one place
+depth is permitted, and it is permitted because the thing genuinely is an
+object rather than a panel pretending to be one. Everything else — every Desk,
+Workbench, Ledger and Record surface — stays flat.
 
 ## Shapes
 

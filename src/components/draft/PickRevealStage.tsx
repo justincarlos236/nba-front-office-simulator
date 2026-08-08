@@ -6,6 +6,7 @@ import type { ResolvedPick } from "@/lib/actions/draft";
 import type { DraftTeamInfo } from "./types";
 import { teamLabel } from "./types";
 import { DraftResolutionCard } from "./DraftResolutionCard";
+import { DraftCard } from "./DraftCard";
 
 /**
  * Forked from `src/components/draft/lottery/LotteryReveal.tsx` - the same
@@ -55,6 +56,7 @@ export function PickRevealStage({
   resolvedPicks,
   teamsById,
   userTeamId,
+  season,
   onReveal,
   onComplete,
 }: {
@@ -62,6 +64,8 @@ export function PickRevealStage({
   resolvedPicks: ResolvedPick[];
   teamsById: Record<string, DraftTeamInfo>;
   userTeamId: string | null;
+  /** Draft year, printed on the user's own draft card. */
+  season: number;
   /** Fired once per entry, the moment it becomes the current reveal - lets the parent update the live board/order rail/night-event log in real time. */
   onReveal: (pick: ResolvedPick) => void;
   onComplete: () => void;
@@ -224,13 +228,36 @@ export function PickRevealStage({
                 YOUR PICK
               </span>
             )}
-            <div className="mt-1">
-              <p className="text-lg font-semibold text-ink">{current.fullName}</p>
-              <p className="text-xs text-ink-muted">
-                {current.position} &middot; OVR {current.overallRating} &middot; POT{" "}
-                {current.potentialRating}
-              </p>
-            </div>
+            {/* Your own selection gets the card that goes to the podium. CPU
+                picks stay as the compact line - a card for all sixty would be
+                wallpaper, and the point is that yours is the one you keep. */}
+            {isUserPick && team ? (
+              <div className="mt-1 w-full max-w-sm text-left">
+                <DraftCard
+                  playerName={current.fullName}
+                  teamCity={team.city}
+                  teamName={team.name}
+                  primaryColor={team.primaryColor}
+                  secondaryColor={team.secondaryColor}
+                  round={current.overallPickNumber > 30 ? 2 : 1}
+                  overallPickNumber={current.overallPickNumber}
+                  season={season}
+                  viaTeamLabel={
+                    current.tradedFromTeamId
+                      ? teamLabel(teamsById, current.tradedFromTeamId)
+                      : null
+                  }
+                />
+              </div>
+            ) : (
+              <div className="mt-1">
+                <p className="text-lg font-semibold text-ink">{current.fullName}</p>
+                <p className="text-xs text-ink-muted">
+                  {current.position} &middot; OVR {current.overallRating} &middot; POT{" "}
+                  {current.potentialRating}
+                </p>
+              </div>
+            )}
 
             {current.tradedFromTeamId && (
               <div className="animate-lottery-banner-in mt-2 rounded-[2px] border border-caution bg-caution/15 px-4 py-2">

@@ -95,7 +95,7 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
     throw new Error(validation.violation ?? "This offer isn't legal under current cap rules.");
   }
 
-  await prisma.$transaction(async (tx) => {
+  const signedContractId = await prisma.$transaction(async (tx) => {
     await tx.leaguePlayer.update({
       where: { id: freeAgent.id },
       data: {
@@ -200,7 +200,11 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
         },
       ]);
     }
+
+    return contract.id;
   });
 
-  redirect(`/leagues/${league.id}`);
+  // The contract sheet, not the dashboard. Signing was the other action that
+  // computed a real consequence and then stepped over it on redirect.
+  redirect(`/leagues/${league.id}/contracts/${signedContractId}?just=1`);
 }

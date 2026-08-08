@@ -159,6 +159,7 @@ export default async function DraftPage({ params }: PageProps) {
       {gatePhase === "active" && draftPicks.length > 0 && (
         <DraftExperience
           leagueId={league.id}
+          season={season}
           userTeamId={userTeamId}
           teamsById={teamsById}
           teamContextById={teamContextById}

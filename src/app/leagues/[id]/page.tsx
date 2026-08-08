@@ -28,6 +28,8 @@ import {
   type JobSecurityLevel,
 } from "@/lib/gm/jobSecurity";
 import { EXPECTATION_LEVEL_LABEL } from "@/lib/gm/expectationLevel";
+import { OWNER_ARCHETYPE_LABEL } from "@/lib/gm/ownerArchetype";
+import { OwnershipLetter } from "@/components/ownership/OwnershipLetter";
 import { computeCompetitivenessPercentiles } from "@/lib/actions/competitiveness";
 import { computeTeamIdentity, TEAM_IDENTITY_LABEL } from "@/lib/gm/teamIdentity";
 import { computeTeamNeeds, TEAM_NEED_LABEL } from "@/lib/gm/teamNeeds";
@@ -509,18 +511,13 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
                 </span>
               </p>
             )}
-            {league.payrollReductionTargetCents != null &&
-              league.payrollDirectiveSeason != null && (
-                <p className="mt-3 border-l-2 border-l-caution pl-3 text-[15px] text-ink">
-                  Reduce payroll below {formatCentsCompact(league.payrollReductionTargetCents)}{" "}
-                  before {league.payrollDirectiveSeason}-
-                  {(league.payrollDirectiveSeason + 1).toString().slice(-2)}.
-                </p>
-              )}
-            {league.financialMandateSeason != null && (
-              <p className="mt-3 border-l-2 border-l-signal-red pl-3 text-[15px] text-ink">
-                Return the franchise to profitability before {league.financialMandateSeason}-
-                {(league.financialMandateSeason + 1).toString().slice(-2)}, or your job is at risk.
+            {/* The demands themselves are rendered as letters in their own
+                section below - a directive with your job attached is not a
+                footnote in a 300px field. */}
+            {(league.payrollReductionTargetCents != null ||
+              league.financialMandateSeason != null) && (
+              <p className="mt-3 text-[15px] text-ink-muted">
+                Ownership has put a demand in writing. See below.
               </p>
             )}
             <div className="mt-4 flex items-center justify-between gap-4 border-t border-hairline pt-4">
@@ -581,6 +578,39 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
             </Field>
           </Link>
         </section>
+
+        {/* ON THE RECORD. Ownership's standing demands, as the letters they
+            are rather than two sentences in the corner of a panel. */}
+        {(league.payrollReductionTargetCents != null || league.financialMandateSeason != null) && (
+          <section className="mt-16">
+            <div className="border-b border-rule-strong pb-3">
+              <Label tone="ink">On the record</Label>
+            </div>
+            <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {league.payrollReductionTargetCents != null &&
+                league.payrollDirectiveSeason != null && (
+                  <OwnershipLetter
+                    demand={{
+                      kind: "payroll",
+                      targetCents: league.payrollReductionTargetCents,
+                      bySeason: league.payrollDirectiveSeason,
+                    }}
+                    ownerArchetype={userLeagueTeam.ownerArchetype}
+                    ownerArchetypeLabel={OWNER_ARCHETYPE_LABEL[userLeagueTeam.ownerArchetype]}
+                    teamLabel={`${userLeagueTeam.team.city} ${userLeagueTeam.team.name}`}
+                  />
+                )}
+              {league.financialMandateSeason != null && (
+                <OwnershipLetter
+                  demand={{ kind: "profitability", bySeason: league.financialMandateSeason }}
+                  ownerArchetype={userLeagueTeam.ownerArchetype}
+                  ownerArchetypeLabel={OWNER_ARCHETYPE_LABEL[userLeagueTeam.ownerArchetype]}
+                  teamLabel={`${userLeagueTeam.team.city} ${userLeagueTeam.team.name}`}
+                />
+              )}
+            </div>
+          </section>
+        )}
 
         {/* SUPPORTING MATERIAL. Below the decision layer on purpose. */}
         <section className="mt-16">

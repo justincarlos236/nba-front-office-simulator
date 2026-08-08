@@ -37,6 +37,7 @@ interface PendingReveal {
 
 export function DraftExperience({
   leagueId,
+  season,
   userTeamId,
   teamsById,
   teamContextById,
@@ -46,6 +47,8 @@ export function DraftExperience({
   initialScoutingAssignmentsRemaining,
 }: {
   leagueId: string;
+  /** Draft year, printed on the user's own draft card. */
+  season: number;
   userTeamId: string | null;
   teamsById: Record<string, DraftTeamInfo>;
   teamContextById: Record<string, DraftTeamContextInfo>;
@@ -250,6 +253,7 @@ export function DraftExperience({
           resolvedPicks={pendingReveal.resolvedPicks}
           teamsById={teamsById}
           userTeamId={userTeamId}
+          season={season}
           onReveal={handleReveal}
           onComplete={handleRevealComplete}
         />
