@@ -3,6 +3,7 @@ import { computeCapSheet } from "@/lib/cap/capSheet";
 import { getSeasonCapRules } from "@/lib/cap/constants";
 import { DEFAULT_MAX_ROSTER_SIZE } from "@/lib/data-sources/rosterConstruction";
 import {
+  rollEventCount,
   rollForCpuSigning,
   rollForCpuTrade,
   rollForCpuOfferToUser,
@@ -64,7 +65,11 @@ import {
 import type { NewsImportance } from "@/generated/prisma/client";
 
 const INJURY_CHANCE_PER_TEAM_GAME = 0.02;
-const TRADE_CHANCE_PER_GAME = 0.006;
+// Tuned against the measured 42.6% roll-success rate to land near 15 completed
+// CPU trades a league-season. The real NBA runs closer to 40, but many of those
+// are minor salary filler; 15 meaningful ones reads as an active market without
+// burying the news feed.
+const TRADE_CHANCE_PER_GAME = 0.03;
 /** Deliberately below the CPU-CPU rate - see the note at the call site. */
 const OFFER_TO_USER_CHANCE_PER_GAME = 0.004;
 const SIGNING_CHANCE_PER_GAME = 0.01;
@@ -360,14 +365,22 @@ export async function applyLeagueEvents(
 
   const totalGames = simulatedGames.length;
 
-  if (shouldTriggerEvent(totalGames, TRADE_CHANCE_PER_GAME)) {
+  // Trades and signings recur, so they roll per game rather than once per
+  // batch. A single boolean for the whole batch capped the league at one trade
+  // per 50 games and produced two trades a season league-wide, against a real
+  // NBA figure near 40 - and tied that rate to CHUNK_SIZE rather than to the
+  // calendar. See `rollEventCount`.
+  const tradeCount = rollEventCount(totalGames, TRADE_CHANCE_PER_GAME);
+  for (let i = 0; i < tradeCount; i += 1) {
     await maybeExecuteCpuTrade(leagueId, season, userControlledTeamId, transactions);
   }
-  if (shouldTriggerEvent(totalGames, SIGNING_CHANCE_PER_GAME)) {
+  const signingCount = rollEventCount(totalGames, SIGNING_CHANCE_PER_GAME);
+  for (let i = 0; i < signingCount; i += 1) {
     await maybeExecuteCpuSigning(leagueId, season, userControlledTeamId, transactions);
   }
-  // Rarer than a CPU-CPU trade: an offer aimed at the user demands a decision,
-  // and something that demands a decision every few games becomes noise.
+  // Deliberately still once per batch: only one offer may stand at a time
+  // anyway (see `maybeProposeCpuTradeToUser`), and something that demands a
+  // decision every few games becomes noise rather than pressure.
   if (shouldTriggerEvent(totalGames, OFFER_TO_USER_CHANCE_PER_GAME)) {
     await maybeProposeCpuTradeToUser(leagueId, season, userControlledTeamId);
   }

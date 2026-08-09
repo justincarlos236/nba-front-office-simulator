@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   rollForCpuSigning,
   rollForCpuTrade,
+  rollEventCount,
   rollForCpuOfferToUser,
   rollForTeamInjury,
   shouldTriggerEvent,
@@ -373,5 +374,57 @@ describe("rollForCpuOfferToUser", () => {
     // is deliberately not decided here - that is what the user is being asked.
     const offer = rollForCpuOfferToUser([team("A", roster)], team("USER", roster), 2024, () => 0.4);
     if (offer) expect(typeof offer.proposerScore).toBe("number");
+  });
+});
+
+describe("rollEventCount", () => {
+  function seeded(seed: number): () => number {
+    let a = seed >>> 0;
+    return () => {
+      a |= 0;
+      a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  it("does not depend on how the games are batched", () => {
+    // THE REGRESSION THIS EXISTS FOR. `shouldTriggerEvent` collapsed a whole
+    // batch into one boolean, so league activity was a function of CHUNK_SIZE
+    // rather than the calendar - a season simulated in one batch produced one
+    // trade, the same season in 25 batches produced up to 25.
+    // 1250 rather than a real 1230-game season only because it divides evenly
+    // by the chunk size - comparing 1230 whole against 25 chunks of 50 would
+    // be comparing 1230 games to 1250.
+    const CHANCE = 0.03;
+    const GAMES = 1250;
+    const CHUNK = 50;
+    const whole = rollEventCount(GAMES, CHANCE, seeded(7));
+    const rng = seeded(7);
+    let chunked = 0;
+    for (let i = 0; i < GAMES / CHUNK; i += 1) chunked += rollEventCount(CHUNK, CHANCE, rng);
+    expect(chunked).toBe(whole);
+  });
+
+  it("scales with the number of games", () => {
+    const rng = seeded(3);
+    const few = rollEventCount(50, 0.03, rng);
+    const many = rollEventCount(1000, 0.03, rng);
+    expect(many).toBeGreaterThan(few);
+  });
+
+  it("lands near the expected count over a season", () => {
+    // 1230 games at 3% should average ~37 opportunities.
+    const rng = seeded(99);
+    const runs = Array.from({ length: 20 }, () => rollEventCount(1230, 0.03, rng));
+    const mean = runs.reduce((a, b) => a + b, 0) / runs.length;
+    expect(mean).toBeGreaterThan(28);
+    expect(mean).toBeLessThan(48);
+  });
+
+  it("returns zero for a degenerate batch", () => {
+    expect(rollEventCount(0, 0.5, seeded(1))).toBe(0);
+    expect(rollEventCount(100, 0, seeded(1))).toBe(0);
   });
 });

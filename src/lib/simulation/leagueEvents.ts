@@ -154,7 +154,14 @@ export function rollForTeamInjury(
   };
 }
 
-/** P(at least one event) across `gamesInBatch` independent per-game rolls. */
+/**
+ * P(at least one event) across `gamesInBatch` independent per-game rolls.
+ *
+ * Correct for anything that can only happen once per batch - an All-Star buzz
+ * item, a single standing trade offer. **For anything that can recur, use
+ * `rollEventCount` instead**: this collapses a whole batch into one boolean, so
+ * a hundred games and ten games both yield at most one event.
+ */
 export function shouldTriggerEvent(
   gamesInBatch: number,
   chancePerGame: number,
@@ -163,6 +170,34 @@ export function shouldTriggerEvent(
   if (gamesInBatch <= 0) return false;
   const chance = 1 - (1 - chancePerGame) ** gamesInBatch;
   return rng() < chance;
+}
+
+/**
+ * How many times an event fires across `gamesInBatch` - one independent roll
+ * per game, rather than one roll for the whole batch.
+ *
+ * This exists because `shouldTriggerEvent` capped recurring events at one per
+ * call, which made league activity a function of the simulation's internal
+ * chunk size rather than of the calendar. With games processed 50 at a time, a
+ * 1,230-game season could produce at most ~24 trade opportunities, and the
+ * measured result was **2 trades per season league-wide** against a real NBA
+ * figure near 40. Change the chunk size for performance and the trade market
+ * would silently move with it.
+ *
+ * Rolling per game decouples the two: the same season produces the same
+ * expected activity whether it is simulated in one batch or a hundred.
+ */
+export function rollEventCount(
+  gamesInBatch: number,
+  chancePerGame: number,
+  rng: () => number = Math.random,
+): number {
+  if (gamesInBatch <= 0 || chancePerGame <= 0) return 0;
+  let count = 0;
+  for (let i = 0; i < gamesInBatch; i += 1) {
+    if (rng() < chancePerGame) count += 1;
+  }
+  return count;
 }
 
 export interface CpuRosterPlayer {
@@ -368,7 +403,13 @@ export function rollForCpuTrade(
   teams: CpuTeam[],
   season: number,
   rng: () => number = Math.random,
-  maxAttempts = 5,
+  // Measured: a mutually acceptable, legal one-for-one trade is genuinely hard
+  // to stumble on, because a deal that helps one side usually hurts the other.
+  // At 5 attempts only 5.9% of rolls found anything, which - far more than the
+  // event-trigger frequency - was why the league managed two trades a season.
+  // 40 attempts finds one 42.6% of the time. This is pure computation over
+  // rosters already in memory, so the extra attempts are cheap.
+  maxAttempts = 40,
 ): CpuTradeResult | null {
   if (teams.length < 2) return null;
 
