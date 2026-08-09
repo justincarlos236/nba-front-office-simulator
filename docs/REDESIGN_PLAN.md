@@ -8,20 +8,28 @@ owns its audit findings as acceptance criteria.
 **This file is the ledger.** A finding is not "done" because a surface was
 redesigned; it is done when the redesigned surface demonstrably solves it.
 
+**Status (re-verified against the code 2026-08-09): all P0s closed, one P1
+remaining.** That P1 is the canonical roster page, deliberately deferred. Nine
+P2s and two P3s remain, all of them scope additions (competing free-agent
+offers, incoming CPU trade offers, cross-session scouting summary) rather than
+defects. Several findings had in fact been fixed by the surface redesigns
+without the ledger being updated — a stale ledger is how finished work gets
+redone, so each entry below was checked against the source before being marked.
+
 ## Sequence — the redesign (complete)
 
-| # | Step | Status |
-|---|---|---|
-| 1 | Remaining P0 confirmations | **done** |
-| 2 | Revert P1 implementations built around the old dashboard composition | **done** |
-| 3 | Continuity schema (`lastSeenAt` + read state) | **done** |
-| 4 | Choose the visual world — **The Wire**, locked | **done** |
-| 5 | Primitive/component layer + focus tokens + semantic colors | **done** |
-| 6 | Dashboard redesign (Desk) | **done** |
-| 7 | Trade outcome, Draft Night header, free agency | **done** |
-| 8 | Cross-cutting: attention model, nav regrouping, orphan routes, error mapping | **done** |
-| 9 | Migration pass — 123 files off the legacy palette | **done** |
-| 10 | Responsive pass, boundaries (`not-found`/`error`/`loading`) | **done** |
+| #   | Step                                                                         | Status   |
+| --- | ---------------------------------------------------------------------------- | -------- |
+| 1   | Remaining P0 confirmations                                                   | **done** |
+| 2   | Revert P1 implementations built around the old dashboard composition         | **done** |
+| 3   | Continuity schema (`lastSeenAt` + read state)                                | **done** |
+| 4   | Choose the visual world — **The Wire**, locked                               | **done** |
+| 5   | Primitive/component layer + focus tokens + semantic colors                   | **done** |
+| 6   | Dashboard redesign (Desk)                                                    | **done** |
+| 7   | Trade outcome, Draft Night header, free agency                               | **done** |
+| 8   | Cross-cutting: attention model, nav regrouping, orphan routes, error mapping | **done** |
+| 9   | Migration pass — 123 files off the legacy palette                            | **done** |
+| 10  | Responsive pass, boundaries (`not-found`/`error`/`loading`)                  | **done** |
 
 Side quest: the transactions page rebuilt as a real wire (season filing,
 four importance registers, sticky filter rail).
@@ -39,13 +47,13 @@ Restore point before any of this work: branch `pre-visual-richness`, tag
 The 28-item Visual Possibility Audit is the master idea pool. **18 committed**
 across Phases A–E; 8 backlog; 2 rejected.
 
-| Phase | Contents | Status |
-|---|---|---|
-| **A** | Icon set, cap gauge, transaction stamps, roster shape, season ribbon, contract ladder | **done** (`7d1d264`, fixes `a2c8690`) |
-| **B** | Contract documents, league-office rulings, ownership letters, draft cards | next |
-| **C** | Championship banner rafters, trophy cabinet, retired numbers, franchise-memory timeline | pending |
-| **D** | Arena photography, material texture, franchise skylines, GM office framing | pending |
-| **E** | Scouting cards, physical draft-board wall | pending |
+| Phase | Contents                                                                                | Status                                |
+| ----- | --------------------------------------------------------------------------------------- | ------------------------------------- |
+| **A** | Icon set, cap gauge, transaction stamps, roster shape, season ribbon, contract ladder   | **done** (`7d1d264`, fixes `a2c8690`) |
+| **B** | Contract documents, league-office rulings, ownership letters, draft cards               | next                                  |
+| **C** | Championship banner rafters, trophy cabinet, retired numbers, franchise-memory timeline | pending                               |
+| **D** | Arena photography, material texture, franchise skylines, GM office framing              | pending                               |
+| **E** | Scouting cards, physical draft-board wall                                               | pending                               |
 
 **Backlog** (deliberately uncommitted): tunnel imagery, press credential,
 lower-third broadcast bars, live-game score bug, trade-value balance scale,
@@ -90,7 +98,7 @@ real look before it is called done.
       salary, and total commitment before it lands.
 - [x] Draft pick had no confirmation. Now confirms by name; the board is a dense
       list of similar rows and a mis-click cost a first-rounder with no undo.
-- [x] Draft lottery: deliberately *not* gated. The user navigates to a dedicated
+- [x] Draft lottery: deliberately _not_ gated. The user navigates to a dedicated
       page and clicks "Start the Lottery" - unambiguous intent. What was missing
       was that the draw is one-time; that is now stated.
 
@@ -114,45 +122,60 @@ real look before it is called done.
       renders nothing on a first visit rather than showing an empty shell.
 - [x] **P2** Status badges using `sky`/`purple` as category colour. All four
       badge-class maps replaced by the semantic `Status` primitive.
-- [ ] **P1** No canonical roster page. *Deferred to step 9* — the dashboard
+- [ ] **P1** No canonical roster page. _Deferred to step 9_ — the dashboard
       roster table is now a proper Ledger, but `/rotation` still splits the job
       and the sub-nav still has no "Roster" entry.
 
 ### Draft night + lottery
 
-- [ ] **P1** `/draft/lottery` has no return edge to `/draft`.
+- [x] **P1** `/draft/lottery` has no return edge to `/draft`. Returns to
+      `/leagues/{id}/draft`.
+- [x] **P1** Scouting report rendered as six undifferentiated lines despite a
+      five-tier confidence model with an UNCERTAIN state per axis. Now an
+      Artifact where confidence drives the typography (Phase E).
+- [x] **P1** Draft board was a vertical list of made picks — the shape of a
+      transaction feed. Now a wall: a full round at a glance, own picks
+      outlined, undecided picks drawn as slots (Phase E).
 - [ ] **P2** Scouting has no cross-session summary ("you scouted 6 of 12").
 
-### Trade outcome (built, not yet redesigned)
+### Trade outcome
 
-- [ ] **P1** Structurally sound, visually plain: built inside the old world and
-      shares the generic page skeleton. Rebuild in the new world.
+- [x] **P1** Structurally sound, visually plain: built inside the old world and
+      shares the generic page skeleton. Rebuilt in the new world — Broadcast on
+      execution, Record on revisit, with the register scaling to what actually
+      moved (a blockbuster splits the screen between two franchise colours; a
+      rotation swap files as a ruled record). Carries an immutable
+      `Trade.capSnapshot` so the cap consequence is evidence, not a recompute.
 
 ### Free agency
 
-- [ ] **P1** 77+ rows, no filters, no position/need/rights filtering, no search.
-- [ ] **P1** The board shows "Est. value" but never the cap space that makes it
-      meaningful.
+- [x] **P1** 77+ rows, no filters. `FreeAgentBoard` now has position filter,
+      name search, affordable-only, rights-only and sort.
+- [x] **P1** "Est. value" without the cap space that makes it meaningful. Cap
+      space is passed in and drives the affordable-only filter.
 - [ ] **P2** No competing offers; a free agent waits indefinitely, draining urgency.
 
 ### Trade builder
 
-- [ ] **P1** Partner browse is a flat 30-card grid with no cap space, no needs,
-      no "teams that want what you have."
+- [x] **P1** Partner browse is a flat 30-card grid with no cap space or needs.
+      Now a Ledger with a cap-space column and each team's computed needs.
 - [ ] **P2** No incoming CPU offers; trade is outbound-only.
-- [ ] **P2** Raw engine `error.message` rendered as UI copy.
+- [x] **P2** Raw engine `error.message` rendered as UI copy. Replaced by
+      `userFacing.ts` translation and league-office rulings.
 
 ### Finances
 
-- [ ] **P1** Business decision inbox rendered twice with identical actions.
+- [x] **P1** Business decision inbox rendered twice with identical actions. The
+      overview now surfaces only the two most urgent and links to the full inbox.
 - [ ] **P2** "Projected this season" duplicated verbatim across two tabs.
 
 ## Cross-cutting (step 8) — belongs to no single surface
 
-- [ ] **P0** Notification fragmentation: 7 surfaces try to tell the user
+- [x] **P0** Notification fragmentation: 7 surfaces try to tell the user
       something; exactly 1 badge exists, and it is inside the section it
-      describes. A BREAKING decision that blocks the season is invisible from
-      the sub-nav.
+      describes. `getLeagueAttention()` is now the single source for nav counts,
+      consumed by the league layout, so a blocking decision is visible from the
+      sub-nav.
 - [ ] **P2** Focus states: `grep focus-visible` returns zero results
       product-wide. 13 ARIA attributes across 95 buttons and ~40 routes; zero
       `aria-live` regions across 37 server actions. Binding, per PRODUCT.md's
