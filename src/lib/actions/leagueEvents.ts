@@ -4,6 +4,7 @@ import { getSeasonCapRules } from "@/lib/cap/constants";
 import {
   rollForCpuSigning,
   rollForCpuTrade,
+  rollForCpuOfferToUser,
   rollForTeamInjury,
   shouldTriggerEvent,
   type CpuTeam,
@@ -63,6 +64,8 @@ import type { NewsImportance } from "@/generated/prisma/client";
 
 const INJURY_CHANCE_PER_TEAM_GAME = 0.02;
 const TRADE_CHANCE_PER_GAME = 0.006;
+/** Deliberately below the CPU-CPU rate - see the note at the call site. */
+const OFFER_TO_USER_CHANCE_PER_GAME = 0.004;
 const SIGNING_CHANCE_PER_GAME = 0.01;
 // All-Star Weekend "buzz" news (the weeks-out anticipation the user asked
 // for) - only fires once the user's own team is in a believable pre-break
@@ -361,6 +364,11 @@ export async function applyLeagueEvents(
   }
   if (shouldTriggerEvent(totalGames, SIGNING_CHANCE_PER_GAME)) {
     await maybeExecuteCpuSigning(leagueId, season, userControlledTeamId, transactions);
+  }
+  // Rarer than a CPU-CPU trade: an offer aimed at the user demands a decision,
+  // and something that demands a decision every few games becomes noise.
+  if (shouldTriggerEvent(totalGames, OFFER_TO_USER_CHANCE_PER_GAME)) {
+    await maybeProposeCpuTradeToUser(leagueId, season, userControlledTeamId);
   }
 
   const userGamesPlayed = userControlledTeamId
@@ -1387,4 +1395,132 @@ export async function applyBusinessDecisionEvents(
   }
 
   return { breakingDecisionPending };
+}
+
+/**
+ * An unsolicited trade offer from a CPU club for one of the user's players.
+ *
+ * Trade was outbound-only: the user could always call around, but nothing ever
+ * arrived, so the other twenty-nine front offices never appeared to want
+ * anything. This is the same inertness free agency had before rivals started
+ * competing for signings.
+ *
+ * Stored as a `Trade` with status PROPOSED - the first real use of that
+ * lifecycle, which the schema has always supported while every trade in the
+ * product went straight to EXECUTED. Nothing moves until the user accepts.
+ */
+async function maybeProposeCpuTradeToUser(
+  leagueId: string,
+  season: number,
+  userControlledTeamId: string | null,
+): Promise<void> {
+  if (!userControlledTeamId) return;
+
+  // One standing offer at a time. A queue of stale proposals would rot - cap
+  // space and rosters move underneath them - and an inbox that accumulates is
+  // a chore rather than a decision.
+  const existing = await prisma.trade.count({
+    where: { leagueId, status: "PROPOSED" },
+  });
+  if (existing > 0) return;
+
+  const [leagueTeams, allTeamsWinLoss] = await Promise.all([
+    prisma.leagueTeam.findMany({
+      where: { leagueId },
+      include: {
+        team: true,
+        players: {
+          where: { isActive: true },
+          include: {
+            player: true,
+            contract: { include: { years: { where: { season } } } },
+          },
+        },
+      },
+    }),
+    prisma.leagueTeam.findMany({
+      where: { leagueId },
+      select: { id: true, wins: true, losses: true },
+    }),
+  ]);
+  const percentileByTeam = await computeCompetitivenessPercentiles(allTeamsWinLoss);
+
+  const built: CpuTeam[] = leagueTeams
+    .map((lt) => {
+      const roster = lt.players
+        .filter((p) => p.contract?.years[0])
+        .map((p) => ({
+          leaguePlayerId: p.id,
+          playerName: p.player.fullName,
+          rating: p.overallRating,
+          potentialRating: p.potentialRating,
+          age: estimateAge(p.player.draftYear, season),
+          position: p.player.position,
+          salaryCents: p.contract!.years[0].salaryCents,
+          noTradeClause: p.contract!.noTradeClause,
+          injuryStatus: p.injuryStatus,
+          careerGamesMissedToInjury: p.careerGamesMissedToInjury,
+          wantsOut: p.tradeRequestActive,
+        }));
+      const avgAge =
+        roster.length > 0 ? roster.reduce((sum, p) => sum + p.age, 0) / roster.length : 27;
+      const capSheet = computeCapSheet({
+        season,
+        contracts: lt.players
+          .filter((p) => p.contract?.years[0])
+          .map((p) => ({ playerId: p.playerId, salaryCents: p.contract!.years[0].salaryCents })),
+      });
+      return {
+        leagueTeamId: lt.id,
+        teamLabel: `${lt.team.city} ${lt.team.name}`,
+        roster,
+        capState: {
+          apronLevel: capSheet.apronLevel,
+          capSpaceCents: capSheet.capSpaceCents,
+          ownedFutureFirstRoundPickSeasons: [] as number[],
+        },
+        identity: computeTeamIdentity(percentileByTeam.get(lt.id) ?? 0.5, avgAge),
+        needs: computeTeamNeeds(
+          roster.map((p) => ({ position: p.position, overallRating: p.rating })),
+        ),
+        personality: lt.gmPersonality,
+      };
+    })
+    .filter((t) => t.roster.length > 0);
+
+  const userTeam = built.find((t) => t.leagueTeamId === userControlledTeamId);
+  if (!userTeam) return;
+  const cpuTeams = built.filter((t) => t.leagueTeamId !== userControlledTeamId);
+
+  const offer = rollForCpuOfferToUser(cpuTeams, userTeam, season);
+  if (!offer) return;
+
+  await prisma.$transaction(async (tx) => {
+    const trade = await tx.trade.create({
+      data: {
+        leagueId,
+        proposedById: offer.fromTeam.leagueTeamId,
+        status: "PROPOSED",
+        validationResult: { cpuProposed: true, proposerScore: offer.proposerScore },
+      },
+    });
+    await tx.tradeAsset.createMany({
+      data: [
+        {
+          tradeId: trade.id,
+          type: "PLAYER",
+          fromLeagueTeamId: offer.fromTeam.leagueTeamId,
+          toLeagueTeamId: userControlledTeamId,
+          leaguePlayerId: offer.offering.leaguePlayerId,
+        },
+        {
+          tradeId: trade.id,
+          type: "PLAYER",
+          fromLeagueTeamId: userControlledTeamId,
+          toLeagueTeamId: offer.fromTeam.leagueTeamId,
+          leaguePlayerId: offer.wanting.leaguePlayerId,
+        },
+      ],
+    });
+  });
 }

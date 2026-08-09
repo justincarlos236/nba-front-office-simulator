@@ -70,6 +70,8 @@ export interface ActionCenterInput {
   yourPickIsUp: boolean;
   roster: ActionCenterRosterPlayer[];
   staffVacancies: StaffRole[];
+  /** An unsolicited CPU trade offer awaiting a decision. Null when none is open. */
+  pendingTradeOffer: { tradeId: string; fromTeamLabel: string } | null;
   /** Finances as a Gameplay Pillar (Phase 1) - the Front Office Inbox. Null when nothing's pending. */
   pendingBusinessDecisions: {
     count: number;
@@ -146,6 +148,19 @@ export function computeActionCenterItems(input: ActionCenterInput): ActionCenter
       reasoning:
         "The playoffs are single-elimination best-of-seven series - miss the cut and the season simply ends, so every game matters.",
       consequence: "The series can't move to its next game until this one is played.",
+    });
+  }
+
+  if (input.pendingTradeOffer) {
+    items.push({
+      id: "pending-trade-offer",
+      severity: "info",
+      label: `${input.pendingTradeOffer.fromTeamLabel} have made you an offer`,
+      description: "Another front office wants one of your players. Review the terms.",
+      href: `${base}/trades/offers/${input.pendingTradeOffer.tradeId}`,
+      reasoning:
+        "Rival teams pursue players who fill their own roster holes, so an offer is a signal about how the league values someone on your roster.",
+      consequence: "The offer stays open until you accept or decline it.",
     });
   }
 
@@ -416,6 +431,7 @@ export async function getActionCenterItems(
     nextPendingPick,
     pendingDecisions,
     lastPlayedGame,
+    pendingTradeOfferRow,
   ] = await Promise.all([
     computeLeaguePhase(leagueId, season),
     prisma.playoffSeries.findFirst({
@@ -458,6 +474,16 @@ export async function getActionCenterItems(
       orderBy: { dayIndex: "desc" },
       select: { dayIndex: true },
     }),
+    // An unsolicited CPU offer. Only one is ever open at a time - see
+    // `maybeProposeCpuTradeToUser` for why a queue would rot.
+    prisma.trade.findFirst({
+      where: { leagueId, status: "PROPOSED" },
+      orderBy: { createdAt: "desc" },
+      // `Trade.proposedById` is a scalar with no relation on the model, so the
+      // proposing club's name is resolved from `league.teams` below rather
+      // than joined here.
+      select: { id: true, proposedById: true },
+    }),
   ]);
 
   const pendingBusinessDecisions =
@@ -485,6 +511,17 @@ export async function getActionCenterItems(
       })()
     : null;
 
+  // Resolved from a direct lookup because `Trade.proposedById` carries no
+  // relation on the model.
+  const proposingTeamLabel = pendingTradeOfferRow
+    ? await prisma.leagueTeam
+        .findUnique({
+          where: { id: pendingTradeOfferRow.proposedById },
+          select: { team: { select: { city: true, name: true } } },
+        })
+        .then((lt) => (lt ? `${lt.team.city} ${lt.team.name}` : null))
+    : null;
+
   const filledRoles = new Set(staff.map((s) => s.role));
   const staffVacancies = (
     ["HEAD_COACH", "PLAYER_DEVELOPMENT_COACH", "MEDICAL_STAFF"] as StaffRole[]
@@ -502,6 +539,12 @@ export async function getActionCenterItems(
     simpleCapStatus: precomputed.simpleCapStatus,
     teamNeeds: precomputed.teamNeeds,
     pendingPlayoffGame,
+    pendingTradeOffer: pendingTradeOfferRow
+      ? {
+          tradeId: pendingTradeOfferRow.id,
+          fromTeamLabel: proposingTeamLabel ?? "A rival club",
+        }
+      : null,
     noGamesPlayedThisSeasonYet: lastPlayedGame == null,
     allStarWeekendPending: allStarWeekend?.status === "PENDING",
     pendingBusinessDecisions,

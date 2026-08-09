@@ -476,3 +476,117 @@ export function rollForCpuSigning(
     leaguePlayerId: pick(freeAgentIds, rng),
   };
 }
+
+/**
+ * A CPU club's unsolicited trade offer for one of the user's players.
+ *
+ * The audit finding was that trade is outbound-only: the user can always call
+ * around, but nothing ever arrives. That makes the other twenty-nine front
+ * offices feel inert - they never want anything, so the phone only rings when
+ * you pick it up. This is the same gap free agency had before rivals started
+ * competing.
+ *
+ * The construction deliberately mirrors `rollForCpuTrade`, with one asymmetry
+ * that matters: the CPU side must genuinely want the deal (it is checked
+ * against `evaluateTradeOffer` exactly as in a CPU-CPU swap), but the user's
+ * side is *not* checked. Whether the offer is good for the user is the user's
+ * judgement to make - that is the entire point of receiving one. Filtering to
+ * only offers the user "should" accept would turn an inbox into a to-do list.
+ */
+export interface CpuOfferToUser {
+  fromTeam: { leagueTeamId: string; teamLabel: string };
+  /** What the CPU club is giving up. */
+  offering: CpuRosterPlayer;
+  /** The user's player it wants. */
+  wanting: CpuRosterPlayer;
+  /** The proposing club's own score for the deal, for the offer's rationale. */
+  proposerScore: number;
+}
+
+export function rollForCpuOfferToUser(
+  cpuTeams: CpuTeam[],
+  userTeam: CpuTeam,
+  season: number,
+  rng: () => number = Math.random,
+  maxAttempts = 6,
+): CpuOfferToUser | null {
+  if (cpuTeams.length === 0 || userTeam.roster.length === 0) return null;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const proposer = cpuTeams[Math.floor(rng() * cpuTeams.length)];
+    if (!proposer || proposer.roster.length === 0) continue;
+
+    // What the CPU wants from the user, chosen by its own needs - so an offer
+    // reads as motivated rather than arbitrary.
+    const wanting =
+      pickTradeTarget(
+        userTeam.roster,
+        proposer.needs,
+        proposer.identity,
+        proposer.personality,
+        rng,
+      ) ?? pickTradeablePlayer(userTeam.roster, rng);
+    if (!wanting) continue;
+
+    const offering =
+      pickTradeOffer(proposer.roster, proposer.needs, wanting, season, rng) ??
+      pickTradeablePlayer(proposer.roster, rng);
+    if (!offering) continue;
+
+    const wantingAsset = toTradeAsset(wanting);
+    const offeringAsset = toTradeAsset(offering);
+
+    // Only the proposer's willingness is checked. See the note above: whether
+    // this is a good deal for the user is precisely what the user is being
+    // asked, and pre-filtering would answer their question for them.
+    const proposerAccepts = evaluateTradeOffer({
+      respondingTeam: {
+        identity: proposer.identity,
+        needs: proposer.needs,
+        personality: proposer.personality,
+        roster: proposer.roster.map((p) => ({ overallRating: p.rating, age: p.age })),
+      },
+      currentSeason: season,
+      incoming: [wantingAsset],
+      outgoing: [offeringAsset],
+    });
+    if (proposerAccepts.decision !== "ACCEPT") continue;
+
+    const assets: TradeAssetInput[] = [
+      {
+        type: "PLAYER",
+        fromTeamId: proposer.leagueTeamId,
+        toTeamId: userTeam.leagueTeamId,
+        playerId: offering.leaguePlayerId,
+        salaryCents: offering.salaryCents,
+      },
+      {
+        type: "PLAYER",
+        fromTeamId: userTeam.leagueTeamId,
+        toTeamId: proposer.leagueTeamId,
+        playerId: wanting.leaguePlayerId,
+        salaryCents: wanting.salaryCents,
+      },
+    ];
+
+    // A proposal that could never legally execute is worse than no proposal:
+    // the user would accept it and be told no by the league office.
+    const validation = validateTrade({
+      season,
+      assets,
+      teamCapStates: {
+        [proposer.leagueTeamId]: proposer.capState,
+        [userTeam.leagueTeamId]: userTeam.capState,
+      },
+    });
+    if (!validation.isValid) continue;
+
+    return {
+      fromTeam: { leagueTeamId: proposer.leagueTeamId, teamLabel: proposer.teamLabel },
+      offering,
+      wanting,
+      proposerScore: proposerAccepts.score,
+    };
+  }
+  return null;
+}

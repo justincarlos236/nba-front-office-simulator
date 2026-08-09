@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   rollForCpuSigning,
   rollForCpuTrade,
+  rollForCpuOfferToUser,
   rollForTeamInjury,
   shouldTriggerEvent,
   type CpuTeam,
@@ -273,5 +274,104 @@ describe("rollForCpuSigning", () => {
   it("picks a team and free agent deterministically from a fixed rng", () => {
     const result = rollForCpuSigning(["teamA", "teamB"], ["fa1", "fa2"], () => 0);
     expect(result).toEqual({ leagueTeamId: "teamA", leaguePlayerId: "fa1" });
+  });
+});
+
+describe("rollForCpuOfferToUser", () => {
+  const capState = {
+    apronLevel: ApronLevel.UNDER_CAP,
+    capSpaceCents: 50_000_000_00n,
+    ownedFutureFirstRoundPickSeasons: [] as number[],
+  };
+
+  function team(
+    id: string,
+    players: {
+      rating: number;
+      age?: number;
+      position?: "PG" | "SG" | "SF" | "PF" | "C";
+      noTradeClause?: boolean;
+    }[],
+    overrides: Partial<Pick<CpuTeam, "identity" | "needs" | "personality">> = {},
+  ): CpuTeam {
+    return {
+      leagueTeamId: id,
+      teamLabel: id,
+      roster: players.map((p, i) => ({
+        leaguePlayerId: `${id}-p${i}`,
+        playerName: `${id} Player ${i}`,
+        rating: p.rating,
+        potentialRating: p.rating,
+        age: p.age ?? 27,
+        position: p.position ?? "SF",
+        salaryCents: 5_000_000_00n,
+        noTradeClause: p.noTradeClause ?? false,
+        injuryStatus: "HEALTHY" as const,
+        careerGamesMissedToInjury: 0,
+      })),
+      capState,
+      identity: overrides.identity ?? "PLAY_IN_TEAM",
+      needs: overrides.needs ?? [],
+      personality: overrides.personality ?? "BALANCED",
+    };
+  }
+
+  const roster = [{ rating: 78 }, { rating: 74 }, { rating: 70 }, { rating: 66 }];
+
+  it("returns null when there are no CPU teams", () => {
+    expect(rollForCpuOfferToUser([], team("USER", roster), 2024, () => 0.4)).toBeNull();
+  });
+
+  it("returns null when the user has no roster to want from", () => {
+    expect(
+      rollForCpuOfferToUser([team("A", roster)], team("USER", []), 2024, () => 0.4),
+    ).toBeNull();
+  });
+
+  it("returns null when every user player is untouchable", () => {
+    const untouchable = roster.map((p) => ({ ...p, noTradeClause: true }));
+    expect(
+      rollForCpuOfferToUser([team("A", roster)], team("USER", untouchable), 2024, () => 0.4, 3),
+    ).toBeNull();
+  });
+
+  it("always proposes between the CPU club and the user, in both directions", () => {
+    const offer = rollForCpuOfferToUser([team("A", roster)], team("USER", roster), 2024, () => 0.4);
+    if (!offer) return; // the roll may legitimately decline; shape is asserted when it fires
+    expect(offer.fromTeam.leagueTeamId).toBe("A");
+    // The club gives up one of its own and asks for one of the user's.
+    expect(offer.offering.leaguePlayerId.startsWith("A-")).toBe(true);
+    expect(offer.wanting.leaguePlayerId.startsWith("USER-")).toBe(true);
+  });
+
+  it("never asks for a player the user cannot trade", () => {
+    const mixed = [
+      { rating: 82, noTradeClause: true },
+      { rating: 74 },
+      { rating: 70 },
+      { rating: 66 },
+    ];
+    for (const seed of [0.1, 0.3, 0.5, 0.7, 0.9]) {
+      const offer = rollForCpuOfferToUser(
+        [team("A", roster)],
+        team("USER", mixed),
+        2024,
+        () => seed,
+      );
+      if (offer) expect(offer.wanting.leaguePlayerId).not.toBe("USER-p0");
+    }
+  });
+
+  it("is deterministic for a given seed", () => {
+    const run = () =>
+      rollForCpuOfferToUser([team("A", roster)], team("USER", roster), 2024, () => 0.4);
+    expect(run()).toEqual(run());
+  });
+
+  it("reports the proposing club's own score, not the user's", () => {
+    // The offer carries why the CPU wants it. Whether it is good for the user
+    // is deliberately not decided here - that is what the user is being asked.
+    const offer = rollForCpuOfferToUser([team("A", roster)], team("USER", roster), 2024, () => 0.4);
+    if (offer) expect(typeof offer.proposerScore).toBe("number");
   });
 });

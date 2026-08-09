@@ -34,6 +34,7 @@ function baseInput(overrides: Partial<ActionCenterInput> = {}): ActionCenterInpu
     currentSeason: 2023,
     phase: "regular-season",
     ownerConfidence: 65,
+    pendingTradeOffer: null,
     payrollReductionTargetCents: null,
     payrollDirectiveSeason: null,
     totalSalaryCents: 100_000_000n,
