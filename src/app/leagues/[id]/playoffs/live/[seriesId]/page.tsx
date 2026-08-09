@@ -46,6 +46,11 @@ export default async function LivePlayoffGamePage({ params }: PageProps) {
 
   const isHigherSeed = series.higherSeedTeamId === userTeamId;
   const opponentTeamId = isHigherSeed ? series.lowerSeedTeamId : series.higherSeedTeamId;
+  // Note this can describe a game that will never be played: because the guard
+  // above deliberately does not 404 on a decided series, this component
+  // legitimately re-renders after the clinching game. `LiveGameExperience`
+  // therefore checks `winsNeeded` itself and suppresses the number rather than
+  // announcing "Game 8" of a best-of-seven.
   const gameNumber = series.higherSeedWins + series.lowerSeedWins + 1;
   const isHome = isHigherSeedHomeGame(gameNumber) === isHigherSeed;
   const userWins = isHigherSeed ? series.higherSeedWins : series.lowerSeedWins;
