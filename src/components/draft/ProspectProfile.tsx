@@ -5,14 +5,9 @@ import {
   computeScoutingConfidence,
   generateScoutingReport,
   SCOUTING_CONFIDENCE_LABEL,
-  BUST_RISK_LABEL,
-  TRAJECTORY_LABEL,
-  WORK_ETHIC_LABEL,
-  READINESS_LABEL,
-  INJURY_OUTLOOK_LABEL,
-  SCOUTING_REPORT_CONFIDENCE_LABEL,
   type ResolvableHiddenAxis,
 } from "@/lib/draft/scoutingProfile";
+import { ScoutingReportSheet } from "./ScoutingReportSheet";
 import { PlayerAvatar } from "@/components/players/PlayerAvatar";
 import type { DraftProspectInfo } from "./types";
 import { formatHeight } from "./types";
@@ -78,9 +73,7 @@ export function ProspectProfile({
         )}
         {prospect.collegeOrTeam && (
           <p>
-            <span className="text-ink">
-              {prospect.isInternational ? "Club:" : "Program:"}
-            </span>{" "}
+            <span className="text-ink">{prospect.isInternational ? "Club:" : "Program:"}</span>{" "}
             {prospect.collegeOrTeam}
           </p>
         )}
@@ -91,8 +84,7 @@ export function ProspectProfile({
         )}
         {prospect.pathway && (
           <p title={PROSPECT_PATHWAY_DESCRIPTION[prospect.pathway]}>
-            <span className="text-ink">Pathway:</span>{" "}
-            {PROSPECT_PATHWAY_LABEL[prospect.pathway]}
+            <span className="text-ink">Pathway:</span> {PROSPECT_PATHWAY_LABEL[prospect.pathway]}
           </p>
         )}
         {bigBoardRank != null && (
@@ -117,51 +109,29 @@ export function ProspectProfile({
         </p>
       )}
 
-      <div className="mt-4 border-t border-rule pt-4">
-        <div className="flex items-baseline justify-between">
-          <p className="text-xs tracking-wide text-ink-muted uppercase">Scouting Report</p>
-          <span className="text-xs text-ink-muted">
-            {SCOUTING_REPORT_CONFIDENCE_LABEL[scoutingReport.confidence]}
-          </span>
-        </div>
-        <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm sm:grid-cols-3">
-          <p>
-            <span className="text-ink-muted">Ceiling:</span>{" "}
-            <span className="text-ink">{scoutingReport.ceilingRangeLabel}</span>
-          </p>
-          <p>
-            <span className="text-ink-muted">Bust risk:</span>{" "}
-            <span className="text-ink">{BUST_RISK_LABEL[scoutingReport.bustRisk]}</span>
-          </p>
-          <p>
-            <span className="text-ink-muted">Trajectory:</span>{" "}
-            <span className="text-ink">{TRAJECTORY_LABEL[scoutingReport.trajectory]}</span>
-          </p>
-          <p>
-            <span className="text-ink-muted">Work ethic:</span>{" "}
-            <span className="text-ink">{WORK_ETHIC_LABEL[scoutingReport.workEthic]}</span>
-          </p>
-          <p>
-            <span className="text-ink-muted">Readiness:</span>{" "}
-            <span className="text-ink">{READINESS_LABEL[scoutingReport.readiness]}</span>
-          </p>
-          <p>
-            <span className="text-ink-muted">Injury outlook:</span>{" "}
-            <span className="text-ink">
-              {INJURY_OUTLOOK_LABEL[scoutingReport.injuryOutlook]}
-            </span>
-          </p>
-        </div>
-      </div>
+      {/* The report is a document the scouting department produced, so it is
+          rendered as one. Six identical grey lines stated the findings without
+          ever conveying how much of the file is actually filled in - which is
+          the whole substance of a draft decision. */}
+      <ScoutingReportSheet
+        report={scoutingReport}
+        prospectName={prospect.fullName}
+        className="mt-5"
+      />
 
-      <div className="mt-4 space-y-1.5 border-t border-rule pt-4">
+      {/* Square, not `rounded-full`: the document world has cut edges. */}
+      <div className="mt-5 space-y-2 border-t border-rule pt-4">
         {attributes.map(([label, value]) => (
-          <div key={label} className="flex items-center gap-2 text-xs">
-            <span className="w-24 shrink-0 text-ink-muted">{label}</span>
-            <div className="h-1.5 flex-1 rounded-full bg-raised">
-              <div className="h-1.5 rounded-full bg-team-accent" style={{ width: `${value}%` }} />
+          <div key={label} className="flex items-center gap-3 text-xs">
+            <span className="w-24 shrink-0 text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase">
+              {label}
+            </span>
+            <div className="h-1.5 flex-1 bg-raised">
+              <div className="h-1.5 bg-team-accent" style={{ width: `${value}%` }} />
             </div>
-            <span className="w-6 shrink-0 text-right font-mono text-ink-muted">{value}</span>
+            <span className="w-6 shrink-0 text-right font-mono tabular-nums text-ink-muted">
+              {value}
+            </span>
           </div>
         ))}
       </div>
