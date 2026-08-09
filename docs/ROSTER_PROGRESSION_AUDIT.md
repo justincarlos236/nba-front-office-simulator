@@ -12,6 +12,12 @@ this one inherits.
 ## Verdict
 
 **Materially flawed — one root cause, very wide blast radius.**
+**Both P0s are now fixed (`ffec212`).** Measured after: ages span 18-44 with
+real medians, all three development branches are populated (356 growing, 93
+prime, 88 declining in a fresh league), and retirement is reachable - roughly 10
+expected next offseason in a fresh league and 38 in the six-season save, against
+zero before. P1-3, P1-4 and P2-5 remain, and were deliberately deferred until
+the roster market behaves normally.
 
 The progression *models* are sound. Development, retirement, and draft-class
 generation are all well-built, tested, and sensibly shaped. They are also, for
@@ -42,7 +48,7 @@ function to read it already exists.
 
 ## Findings
 
-### P0-1 — Every real player is permanently 27 years old
+### P0-1 — Every real player is permanently 27 years old · **FIXED** (`ffec212`)
 
 **Observed.** In a fresh league, `estimateAge` returns **27 for all 537
 players**. In the six-season save it returns 27 for the same 537, while the 240
@@ -97,7 +103,7 @@ exactly the fallback age; assert median age lands near 26–27 with real spread.
 
 ---
 
-### P0-2 — Retirement is mathematically unreachable
+### P0-2 — Retirement is mathematically unreachable · **FIXED** (`ffec212`, downstream of P0-1)
 
 **Observed.** The six-season save has recorded **zero retirements**. Active
 population is 777: exactly 537 seeded + 240 drafted (60 per draft × 4 drafts).

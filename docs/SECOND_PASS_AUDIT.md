@@ -8,14 +8,18 @@ is marked fixed because we worked on it.
 
 ---
 
-## Headline: the premise needs correcting
+## Headline: the premise needed correcting — and has since been addressed
 
-The revamp phase is **not** complete. An unfixed **P0** is outstanding, found by
-the roster/progression audit and not yet touched in code: every seeded player is
-permanently 27 years old, so nobody ages, declines, or retires. A six-season
-save holds 777 players and has recorded **zero retirements**.
+At the time of writing, the revamp phase was **not** complete: a P0 found by the
+roster/progression audit was outstanding in code. Every seeded player was
+permanently 27 years old, so nobody aged, declined, or retired; a six-season
+save held 777 players and had recorded zero retirements.
 
-That single defect gates the honest answer to "is this feature-complete?"
+**That defect is now fixed (`ffec212`).** Ages resolve from `birthDate`, all
+three development branches are populated, and retirement fires. Release
+readiness moves from 6/10 to roughly 7/10; the remaining blockers are P1-2
+(event frequency) and P1-4 (no canonical roster page), neither of which is
+critical.
 
 ---
 
@@ -39,12 +43,12 @@ This is **not** a system-design problem any more. It is a finishing problem.
 | Gameplay depth | 6/10 | Real decisions exist; several systems are safely ignorable |
 | NBA realism | 6/10 | Games are realistic now; careers and the trade market are not |
 | System integration | 8/10 | Verified populated end to end — the strongest dimension |
-| Long-save stability | 4/10 | Population grows without bound; nobody ever leaves |
+| Long-save stability | 4/10 → 6/10 | Attrition now works; DB growth still unaddressed |
 | Exploit resistance | 7/10 | Stage 1 closed the severe ones; no new reproducible exploit found |
 | UX clarity | 7/10 | Attention model is real; a few dead ends remain |
 | Technical robustness | 8/10 | State integrity verified perfect across 13 saves |
 | Test confidence | 6/10 | 1,220 tests, but no cross-system integration coverage |
-| **Release readiness** | **6/10** | One P0 blocks it; the rest is finishing work |
+| **Release readiness** | **6/10 → 7/10** | P0 since fixed (`ffec212`); the rest is finishing work |
 
 ---
 
@@ -121,7 +125,7 @@ largely absent.** This should be protected, not re-architected.
 
 ## 3. Remaining findings
 
-### P0-1 — Nobody ages, declines, or retires · *Bug*
+### P0-1 — Nobody ages, declines, or retires · *Bug* · **FIXED** (`ffec212`)
 
 Carried from `docs/ROSTER_PROGRESSION_AUDIT.md`, unfixed in code.
 
