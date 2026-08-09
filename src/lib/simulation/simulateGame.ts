@@ -40,9 +40,9 @@ const HOME_COURT_ADVANTAGE = 1.1;
  * Calibrated empirically against real saves rather than assumed. The strength
  * model produces a best-to-worst spread of roughly 7 rating points in a fresh
  * league and 12 in a talent-stratified one, so no single value is ideal for
- * both; 2.0 brackets the NBA's ~12-win standard deviation from either side
- * (measured: 9.8 in a fresh league, 13.2 in a developed one, against 5.1 and
- * 5.8 before this change).
+ * both; this pair brackets the NBA's ~12-win standard deviation from either
+ * side, measured over 200 seasons per league: 10.7 in a fresh league and 14.1
+ * in a developed one, against 5.1 and 5.8 before this change.
  *
  * The old logistic steepness of 0.07 was calibrated for a far wider spread
  * than the roster model has ever produced, which flattened the league to a
