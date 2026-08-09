@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PHASE_LIGHT, phaseLight } from "./phaseLight";
+import { PHASE_LIGHT, phaseLight, skyStops } from "./phaseLight";
 import { resolveTeamAccent, contrastRatio } from "./teamAccent";
 import { TEAM_SEEDS } from "../../../prisma/data/teams";
 
@@ -27,34 +27,91 @@ describe("phase light", () => {
   });
 
   it("keeps every sky dark enough to sit inside a dark interface", () => {
-    // The window is a hole in a dark room, not a lightbox. Lightness is given
-    // in oklch; anything at or above 0.45 would read as a bright panel.
+    // The window is a hole in a dark room, not a lightbox. Anything at or
+    // above 0.45 OKLCH lightness would read as a bright panel.
     for (const phase of PHASES) {
-      const { skyFrom, skyTo } = phaseLight(phase);
-      for (const stop of [skyFrom, skyTo]) {
-        const L = Number(stop.match(/oklch\(([\d.]+)/)?.[1]);
-        expect(L).toBeGreaterThan(0);
-        expect(L).toBeLessThan(0.45);
-      }
+      const l = phaseLight(phase);
+      expect(l.lightnessTop).toBeGreaterThan(0);
+      expect(l.lightnessTop).toBeLessThan(0.45);
+      expect(l.lightnessHorizon).toBeGreaterThan(0);
+      expect(l.lightnessHorizon).toBeLessThan(0.45);
     }
   });
 
   it("keeps the phases visually distinguishable from one another", () => {
     // If two phases look the same, the layer is decoration rather than
-    // information. Compare hue, which is what actually carries the difference.
-    const hues = PHASES.map((p) => Number(phaseLight(p).skyFrom.match(/([\d.]+)\)$/)?.[1]));
-    for (const h of hues) expect(Number.isFinite(h)).toBe(true);
-    expect(new Set(hues).size).toBe(PHASES.length);
+    // information. Hue shift plus lightness is what carries the difference.
+    const signatures = PHASES.map((p) => {
+      const l = phaseLight(p);
+      return `${l.hueShift}:${l.lightnessTop}`;
+    });
+    expect(new Set(signatures).size).toBe(PHASES.length);
   });
 
   it("gradients always run darker toward the horizon", () => {
     // One Lamp: light comes from above. A sky that brightens downward reads as
     // an inverted, artificial gradient.
     for (const phase of PHASES) {
-      const { skyFrom, skyTo } = phaseLight(phase);
-      const from = Number(skyFrom.match(/oklch\(([\d.]+)/)?.[1]);
-      const to = Number(skyTo.match(/oklch\(([\d.]+)/)?.[1]);
-      expect(from).toBeGreaterThan(to);
+      const l = phaseLight(phase);
+      expect(l.lightnessTop).toBeGreaterThan(l.lightnessHorizon);
+    }
+  });
+
+  it("keeps the sky a weather effect rather than a colour statement", () => {
+    // Low chroma is what stops this competing with the team accent it sits
+    // inside. Above ~0.08 the sky starts reading as a second brand colour.
+    for (const phase of PHASES) {
+      expect(phaseLight(phase).chroma).toBeLessThanOrEqual(0.08);
+    }
+  });
+});
+
+describe("the sky is derived from the franchise, not fixed per phase", () => {
+  /**
+   * REGRESSION GUARD. The first implementation used absolute per-phase sky
+   * colours. That produced a real defect: Brooklyn resolves to the monochrome
+   * slate #748799, the offseason sky was warm amber, and the two met at a hard
+   * edge - reading as a broken image tile rather than a view.
+   *
+   * Any independent colour has this failure for *some* franchise, because the
+   * accent varies per save and the sky did not. These tests assert the sky now
+   * tracks the accent.
+   */
+  it("puts the sky in the same hue family as the team accent", () => {
+    for (const phase of PHASES) {
+      // A warm franchise (amber, hue ~75) must not get a cold sky, and a cool
+      // one (blue, hue ~250) must not get a warm one.
+      for (const hue of [75, 250]) {
+        const { from } = skyStops(phase, hue);
+        const skyHue = Number(from.match(/([\d.]+)\)$/)?.[1]);
+        const shift = phaseLight(phase).hueShift;
+        expect(skyHue).toBeCloseTo((hue + shift + 360) % 360, 5);
+      }
+    }
+  });
+
+  it("falls back to the system neutral for a monochrome franchise", () => {
+    // Brooklyn and San Antonio have no meaningful accent hue. Reading one off
+    // a near-neutral yields an arbitrary angle, so they take the product's own
+    // blue instead of a random tint.
+    for (const phase of PHASES) {
+      const { from } = skyStops(phase, null);
+      const skyHue = Number(from.match(/([\d.]+)\)$/)?.[1]);
+      expect(skyHue).toBeCloseTo((245 + phaseLight(phase).hueShift + 360) % 360, 5);
+    }
+  });
+
+  it("emits valid oklch for every phase and every hue on the wheel", () => {
+    for (const phase of PHASES) {
+      for (let hue = 0; hue < 360; hue += 15) {
+        for (const stop of Object.values(skyStops(phase, hue))) {
+          expect(stop).toMatch(/^oklch\([\d.]+ [\d.]+ [\d.]+\)$/);
+          const h = Number(stop.match(/([\d.]+)\)$/)?.[1]);
+          // Hue must stay on the wheel after the shift wraps.
+          expect(h).toBeGreaterThanOrEqual(0);
+          expect(h).toBeLessThan(360);
+        }
+      }
     }
   });
 });

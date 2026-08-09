@@ -133,6 +133,20 @@ function hasRealColour(hex: string): boolean {
 }
 
 /**
+ * The OKLCH hue of a resolved accent, for the environmental layer to build a
+ * sky in the same colour family as the franchise (see `skyStops`).
+ *
+ * Returns `null` when the accent carries no meaningful hue - a monochrome
+ * franchise resolved to the slate fallback. Hue is meaningless below
+ * MIN_CHROMA, and reading one off a near-neutral yields an arbitrary angle
+ * that would tint the sky at random.
+ */
+export function accentHue(hex: string): number | null {
+  const { C, h } = hexToOklch(hex);
+  return C >= MIN_CHROMA ? h : null;
+}
+
+/**
  * The cascade. Order matters: a team's own primary is preferred, then its
  * secondary (which is usually the colour fans pair with it anyway), and only
  * then a synthesised lightening.

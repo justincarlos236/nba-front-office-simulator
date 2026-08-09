@@ -398,6 +398,48 @@ a compositional preference: the team-accent cascade guarantees
 the accent at 80% over the phase skies drops **38 of 60 team/phase combinations
 below AA**, worst case 3.37:1 (LAC). See `phaseLight.test.ts`, which locks this.
 
+### One Landmark, Two Companions
+
+**Franchises are differentiated by place, not only by colour.** Every city in
+the window is a composition of three layers in a fixed hierarchy:
+
+1. **The Signature** — exactly one form nobody could mistake, drawn largest and
+   darkest. Brooklyn's bridge arches, Chicago's Willis setbacks, San Francisco's
+   suspension span, New Orleans' dome, Toronto's CN Tower.
+2. **The Support** — one to three corroborating forms, placing the Signature in
+   a real skyline instead of isolating it as a logo.
+3. **The Field** — a low run of generic massing at the edges for the Signature
+   to rise out of. Without it a landmark floats and reads as an icon.
+
+This replaced a grammar of "flat-topped rectilinear masses by default; a curve
+or spire spent only where a city genuinely reads by it" — a rule that made
+generic buildings the default and the landmark the exception, and so guaranteed
+thirty unrecognisable cities. Every one of them passed its tests (closed,
+unique, in-bounds) because none of those properties say anything about whether
+a city looks like itself. The hierarchy is now structural rather than
+advisory, so `Skyline.test.ts` can enforce it.
+
+**Constraints:**
+
+- **One spent gesture per city.** A city that gets a dome does not also get a
+  suspension cable. This is what keeps it out of tourist-poster territory.
+- **Recognition comes from shape, never contrast.** These render at 55–80%
+  opacity behind content and must still read.
+- **Signature height 25–92** of a 100-unit frame, and always taller than every
+  Support. A silhouette touching `y=0` reads as cropped by the header rather
+  than standing in it.
+- **Silhouette only.** No strokes, no windows, no detail below the roofline.
+- **Landscape may be the Signature** where a city genuinely reads by it —
+  Denver's Rockies, Utah's Wasatch, Phoenix's saguaro. Buildings drop to Field.
+- **Same-metro franchises differentiate by district.** The Nets take the
+  Brooklyn Bridge with Manhattan small and distant; the Knicks take the Empire
+  State at full height. The Lakers take downtown's US Bank crown; the Clippers
+  take Inglewood's Intuit Dome. The shared metro may appear as Support, never
+  as both franchises' Signature.
+
+**The test:** cover the team name. If someone who knows the city cannot name it
+in two seconds, the Signature is wrong or too small.
+
 ### The Grain Rule
 
 **Texture follows the Artifact Exception exactly.** Grain belongs to rendered

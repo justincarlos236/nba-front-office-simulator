@@ -51,6 +51,7 @@ import { CapThresholdGauge } from "@/components/cap/CapThresholdGauge";
 import { ContractLadder } from "@/components/cap/ContractLadder";
 import { SeasonRibbon } from "@/components/league/SeasonRibbon";
 import { OfficeWindow } from "@/components/environment/OfficeWindow";
+import { accentHue, resolveTeamAccent } from "@/lib/design/teamAccent";
 import { RosterShape } from "@/components/roster/RosterShape";
 import {
   ButtonLink,
@@ -271,57 +272,50 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
     dashboardWeekend,
     dashboardBreakingDecision,
     recentTeamGames,
-  ] =
-    await Promise.all([
-      computeLeaguePhase(league.id, season),
-      // Read the diff BEFORE advancing the visit clock below - marking the save
-      // seen first would erase the very window this renders.
-      getSaveContinuity(league.id, league.lastSeenAt, league.newsReadThroughAt),
-      prisma.game.count({
-        where: {
-          leagueId: league.id,
-          season,
-          type: "REGULAR_SEASON",
-          playedAt: null,
-          OR: [
-            { homeLeagueTeamId: userLeagueTeam.id },
-            { awayLeagueTeamId: userLeagueTeam.id },
-          ],
-        },
-      }),
-      prisma.allStarWeekend.findUnique({
-        where: { leagueId_season: { leagueId: league.id, season } },
-      }),
-      prisma.businessDecision.findFirst({
-        where: {
-          leagueId: league.id,
-          leagueTeamId: userLeagueTeam.id,
-          status: "PENDING",
-          severity: "BREAKING",
-        },
-        select: { id: true },
-      }),
-      // The team's own last ten. The decision column had nothing to say about
-      // how the team is actually playing, which is the first thing a GM looks
-      // at - and the real reason the column read as empty.
-      prisma.game.findMany({
-        where: {
-          leagueId: league.id,
-          season,
-          playedAt: { not: null },
-          OR: [
-            { homeLeagueTeamId: userLeagueTeam.id },
-            { awayLeagueTeamId: userLeagueTeam.id },
-          ],
-        },
-        include: {
-          homeTeam: { include: { team: true } },
-          awayTeam: { include: { team: true } },
-        },
-        orderBy: { playedAt: "desc" },
-        take: 10,
-      }),
-    ]);
+  ] = await Promise.all([
+    computeLeaguePhase(league.id, season),
+    // Read the diff BEFORE advancing the visit clock below - marking the save
+    // seen first would erase the very window this renders.
+    getSaveContinuity(league.id, league.lastSeenAt, league.newsReadThroughAt),
+    prisma.game.count({
+      where: {
+        leagueId: league.id,
+        season,
+        type: "REGULAR_SEASON",
+        playedAt: null,
+        OR: [{ homeLeagueTeamId: userLeagueTeam.id }, { awayLeagueTeamId: userLeagueTeam.id }],
+      },
+    }),
+    prisma.allStarWeekend.findUnique({
+      where: { leagueId_season: { leagueId: league.id, season } },
+    }),
+    prisma.businessDecision.findFirst({
+      where: {
+        leagueId: league.id,
+        leagueTeamId: userLeagueTeam.id,
+        status: "PENDING",
+        severity: "BREAKING",
+      },
+      select: { id: true },
+    }),
+    // The team's own last ten. The decision column had nothing to say about
+    // how the team is actually playing, which is the first thing a GM looks
+    // at - and the real reason the column read as empty.
+    prisma.game.findMany({
+      where: {
+        leagueId: league.id,
+        season,
+        playedAt: { not: null },
+        OR: [{ homeLeagueTeamId: userLeagueTeam.id }, { awayLeagueTeamId: userLeagueTeam.id }],
+      },
+      include: {
+        homeTeam: { include: { team: true } },
+        awayTeam: { include: { team: true } },
+      },
+      orderBy: { playedAt: "desc" },
+      take: 10,
+    }),
+  ]);
 
   await markSaveSeen(league.id);
 
@@ -357,6 +351,14 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
   const capStatus = simplifyCapStatus(capSheet.apronLevel);
   const seasonLabel = `${season}-${(season + 1).toString().slice(-2)}`;
 
+  // The window's sky is built from the franchise's own hue rather than an
+  // absolute per-phase colour, so it can never clash with the accent field it
+  // sits inside. Null for a monochrome franchise (Brooklyn, San Antonio),
+  // which falls back to the system's neutral blue - see `skyStops`.
+  const headerAccentHue = accentHue(
+    resolveTeamAccent(userLeagueTeam.team.primaryColor, userLeagueTeam.team.secondaryColor).hex,
+  );
+
   return (
     <main className="flex-1 pb-24">
       {/* THE FRANCHISE. A full-bleed field in the team's own colour - the
@@ -381,15 +383,18 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
             4.25rem) would reach the band, so the window simply does not exist
             there rather than being allowed to crowd the name. */}
         <div className="pointer-events-none absolute inset-0 mx-auto hidden max-w-300 xl:block">
-          <div className="absolute inset-y-0 right-0 w-[34%]">
+          {/* Wider than the visible result: the component's radial mask fades
+              it to nothing on every side, so the band is the area the dissolve
+              works *within*, not a rectangle with an edge. A narrow band would
+              clip the falloff back into a hard boundary - the exact defect
+              this replaced. */}
+          <div className="absolute inset-y-0 right-0 w-[52%]">
             <OfficeWindow
               abbreviation={userLeagueTeam.team.abbreviation}
               relocatedCityName={userLeagueTeam.relocatedCityName}
               phase={phase}
+              accentHue={headerAccentHue}
             />
-            {/* Dissolve the window's left edge into the accent field so it
-                reads as an opening in the wall, not a pasted-on panel. */}
-            <div className="absolute inset-y-0 left-0 w-24 bg-linear-to-r from-team-accent to-transparent" />
           </div>
         </div>
 
@@ -408,8 +413,7 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
             {userLeagueTeam.wins}&ndash;{userLeagueTeam.losses}
             {rank > 0 && (
               <span className="font-sans text-[15px] font-medium tracking-normal normal-case text-team-accent-ink/80">
-                {ordinal(rank)} in the{" "}
-                {userLeagueTeam.team.conference === "EAST" ? "East" : "West"}
+                {ordinal(rank)} in the {userLeagueTeam.team.conference === "EAST" ? "East" : "West"}
               </span>
             )}
           </p>
@@ -659,8 +663,8 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
           </div>
           {isBrandNewSeason ? (
             <p className="mt-4 max-w-[70ch] text-[15px] leading-relaxed text-ink-muted">
-              Long-term contracts will show up here once your books have some real history -
-              nothing to plan around yet on day one.{" "}
+              Long-term contracts will show up here once your books have some real history - nothing
+              to plan around yet on day one.{" "}
               <HowDoesThisWork
                 topic="financial-flexibility"
                 className="underline decoration-rule underline-offset-4 hover:text-ink"
@@ -751,9 +755,7 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
                       {lp.injuryStatus === "HEALTHY" ? (
                         <Status tone="neutral">Healthy</Status>
                       ) : (
-                        <Status tone="negative">
-                          Out{gamesOut > 0 ? ` · ${gamesOut}g` : ""}
-                        </Status>
+                        <Status tone="negative">Out{gamesOut > 0 ? ` · ${gamesOut}g` : ""}</Status>
                       )}
                     </Td>
                     <Td numeric>
