@@ -25,6 +25,28 @@ function makeRoster(
 }
 
 /** A believable 13-man roster: 5 starters (one per position), 8 bench, mix of real/fictional. */
+/**
+ * A seeded generator, used everywhere this file needs randomness.
+ *
+ * These tests used `seededRng(1001)` directly, which made the suite genuinely
+ * flaky - a full run failed once and passed on retry during the simulation
+ * audit. Statistical assertions on an unseeded generator will eventually fail
+ * for no reason, and a suite people learn to re-run is a suite that stops
+ * catching things.
+ *
+ * Each call site gets its own stream so tests stay independent of order.
+ */
+function seededRng(seed = 20260810): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 function fullRoster(prefix: string): RosterPlayerForSimulation[] {
   const positions: Position[] = ["PG", "SG", "SF", "PF", "C"];
   const roster: RosterPlayerForSimulation[] = [];
@@ -71,7 +93,7 @@ describe("allocateMinutes", () => {
   it("never allocates more than 40 minutes to any player", () => {
     const roster = fullRoster("home");
     for (let i = 0; i < 20; i++) {
-      const minutes = allocateMinutes(roster, 5, Math.random);
+      const minutes = allocateMinutes(roster, 5, seededRng(1002));
       for (const m of minutes.values()) {
         expect(m).toBeLessThanOrEqual(40);
         expect(m).toBeGreaterThan(0);
@@ -95,7 +117,7 @@ describe("allocateMinutes", () => {
   });
 
   it("returns an empty map for an empty roster", () => {
-    expect(allocateMinutes([], 10, Math.random).size).toBe(0);
+    expect(allocateMinutes([], 10, seededRng(1003)).size).toBe(0);
   });
 
   it("a high benchTrustDelta coach plays the bench deeper than a low/negative one", () => {
@@ -103,12 +125,17 @@ describe("allocateMinutes", () => {
     let trustedRosterSize = 0;
     let shortLeashRosterSize = 0;
     const trials = 40;
+    // Streams hoisted out of the loop: a generator constructed per iteration
+    // is re-seeded identically every time, so all 40 "trials" would be one
+    // trial counted 40 times.
+    const trustedRng = seededRng(1004);
+    const shortLeashRng = seededRng(1005);
     for (let i = 0; i < trials; i++) {
-      trustedRosterSize += allocateMinutes(roster, 8, Math.random, {
+      trustedRosterSize += allocateMinutes(roster, 8, trustedRng, {
         benchTrustDelta: 1,
         threePaMultiplier: 1,
       }).size;
-      shortLeashRosterSize += allocateMinutes(roster, 8, Math.random, {
+      shortLeashRosterSize += allocateMinutes(roster, 8, shortLeashRng, {
         benchTrustDelta: -1,
         threePaMultiplier: 1,
       }).size;
@@ -125,7 +152,10 @@ describe("allocateMinutes", () => {
     const roster = fullRoster("home").map((p) =>
       p.leaguePlayerId === "home-bench-7" ? { ...p, rotationSlot: 0, targetMinutesPerGame: 34 } : p,
     );
-    const samples = Array.from({ length: 30 }, () => allocateMinutes(roster, 6, Math.random));
+    // One stream shared across all 30 draws - creating a fresh generator per
+    // sample would seed each identically and produce 30 copies of one game.
+    const rng = seededRng(1006);
+    const samples = Array.from({ length: 30 }, () => allocateMinutes(roster, 6, rng));
     const promotedMinutes = samples.map((m) => m.get("home-bench-7") ?? 0);
     const average = promotedMinutes.reduce((sum, m) => sum + m, 0) / promotedMinutes.length;
 
@@ -166,7 +196,7 @@ describe("generateBoxScore", () => {
 
   it("reconciles home and away points to the exact team score", () => {
     for (let trial = 0; trial < 20; trial++) {
-      const lines = generateBoxScore(rosters(), 118, 101, Math.random);
+      const lines = generateBoxScore(rosters(), 118, 101, seededRng(1007));
       const homePoints = lines
         .filter((l) => l.leagueTeamId === "home-team")
         .reduce((sum, l) => sum + l.points, 0);
@@ -180,7 +210,7 @@ describe("generateBoxScore", () => {
 
   it("never produces negative or impossible stat lines", () => {
     for (let trial = 0; trial < 20; trial++) {
-      const lines = generateBoxScore(rosters(), 130, 95, Math.random);
+      const lines = generateBoxScore(rosters(), 130, 95, seededRng(1008));
       for (const line of lines) {
         expect(line.minutesPlayed).toBeGreaterThan(0);
         expect(line.points).toBeGreaterThanOrEqual(0);
@@ -206,7 +236,7 @@ describe("generateBoxScore", () => {
     // nominal band itself.
     const ROUNDING_SLACK = 3;
     for (let trial = 0; trial < 20; trial++) {
-      const lines = generateBoxScore(rosters(), 112, 108, Math.random);
+      const lines = generateBoxScore(rosters(), 112, 108, seededRng(1009));
       for (const teamId of ["home-team", "away-team"]) {
         const teamLines = lines.filter((l) => l.leagueTeamId === teamId);
         const totalRebounds = teamLines.reduce((sum, l) => sum + l.rebounds, 0);
@@ -220,7 +250,7 @@ describe("generateBoxScore", () => {
   });
 
   it("never generates a row for a player who wasn't allocated minutes", () => {
-    const lines = generateBoxScore(rosters(), 112, 108, Math.random);
+    const lines = generateBoxScore(rosters(), 112, 108, seededRng(1010));
     // 5 starters + up to 7 real-rotation bench players per team, capped
     // well under the full 13-man roster (deep bench regularly DNPs).
     const homeLines = lines.filter((l) => l.leagueTeamId === "home-team");
@@ -261,7 +291,7 @@ describe("generateBoxScore", () => {
         },
         AVERAGE_TEAM_SCORE_APPROX,
         AVERAGE_TEAM_SCORE_APPROX - 8,
-        Math.random,
+        seededRng(1011),
       );
       const starLine = lines.find((l) => l.leaguePlayerId === "star");
       // A moderate bench player (not the deepest scratch-prone slot), so it
@@ -285,6 +315,9 @@ describe("generateBoxScore", () => {
     let paceAndSpaceThreeShare = 0;
     let grindItOutThreeShare = 0;
     const trials = 15;
+    // Hoisted for the same reason as above - one stream across all trials.
+    const paceRng = seededRng(1012);
+    const grindRng = seededRng(1013);
     for (let i = 0; i < trials; i++) {
       const paceRosters: GameRosters = {
         homeTeamId: "home-team",
@@ -300,10 +333,10 @@ describe("generateBoxScore", () => {
         homeCoachModifier: { benchTrustDelta: 0, threePaMultiplier: 0.7 },
       };
 
-      const paceLines = generateBoxScore(paceRosters, 112, 108, Math.random).filter(
+      const paceLines = generateBoxScore(paceRosters, 112, 108, paceRng).filter(
         (l) => l.leagueTeamId === "home-team",
       );
-      const grindLines = generateBoxScore(grindRosters, 112, 108, Math.random).filter(
+      const grindLines = generateBoxScore(grindRosters, 112, 108, grindRng).filter(
         (l) => l.leagueTeamId === "home-team",
       );
 
