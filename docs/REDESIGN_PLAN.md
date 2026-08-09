@@ -174,7 +174,11 @@ the Threshold Rule, plus **One Landmark, Two Companions** for the skylines.
       name search, affordable-only, rights-only and sort.
 - [x] **P1** "Est. value" without the cap space that makes it meaningful. Cap
       space is passed in and drives the affordable-only filter.
-- [ ] **P2** No competing offers; a free agent waits indefinitely, draining urgency.
+- [x] **P2** No competing offers; a free agent waits indefinitely, draining
+      urgency. Rival clubs now show as competition on the board (derived from
+      their cap space and roster holes) **and** actually sign, via the same
+      interest model, on season advance - so the pressure the board shows is
+      pressure the game honours.
 
 ### Trade builder
 
