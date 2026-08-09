@@ -265,9 +265,23 @@ untouched produce equal strength.
 
 Team-strength spread fell from **11.6 to 4.5** over six seasons.
 
-**Root cause.** Not investigated to completion — plausibly development/regression
-pulling ratings toward the mean, compounded by roster bloat (P0-3). **Flagged as
-requiring its own investigation rather than diagnosed here.**
+**CORRECTION (2026-08-10).** This finding was **overstated**. The 11.6 → 4.5
+figure was measured with `computeTeamStrength`, which is *not* the function the
+simulation uses — `computeRotationAdjustedStrength` is. Re-measured with the
+right function, the same save declines **13.3 → 8.9** over six seasons: real,
+but a third of the reported severity. The audit's own rule — follow the code
+paths, not the names — was broken here by the audit itself.
+
+**Root cause.** Still not diagnosed. Investigation found that talent does not
+*compress* (player rating distributions are stable across saves: max 99, median
+~70-74 in both fresh and six-season leagues). What happens instead is that
+talent never **concentrates**: across all 13 live saves, the top 30 players are
+spread over 20-22 teams with never more than 3 on one roster, and that is
+already true in a brand-new league. Superteams cannot form.
+
+That is a roster-construction and progression question, not a simulation-engine
+one, and it belongs to a separate audit. A definitive answer needs a headless
+20-season harness, which has not been built.
 
 **Gameplay impact.** Long saves lose all competitive texture. No dynasties, no
 rebuilds — a 20-season save is 20 identical seasons.
@@ -296,6 +310,13 @@ average simply re-normalises.
 
 **Impact.** Injuries are under-weighted, and there is no "next man up" — the
 tenth man does not step into the starter's minutes. Real, but modest.
+
+**FIXED (Stage 3, `e8952a6`)** — and fixing it exposed a worse bug underneath.
+Once Stage 1 let bench players reach the rotation at all, the vacated slot was
+filled *by slot number*, so the thirteenth-best player inherited the injured
+starter's slot 0 and **35 minutes**. Call-ups now slide down past anyone they
+are clearly worse than: same roster, starter out, the second-best man goes
+34 → 39 minutes and the call-up lands on 11.
 
 ---
 
