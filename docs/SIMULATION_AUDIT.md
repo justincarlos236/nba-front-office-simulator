@@ -30,16 +30,23 @@ case, **exactly zero**.
 
 ## Scores
 
-| Dimension | Score | Note |
-|---|---|---|
-| **Overall simulation quality** | **4/10** | Excellent machinery, broken competitive range |
-| Correctness | 6/10 | State integrity is perfect; the strength model has real bugs |
-| NBA realism | 3/10 | League is nearly flat; margins ignore mismatch |
-| Regular-season realism | 3/10 | 9-game spread between best and worst team |
-| Playoff realism | 7/10 | Series-length distribution is genuinely good |
-| Player-stat realism | 7/10 | Box scores reconcile exactly and read plausibly |
-| Long-term stability | 4/10 | No inflation, but parity collapses and rosters bloat |
-| Test confidence | 4/10 | Strong unit coverage, zero behavioural/statistical tests |
+Both columns measured the same way. "After" reflects Stages 1-4
+(`3022e55`, `f542b17`, `e8952a6`, `5a18395`).
+
+| Dimension | Before | After | Note |
+|---|---|---|---|
+| **Overall simulation quality** | **4/10** | **8/10** | Competitive range fixed; talent concentration still open |
+| Correctness | 6/10 | 9/10 | Four strength-path defects closed; state integrity was always perfect |
+| NBA realism | 3/10 | 8/10 | Win spread, margins and scoring all land in real bands |
+| Regular-season realism | 3/10 | 8/10 | Best-worst spread 9.1 -> 35.5 games |
+| Playoff realism | 7/10 | 8/10 | Was already good; live-game model now matches the season model |
+| Player-stat realism | 7/10 | 8/10 | Unchanged model, now fed a realistic margin and minutes |
+| Long-term stability | 4/10 | 6/10 | Roster bloat fixed; talent still never concentrates (P1-8) |
+| Test confidence | 4/10 | 8/10 | Nine statistical safeguards; suite now deterministic |
+
+**Remaining verdict: strong but needs tuning** — down from *materially flawed*.
+The one substantive gap left is that talent never concentrates into superteams,
+which is roster construction rather than the engine and belongs to its own audit.
 
 ---
 
