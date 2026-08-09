@@ -37,8 +37,17 @@ function isBigMoment(pick: ResolvedPick, userTeamId: string | null): boolean {
   );
 }
 
+/** The user's own selection renders as a draft card rather than a line of
+ *  text. A card carries five fields and a colour band; the timings below were
+ *  tuned when every pick was one line, so an own-pick flashed past before it
+ *  could be read. It is also the only pick the player actually keeps. */
+function isOwnPick(pick: ResolvedPick, userTeamId: string | null): boolean {
+  return userTeamId !== null && pick.leagueTeamId === userTeamId;
+}
+
 function baseDelayForPick(pick: ResolvedPick, userTeamId: string | null): number {
   if (pick.overallPickNumber === 1) return 2600;
+  if (isOwnPick(pick, userTeamId)) return 3200;
   if (isBigMoment(pick, userTeamId)) return 1500;
   if (pick.overallPickNumber <= 5) return 1100;
   if (pick.overallPickNumber <= 14) return 750;
@@ -47,6 +56,7 @@ function baseDelayForPick(pick: ResolvedPick, userTeamId: string | null): number
 }
 function settleDelayForPick(pick: ResolvedPick, userTeamId: string | null): number {
   if (pick.overallPickNumber === 1) return 1200;
+  if (isOwnPick(pick, userTeamId)) return 1600;
   if (isBigMoment(pick, userTeamId)) return 700;
   if (pick.overallPickNumber <= 14) return 350;
   return 150;
@@ -78,6 +88,8 @@ export function PickRevealStage({
   const [mode, setMode] = useState<Mode>("auto");
   const [speed, setSpeed] = useState<SpeedLabel>("2x");
   const [isPaused, setIsPaused] = useState(false);
+  /** True while the sequence is holding on the user's own selection. */
+  const [holdingOnOwnPick, setHoldingOnOwnPick] = useState(false);
 
   const modeRef = useRef(mode);
   const speedRef = useRef(speed);
@@ -150,6 +162,23 @@ export function PickRevealStage({
         setCurrent(entry);
         onRevealRef.current(entry);
         await waitTicks(settleDelayForPick(entry, userTeamId));
+
+        // Your own selection renders as a draft card and is the one pick of
+        // sixty you actually keep. Auto-advancing past it means the card
+        // flashes by before it can be read, so the sequence holds here until
+        // the player dismisses it - unless they have asked to sim to the end,
+        // in which case they have said they do not want to stop for anything.
+        if (
+          !cancelled &&
+          !simToEndRef.current &&
+          !isSingle &&
+          isOwnPick(entry, userTeamId) &&
+          i < resolvedPicks.length - 1
+        ) {
+          setHoldingOnOwnPick(true);
+          await waitForManualAdvance();
+          setHoldingOnOwnPick(false);
+        }
       }
 
       if (cancelled) return;
@@ -248,6 +277,15 @@ export function PickRevealStage({
                       : null
                   }
                 />
+                {holdingOnOwnPick && (
+                  <button
+                    type="button"
+                    onClick={handleManualAdvance}
+                    className="mt-4 w-full rounded-[2px] bg-team-accent px-5 py-2.5 text-[11px] font-semibold tracking-[0.09em] text-team-accent-ink uppercase transition-opacity duration-120 hover:opacity-[0.88]"
+                  >
+                    Continue the draft
+                  </button>
+                )}
               </div>
             ) : (
               <div className="mt-1">

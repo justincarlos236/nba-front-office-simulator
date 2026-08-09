@@ -429,8 +429,10 @@ export function TradeBuilder({
           feasibility && !feasibility.isValid ? "border-t-signal-red" : "border-t-team-accent"
         }`}
       >
+        {/* Inside the panel, not straddling its top edge - anchored above it
+            the stamp cut through the draft-pick lists behind. */}
         {feasibility && !feasibility.isValid && (
-          <Stamp tone="signal" rotate={-8} className="absolute -top-4 right-6">
+          <Stamp tone="signal" rotate={-8} className="absolute top-5 right-6">
             Denied
           </Stamp>
         )}
