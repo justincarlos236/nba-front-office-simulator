@@ -136,6 +136,33 @@ describe("stale rotation slots (P0 regression)", () => {
     expect(resolved.some((e) => e.player.leaguePlayerId === "marginal")).toBe(false);
   });
 
+  it("promotes by quality when a slot is vacated, not by slot number", () => {
+    // An injured player is filtered out before the rotation resolves, leaving
+    // their slot open. Filling open slots in ascending order handed a vacated
+    // slot 0 to whoever was next in the bench queue - putting the thirteenth
+    // best player on starter minutes when the starter went down.
+    const squad = Array.from({ length: 12 }, (_, i) => p(`old${i}`, 78 - i * 2, i));
+    const bench = p("bench12", 52, null);
+    const starOut = squad.slice(1); // old0 (the 78) is hurt
+
+    const resolved = resolveRotation([bench, ...starOut]);
+    // The next-best man leads the rotation - not the call-up, who used to
+    // inherit the vacated slot 0 and its starter minutes.
+    expect(resolved[0].player.leaguePlayerId).toBe("old1");
+    // The call-up settles near the back. Not necessarily last: he only slides
+    // past players he is clearly worse than, and old11 (56) is within the
+    // margin of him (52).
+    const benchRank = resolved.findIndex((e) => e.player.leaguePlayerId === "bench12");
+    expect(benchRank).toBeGreaterThan(8);
+  });
+
+  it("orders the rotation from best to worst once call-ups are involved", () => {
+    const squad = Array.from({ length: 12 }, (_, i) => p(`old${i}`, 78 - i * 2, i));
+    const resolved = resolveRotation([p("star", 95, null), ...squad.slice(2)]);
+    const ratings = resolved.map((e) => e.player.overallRating);
+    expect([...ratings].sort((a, b) => b - a)).toEqual(ratings);
+  });
+
   it("assigns contiguous ranks from 0 after displacement", () => {
     const squad = Array.from({ length: 12 }, (_, i) => p(`old${i}`, 78 - i * 2, i));
     const resolved = resolveRotation([p("star", 95, null), ...squad]);

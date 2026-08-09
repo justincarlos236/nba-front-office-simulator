@@ -63,9 +63,12 @@ export function resolveRotation(roster: RosterPlayerForSimulation[]): ResolvedRo
     }
   }
 
-  // Fill whichever numeric slots are still open with the best of the
-  // unslotted remainder, in ascending slot order.
+  // Everyone the user did not place, best first.
   const autoRanked = buildAutoRotation(unslotted).map(({ player }) => player);
+
+  // Fill whichever slots are still open, best call-up to the lowest open
+  // rank. A user who slots one player at 3 and leaves the rest to the engine
+  // gets exactly that: their pick at 3, the best of the others around them.
   let autoIndex = 0;
   for (let slot = 0; slot < MAX_ROTATION_SIZE; slot++) {
     if (slotted.has(slot)) continue;
@@ -75,40 +78,48 @@ export function resolveRotation(roster: RosterPlayerForSimulation[]): ResolvedRo
     autoIndex++;
   }
 
-  // The depth chart as the user actually ordered it, gaps already filled.
   const ordered = [...slotted.entries()].sort(([a], [b]) => a - b).map(([, player]) => player);
 
-  // Anyone still unplaced was shut out because the twelve slots were already
-  // claimed. Left there, a newly acquired player contributes NOTHING - not
-  // reduced minutes, zero - so trading for the best player in the league moved
-  // team strength by exactly 0.00 and he never appeared in a box score. Every
-  // trade and signing writes rotationSlot: null, so a saved rotation silently
-  // froze the roster it was saved against.
+  // Slide call-ups down past anyone they are clearly worse than.
   //
-  // A clearly better player now enters at the depth his rating warrants,
-  // pushing the weakest man out of the rotation. The user's ordering still
-  // holds among everyone they actually chose; what no longer holds is a stale
-  // slot list outranking a player who is plainly better, which is never what
-  // anyone intended.
+  // Filling open ranks in ascending order is right when the user simply left
+  // gaps, but wrong when a slot came open because its owner is injured or was
+  // traded: the vacancy is at the TOP of the chart, so the next man off the
+  // bench inherited starter minutes. Measured, that put the thirteenth-best
+  // player on 35 minutes the moment a starter went down.
+  //
+  // Only call-ups move, and only downward, so a player the user actually
+  // placed never loses ground to someone worse - the rest of the chart simply
+  // closes up, which is what a real bench does.
+  for (let i = 0; i < ordered.length - 1; i++) {
+    const here = ordered[i];
+    if (explicitlySlotted.has(here.leaguePlayerId)) continue;
+    for (let j = i + 1; j < ordered.length; j++) {
+      if (ordered[j].overallRating - here.overallRating < DISPLACEMENT_MARGIN) break;
+      ordered[j - 1] = ordered[j];
+      ordered[j] = here;
+    }
+  }
+
+  // Anyone still unplaced was shut out because every slot was already claimed.
+  // Left there, a newly acquired player contributes NOTHING - not reduced
+  // minutes, zero - so trading for the best player in the league moved team
+  // strength by exactly 0.00 and he never appeared in a box score. Every trade
+  // and signing writes rotationSlot: null, so a saved rotation silently froze
+  // the roster it was saved against.
   for (let i = autoIndex; i < autoRanked.length; i++) {
     const candidate = autoRanked[i];
-    const weakest = ordered.reduce(
-      (worst, p) => (p.overallRating < worst.overallRating ? p : worst),
-      ordered[0],
+    const weakest = ordered.reduce((worst, p) =>
+      p.overallRating < worst.overallRating ? p : worst,
     );
-    if (!weakest) break;
-
     // A player the user deliberately slotted is protected unless the newcomer
-    // is *clearly* better. Benching a star or starting a favourite role player
+    // is *clearly* better. Benching a star or starting a favoured role player
     // is a legitimate choice, and the gap there is usually a point or two -
     // whereas a genuine acquisition outclasses the last man by a wide margin.
-    // An auto-filled player was never chosen by anyone, so any upgrade takes
-    // their place.
     const margin = explicitlySlotted.has(weakest.leaguePlayerId) ? DISPLACEMENT_MARGIN : 1;
-    // `autoRanked` is best-first, so once one candidate fails to clear the bar,
-    // no later one can either.
+    // `autoRanked` is best-first, so once one candidate fails to clear the
+    // bar, no later one can either.
     if (candidate.overallRating - weakest.overallRating < margin) break;
-
     ordered.splice(ordered.indexOf(weakest), 1);
     const insertAt = ordered.findIndex((p) => p.overallRating < candidate.overallRating);
     ordered.splice(insertAt === -1 ? ordered.length : insertAt, 0, candidate);
