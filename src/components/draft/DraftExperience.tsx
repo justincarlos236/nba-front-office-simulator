@@ -321,24 +321,13 @@ export function DraftExperience({
         </div>
       )}
 
-      {(message || errorMessage || nightEvents.length > 0) && (
-        <div className="rounded-[2px] border border-rule bg-field p-4">
-          {message && <p className="text-sm text-team-accent">{message}</p>}
+      {/* Immediate feedback on what just happened stays at the top - it is a
+          response to an action the player just took. The running night log is
+          a feed, so it sits below the board rather than above it. */}
+      {(message || errorMessage) && (
+        <div className="border-t border-rule bg-field p-4">
+          {message && <p className="text-[15px] text-team-accent">{message}</p>}
           {errorMessage && <ErrorNotice error={errorMessage} />}
-          {nightEvents.length > 0 && (
-            <div className={message || errorMessage ? "mt-3 border-t border-rule pt-3" : ""}>
-              <p className="text-xs font-semibold tracking-wide text-ink-muted uppercase">
-                Draft Night
-              </p>
-              <div className="mt-2 space-y-1">
-                {nightEvents.map((event, i) => (
-                  <p key={i} className="text-xs text-ink">
-                    {event}
-                  </p>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -421,6 +410,27 @@ export function DraftExperience({
           </div>
         </div>
       </div>
+
+      {/* The night log. A feed of what the rest of the league has been doing -
+          worth reading, never worth putting above the board you are drafting
+          from. Newest first, as a wire. */}
+      {nightEvents.length > 0 && (
+        <section className="border-t border-rule bg-field p-5">
+          <p className="text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase">
+            Draft night
+          </p>
+          <div className="mt-3">
+            {nightEvents.map((event, i) => (
+              <p
+                key={i}
+                className="border-b border-hairline py-2 text-[15px] text-ink last:border-b-0"
+              >
+                {event}
+              </p>
+            ))}
+          </div>
+        </section>
+      )}
 
       {profileProspect && (
         <ProspectProfileModal

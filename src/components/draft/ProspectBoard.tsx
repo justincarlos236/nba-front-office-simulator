@@ -119,7 +119,7 @@ export function ProspectBoard({
         </button>
       </div>
 
-      <div className="mt-3 max-h-[40rem] space-y-2 overflow-y-auto pr-1">
+      <div className="mt-3 max-h-160 space-y-2 overflow-y-auto pr-1">
         {filtered.map((p) => {
           const pick = pickByProspectId.get(p.id);
           const isDrafted = Boolean(pick);
@@ -136,7 +136,7 @@ export function ProspectBoard({
                 disabled={compareDisabled}
                 onChange={() => onToggleCompare(p.id)}
                 aria-label={`Compare ${p.fullName}`}
-                className="shrink-0 accent-orange-500"
+                className="shrink-0 accent-[var(--team-accent)]"
               />
               <button
                 type="button"
@@ -151,10 +151,16 @@ export function ProspectBoard({
                   <p className="truncate text-xs text-ink-muted">
                     {p.position} &middot; Age {p.age} &middot; OVR {p.overallRating} &middot; POT{" "}
                     {p.potentialRating}
-                    {pick
-                      ? ` · Drafted by ${teamLabel(teamsById, pick.leagueTeamId)} (Pick ${pick.overallPickNumber})`
-                      : ""}
                   </p>
+                  {/* Already drafted is the single most decision-relevant fact
+                      about a prospect, and it was the tail of a six-part line -
+                      so it truncated to "Drafted b..." exactly when it mattered. */}
+                  {pick && (
+                    <p className="truncate text-[11px] font-semibold tracking-[0.09em] text-caution uppercase">
+                      Off the board &middot; {teamLabel(teamsById, pick.leagueTeamId)} #
+                      {pick.overallPickNumber}
+                    </p>
+                  )}
                 </span>
               </button>
               <button

@@ -628,7 +628,7 @@ function RosterColumn({
                 onChange={() => onToggle(p.leaguePlayerId)}
                 onClick={(e) => e.stopPropagation()}
                 aria-label={`Select ${p.fullName} for this trade`}
-                className="accent-orange-500"
+                className="accent-[var(--team-accent)]"
               />
               <span onClick={(e) => e.stopPropagation()}>
                 <PlayerChip
@@ -665,7 +665,7 @@ function RosterColumn({
                   type="checkbox"
                   checked={selectedPicks.has(p.draftPickId)}
                   onChange={() => onTogglePick(p.draftPickId)}
-                  className="accent-orange-500"
+                  className="accent-[var(--team-accent)]"
                 />
                 <span className="text-ink">{pickLabel(p)}</span>
               </label>
