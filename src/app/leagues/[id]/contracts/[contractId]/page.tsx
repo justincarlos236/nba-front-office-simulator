@@ -54,12 +54,11 @@ export default async function ContractPage({ params, searchParams }: PageProps) 
 
   return (
     <main className="mx-auto max-w-225 flex-1 px-4 py-10 sm:px-6 sm:py-16">
+      {/* The document carries the player's name; repeating it as a page
+          heading 200px above the artifact was the same name twice. */}
       <div className="border-b border-rule-strong pb-6">
         <Label tone="accent">{isFresh ? "Contract executed" : "On file"}</Label>
-        <h1 className="mt-3 text-[clamp(1.75rem,3.5vw,2.5rem)] leading-tight font-bold tracking-[-0.02em] text-ink">
-          {contract.leaguePlayer.player.fullName}
-        </h1>
-        <p className="mt-3 text-[15px] text-ink-muted">
+        <p className="mt-3 max-w-[55ch] text-[clamp(1.125rem,2vw,1.5rem)] leading-snug text-ink">
           {isFresh
             ? "The deal is done and the paperwork is filed."
             : "A contract on the franchise's books."}

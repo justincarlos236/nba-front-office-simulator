@@ -60,17 +60,32 @@ export function ArtifactHead({
   issuer,
   title,
   reference,
+  accented = false,
 }: {
   /** Who produced this - the league office, ownership, the franchise. */
   issuer: string;
   title: string;
   /** A file/reference line. Real documents carry one; it sells the object. */
   reference?: string;
+  /**
+   * Rules the header in the franchise's accent. A document issued *by the
+   * franchise* should look like the franchise issued it; a league-office
+   * ruling deliberately does not, because the league is not your team.
+   */
+  accented?: boolean;
 }) {
   return (
-    <header className="border-b border-rule px-6 py-4">
+    <header
+      className={`border-b px-6 py-4 ${
+        accented ? "border-b-rule border-t-2 border-t-team-accent" : "border-rule"
+      }`}
+    >
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <p className="text-[11px] font-semibold tracking-[0.18em] text-ink-muted uppercase">
+        <p
+          className={`text-[11px] font-semibold tracking-[0.18em] uppercase ${
+            accented ? "text-team-accent" : "text-ink-muted"
+          }`}
+        >
           {issuer}
         </p>
         {reference && (

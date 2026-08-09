@@ -21,6 +21,8 @@ import { PlayerChip } from "@/components/players/PlayerChip";
 import type { DepartmentLevel } from "@/generated/prisma/client";
 import { ErrorNotice } from "@/components/ui/ErrorNotice";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
+import { Stamp } from "@/components/ui/Stamp";
+import { IconRuling } from "@/components/ui/icons";
 
 interface RosterPlayerDTO {
   leaguePlayerId: string;
@@ -422,19 +424,33 @@ export function TradeBuilder({
       {/* THE WIRE - Workbench. The verdict is the whole point of this surface,
           so it sticks to the bottom of the viewport rather than scrolling away
           below two long roster columns while the user is still selecting. */}
-      <div className="sticky bottom-0 z-10 mt-6 border-t-2 border-team-accent bg-field p-6 shadow-none">
+      <div
+        className={`sticky bottom-0 z-10 mt-6 relative border-t-2 bg-field p-6 ${
+          feasibility && !feasibility.isValid ? "border-t-signal-red" : "border-t-team-accent"
+        }`}
+      >
+        {feasibility && !feasibility.isValid && (
+          <Stamp tone="signal" rotate={-8} className="absolute -top-4 right-6">
+            Denied
+          </Stamp>
+        )}
         {feasibility === null ? (
           <p className="text-[15px] text-ink-muted">
             Select at least one player or pick on either side.
           </p>
         ) : (
           <div>
+            {/* An illegal offer is the league office refusing it, and that is
+                the register it should read in - the live check is where a
+                block is actually seen, since Execute is disabled before the
+                server ever gets the chance to reject it. */}
             <p
-              className={`text-[clamp(1rem,1.6vw,1.25rem)] leading-snug font-semibold ${
+              className={`flex items-start gap-2 text-[clamp(1rem,1.6vw,1.25rem)] leading-snug font-semibold ${
                 feasibility.isValid ? "text-ink" : "text-signal-red"
               }`}
             >
-              {feasibility.headline}
+              {!feasibility.isValid && <IconRuling className="mt-1 shrink-0" />}
+              {feasibility.isValid ? feasibility.headline : "The league office would reject this"}
             </p>
             {feasibility.detail && (
               <p className="mt-1 text-[15px] leading-relaxed text-ink-muted">

@@ -66,10 +66,12 @@ export function ContractSheet({
 
   return (
     <Artifact tone="paper" className={className}>
+      {/* Issued by the franchise, so it carries the franchise's accent. */}
       <ArtifactHead
-        issuer="Uniform Player Contract"
+        accented
+        issuer={teamLabel}
         title={playerName}
-        reference={`${teamLabel} · Filed ${seasonLabel(signedSeason)}`}
+        reference={`Uniform Player Contract · Filed ${seasonLabel(signedSeason)}`}
       />
 
       <ArtifactClause number={1} label="Term">
@@ -112,18 +114,23 @@ export function ContractSheet({
           : "None. This contract is tradeable subject to league rules."}
       </ArtifactClause>
 
-      <div className="flex justify-end px-6 pt-4">
-        <Stamp tone="positive" rotate={-5}>
+      {/* The stamp lands across the signature block, the way it does on a
+          real filed document - not in an empty band of its own. */}
+      <div className="relative">
+        <ArtifactSignature
+          lines={[
+            { role: "Player", name: playerName },
+            { role: "General Manager", name: gmName },
+          ]}
+        />
+        <Stamp
+          tone="positive"
+          rotate={-8}
+          className="pointer-events-none absolute -top-3 right-6"
+        >
           Executed
         </Stamp>
       </div>
-
-      <ArtifactSignature
-        lines={[
-          { role: "Player", name: playerName },
-          { role: "General Manager", name: gmName },
-        ]}
-      />
     </Artifact>
   );
 }
