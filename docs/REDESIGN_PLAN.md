@@ -47,13 +47,29 @@ Restore point before any of this work: branch `pre-visual-richness`, tag
 The 28-item Visual Possibility Audit is the master idea pool. **18 committed**
 across Phases A–E; 8 backlog; 2 rejected.
 
-| Phase | Contents                                                                                | Status                                |
-| ----- | --------------------------------------------------------------------------------------- | ------------------------------------- |
-| **A** | Icon set, cap gauge, transaction stamps, roster shape, season ribbon, contract ladder   | **done** (`7d1d264`, fixes `a2c8690`) |
-| **B** | Contract documents, league-office rulings, ownership letters, draft cards               | next                                  |
-| **C** | Championship banner rafters, trophy cabinet, retired numbers, franchise-memory timeline | pending                               |
-| **D** | Arena photography, material texture, franchise skylines, GM office framing              | pending                               |
-| **E** | Scouting cards, physical draft-board wall                                               | pending                               |
+| Phase | Contents                                                                                | Status                                                            |
+| ----- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| **A** | Icon set, cap gauge, transaction stamps, roster shape, season ribbon, contract ladder   | **done** (`7d1d264`, fixes `a2c8690`)                             |
+| **B** | Contract documents, league-office rulings, ownership letters, draft cards               | **done**                                                          |
+| **C** | Championship banner rafters, trophy cabinet, retired numbers, franchise-memory timeline | **done** (`46c46ca`)                                              |
+| **D** | Material texture, franchise skylines, GM office framing, phase light                    | **done** (`fdd946e`, `2a0f0ed`, `ae265b3`) — photography deferred |
+| **E** | Scouting report as Artifact, draft board as a wall                                      | **done** (`779ee86`)                                              |
+
+Phase D's authored layer is complete; the photography slots are specified in
+`docs/PHOTO_SOURCING_BRIEF.md` and are waiting on image selection. Only four
+surfaces take photography at all — the dashboard header uses the authored
+office window instead, since a stock arena photo would show the same building
+for all 30 franchises.
+
+**The Phase D lesson, worth keeping alongside Phase A's.** The first skyline
+grammar — "flat-topped rectilinear masses by default; a curve or spire spent
+only where a city genuinely reads by it" — made generic buildings the default
+and the landmark the exception, and produced 30 interchangeable cities. Every
+one passed its tests (closed, unique, in-bounds) because none of those
+properties say anything about whether a city looks like itself. Restructuring
+into signature/support/field made the hierarchy enforceable, and those tests
+immediately caught eight real composition errors. **Test the property that
+matters, not the property that is easy to check.**
 
 **Backlog** (deliberately uncommitted): tunnel imagery, press credential,
 lower-third broadcast bars, live-game score bug, trade-value balance scale,
@@ -73,16 +89,21 @@ all passed on it. **Only a screenshot caught it.** `capGaugeScale.test.ts` now
 locks the window. Automated checks cannot see composition — every phase needs a
 real look before it is called done.
 
-### Proposed amendments to DESIGN.md (not yet applied)
+### Amendments to DESIGN.md — all applied
 
-1. **Flat Law exception for artifacts.** A contract sheet, draft card or
-   scouting card is a physical object and may carry material/edge; interface
-   surfaces still may not.
+1. **The Artifact Exception.** A contract sheet, draft card or scouting card is
+   a physical object and may carry material/edge; interface surfaces still may
+   not. Paper grain is applied inside `Artifact` itself and deliberately not
+   exposed on `Field`.
 2. **Broadcast imagery clause.** Broadcast surfaces may carry full-bleed
-   photography; Desk/Workbench/Ledger may not.
+   photography; Desk/Workbench/Ledger may not. Halftone screens it so an image
+   reads as reproduced in a document rather than pasted into a webpage.
 3. **A sixth archetype: Artifact.** Rendered physical documents — contracts,
    draft cards, credentials, banners. Not Broadcast (not a moment), not Record
    (not editorial).
+
+Phase D added four more: the Window Rule, the Grain Rule, the Weather Rule and
+the Threshold Rule, plus **One Landmark, Two Companions** for the skylines.
 
 ## Closed before the redesign
 
