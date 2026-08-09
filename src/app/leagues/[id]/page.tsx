@@ -28,6 +28,11 @@ import {
   type JobSecurityLevel,
 } from "@/lib/gm/jobSecurity";
 import { EXPECTATION_LEVEL_LABEL } from "@/lib/gm/expectationLevel";
+import {
+  computeExpectationGap,
+  EXPECTATION_GAP_NOTE,
+  EXPECTATION_GAP_TONE,
+} from "@/lib/gm/expectationGap";
 import { OWNER_ARCHETYPE_LABEL } from "@/lib/gm/ownerArchetype";
 import { OwnershipLetter } from "@/components/ownership/OwnershipLetter";
 import { computeCompetitivenessPercentiles } from "@/lib/actions/competitiveness";
@@ -355,6 +360,15 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
   // absolute per-phase colour, so it can never clash with the accent field it
   // sits inside. Null for a monochrome franchise (Brooklyn, San Antonio),
   // which falls back to the system's neutral blue - see `skyStops`.
+  // Ownership's ask versus what this roster actually is. Derived, not stored:
+  // both inputs move on their own schedules and a persisted third value would
+  // drift out of step with the two facts it describes.
+  const expectationGap = currentExpectation
+    ? computeExpectationGap(currentExpectation.expectationLevel, teamIdentity)
+    : null;
+  const expectationNote = expectationGap ? EXPECTATION_GAP_NOTE[expectationGap] : null;
+  const expectationGapTone = expectationGap ? EXPECTATION_GAP_TONE[expectationGap] : "neutral";
+
   const headerAccentHue = accentHue(
     resolveTeamAccent(userLeagueTeam.team.primaryColor, userLeagueTeam.team.secondaryColor).hex,
   );
@@ -548,6 +562,26 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
                 <span className="text-ink">
                   {EXPECTATION_LEVEL_LABEL[currentExpectation.expectationLevel]}
                 </span>
+                {/* Ownership's ask and the team's actual identity were both
+                    already on this page, in adjacent fields, with nothing
+                    saying they disagreed - so a mandate to contend sitting
+                    above the word "Tanking" read as a data bug rather than as
+                    the central tension of the job. Naming the gap turns two
+                    facts that look broken together into one that means
+                    something. Silent when they agree. */}
+                {expectationNote && (
+                  <span
+                    className={`mt-1 block ${
+                      expectationGapTone === "negative"
+                        ? "text-negative"
+                        : expectationGapTone === "caution"
+                          ? "text-caution"
+                          : "text-ink-muted"
+                    }`}
+                  >
+                    {expectationNote}
+                  </span>
+                )}
               </p>
             )}
             {/* The demands themselves are rendered as letters in their own
