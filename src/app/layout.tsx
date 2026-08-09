@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Archivo, JetBrains_Mono } from "next/font/google";
 import { NavBar } from "@/components/layout/NavBar";
+import { TextureDefs } from "@/components/environment/textures";
 import { PlayerProfileProvider } from "@/components/players/PlayerProfileProvider";
 import "./globals.css";
 
@@ -33,6 +34,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${archivo.variable} ${jetbrainsMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        {/* SVG filter definitions for the Phase D material layer. Mounted once
+            at the root because filter ids are document-global. */}
+        <TextureDefs />
         <PlayerProfileProvider>
           <NavBar />
           {children}

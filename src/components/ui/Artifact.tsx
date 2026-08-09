@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { PaperGrain } from "@/components/environment/textures";
 
 /**
  * THE WIRE - the Artifact archetype's shell. See DESIGN.md.
@@ -47,7 +48,13 @@ export function Artifact({
       // reads as paper rather than as a card with a drop shadow.
       style={{ boxShadow: "0 1px 0 0 var(--ground), 0 2px 0 0 var(--hairline)" }}
     >
-      {children}
+      {/* Phase D: the tooth of the stock. The Artifact Exception is the only
+          licence for material in this system, so grain lives here and is
+          deliberately not exposed as a prop on Field - a Workbench or Ledger
+          surface that acquires texture is the failure mode this rule exists
+          to prevent. Sits under the content, never over it. */}
+      <PaperGrain />
+      <div className="relative">{children}</div>
     </article>
   );
 }

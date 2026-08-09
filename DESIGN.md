@@ -125,7 +125,7 @@ transaction wires, cap sheets, medical reports, scouting packets, tampering
 memos, collective bargaining documents. Ruled, monospaced, stamped, filed. Not
 nostalgic — current. This is what the job actually looks like, and rendering it
 at professional-instrument quality is what makes a screen full of salary
-figures read as *authority* rather than as a spreadsheet.
+figures read as _authority_ rather than as a spreadsheet.
 
 The world's governing idea is that **the document language is a floor, not a
 ceiling.** Roughly eighty percent of routes are documentary: ruled fields,
@@ -182,8 +182,8 @@ you run.
 - **Positive** (`#3DD68C`): surplus, cap room, gains, favorable outcomes.
 - **Caution** (`#FFB020`): approaching a threshold, provisional, unresolved.
 - **Negative** (`#FF6B6B`): validation failures, over-limit states, losses,
-  injuries. Distinct from Signal Red: negative is *your* problem, signal red is
-  *the league's* ruling.
+  injuries. Distinct from Signal Red: negative is _your_ problem, signal red is
+  _the league's_ ruling.
 
 ### Neutral
 
@@ -227,7 +227,7 @@ qualifies.
 Team primaries were measured against the ground: **16 of 30 fail 3.0:1**, and
 for Minnesota and Dallas both primary and secondary fail. The accent is
 therefore resolved by a documented cascade, never taken raw. Every candidate
-must clear **two** bars — legible against the ground, *and* chromatic enough to
+must clear **two** bars — legible against the ground, _and_ chromatic enough to
 read as a franchise colour:
 
 1. Use `primaryColor` if it clears 4.5:1 and carries real chroma (OKLCH C ≥ 0.04).
@@ -305,31 +305,31 @@ archetype's rules are binding:
 
 - **Desk** — orient and decide. Asymmetric: a wide reading column with a narrow
   persistent figure rail. One focus, supporting material below. Container
-  1200px. *(dashboard, `/leagues`)*
+  1200px. _(dashboard, `/leagues`)_
 - **Workbench** — build something and see consequences live. Two panels plus a
-  verdict region that never scrolls out of view. Container 1400px. *(trade
-  builder, rotation, contract offer, draft board)*
+  verdict region that never scrolls out of view. Container 1400px. _(trade
+  builder, rotation, contract offer, draft board)_
 - **Broadcast** — a moment happens to you. Full-bleed, centered, staged, no
   container max. The only archetype with a real motion budget and the only one
-  permitted display type. *(draft night, lottery, trade outcome, playoff series,
-  career end, championship)*
+  permitted display type. _(draft night, lottery, trade outcome, playoff series,
+  career end, championship)_
 - **Ledger** — scan and compare a real dataset. Ruled columns edge to edge,
   filters as first-class header controls, density maximized. Container 1400px.
-  *(standings, leaders, finances, free agency, transactions, roster)*
+  _(standings, leaders, finances, free agency, transactions, roster)_
 - **Record** — read what already happened. Single narrow column, editorial,
-  past tense, no controls. Container 720px. *(history, career, narratives,
-  player profile)*
+  past tense, no controls. Container 720px. _(history, career, narratives,
+  player profile)_
 - **Artifact** — a rendered physical document. Not Broadcast (it is not a
   moment) and not Record (it is not editorial): it is the object itself, the
   thing a real front office would file. Bounded width, its own paper tone,
-  material edges per the Artifact Exception, and typography set as *print*
+  material edges per the Artifact Exception, and typography set as _print_
   rather than as interface — letterhead, clause numbering, signature lines,
-  filing marks. Never scrolls as a page; it sits inside one. *(contracts,
+  filing marks. Never scrolls as a page; it sits inside one. _(contracts,
   league-office rulings, ownership letters, draft cards, scouting cards,
-  credentials, banners)*
+  credentials, banners)_
 
 The sixth archetype exists because the other five all describe ways of
-*presenting information*, and this product's world is one where information
+_presenting information_, and this product's world is one where information
 arrives as paper. A contract rendered as a form is a UI; a contract rendered as
 a contract is the world.
 
@@ -369,10 +369,69 @@ on an interface surface is a defect.
 rendered physical object, and physical objects have edges. A contract sheet, a
 draft card, a scouting card, a credential, a banner may carry material: a cut
 or torn edge, a paper tone distinct from the field, a stamp, a fold, a rule
-printed *on* the object rather than drawn around it. This is the one place
+printed _on_ the object rather than drawn around it. This is the one place
 depth is permitted, and it is permitted because the thing genuinely is an
 object rather than a panel pretending to be one. Everything else — every Desk,
 Workbench, Ledger and Record surface — stays flat.
+
+## The Environmental Layer (Phase D)
+
+The Wire is a document system, and a document system that acquires atmosphere
+everywhere stops being one. This layer exists so the product feels like a place
+rather than a database viewer — and every rule below exists to stop it becoming
+a skin.
+
+**The layer is three things and nothing else:** material (paper grain, halftone,
+ink bleed), the view (franchise skyline), and light (phase-aware sky).
+
+### The Window Rule
+
+**The environmental layer has exactly one home: the franchise header on the
+dashboard.** Not the nav, not a page background, not a card. The dashboard is
+the Desk — the room you work in — and the window is what that room can see. A
+skyline appearing on a second surface makes it wallpaper.
+
+The window is confined to a band the header text never enters, and the accent
+field under the text stays **fully opaque**. This is a contrast requirement, not
+a compositional preference: the team-accent cascade guarantees
+`--team-accent-ink` at ≥4.5:1 against a _solid_ accent field, and compositing
+the accent at 80% over the phase skies drops **38 of 60 team/phase combinations
+below AA**, worst case 3.37:1 (LAC). See `phaseLight.test.ts`, which locks this.
+
+### The Grain Rule
+
+**Texture follows the Artifact Exception exactly.** Grain belongs to rendered
+physical objects, because paper has tooth and a panel does not. It is applied
+inside `Artifact` itself and is deliberately _not_ exposed as a prop on `Field`
+or any Workbench/Ledger primitive — a spreadsheet that acquires paper texture is
+the precise failure this rule prevents.
+
+Halftone is narrower still: it screens **photography on Broadcast surfaces
+only**, so an image reads as reproduced in a document rather than pasted into a
+webpage.
+
+### The Weather Rule
+
+**Light may say what phase it is; it may never say anything else.** Phase light
+tints the sky behind the skyline and nothing further. It must never tint
+content, never shift a semantic colour (the Semantic Trio is immune), and never
+change a threshold's reading. If the light disagrees with `PhaseIndicator`, the
+light is wrong — both derive from `LeaguePhase`, which is the single source.
+
+Every sky sits below `0.45` lightness in OKLCH. The window is a hole in a dark
+room, not a lightbox.
+
+### The Threshold Rule
+
+**If you can see the texture as texture, it is too strong.** These effects are
+meant to stop a surface reading as a flat fill — not to be noticed. Grain is
+6% alpha. Phase light moves hue, barely lightness, so different parts of the
+season feel different across weeks of play without being legible as a colour
+change inside one session.
+
+The test for the whole layer: **remove it, and the interface must still be
+complete and legible.** It carries atmosphere, never information. Nothing here
+is the only way to learn anything.
 
 ## Shapes
 
@@ -389,7 +448,7 @@ vocabulary.
 There is no intermediate radius. A 6px or 12px corner anywhere is a drift back
 toward the previous world.
 
-Borders are 1px by default. Emphasis comes from rule *value*, not width, with
+Borders are 1px by default. Emphasis comes from rule _value_, not width, with
 one exception: a Broadcast surface may use a heavy team-color field as a
 structural element, which is a field rather than a border.
 

@@ -50,6 +50,7 @@ import { getSaveContinuity, markSaveSeen } from "@/lib/league/saveContinuity";
 import { CapThresholdGauge } from "@/components/cap/CapThresholdGauge";
 import { ContractLadder } from "@/components/cap/ContractLadder";
 import { SeasonRibbon } from "@/components/league/SeasonRibbon";
+import { OfficeWindow } from "@/components/environment/OfficeWindow";
 import { RosterShape } from "@/components/roster/RosterShape";
 import {
   ButtonLink,
@@ -361,12 +362,46 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
       {/* THE FRANCHISE. A full-bleed field in the team's own colour - the
           single largest perceptual change from the previous world, where team
           identity was a 4px border stripe. */}
-      <header className="border-b border-rule bg-team-accent">
-        <div className="mx-auto max-w-300 px-6 py-10 sm:px-8 sm:py-14">
+      <header className="relative isolate border-b border-rule bg-team-accent">
+        {/* THE VIEW. Phase D: the city outside the office, under the light of
+            the phase the save is in.
+
+            Confined to a band on the right that the header text never enters,
+            rather than washed across the whole field. That is a contrast
+            requirement, not a taste one: the team-accent cascade guarantees
+            4.5:1 for `--team-accent-ink` against a *solid* accent field, and
+            compositing the window under a translucent accent breaks that
+            guarantee on 38 of 60 team/phase combinations (worst: LAC at
+            3.37:1). Here the accent stays fully opaque everywhere the text
+            sits, so the guarantee holds exactly as measured. */}
+        {/* Pinned to the same centred column as the header text, so the band
+            and the text share one geometry instead of racing each other as the
+            viewport changes. `hidden xl:block`: below 1280px the column is
+            narrow enough that a long wordmark ("Portland Trail Blazers" at
+            4.25rem) would reach the band, so the window simply does not exist
+            there rather than being allowed to crowd the name. */}
+        <div className="pointer-events-none absolute inset-0 mx-auto hidden max-w-300 xl:block">
+          <div className="absolute inset-y-0 right-0 w-[34%]">
+            <OfficeWindow
+              abbreviation={userLeagueTeam.team.abbreviation}
+              relocatedCityName={userLeagueTeam.relocatedCityName}
+              phase={phase}
+            />
+            {/* Dissolve the window's left edge into the accent field so it
+                reads as an opening in the wall, not a pasted-on panel. */}
+            <div className="absolute inset-y-0 left-0 w-24 bg-linear-to-r from-team-accent to-transparent" />
+          </div>
+        </div>
+
+        <div className="relative mx-auto max-w-300 px-6 py-10 sm:px-8 sm:py-14">
           <p className="text-[11px] font-semibold tracking-[0.09em] text-team-accent-ink/70 uppercase">
             {seasonLabel} season
           </p>
-          <h1 className="mt-3 text-[clamp(2.5rem,6vw,4.25rem)] leading-[0.95] font-bold tracking-[-0.02em] text-team-accent-ink">
+          {/* `xl:max-w-186` (62% of the 75rem column) keeps the wordmark clear
+              of the window band, which occupies the right 34% of this same
+              column. Capped on the heading itself rather than on the container,
+              so the text stays flush left instead of re-centring. */}
+          <h1 className="mt-3 text-[clamp(2.5rem,6vw,4.25rem)] leading-[0.95] font-bold tracking-[-0.02em] text-team-accent-ink xl:max-w-186">
             {userLeagueTeam.team.city} {userLeagueTeam.team.name}
           </h1>
           <p className="mt-4 flex flex-wrap items-baseline gap-x-4 font-mono text-[clamp(1.5rem,3vw,2.25rem)] tabular-nums text-team-accent-ink">
