@@ -8,10 +8,8 @@ import { getSeasonCapRules } from "@/lib/cap/constants";
 import { computeCapSheet } from "@/lib/cap/capSheet";
 import { CAP_STATUS_LABEL, simplifyCapStatus } from "@/lib/cap/capStatusLabel";
 import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
-import {
-  FreeAgentBoard,
-  type FreeAgentRow,
-} from "@/components/freeagency/FreeAgentBoard";
+import { computeRivalInterest, type RivalTeam } from "@/lib/freeagency/rivalInterest";
+import { FreeAgentBoard, type FreeAgentRow } from "@/components/freeagency/FreeAgentBoard";
 import { Label, StatCell, Status } from "@/components/ui/primitives";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +36,7 @@ export default async function FreeAgentsPage({ params }: PageProps) {
 
   const season = league.currentSeason;
 
-  const [freeAgents, ownRoster] = await Promise.all([
+  const [freeAgents, ownRoster, rivalRosters, leagueTeams] = await Promise.all([
     prisma.leaguePlayer.findMany({
       where: { leagueId: league.id, leagueTeamId: null, isActive: true },
       include: {
@@ -55,6 +53,30 @@ export default async function FreeAgentsPage({ params }: PageProps) {
           },
         })
       : Promise.resolve([]),
+    // Every rostered player in the league, in one query rather than 29 - the
+    // rival-interest model needs each club's cap space and roster holes, and
+    // fetching those per team would be thirty round trips on a page load.
+    prisma.leaguePlayer.findMany({
+      where: {
+        leagueId: league.id,
+        isActive: true,
+        leagueTeamId: { not: null },
+        ...(league.userControlledTeamId
+          ? { NOT: { leagueTeamId: league.userControlledTeamId } }
+          : {}),
+      },
+      select: {
+        leagueTeamId: true,
+        playerId: true,
+        overallRating: true,
+        player: { select: { position: true } },
+        contract: { select: { years: { where: { season }, select: { salaryCents: true } } } },
+      },
+    }),
+    prisma.leagueTeam.findMany({
+      where: { leagueId: league.id },
+      select: { id: true, team: { select: { abbreviation: true } } },
+    }),
   ]);
 
   const rules = getSeasonCapRules(season);
@@ -87,6 +109,39 @@ export default async function FreeAgentsPage({ params }: PageProps) {
   };
   const needPositions = [...new Set(needs.flatMap((need) => NEED_POSITIONS[need] ?? []))];
 
+  // Each rival's cap space and roster holes, so the board can say who else is
+  // circling. Built once here and reused across every free agent, rather than
+  // recomputed per row.
+  const abbreviationByTeamId = new Map(leagueTeams.map((lt) => [lt.id, lt.team.abbreviation]));
+  const rosterByTeamId = new Map<string, typeof rivalRosters>();
+  for (const lp of rivalRosters) {
+    if (!lp.leagueTeamId) continue;
+    const list = rosterByTeamId.get(lp.leagueTeamId) ?? [];
+    list.push(lp);
+    rosterByTeamId.set(lp.leagueTeamId, list);
+  }
+
+  const rivals: RivalTeam[] = [...rosterByTeamId.entries()].map(([teamId, roster]) => ({
+    leagueTeamId: teamId,
+    abbreviation: abbreviationByTeamId.get(teamId) ?? "???",
+    capSpaceCents: computeCapSheet({
+      season,
+      contracts: roster
+        .filter((lp) => lp.contract?.years[0])
+        .map((lp) => ({
+          playerId: lp.playerId,
+          salaryCents: lp.contract!.years[0].salaryCents,
+        })),
+    }).capSpaceCents,
+    needs: computeTeamNeeds(
+      roster.map((lp) => ({
+        position: lp.player.position,
+        overallRating: lp.overallRating,
+      })),
+    ),
+    rosterCount: roster.length,
+  }));
+
   const rows: FreeAgentRow[] = freeAgents.map((fa) => {
     const stat = fa.player.seasonStats[0];
     const estimatedValueCents = stat
@@ -113,6 +168,30 @@ export default async function FreeAgentsPage({ params }: PageProps) {
       estimatedValue: estimatedValueCents ? formatCentsCompact(estimatedValueCents) : null,
       estimatedValueCents: estimatedValueCents ? estimatedValueCents.toString() : null,
       hasReSigningRights: fa.reSigningTeamId === league.userControlledTeamId,
+      // Who else is circling. Without a price there is nothing to compare a
+      // rival's cap space against, so interest is simply unknown rather than
+      // guessed at.
+      ...(() => {
+        if (!estimatedValueCents) {
+          return { interestLevel: "none" as const, interestedTeams: [] };
+        }
+        const interest = computeRivalInterest(
+          {
+            position: fa.player.position,
+            overallRating: fa.overallRating,
+            estimatedValueCents,
+          },
+          rivals,
+        );
+        return {
+          interestLevel: interest.level,
+          // Only the motivated bidders are named: a team with spare room is not
+          // news, and listing twenty abbreviations would bury the two that matter.
+          interestedTeams: interest.rivals
+            .filter((r) => r.reason === "fills a need")
+            .map((r) => r.abbreviation),
+        };
+      })(),
     };
   });
 

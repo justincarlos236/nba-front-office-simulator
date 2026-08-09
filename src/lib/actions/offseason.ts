@@ -122,6 +122,7 @@ import { computeTeamIdentity } from "@/lib/gm/teamIdentity";
 import { computeTeamNeeds, type TeamNeedRosterPlayer } from "@/lib/gm/teamNeeds";
 import { computePlayerTradeValue } from "@/lib/gm/playerTradeValue";
 import { computeReSigningMaxOfferCents } from "@/lib/freeagency/reSigningRights";
+import { runCpuFreeAgentMarket } from "@/lib/freeagency/cpuFreeAgentMarket";
 import { evaluateReSigningDecision } from "@/lib/gm/reSigningDecision";
 import {
   computeActualOutcome,
@@ -266,7 +267,11 @@ export async function advanceSeasonAction(leagueId: string) {
   const leaguePlayers = await prisma.leaguePlayer.findMany({
     where: { leagueId, isActive: true },
     include: {
-      player: true,
+      // `seasonStats` is loaded because the CPU free-agent market prices every
+      // free agent off the same valuation model the board quotes to the user.
+      // Without it the market would price nobody and silently sign nobody -
+      // a no-op that typechecks perfectly, since the field is optional.
+      player: { include: { seasonStats: { where: { season } } } },
       contract: { include: { years: { where: { season } } } },
       personalityProfile: true,
     },
@@ -785,6 +790,36 @@ export async function advanceSeasonAction(leagueId: string) {
     }
   }
 
+  // --- CPU free-agent market ---
+  //
+  // Rival clubs actually signing the free agents the board showed them
+  // competing for. Without this, `rivalInterest` would be theatre: the market
+  // page would name three suitors for a centre and then nobody would ever sign
+  // him, which is worse than saying nothing because it manufactures urgency the
+  // game does not honour.
+  //
+  // Runs *after* the re-signing pass so a club fills its own holes with its own
+  // expiring players first, and only then shops - and so players who just
+  // walked are themselves on the market.
+  const cpuFreeAgentSignings = await runCpuFreeAgentMarket({
+    leagueId,
+    newSeason,
+    userTeamId: league.userControlledTeamId,
+    leaguePlayers,
+    playerUpdates,
+    teamById,
+  });
+  // Mutate the player's existing update rather than pushing a second one:
+  // every active player already has an entry from the development pass, and a
+  // duplicate would both clobber their developed rating and double-count them
+  // in `newSeasonRoster` below. Only the team assignment changes here.
+  const updateById = new Map(playerUpdates.map((u) => [u.id, u]));
+  for (const signing of cpuFreeAgentSignings) {
+    const existing = updateById.get(signing.leaguePlayerId);
+    if (!existing) continue;
+    existing.leagueTeamId = signing.leagueTeamId;
+  }
+
   // --- Staff season progression (Phase 15a) ---
   // Uses its own seeded rng, independent of the player-development stream
   // above - adding staff rolls must never shift what an existing league's
@@ -1211,6 +1246,8 @@ export async function advanceSeasonAction(leagueId: string) {
   // recreate the churn this phase exists to fix) instead of that function's
   // 1-year veteran-minimum deal.
   const CPU_RESIGNING_YEARS = 2;
+  /** Same modest term as a CPU re-signing - see the note on that constant. */
+  const CPU_FREE_AGENT_YEARS = 2;
   const cpuReSigningNewsRows = cpuReSignings.map((r) => {
     const team = teamById.get(r.leagueTeamId)?.team;
     const player = leaguePlayerById.get(r.leaguePlayerId)!.player;
@@ -1257,6 +1294,60 @@ export async function advanceSeasonAction(leagueId: string) {
   }
   if (cpuReSigningNewsRows.length > 0) {
     await prisma.leagueTransaction.createMany({ data: cpuReSigningNewsRows });
+  }
+
+  // CPU free-agent signings need contracts for exactly the same reason
+  // re-signings do: a player sitting on a roster with no contract row is
+  // invisible to every cap sheet in the product, which would silently
+  // under-count that club's payroll from here on.
+  //
+  // `signedUsing: NONE` is correct rather than a placeholder - the pass only
+  // ever signs within a team's own cap space, so no exception was invoked.
+  if (cpuFreeAgentSignings.length > 0) {
+    await Promise.all(
+      cpuFreeAgentSignings.map(async (s) => {
+        const contract = await prisma.contract.create({
+          data: {
+            leaguePlayerId: s.leaguePlayerId,
+            leagueTeamId: s.leagueTeamId,
+            signedSeason: newSeason,
+            startSeason: newSeason,
+            endSeason: newSeason + CPU_FREE_AGENT_YEARS - 1,
+            signedUsing: "NONE",
+          },
+        });
+        await prisma.contractYear.createMany({
+          data: Array.from({ length: CPU_FREE_AGENT_YEARS }, (_, i) => ({
+            contractId: contract.id,
+            season: newSeason + i,
+            salaryCents: s.salaryCents,
+            guaranteedCents: s.salaryCents,
+          })),
+        });
+      }),
+    );
+
+    // The market is only pressure if the user can see it resolve. A player they
+    // were weighing turning up on a rival's roster with no notice would read as
+    // the game losing track of him.
+    await prisma.leagueTransaction.createMany({
+      data: cpuFreeAgentSignings.map((s) => {
+        const team = teamById.get(s.leagueTeamId)?.team;
+        const name = leaguePlayerById.get(s.leaguePlayerId)?.player.fullName ?? "A free agent";
+        return {
+          leagueId,
+          season: newSeason,
+          type: "SIGNING" as const,
+          description: team
+            ? `${name} has signed with the ${team.city} ${team.name}.`
+            : `${name} has signed with a rival.`,
+          importance: importanceForRating(
+            leaguePlayerById.get(s.leaguePlayerId)?.overallRating ?? 0,
+          ),
+          teamIds: [s.leagueTeamId],
+        };
+      }),
+    });
   }
 
   // --- Staff persistence (Phase 15a) ---

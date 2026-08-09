@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { PlayerChip } from "@/components/players/PlayerChip";
 import { DataTable, Label, Status, Td, Th } from "@/components/ui/primitives";
+import { INTEREST_LABEL, INTEREST_TONE, type InterestLevel } from "@/lib/freeagency/rivalInterest";
 
 /**
  * THE WIRE - Ledger archetype. The market board.
@@ -27,6 +28,10 @@ export interface FreeAgentRow {
   /** Raw cents, for the affordability filter. */
   estimatedValueCents: string | null;
   hasReSigningRights: boolean;
+  /** How hard rivals are competing for this player. See `rivalInterest.ts`. */
+  interestLevel: InterestLevel;
+  /** Abbreviations of the clubs with a genuine hole this player fills. */
+  interestedTeams: string[];
 }
 
 type SortKey = "overallRating" | "pointsPerGame" | "estimatedValueCents";
@@ -171,7 +176,10 @@ export function FreeAgentBoard({
         </div>
       </div>
 
-      <p aria-live="polite" className="mt-4 text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase">
+      <p
+        aria-live="polite"
+        className="mt-4 text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase"
+      >
         {filtered.length} of {rows.length} available
       </p>
 
@@ -184,6 +192,7 @@ export function FreeAgentBoard({
             <Th>Tier</Th>
             <Th numeric>PPG</Th>
             <Th numeric>Est. value</Th>
+            <Th>Competition</Th>
             <Th>
               <span className="sr-only">Offer</span>
             </Th>
@@ -220,6 +229,27 @@ export function FreeAgentBoard({
                 <Td numeric className={affordable ? "text-ink" : "text-ink-muted"}>
                   {row.estimatedValue ?? "-"}
                 </Td>
+                {/* Who else is circling. A quiet market is the default and gets
+                    no weight; only genuine competition is worth a tone. */}
+                <Td>
+                  {row.interestLevel === "none" ? (
+                    <span className="text-rule">&mdash;</span>
+                  ) : (
+                    <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                      <Status tone={INTEREST_TONE[row.interestLevel]}>
+                        {INTEREST_LABEL[row.interestLevel]}
+                      </Status>
+                      {row.interestedTeams.length > 0 && (
+                        <span className="font-mono text-[11px] text-ink-muted">
+                          {row.interestedTeams.slice(0, 3).join(" ")}
+                          {row.interestedTeams.length > 3
+                            ? ` +${row.interestedTeams.length - 3}`
+                            : ""}
+                        </span>
+                      )}
+                    </span>
+                  )}
+                </Td>
                 <Td numeric>
                   <Link
                     href={`/leagues/${leagueId}/free-agents/${row.id}`}
@@ -233,7 +263,7 @@ export function FreeAgentBoard({
           })}
           {filtered.length === 0 && (
             <tr>
-              <Td className="py-10 text-center text-ink-muted" colSpan={7}>
+              <Td className="py-10 text-center text-ink-muted" colSpan={8}>
                 {rows.length === 0
                   ? "No free agents available."
                   : "No players match these filters."}
