@@ -22,6 +22,24 @@ export const RANK_MINUTE_WEIGHTS = [
 
 const FULL_ROTATION_WEIGHT_SUM = RANK_MINUTE_WEIGHTS.reduce((sum, w) => sum + w, 0);
 
+/** A full game's team-minutes: 5 players on the floor for 48 minutes. */
+export const TEAM_MINUTES = 240;
+
+/**
+ * How many RANK_MINUTE_WEIGHTS units one minute of intended playing time is
+ * worth, so an absolute `targetMinutesPerGame` can share a weighting pool with
+ * the relative rank curve above.
+ *
+ * This conversion is mandatory anywhere the two are mixed. `RANK_MINUTE_WEIGHTS`
+ * spans 0.08-1.42 while `targetMinutesPerGame` spans roughly 8-40, so using a
+ * raw minutes value as a weight makes one player worth ~27x his rotation-mates.
+ * `boxScore.ts` always converted; `rotationStrength.ts` did not, which inflated
+ * team strength by up to 8 rating points (~11 wins) for any partially
+ * configured rotation. Living beside the weights it converts, and exported, so
+ * the two consumers cannot drift apart again.
+ */
+export const WEIGHT_PER_MINUTE = FULL_ROTATION_WEIGHT_SUM / TEAM_MINUTES;
+
 /**
  * "What's the default expected minutes for whoever occupies this depth
  * position" - independent of any specific roster, since the engine's own

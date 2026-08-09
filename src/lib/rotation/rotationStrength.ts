@@ -1,49 +1,51 @@
 import type { RosterPlayerForSimulation } from "@/lib/actions/leagueTeamStrength";
-import { computeTeamStrength } from "@/lib/simulation/teamStrength";
 import { resolveRotation } from "./resolveRotation";
-import { RANK_MINUTE_WEIGHTS } from "./autoRotation";
+import { RANK_MINUTE_WEIGHTS, WEIGHT_PER_MINUTE } from "./autoRotation";
 
 /**
- * Deliberately a separate function from computeTeamStrength
- * (src/lib/simulation/teamStrength.ts), not a modification of it -
- * computeTeamStrength answers "how good is this roster on paper" and stays
- * exactly as it is for every consumer that evaluates roster talent
- * (SeasonExpectation seeding in league.ts/offseason.ts, All-Star Weekend's
- * exhibition squads). This function answers a different question - "how
- * strong is this team tonight, given who's actually slated to play and for
- * how long" - and is used only by computeLeagueTeamStrengths, the one
- * function that feeds real per-game win probability and opponent-strength
- * adjustment.
+ * "How strong is this team tonight, given who is actually slated to play and
+ * for how long" - used by `computeLeagueTeamStrengths`, the one function
+ * feeding per-game win probability and opponent-strength adjustment.
  *
- * For an uncustomized roster (no player has a rotationSlot set - true for
- * every CPU team, forever, and any user team before they touch Rotation
- * Management), this delegates straight to computeTeamStrength on the full
- * roster - not an approximation of it, the literal same call - so nothing
- * about existing win-probability/opponent-adjustment behavior changes
- * until a user actually opts in. computeTeamStrength weights its own top 9
- * by rating with a flat bench weight for the rest and never drops anyone;
- * resolveRotation caps at 12 and weights by resolved minutes - two
- * deliberately different curves that would not coincide numerically, so
- * this only switches to the rotation-based curve once there's an actual
- * custom rotation to reflect. Once customized, a player left outside the
- * resolved rotation entirely (deeper than the configured/auto-filled
- * slots) correctly contributes nothing to tonight's strength - the whole
- * point of "who's actually playing" rather than "who's on the roster."
+ * Distinct from `computeTeamStrength` (src/lib/simulation/teamStrength.ts),
+ * which answers "how good is this roster on paper" and is still what
+ * SeasonExpectation seeding and All-Star exhibition squads want.
+ *
+ * A player left outside the resolved rotation contributes nothing to tonight's
+ * strength - the whole point of "who is playing" rather than "who is rostered."
+ * `resolveRotation` guarantees that a player good enough to belong is never
+ * outside it, whatever the saved slot list says.
  */
 export function computeRotationAdjustedStrength(roster: RosterPlayerForSimulation[]): number {
   if (roster.length === 0) return 0;
 
-  const hasCustomRotation = roster.some((p) => (p.rotationSlot ?? null) !== null);
-  if (!hasCustomRotation) {
-    return computeTeamStrength(roster.map((p) => p.overallRating));
-  }
-
+  // ONE CURVE FOR ALL THIRTY TEAMS.
+  //
+  // This used to branch: a roster with no custom rotation fell through to
+  // `computeTeamStrength` (all 15 players, flat 0.4 bench weight), while a
+  // roster the user had touched was rated on the 12-man rotation curve. CPU
+  // teams never set a rotation, so they were *permanently* on the first model
+  // and user teams moved to the second the moment they opened the Rotation
+  // screen - worth about +2.4 strength (~3 wins) for opening a page and saving.
+  //
+  // It also meant roster depth was scored inconsistently: under the old
+  // fallback, carrying fewer players raised strength, because a 15-man average
+  // is dragged down by players a 12-man rotation simply excludes.
+  //
+  // `resolveRotation` already falls back to `buildAutoRotation` when nobody has
+  // a slot, so every team is now rated on who would actually play.
   const rotation = resolveRotation(roster);
   let weightedSum = 0;
   let weightTotal = 0;
 
   for (const { player, rank, targetMinutes } of rotation) {
-    const weight = targetMinutes ?? RANK_MINUTE_WEIGHTS[rank] ?? 0;
+    // `targetMinutes` is absolute minutes (8-40); RANK_MINUTE_WEIGHTS is a
+    // relative curve (0.08-1.42). Mixing them raw made one player with a
+    // custom target worth ~27x his rotation-mates and inflated team strength
+    // by up to 8 rating points. `boxScore.ts` always applied this conversion;
+    // this function did not. See WEIGHT_PER_MINUTE in autoRotation.ts.
+    const weight =
+      targetMinutes !== null ? targetMinutes * WEIGHT_PER_MINUTE : (RANK_MINUTE_WEIGHTS[rank] ?? 0);
     weightedSum += player.overallRating * weight;
     weightTotal += weight;
   }

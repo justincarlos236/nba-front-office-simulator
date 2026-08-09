@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { computeCapSheet } from "@/lib/cap/capSheet";
 import { getSeasonCapRules } from "@/lib/cap/constants";
+import { DEFAULT_MAX_ROSTER_SIZE } from "@/lib/data-sources/rosterConstruction";
 import {
   rollForCpuSigning,
   rollForCpuTrade,
@@ -716,7 +717,7 @@ async function maybeExecuteCpuSigning(
   const [cpuLeagueTeams, freeAgents] = await Promise.all([
     prisma.leagueTeam.findMany({
       where: { leagueId, ...(userControlledTeamId ? { id: { not: userControlledTeamId } } : {}) },
-      include: { team: true },
+      include: { team: true, _count: { select: { players: { where: { isActive: true } } } } },
     }),
     prisma.leaguePlayer.findMany({
       where: { leagueId, leagueTeamId: null, isActive: true },
@@ -724,8 +725,17 @@ async function maybeExecuteCpuSigning(
     }),
   ]);
 
+  // Only clubs with an open roster spot may sign. Without this the roll picked
+  // any CPU team at random, so rosters grew without bound - one save six
+  // seasons in had teams carrying 19 to 28 players against a 15-man limit, and
+  // one club signed 16 players in a single season. That is not just a rules
+  // violation: team strength is computed over who is rostered, so unbounded
+  // depth quietly distorts the whole competitive picture.
+  const withRoom = cpuLeagueTeams.filter((t) => t._count.players < DEFAULT_MAX_ROSTER_SIZE);
+  if (withRoom.length === 0) return;
+
   const result = rollForCpuSigning(
-    cpuLeagueTeams.map((t) => t.id),
+    withRoom.map((t) => t.id),
     freeAgents.map((fa) => fa.id),
   );
   if (!result) return;

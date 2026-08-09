@@ -2,7 +2,7 @@ import type { Position } from "@/generated/prisma/client";
 import { deriveOverallRating } from "@/lib/league/ratingFromStats";
 import type { RosterPlayerForSimulation, RealStatBaseline } from "@/lib/actions/leagueTeamStrength";
 import { resolveRotation } from "@/lib/rotation/resolveRotation";
-import { RANK_MINUTE_WEIGHTS } from "@/lib/rotation/autoRotation";
+import { RANK_MINUTE_WEIGHTS, TEAM_MINUTES, WEIGHT_PER_MINUTE } from "@/lib/rotation/autoRotation";
 
 /**
  * A lightweight (not possession-by-possession) per-game player box-score
@@ -55,19 +55,10 @@ export interface GameRosters {
   awayCoachModifier?: CoachModifier;
 }
 
-const TEAM_MINUTES = 240;
 const GARBAGE_TIME_MARGIN_FLOOR = 15;
 const GARBAGE_TIME_MARGIN_CEIL = 40;
 const DEEP_BENCH_SCRATCH_RANK = 9; // rank >= this can DNP-CD
 const DEEP_BENCH_SCRATCH_CHANCE = 0.4;
-
-// Converts an absolute targetMinutesPerGame into the same relative-weight
-// scale RANK_MINUTE_WEIGHTS already uses, so a custom target can share one
-// normalization pool with rank-based fallback weights - RANK_MINUTE_WEIGHTS
-// sums to ~9.5 across a full 12-man rotation and normalizes to 240
-// team-minutes, so 1 minute of intended playing time is worth this many
-// weight units at that same scale.
-const WEIGHT_PER_MINUTE = RANK_MINUTE_WEIGHTS.reduce((sum, w) => sum + w, 0) / TEAM_MINUTES;
 
 function clamp(v: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, v));

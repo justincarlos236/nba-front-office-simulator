@@ -95,3 +95,50 @@ describe("resolveRotation", () => {
     expect(resolved[0].targetMinutes).toBe(0);
   });
 });
+
+describe("stale rotation slots (P0 regression)", () => {
+  function p(id: string, rating: number, slot: number | null): RosterPlayerForSimulation {
+    return {
+      leaguePlayerId: id,
+      fullName: id,
+      overallRating: rating,
+      position: "SF",
+      realStat: null,
+      rotationSlot: slot,
+      targetMinutesPerGame: null,
+    };
+  }
+
+  it("places a newly acquired star even when all twelve slots are claimed", () => {
+    // Every trade and signing writes rotationSlot: null. With twelve slots
+    // already taken, the newcomer used to be dropped from the rotation
+    // entirely - contributing nothing to team strength and never appearing in
+    // a box score.
+    const squad = Array.from({ length: 12 }, (_, i) => p(`old${i}`, 78 - i * 2, i));
+    const resolved = resolveRotation([p("star", 95, null), ...squad]);
+    expect(resolved.some((e) => e.player.leaguePlayerId === "star")).toBe(true);
+    // ...and near the top, not buried at the end of the bench.
+    expect(resolved.findIndex((e) => e.player.leaguePlayerId === "star")).toBe(0);
+  });
+
+  it("keeps the rotation at its maximum size after a displacement", () => {
+    const squad = Array.from({ length: 12 }, (_, i) => p(`old${i}`, 78 - i * 2, i));
+    const resolved = resolveRotation([p("star", 95, null), ...squad]);
+    expect(resolved).toHaveLength(12);
+    // The weakest man is the one who makes way.
+    expect(resolved.some((e) => e.player.leaguePlayerId === "old11")).toBe(false);
+  });
+
+  it("leaves a marginally better player out rather than overriding a real choice", () => {
+    const squad = Array.from({ length: 12 }, (_, i) => p(`old${i}`, 78 - i * 2, i));
+    // old11 is rated 56; a 58 is not a clear enough upgrade to override intent.
+    const resolved = resolveRotation([p("marginal", 58, null), ...squad]);
+    expect(resolved.some((e) => e.player.leaguePlayerId === "marginal")).toBe(false);
+  });
+
+  it("assigns contiguous ranks from 0 after displacement", () => {
+    const squad = Array.from({ length: 12 }, (_, i) => p(`old${i}`, 78 - i * 2, i));
+    const resolved = resolveRotation([p("star", 95, null), ...squad]);
+    expect(resolved.map((e) => e.rank)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+  });
+});
