@@ -17,31 +17,44 @@ The key decision: this is **not** a possession-by-possession simulation. Instead
 each game is modeled statistically from the two teams' **strength ratings** (a
 single number per team, derived from its players' overall ratings).
 
-**Step 1 — win probability (a logistic / "S-curve" function):**
+**Step 1 — the margin (a normal draw around the strength difference):**
 
 ```
-diff = homeStrength + homeCourtAdvantage - awayStrength
-homeWinProbability = 1 / (1 + e^(-k · diff))
+diff          = homeStrength + homeCourtAdvantage - awayStrength
+expectedMargin = diff · marginPerStrengthPoint        (≈ 2.31 points per rating point)
+homeMargin     = expectedMargin + normal(0, marginSd)  (marginSd ≈ 15)
 ```
 
-- `e` is the exponential function; `k` (`WIN_PROB_STEEPNESS ≈ 0.07`) controls how
-  sharply a strength edge turns into a win-probability edge.
-- **Why a logistic curve?** It maps _any_ strength difference (which can be large
-  or negative) into a probability strictly between 0 and 1, and it has the right
-  shape: evenly matched teams are near 50/50, and the favorite's edge grows but
-  **never becomes a guarantee** — a much better team is, say, 80% to win, not
-  100%. That matches real sports, where upsets happen. It's the same math behind
-  logistic regression and Elo ratings, which is a nice thing to be able to say.
-- **Home-court advantage** is a small additive bonus (worth ~3 rating points).
+- **Why a margin rather than a coin flip?** Because it answers two questions at
+  once. A better team is expected to win *by more*, and the spread means the same
+  matchup produces a nail-biter one night and a rout the next — from a single draw.
+- **Home-court advantage** is a small additive bonus (~1.1 rating points, which is
+  worth about 2.5 points of margin — close to the real thing).
 
-**Step 2 — draw a winner:** `homeWon = rng() < homeWinProbability`. `rng` is a
-random-number function that is **passed in**. In production it's `Math.random`;
-in tests you pass a fake deterministic generator, so the same inputs always
-produce the same game. **This is how a "random" simulation stays unit-testable.**
+**Step 2 — the winner is just the sign of the margin.** No separate roll. Win
+probability is derived from the same two constants:
 
-**Step 3 — generate a plausible score:** pick a loser score around a realistic NBA
-baseline (~112) with some randomness, add a random winning margin (3–22). Cheap
-and believable.
+```
+homeWinProbability = Φ(expectedMargin / marginSd)
+```
+
+`Φ` is the normal CDF — literally "how often is this margin positive." Because
+the displayed probability and the simulated result come from one model, they
+**cannot disagree**. A much better team is, say, 80% to win, not 100%, so upsets
+stay possible.
+
+`rng` is **passed in**. In production it's `Math.random`; in tests you pass a
+deterministic generator, so the same inputs always produce the same game. **This
+is how a "random" simulation stays unit-testable.**
+
+**Step 3 — generate a plausible score:** draw how high-scoring the game was in
+total (~228 combined, with spread), then split the already-decided margin out of
+it. Cheap and believable.
+
+> **This replaced an earlier logistic model** in which the winner and the margin
+> were drawn separately. Measured over 246,000 games, that version gave a 97.5%
+> favourite the same margin distribution as a coin flip, and produced no game
+> decided by 1-2 points and none by more than 22. See `docs/SIMULATION_AUDIT.md`.
 
 ### Why this design (defend it)
 

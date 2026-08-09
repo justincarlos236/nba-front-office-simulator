@@ -50,41 +50,48 @@ function computeStrengthDiff(
 }
 ```
 
-`HOME_COURT_ADVANTAGE = 3` rating points. The coach bonuses are kept _out_ of the
+`HOME_COURT_ADVANTAGE = 1.1` rating points — small because a strength point is now worth 2.31 points of margin, so 3 would imply a ~7-point home edge. The coach bonuses are kept _out_ of the
 team-strength number itself (so strength stays a pure-player signal reused
 elsewhere) and added here instead.
 
-**Win probability — the logistic curve:**
+**Win probability and score come from one distribution.**
+
+A game is a **point margin drawn from a normal centred on the strength
+differential**; the winner is simply the sign of that margin.
 
 ```ts
-function computeHomeWinProbability(homeStrength, awayStrength, homeCoachBonus=0, awayCoachBonus=0): number {
+const MARGIN_PER_STRENGTH_POINT = 2.31; // expected margin per point of strength
+const MARGIN_SD = 15;                   // spread of a single game around it
+
+function computeHomeWinProbability(homeStrength, awayStrength, homeCoachBonus=0, awayCoachBonus=0) {
   const diff = computeStrengthDiff(...);
-  return 1 / (1 + Math.exp(-WIN_PROB_STEEPNESS * diff));   // WIN_PROB_STEEPNESS = 0.07
+  // Literally "how often is this margin positive".
+  return standardNormalCdf((diff * MARGIN_PER_STRENGTH_POINT) / MARGIN_SD);
+}
+
+function simulateGame(homeStrength, awayStrength, rng = Math.random, ...) {
+  const expectedMargin = diff * MARGIN_PER_STRENGTH_POINT;
+  let homeMargin = Math.round(expectedMargin + gaussian(rng) * MARGIN_SD);
+  if (homeMargin === 0) homeMargin = expectedMargin >= 0 ? 1 : -1;  // no ties
+
+  const combined = Math.round(AVERAGE_COMBINED_SCORE + gaussian(rng) * COMBINED_SCORE_SD);
+  const loserScore = Math.max(MIN_TEAM_SCORE, Math.round((combined - Math.abs(homeMargin)) / 2));
+  const winnerScore = loserScore + Math.abs(homeMargin);
+  // ...winner assigned by the sign of homeMargin
 }
 ```
 
-`1 / (1 + e^(-k·diff))` is the logistic function: `diff = 0` → 0.5; big positive
-diff → approaches (but never reaches) 1. So the favorite is favored but upsets stay
-possible.
-
-**The full game:**
-
-```ts
-function simulateGame(homeStrength, awayStrength, rng = Math.random, homeCoachBonus=0, awayCoachBonus=0): SimulatedGameResult {
-  const p = computeHomeWinProbability(...);
-  const homeWon = rng() < p;                                   // draw the winner
-  const loserScore = Math.round(AVERAGE_TEAM_SCORE + (rng()-0.5)*SCORE_RANDOMNESS); // ~112 ± 22
-  const margin = MIN_MARGIN + Math.round(rng()*(MAX_MARGIN-MIN_MARGIN));            // 3..22
-  const winnerScore = loserScore + margin;
-  return homeWon ? {homeWon:true, homeScore:winnerScore, awayScore:loserScore, homeWinProbability:p}
-                 : {homeWon:false, homeScore:loserScore, awayScore:winnerScore, homeWinProbability:p};
-}
-```
-
-- **`rng` is a parameter** — inject a seeded/fake generator in tests to force exact
-  outcomes (Rule 4 from the code-guide README).
-- Three `rng()` calls: one to pick the winner, two to shape the score. Cheap and
-  deterministic.
+- **Why margin-first.** The previous model drew the winner from a logistic curve
+  and then drew the margin from a bounded uniform `[3, 22]` that never looked at
+  team strength. Measured over 246,000 games: a 97.5% favourite beat a hopeless
+  team by the same margin distribution as a coin flip (12.49 points in both), not
+  one game was decided by 1–2 points, and not one exceeded 22. One distribution
+  fixes all three and makes probability and margin consistent by construction.
+- **The two constants are tuned as a pair** — only their *ratio* sets win
+  probability. See `docs/SIMULATION_AUDIT.md` for the calibration.
+- **`rng` is a parameter** — inject a seeded generator in tests (Rule 4 from the
+  code-guide README). Each `gaussian()` consumes two `rng()` values via
+  Box-Muller, so seeded sequences stay reproducible.
 
 ## `simulation/boxScore.ts` — team result → player lines
 

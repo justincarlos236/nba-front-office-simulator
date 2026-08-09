@@ -21,12 +21,14 @@ const OT_AVERAGE_SCORE = 11;
 const OT_SCORE_RANDOMNESS = 5;
 const MIN_OT_SCORE = 4;
 
-const QUARTER_STRENGTH_SENSITIVITY = 0.11;
+const QUARTER_STRENGTH_SENSITIVITY = 0.35;
 ```
 
 - `AVERAGE_QUARTER_SCORE = 28` — an average team scores ~112 in a game, so ~28 per quarter.
 - The `OT_*` constants are the same idea for a 5-minute overtime period (shorter, so smaller scores).
-- `QUARTER_STRENGTH_SENSITIVITY = 0.11` — how much a team's strength edge tilts each quarter's score.
+- `QUARTER_STRENGTH_SENSITIVITY = 0.35` — how much a team's strength edge tilts each quarter's score.
+  Re-calibrated from 0.11 when `simulateGame` moved to a margin-first model: a live playoff game must
+  not run a different win model from the one every probability display reports.
   This number is special: it was **carefully calibrated** (by running tens of thousands of test games)
   so that summing 4 independent quarters produces the _same_ overall win rate as the quick `simulateGame`
   model. Why the care? Because adding up 4 separate random quarters would naturally exaggerate a strength

@@ -2,33 +2,39 @@
 
 **What this whole file is about:** given two teams' strength numbers (from the last file), this file
 decides who wins one game and makes up a believable final score. It does _not_ simulate every
-possession — it uses a probability (a weighted coin flip) based on the strength difference. This is
-fast, and — because the randomness is passed in — it's predictable when testing.
+possession — it draws a **point margin** from a bell curve centred on the strength difference, and
+whoever the margin favours wins. This is fast, and — because the randomness is passed in — it's
+predictable when testing.
 
-Open the real file: `src/lib/simulation/simulateGame.ts`. It teaches "default values" for inputs, an
-S-curve probability, and drawing a random outcome.
+Open the real file: `src/lib/simulation/simulateGame.ts`. It teaches "default values" for inputs,
+drawing from a normal distribution, and deriving two related outputs from one model so they cannot
+contradict each other.
 
 ---
 
 ## Part 1 — the settings
 
 ```ts
-const HOME_COURT_ADVANTAGE = 3; // rating points of equivalent strength
-const WIN_PROB_STEEPNESS = 0.07;
-const AVERAGE_TEAM_SCORE = 112;
-const SCORE_RANDOMNESS = 22; // +/- swing applied to the loser's score
-const MIN_MARGIN = 3;
-const MAX_MARGIN = 22;
+const HOME_COURT_ADVANTAGE = 1.1; // rating points of equivalent strength
+const MARGIN_PER_STRENGTH_POINT = 2.31;
+const MARGIN_SD = 15;
+const AVERAGE_COMBINED_SCORE = 228; // both teams together
+const COMBINED_SCORE_SD = 19;
+const MIN_TEAM_SCORE = 78;
 ```
 
-- `HOME_COURT_ADVANTAGE = 3` — the home team plays as if it's 3 rating points stronger (home teams win
-  a bit more, like reality).
-- `WIN_PROB_STEEPNESS = 0.07` — controls how sharply a strength edge turns into a win-probability edge
-  (used in the S-curve below).
-- `AVERAGE_TEAM_SCORE = 112` — a realistic average NBA team score.
-- `SCORE_RANDOMNESS = 22` — how much the loser's score can swing up or down from average.
-- `MIN_MARGIN = 3` / `MAX_MARGIN = 22` — the winner beats the loser by somewhere between 3 and 22
-  points.
+- `HOME_COURT_ADVANTAGE = 1.1` — the home team plays as if it's about one rating point stronger.
+  Small, because a rating point is now worth 2.31 points of margin, so 3 would mean a ~7-point home
+  edge and push home teams to a 67% win rate.
+- `MARGIN_PER_STRENGTH_POINT = 2.31` — how many points of expected margin one point of strength buys.
+- `MARGIN_SD = 15` — how far a single game swings around that expectation. This is what produces both
+  one-point finishes and 30-point blowouts from the same draw.
+- `AVERAGE_COMBINED_SCORE = 228` / `COMBINED_SCORE_SD = 19` — the two teams' combined points, which
+  the margin is then split out of.
+- `MIN_TEAM_SCORE = 78` — a floor, so a tail draw can't produce an impossible scoreline.
+
+> **Only the ratio `MARGIN_PER_STRENGTH_POINT / MARGIN_SD` sets win probability**, so those two are
+> tuned as a pair. See `docs/SIMULATION_AUDIT.md` for how they were calibrated against real saves.
 
 ---
 
@@ -56,127 +62,86 @@ export function computeStrengthDiff(
 
 ---
 
-## Part 3 — the win probability (an S-curve)
+## Part 3 — the win probability
 
 ```ts
-export function computeHomeWinProbability(
-  homeStrength: number,
-  awayStrength: number,
-  homeCoachBonus: number = 0,
-  awayCoachBonus: number = 0,
-): number {
+export function computeHomeWinProbability(homeStrength, awayStrength, homeCoachBonus = 0, awayCoachBonus = 0): number {
   const diff = computeStrengthDiff(homeStrength, awayStrength, homeCoachBonus, awayCoachBonus);
-  return 1 / (1 + Math.exp(-WIN_PROB_STEEPNESS * diff));
+  return standardNormalCdf((diff * MARGIN_PER_STRENGTH_POINT) / MARGIN_SD);
 }
 ```
 
-- First compute the strength difference (above).
-- `1 / (1 + Math.exp(-WIN_PROB_STEEPNESS * diff))` — this is a **logistic curve** (the same S-curve
-  shape we met in `valuation/playerValue.md`). `Math.exp(x)` is _e_ to the power `x`. You don't need
-  the math; you need the _shape_:
-  - When the teams are even (`diff = 0`), this gives exactly **0.5** — a 50/50 coin flip.
-  - As the home team gets stronger (`diff` grows), the probability rises toward 1 but **never reaches
-    it** — a much better team might be ~85% to win, not 100%.
-  - As they get weaker, it falls toward 0.
-- **Why an S-curve instead of a straight line?** Because it correctly keeps the probability between 0
-  and 1 no matter how big the strength gap, and it matches reality: even a heavy favorite loses
-  sometimes. Upsets stay possible, which is what makes the sim feel real.
+- This is not a separate model from the score below — it is **literally "how often is this matchup's
+  margin positive."** `standardNormalCdf(z)` answers "what share of a bell curve lies left of `z`", so
+  feeding it `expectedMargin / MARGIN_SD` gives the chance the margin lands above zero.
+- Because probability and margin come from the same two constants, the number shown in the UI and the
+  results the engine actually produces **cannot disagree**. That is the point of deriving one from the
+  other rather than drawing them separately.
+- The result is clamped just inside `(0, 1)` — no matchup is ever a certainty, and a probability of
+  exactly 1 would make a comeback impossible in the live-game simulator.
 
 ---
 
-## Part 4 — playing the game
+## Part 4 — simulating a game
 
 ```ts
-export interface SimulatedGameResult {
-  homeWon: boolean;
-  homeScore: number;
-  awayScore: number;
-  homeWinProbability: number;
-}
+export function simulateGame(homeStrength, awayStrength, rng = Math.random, homeCoachBonus = 0, awayCoachBonus = 0) {
+  const diff = computeStrengthDiff(homeStrength, awayStrength, homeCoachBonus, awayCoachBonus);
+  const homeWinProbability = standardNormalCdf((diff * MARGIN_PER_STRENGTH_POINT) / MARGIN_SD);
 
-export function simulateGame(
-  homeStrength: number,
-  awayStrength: number,
-  rng: () => number = Math.random,
-  homeCoachBonus: number = 0,
-  awayCoachBonus: number = 0,
-): SimulatedGameResult {
-  const homeWinProbability = computeHomeWinProbability(
-    homeStrength,
-    awayStrength,
-    homeCoachBonus,
-    awayCoachBonus,
-  );
-  const homeWon = rng() < homeWinProbability;
+  // 1. Draw the margin, from the home team's point of view.
+  const expectedMargin = diff * MARGIN_PER_STRENGTH_POINT;
+  let homeMargin = Math.round(expectedMargin + gaussian(rng) * MARGIN_SD);
+  if (homeMargin === 0) homeMargin = expectedMargin >= 0 ? 1 : -1;
 
-  const loserScore = Math.round(AVERAGE_TEAM_SCORE + (rng() - 0.5) * SCORE_RANDOMNESS);
-  const margin = MIN_MARGIN + Math.round(rng() * (MAX_MARGIN - MIN_MARGIN));
-  const winnerScore = loserScore + margin;
+  // 2. Draw how high-scoring the game was, then split the margin out of it.
+  const combined = Math.round(AVERAGE_COMBINED_SCORE + gaussian(rng) * COMBINED_SCORE_SD);
+  const absMargin = Math.abs(homeMargin);
+  const loserScore = Math.max(MIN_TEAM_SCORE, Math.round((combined - absMargin) / 2));
+  const winnerScore = loserScore + absMargin;
 
+  // 3. The sign of the margin decides who won.
+  const homeWon = homeMargin > 0;
   return homeWon
     ? { homeWon: true, homeScore: winnerScore, awayScore: loserScore, homeWinProbability }
     : { homeWon: false, homeScore: loserScore, awayScore: winnerScore, homeWinProbability };
 }
 ```
 
-- `SimulatedGameResult` — the answer shape: who won, both scores, and the win probability that was used
-  (handy for display).
-- **`rng: () => number = Math.random`** — the third input is a random-number **function**, and its
-  default is the built-in `Math.random` (real randomness). But a test can pass a _fake_ rng to force a
-  specific outcome. This is the "inject the randomness so it's testable" pattern again.
+**Step 1 — the margin.** A normal draw centred on the strength difference. A better team is expected
+to win by more, and the `MARGIN_SD` spread means the same matchup can produce a nail-biter one night
+and a rout the next. Basketball has no ties, so a drawn zero breaks toward whoever was favoured.
 
-**Step 1 — decide the winner (a weighted coin flip):**
+**Step 2 — the scoreline.** Rather than inventing two scores, the engine draws how high-scoring the
+game was in total and splits the already-decided margin out of it. `MIN_TEAM_SCORE` guards the tail so
+a lopsided draw can't produce something impossible.
 
-```ts
-const homeWinProbability = computeHomeWinProbability(...);
-const homeWon = rng() < homeWinProbability;
-```
+**Step 3 — the winner.** No separate coin flip: the margin's sign already says who won, which is why
+the reported probability and the results always agree.
 
-- Get the home team's win probability, then `rng() < homeWinProbability`. `rng()` produces a number
-  from 0 to 1. If that random number lands _below_ the home win probability, the home team wins.
-  Example: if the home team is 70% (`0.7`) to win, then any `rng()` roll under `0.7` is a home win —
-  which happens ~70% of the time. That's how you turn a probability into an actual yes/no outcome.
+`gaussian(rng)` uses Box-Muller and consumes **two** `rng()` values, so a game costs four in total —
+still cheap enough to sim a full season instantly, and fully reproducible from a seed.
 
-**Step 2 — make up a believable score:**
+---
 
-```ts
-const loserScore = Math.round(AVERAGE_TEAM_SCORE + (rng() - 0.5) * SCORE_RANDOMNESS);
-const margin = MIN_MARGIN + Math.round(rng() * (MAX_MARGIN - MIN_MARGIN));
-const winnerScore = loserScore + margin;
-```
+## Why it was rebuilt
 
-- `loserScore` — start at the average (112) and nudge it randomly. `(rng() - 0.5)` turns a 0-to-1 roll
-  into a value between −0.5 and +0.5 (so it can go _down_ as well as up); times `SCORE_RANDOMNESS` (22)
-  spreads it to roughly ±11; `Math.round(...)` makes it a whole number. So the loser scores somewhere
-  around 101–123.
-- `margin` — a random winning margin between `MIN_MARGIN` (3) and `MAX_MARGIN` (22). `rng() * (22 - 3)`
-  is 0 to 19; add 3; round; so 3 to 22.
-- `winnerScore` — the loser's score plus the margin.
+The original version drew the winner from a logistic curve and *then* drew the margin from a bounded
+uniform `[3, 22]` that never looked at team strength. Measured over 246,000 simulated games:
 
-**Step 3 — hand back the result:**
+- a 97.5% favourite beat a hopeless team by the same margin distribution as a coin flip — 12.49 points
+  in both cases
+- not one game was decided by 1 or 2 points (the real NBA: ~7%)
+- not one was decided by more than 22 (the real NBA: ~12% are 26+)
 
-```ts
-return homeWon
-  ? { homeWon: true, homeScore: winnerScore, awayScore: loserScore, homeWinProbability }
-  : { homeWon: false, homeScore: loserScore, awayScore: winnerScore, homeWinProbability };
-```
-
-- A ternary that assigns the scores correctly: if the home team won, the home score is the winner's
-  score and the away score is the loser's; otherwise it's flipped. Either way it reports whether the
-  home team won and the probability that was used.
-
-Notice the whole thing uses only **three** `rng()` calls (one for the winner, two for the score) — very
-cheap, which is exactly why simulating a thousand-game season is fast.
+Deriving both from one distribution fixed all three at once. See `docs/SIMULATION_AUDIT.md`.
 
 ---
 
 ## Zooming out
 
-This is the beating heart of the on-court simulation, and it's tiny: turn a strength difference into an
-S-curve probability, flip a weighted coin, and dress it up with a plausible score. It's fast (so
-whole seasons sim quickly), it's realistic (favorites are favored but upsets happen), and it's testable
-(the randomness is injected). Every regular-season game and every playoff game runs through this one
-function.
-
-**Next file:** `simulation/boxScore.md` — taking a decided game score and spreading it into believable
-individual player stat lines. (That one's bigger.)
+This is the beating heart of the on-court simulation, and it's still tiny: turn a strength difference
+into an expected margin, draw around it, and let the sign decide the winner. It's fast (so whole
+seasons sim quickly), it's realistic (favourites are favoured, upsets and blowouts both happen at
+believable rates), and it's testable (the randomness is injected). Every regular-season game and every
+playoff game runs through this one function.

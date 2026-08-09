@@ -13,12 +13,12 @@ can use `simulateLiveGame` instead.
 ## `simulateGame.ts`
 
 ```ts
-const HOME_COURT_ADVANTAGE = 3;
-const WIN_PROB_STEEPNESS = 0.07;
-const AVERAGE_TEAM_SCORE = 112;
-const SCORE_RANDOMNESS = 22;
-const MIN_MARGIN = 3;
-const MAX_MARGIN = 22;
+const HOME_COURT_ADVANTAGE = 1.1;
+const MARGIN_PER_STRENGTH_POINT = 2.31;
+const MARGIN_SD = 15;
+const AVERAGE_COMBINED_SCORE = 228;
+const COMBINED_SCORE_SD = 19;
+const MIN_TEAM_SCORE = 78;
 
 export function computeStrengthDiff(
   homeStrength,
@@ -36,7 +36,8 @@ export function computeHomeWinProbability(
   awayCoachBonus = 0,
 ): number {
   const diff = computeStrengthDiff(homeStrength, awayStrength, homeCoachBonus, awayCoachBonus);
-  return 1 / (1 + Math.exp(-WIN_PROB_STEEPNESS * diff));
+  // "How often is this matchup's margin positive."
+  return standardNormalCdf((diff * MARGIN_PER_STRENGTH_POINT) / MARGIN_SD);
 }
 
 export function simulateGame(
@@ -46,27 +47,36 @@ export function simulateGame(
   homeCoachBonus = 0,
   awayCoachBonus = 0,
 ): SimulatedGameResult {
-  const homeWinProbability = computeHomeWinProbability(
-    homeStrength,
-    awayStrength,
-    homeCoachBonus,
-    awayCoachBonus,
-  );
-  const homeWon = rng() < homeWinProbability;
+  const diff = computeStrengthDiff(homeStrength, awayStrength, homeCoachBonus, awayCoachBonus);
+  const homeWinProbability = standardNormalCdf((diff * MARGIN_PER_STRENGTH_POINT) / MARGIN_SD);
 
-  const loserScore = Math.round(AVERAGE_TEAM_SCORE + (rng() - 0.5) * SCORE_RANDOMNESS);
-  const margin = MIN_MARGIN + Math.round(rng() * (MAX_MARGIN - MIN_MARGIN));
-  const winnerScore = loserScore + margin;
+  const expectedMargin = diff * MARGIN_PER_STRENGTH_POINT;
+  let homeMargin = Math.round(expectedMargin + gaussian(rng) * MARGIN_SD);
+  if (homeMargin === 0) homeMargin = expectedMargin >= 0 ? 1 : -1; // no ties
 
+  const combined = Math.round(AVERAGE_COMBINED_SCORE + gaussian(rng) * COMBINED_SCORE_SD);
+  const absMargin = Math.abs(homeMargin);
+  const loserScore = Math.max(MIN_TEAM_SCORE, Math.round((combined - absMargin) / 2));
+  const winnerScore = loserScore + absMargin;
+
+  const homeWon = homeMargin > 0;
   return homeWon
     ? { homeWon: true, homeScore: winnerScore, awayScore: loserScore, homeWinProbability }
     : { homeWon: false, homeScore: loserScore, awayScore: winnerScore, homeWinProbability };
 }
 ```
 
-**What it does:** a strength difference → a logistic win probability → a coin flip
-against it (`rng()`), then a plausible loser score (~112±22) and a random margin. Three
-`rng()` calls, O(1). `rng` is injected, so tests force exact outcomes.
+**What it does:** a strength difference → an expected point margin → one normal
+draw around it, with the margin's sign deciding the winner. The scoreline comes
+from a second draw for the combined total, split around that margin. Four `rng()`
+calls (each `gaussian` uses two), O(1), and `rng` is injected so tests force exact
+outcomes.
+
+**Why margin-first.** Win probability and margin are derived from the same two
+constants, so they cannot disagree. The previous model drew them separately: a
+97.5% favourite beat a hopeless team by the same margin distribution as a coin
+flip, and across 246,000 games not one was decided by 1-2 points or by more than
+22. See `docs/SIMULATION_AUDIT.md`.
 
 ---
 
@@ -345,7 +355,7 @@ The **empirically calibrated** per-quarter sensitivity + a period sim:
 
 ```ts
 const AVERAGE_QUARTER_SCORE = 28;         // 112 / 4
-const QUARTER_STRENGTH_SENSITIVITY = 0.11; // fit so 4 summed quarters match computeHomeWinProbability within ~1%
+const QUARTER_STRENGTH_SENSITIVITY = 0.35; // fit so 4 summed quarters match computeHomeWinProbability within ~2%
 
 export function simulateQuarter(homeStrength, awayStrength, homeCoachBonus = 0, awayCoachBonus = 0, rng = Math.random): PeriodScore {
   const diff = computeStrengthDiff(homeStrength, awayStrength, homeCoachBonus, awayCoachBonus);
@@ -366,7 +376,7 @@ export function simulateLiveGame(homeStrength, awayStrength, homeCoachBonus = 0,
 }
 ```
 
-The winner **emerges** from summing periods (nothing decided upfront). `0.11` was fit
+The winner **emerges** from summing periods (nothing decided upfront). `0.35` was fit
 (a script simulated 20,000 games per strength differential) so compounding 4 quarters
 still matches the single-shot win-probability model.
 

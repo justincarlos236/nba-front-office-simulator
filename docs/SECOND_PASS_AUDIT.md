@@ -207,13 +207,20 @@ grep" is exactly the kind of shortcut this audit was supposed to avoid.
 
 ---
 
-### P2-6 — Three deep-dive docs describe a simulation model that no longer exists
+### P2-6 — Deep-dive docs describe a simulation model that no longer exists · **FIXED**
 
 `docs/code-deep-dive/02-simulation.md`, `docs/code-guide/04-simulation-code.md`
-and `docs/extreme-deep-dive/simulation/simulateGame.md` all document
+and `docs/extreme-deep-dive/simulation/simulateGame.md` all documented
 `WIN_PROB_STEEPNESS` and `MIN_MARGIN`, both deleted in the Stage 2 rework. These
 are personal reference docs, so the cost is confusion rather than user-facing
-error — but they now actively mislead.
+error — but a doc that teaches the wrong model line by line is worse than none.
+
+**Fixed.** All rewritten to the margin-first model, each carrying a short note on
+why it changed. The audit undercounted: a **fourth** file
+(`docs/handbook/04-simulation-engine.md`) taught the logistic curve as well, and
+two more still cited the live-game sensitivity of `0.11` after it was
+recalibrated to `0.35`. Found by grepping for the deleted constants rather than
+by trusting the audit's own list.
 
 ---
 
