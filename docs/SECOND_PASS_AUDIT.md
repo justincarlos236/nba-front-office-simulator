@@ -195,10 +195,15 @@ simulator this is a conspicuous gap.
 
 ---
 
-### P2-5 — `/contracts` is unreachable · *Dead code*
+### ~~P2-5 — `/contracts` is unreachable~~ · **WITHDRAWN — the finding was wrong**
 
-**Zero** links to it anywhere in the codebase. The page exists and renders; no
-user can arrive at it. Either wire it into navigation or delete it.
+The route is `/contracts/[contractId]`, a signing-outcome document reached by
+redirect from `signFreeAgentAction` (`freeagency.ts:209`), exactly like the
+trade outcome page. It is not an index page and not orphaned.
+
+The error was mine: I grepped for `href` and `Link` only, so a `redirect()`
+target read as unreachable. Recorded rather than deleted, because "verified by
+grep" is exactly the kind of shortcut this audit was supposed to avoid.
 
 ---
 

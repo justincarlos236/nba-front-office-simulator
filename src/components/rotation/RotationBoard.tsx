@@ -44,6 +44,17 @@ export interface RotationPlayer {
   /** Player Morale & Personality System - a role/minutes change here is the exact event this reacts to. */
   morale: number;
   tradeRequestActive: boolean;
+  /**
+   * Contract and ceiling. The Roster page is the canonical team view, so a
+   * player's terms belong beside his role rather than a page away.
+   *
+   * Optional because the pre-game rotation setter inside a live playoff game
+   * reuses this board, and what a player earns is irrelevant when you are
+   * choosing who starts tonight - fetching it there would be wasted work.
+   */
+  potentialRating?: number;
+  salary?: string | null;
+  contractEndSeason?: number | null;
 }
 
 const MORALE_DOT_CLASS: Record<MoraleLevel, string> = {
@@ -161,10 +172,28 @@ function SortableRow({
         />
       </div>
       <span className="w-10 shrink-0 text-xs text-ink-muted">{player.position}</span>
+      {/* Rating and ceiling: the gap between them is what makes a young player
+          worth minutes he has not earned yet. */}
+      {player.potentialRating !== undefined && (
+        <span className="w-14 shrink-0 text-right font-mono text-xs tabular-nums text-ink-muted">
+          <span className="text-team-accent">{player.overallRating}</span>
+          <span className="text-rule">/{player.potentialRating}</span>
+        </span>
+      )}
       <MoraleIndicator morale={player.morale} tradeRequestActive={player.tradeRequestActive} />
       {player.injuryStatus !== "HEALTHY" && (
         <span className="shrink-0 rounded-full bg-negative/15 px-2 py-0.5 text-xs font-semibold text-negative">
           Out
+        </span>
+      )}
+      {/* What he costs and how long you have him - inseparable from whether
+          his role is worth defending. */}
+      {player.salary !== undefined && (
+        <span className="w-24 shrink-0 text-right font-mono text-xs tabular-nums text-ink-muted">
+          {player.salary ?? "-"}
+          {player.contractEndSeason != null && (
+            <span className="block text-[10px] text-rule">thru {player.contractEndSeason}</span>
+          )}
         </span>
       )}
       <span className="w-28 shrink-0 text-right text-xs text-ink-muted">

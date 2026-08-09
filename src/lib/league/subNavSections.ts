@@ -29,7 +29,12 @@ export interface NavGroup {
  * instead of being a footer's worth of links pretending to be navigation.
  */
 const ALL_SECTIONS: Record<string, NavSection> = {
-  rotation: { id: "rotation", label: "Rotation", path: "/rotation" },
+  // Labelled "Roster" rather than "Rotation": this is the canonical team page
+  // and now carries contract terms and ceilings alongside role and minutes. The
+  // original audit asked for a roster page; adding a fifteenth nav target to a
+  // row already flagged as overloaded would have traded one finding for
+  // another, so the existing surface absorbed the job instead.
+  rotation: { id: "rotation", label: "Roster", path: "/rotation" },
   schedule: { id: "schedule", label: "Schedule", path: "/schedule" },
   standings: { id: "standings", label: "Standings", path: "/standings" },
   playoffs: { id: "playoffs", label: "Playoffs", path: "/playoffs" },
