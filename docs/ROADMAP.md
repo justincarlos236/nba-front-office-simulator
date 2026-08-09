@@ -1,124 +1,154 @@
 # Roadmap
 
-Built in milestones across multiple sessions rather than all at once, so
-each phase reaches a genuinely polished, tested state before moving on.
+Built in milestones across many sessions rather than all at once, so each
+phase reaches a genuinely polished, tested state before moving on.
 
-## M0 — Foundations ✅
+**Status:** the simulator is feature-complete as a single-player franchise
+management game — a full season loop from preseason through the draft, with
+salary-cap, trade, free-agency, scouting, finance, fan and career systems on
+top of real NBA reference data. **1,172 unit tests across 134 files.**
 
-- [x] Next.js 16 + TypeScript + Tailwind scaffold
-- [x] Prisma schema: auth models, reference data (`Team`/`Player`/
-      `PlayerSeasonStat`), per-save domain (`League`/`LeagueTeam`/
-      `LeaguePlayer`/`Contract`/`ContractYear`/`DraftPick`/`Trade`/
-      `TradeAsset`/`TradeException`), AI assistant thread/message models
-- [x] Tooling: ESLint + Prettier, Vitest, Playwright, GitHub Actions CI
-- [x] Neon Postgres provisioned, first migration applied
-- [x] Initial commit pushed to git
+The original M0–M6 milestone plan is preserved at the bottom for history. It
+stopped describing the product around the time the season engine landed, so
+what follows is organised by system rather than by milestone.
 
-## M1 — Data pipeline ✅ (reference data complete; League bootstrap is M5)
+---
 
-- [x] Static team fixture seeded into the database (30 real NBA teams)
-- [x] Real 2023-24 season stats: `scripts/import-season-stats.ts` aggregates
-      ~26k real per-game box scores (MIT-licensed source) into per-player
-      season averages
-- [x] Real player bios: `scripts/import-players.ts` pulls from balldontlie
-      (rate-limited, resumable) and joins to the stats fixture by name -
-      497/497 matched (5 required a hand-resolved nickname/legal-name alias)
-- [x] All 497 real players + season stats seeded into Postgres
-- [x] Algorithmically-generated contract logic ready (`generateContract`,
-      `planLeaguePlayer`), anchored to the valuation model instead of
-      hand-curated real salary figures (see docs/ARCHITECTURE.md)
-- [x] "New league" flow: clones the snapshot into a fresh `League` (30
-      `LeagueTeam`s, 497 `LeaguePlayer`s + generated `Contract`s) - see M5
+## What's built
 
-## M2 — Salary cap & trade engine (started early — pure logic, no DB needed)
+### The season loop
 
-- [x] Season-by-season CBA constants (cap/tax/apron thresholds, MLE variants)
-- [x] Apron classification + mid-level exception eligibility
-- [x] Cap sheet calculator: committed salary, empty-roster charges, dead
-      money, apron status, cap space per team per season
-- [x] Trade legality validator: cap-space vs. over-the-cap salary matching,
-      second-apron no-aggregation rule, no-trade clauses, Stepien-lite
-      draft pick rule, multi-team trades
-- [x] Unit test suite (39 tests) covering the above as the primary
-      correctness story
-- [x] Wired into real Prisma-backed data via the trade builder (M3) - the
-      validator runs unmodified against live league cap sheets
-- [x] Free agency signing validator (`validateSigning`): cap space, non-
-      taxpayer/taxpayer mid-level exception (gated by apron), and a
-      veteran-minimum deal that's always legal regardless of apron status.
-      Simplification: checks each signing against the exception's full
-      per-season ceiling, doesn't track cumulative spend across multiple
-      signings the way the real MLE (one bucket to split) works
-- [ ] Bird rights / Early-Bird / Non-Bird re-signing rules
+- Schedule generation, game simulation from team strength, and per-game box
+  scores for every player
+- Standings, league leaders, and a play-in tournament
+- Playoff bracket with series simulation, plus **live game-by-game playoff
+  games** the user watches possession by possession and sets a rotation for
+- All-Star weekend
+- Offseason: retirements, progression/regression, draft, free agency, and
+  season advancement gated on the phases actually being complete
 
-## M3 — Core UI (started early)
+### Salary cap & the CBA
 
-- [x] League browser (`/teams`) - all 30 real teams, grouped by conference/
-      division, linking into real rosters
-- [x] Team roster page (`/teams/[abbreviation]`) - real 2023-24 statlines,
-      sorted by scoring, with a live-computed 0-100 rating per player
-- [x] Player detail page (`/players/[id]`) - bio + statline + live
-      valuation-model output (performance score, estimated market value)
-- [x] Playwright e2e test covering the full browse -> roster -> player flow
-- [x] Data visualization: minutes-vs-rating scatter chart (recharts) on
-      every team roster page
-- [x] League dashboard (`/leagues/[id]`) - the signed-in user's own team's
-      live cap sheet (committed salary, cap space, apron status) and full
-      roster with real generated contracts
-- [x] Interactive trade builder (`/leagues/[id]/trades/new`) - pick an
-      opposing team, select players on each side, get instant legality
-      feedback from the same `validateTrade` engine, execute the trade
-      (re-validated server-side, never trusting the client) in a DB
-      transaction that actually reassigns players/contracts between teams.
-      Player-only for now - draft pick trading needs a pick inventory that
-      isn't generated during league bootstrap yet.
-- [x] Free agency board (`/leagues/[id]/free-agents`) - 77 real,
-      fringe/replacement-level players (bottom ~15% by rating - two-way/
-      10-day caliber in reality) start unsigned so the board has real
-      content; every other real player starts on their actual current
-      team. Offering a contract gets the same live-validated,
-      server-re-validated pattern as the trade builder.
+- Season-by-season constants: cap, luxury tax, first and second apron, MLE
+  variants
+- Cap sheet per team per season — committed salary, empty-roster charges,
+  dead money, apron status, cap space
+- Trade legality: salary matching, second-apron no-aggregation, no-trade
+  clauses, Stepien-lite pick protection, multi-team trades
+- Free agency: cap space, non-taxpayer and taxpayer MLE gated by apron,
+  veteran minimum, and **Bird / Early-Bird / Non-Bird re-signing rights**
+- Multi-year projection and a financial flexibility grade
 
-## M4 — AI GM assistant
+### The draft
 
-- [x] Player valuation model (performance composite, age curve, surplus
-      value vs. actual salary) — pure logic, unit tested
-- [ ] Claude-powered assistant with tool-use into cap/trade/valuation logic
-- [ ] Chat UI, persisted per league
+- Lottery with real odds, a full two-round draft, and traded-pick resolution
+- **Scouting as a pillar**: per-prospect scouting depth, private workouts that
+  resolve hidden traits, class character, a public big board and a private
+  board, and a scouting report whose reliability is modelled rather than
+  assumed — every axis can come back genuinely unresolved
+- Draft-night broadcast presentation with pick reveals, and draft hindsight
+  that grades picks in later seasons
 
-## M5 — Auth & multi-tenancy ✅ (single save per user; multiple saves is next)
+### Front office & career
 
-- [x] Auth.js v5 wired up (Credentials provider + Prisma adapter, JWT
-      sessions; `trustHost: true` needed for production - dev mode masks
-      this, only caught by testing the real production build)
-- [x] Sign-up/sign-in pages (React 19 `useActionState` + server actions)
-- [x] Per-user league ownership enforced at the data-access layer (404s,
-      not 403s, for a non-owner - doesn't reveal a league even exists)
-- [x] Idempotent "start a franchise" flow: revisiting after one exists
-      redirects straight to it instead of creating a second one
-- [ ] Multiple saves per user
-- [ ] GitHub OAuth (credentials-only for now - no external app setup needed)
+- Ownership: archetypes, confidence, written mandates, payroll directives, and
+  firing
+- Season expectations derived from payroll tier and roster strength, with the
+  gap to the team's actual identity named where they disagree
+- Team identity and needs, feeding the trade AI's evaluation
+- Career records across saves, and retirement
+- Staff hiring across scouting, development, analytics, sports science
 
-## M6 — Polish & production (started early)
+### Business & fans
 
-- [x] Deployed to Vercel with a public demo:
-      [nba-front-office-simulator-8s2o.vercel.app](https://nba-front-office-simulator-8s2o.vercel.app),
-      connected to GitHub for auto-deploy on every push to `main`. Hit and
-      fixed two real deploy-only issues: a missing `postinstall: prisma
-generate` script (the gitignored generated client doesn't exist on a
-      fresh checkout) and a missing `AUTH_SECRET` env var (Auth.js's
-      generic "server configuration" error in production).
-- [ ] Accessibility pass, responsive design pass
-- [ ] Error boundaries / thoughtful empty & error states
-- [ ] Performance pass (caching, pagination, optimistic UI)
-- [ ] Restore static generation for public pages (`/`, `/teams/*`) - adding
-      a session-aware `NavBar` to the root layout made every page dynamic,
-      since `auth()` reads cookies. Fixable with a Suspense-boundary split
-      or Next.js PPR once it's stable; not worth the complexity yet.
-- [ ] Observability (error tracking)
+- Franchise finances: revenue, expenses, debt, cash reserve, franchise value
+- Ticket pricing, capital projects, arena quality and lease, relocation
+- Business decision inbox, sponsorships, and ownership negotiations
+- Fan sentiment, culture, mandates, and a curated franchise memory
 
-## Stretch goals
+### Roster management
 
-- [ ] Season simulation engine (game-by-game results from team strength)
-- [ ] League-wide trade grade leaderboard / activity feed
-- [ ] Public read-only demo mode for recruiters (no sign-up required)
+- Rotation board with target minutes, morale, injuries, trade requests
+- Player progression and development
+- Contracts as documents, with an immutable cap snapshot recorded on every
+  executed trade so the consequence is evidence rather than a recompute
+
+### Platform
+
+- Auth.js v5, per-user league ownership enforced at the data-access layer
+  (404s, not 403s — a non-owner cannot tell a league exists)
+- **Multiple saves per user**
+- Deployed on Vercel with auto-deploy from `main`
+
+---
+
+## Design
+
+A full visual overhaul, documented in `DESIGN.md` and tracked in
+`docs/REDESIGN_PLAN.md`. The design language is **The Wire** — a front-office
+document system, with six page archetypes and a documentary baseline so a
+small number of moments can break the frame.
+
+Shipped across five phases: a graphic language (icons, gauges, stamps), the
+Artifact archetype (contracts, rulings, letters, draft cards), franchise
+history as objects, an environmental layer (30 authored city skylines,
+phase-aware light, material texture), and the scouting/draft surfaces.
+
+- [ ] **Photography** — four surfaces are specified in
+      `docs/PHOTO_SOURCING_BRIEF.md` and await image selection. Every one
+      degrades to the authored treatment already shipped, so none is blocking.
+
+---
+
+## Not built
+
+Recorded honestly rather than implied. See `PRODUCT.md`.
+
+- [ ] **AI GM assistant.** The `@anthropic-ai/sdk` dependency and the thread/
+      message schema exist; the assistant itself does not. No chat UI, no
+      tool-use wiring. Do not describe this as a feature.
+- [ ] Competing offers in free agency — a free agent currently waits
+      indefinitely, which drains urgency
+- [ ] Incoming CPU trade offers — trade is outbound-only
+- [ ] A canonical roster page (`/rotation` currently splits the job)
+- [ ] GitHub OAuth (credentials-only)
+- [ ] Observability / error tracking
+- [ ] Restore static generation for public pages. A session-aware `NavBar` in
+      the root layout made every page dynamic, since `auth()` reads cookies.
+      Fixable with a Suspense split or PPR; not worth the complexity yet.
+
+---
+
+## Original milestone plan (M0–M6)
+
+Kept for history. Every item below is complete except where the "Not built"
+section above says otherwise.
+
+**M0 — Foundations.** Next.js 16 + TypeScript + Tailwind, Prisma schema, Neon
+Postgres, ESLint/Prettier/Vitest/Playwright, GitHub Actions CI.
+
+**M1 — Data pipeline.** 30 real teams; ~26k real per-game box scores aggregated
+into season averages; 497 real player bios pulled from balldontlie and joined
+by name (5 needed hand-resolved aliases); contracts generated from the
+valuation model rather than hand-curated salary figures.
+
+**M2 — Salary cap & trade engine.** Superseded by the CBA section above.
+
+**M3 — Core UI.** League browser, team rosters, player pages, the league
+dashboard, the trade builder, and the free-agency board — all superseded by
+the design overhaul.
+
+**M4 — AI GM assistant.** The valuation model shipped. The assistant did not.
+
+**M5 — Auth & multi-tenancy.** Complete, including multiple saves.
+
+**M6 — Polish & production.** Deployed, with two deploy-only issues found and
+fixed: a missing `postinstall: prisma generate` (the gitignored client does not
+exist on a fresh checkout) and a missing `AUTH_SECRET` (which surfaces as
+Auth.js's generic "server configuration" error in production). Accessibility,
+responsive, error-boundary and empty-state passes all landed during the
+redesign — focus rings are defined once in `globals.css` for every interactive
+element, and WCAG 2.2 AA is a binding commitment per `PRODUCT.md`.
+
+**Stretch goals.** The season simulation engine was listed here as a stretch
+goal. It is built, and the game is now largely about it.
