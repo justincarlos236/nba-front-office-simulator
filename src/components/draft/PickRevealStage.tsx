@@ -239,7 +239,7 @@ export function PickRevealStage({
                   teamName={team.name}
                   primaryColor={team.primaryColor}
                   secondaryColor={team.secondaryColor}
-                  round={current.overallPickNumber > 30 ? 2 : 1}
+                  round={current.round}
                   overallPickNumber={current.overallPickNumber}
                   season={season}
                   viaTeamLabel={
