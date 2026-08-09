@@ -184,7 +184,11 @@ the Threshold Rule, plus **One Landmark, Two Companions** for the skylines.
 
 - [x] **P1** Partner browse is a flat 30-card grid with no cap space or needs.
       Now a Ledger with a cap-space column and each team's computed needs.
-- [ ] **P2** No incoming CPU offers; trade is outbound-only.
+- [x] **P2** No incoming CPU offers; trade is outbound-only. Rival clubs now
+      make unsolicited offers during simulation, stored as PROPOSED (the first
+      real use of that lifecycle) and surfaced through the Action Center.
+      Accepting delegates to `executeTradeAction`, so an accepted offer is
+      exactly as real as a trade the user built.
 - [x] **P2** Raw engine `error.message` rendered as UI copy. Replaced by
       `userFacing.ts` translation and league-office rulings.
 
