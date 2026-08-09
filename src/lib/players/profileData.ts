@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { estimateAge, estimateExperience } from "@/lib/players/age";
+import { estimateExperience, resolvePlayerAge } from "@/lib/players/age";
 import { computePerformanceScore, scoreToCapFraction } from "@/lib/valuation/playerValue";
 import { getSeasonCapRules } from "@/lib/cap/constants";
 import { computeCareerHighs, isTripleDouble, scoringMilestone } from "@/lib/stats/milestones";
@@ -245,7 +245,7 @@ export async function loadReferencePlayerProfile(
       draftRound: player.draftRound,
       draftPick: player.draftPick,
       pathway: player.pathway,
-      age: estimateAge(player.draftYear, PROFILE_SEASON),
+      age: resolvePlayerAge(player, PROFILE_SEASON),
       experience: estimateExperience(player.draftYear, PROFILE_SEASON),
       currentTeam: teamDTO(player.currentTeam),
     },
@@ -488,7 +488,7 @@ export async function loadLeaguePlayerProfile(
       draftRound: leaguePlayer.player.draftRound,
       draftPick: leaguePlayer.player.draftPick,
       pathway: leaguePlayer.player.pathway,
-      age: estimateAge(leaguePlayer.player.draftYear, season),
+      age: resolvePlayerAge(leaguePlayer.player, season),
       experience: estimateExperience(leaguePlayer.player.draftYear, season),
       currentTeam: teamDTO(leaguePlayer.leagueTeam?.team ?? null),
     },

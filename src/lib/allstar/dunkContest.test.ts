@@ -15,6 +15,7 @@ function candidate(overrides: Partial<DunkContestCandidate>): DunkContestCandida
     leaguePlayerId: `p${counter}`,
     position: "SG",
     draftYear: SEASON - 3, // age ~25
+    birthDate: null,
     overallRating: 75,
     ...overrides,
   };

@@ -22,7 +22,7 @@ import { fanSentimentCreateOps, type SentimentRecord } from "@/lib/fans/recordSe
 import { describeRotationSentiment } from "@/lib/fans/describeSentiment";
 import { computeRoleChangeMoraleDelta, MORALE_NEWS_THRESHOLD } from "@/lib/morale/moraleEvents";
 import { applyMoraleChange } from "@/lib/morale/moraleLevel";
-import { estimateAge } from "@/lib/players/age";
+import { resolvePlayerAge } from "@/lib/players/age";
 import type { RosterPlayerForSimulation } from "@/lib/actions/leagueTeamStrength";
 import type { NewsImportance } from "@/generated/prisma/client";
 
@@ -120,7 +120,7 @@ export async function updateRotationAction(
           financialMotivation: true,
         },
       },
-      player: { select: { fullName: true, position: true, draftYear: true } },
+      player: { select: { fullName: true, position: true, draftYear: true, birthDate: true } },
     },
   });
   const rosterIds = new Set(roster.map((r) => r.id));
@@ -220,7 +220,7 @@ export async function updateRotationAction(
       previousRole,
       newRole,
       valueTier: getPlayerValueTier(r.overallRating),
-      age: estimateAge(r.player.draftYear, league.currentSeason),
+      age: resolvePlayerAge(r.player, league.currentSeason),
     });
     if (moraleDelta === 0) continue;
 

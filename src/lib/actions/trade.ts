@@ -5,16 +5,13 @@ import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
 import { prisma } from "@/lib/prisma";
 import { validateTrade, type TradeAssetInput } from "@/lib/trade/validateTrade";
-import {
-  buildTradeCapSnapshotSide,
-  type TradeCapSnapshot,
-} from "@/lib/trade/capSnapshot";
+import { buildTradeCapSnapshotSide, type TradeCapSnapshot } from "@/lib/trade/capSnapshot";
 import { describeTrade } from "@/lib/transactions/describeTransaction";
 import { highestImportance, importanceForRating } from "@/lib/transactions/newsImportance";
 import { computeCompetitivenessPercentiles } from "@/lib/actions/competitiveness";
 import { computeTeamIdentity } from "@/lib/gm/teamIdentity";
 import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
-import { estimateAge } from "@/lib/players/age";
+import { resolvePlayerAge } from "@/lib/players/age";
 import {
   evaluateTradeOffer,
   playerFillsNeed,
@@ -276,7 +273,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
   const toTeamAvgAge =
     toTeamRoster.length > 0
       ? toTeamRoster.reduce(
-          (sum, lp) => sum + estimateAge(lp.player.draftYear, league.currentSeason),
+          (sum, lp) => sum + resolvePlayerAge(lp.player, league.currentSeason),
           0,
         ) / toTeamRoster.length
       : 27;
@@ -292,7 +289,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
     type: "PLAYER",
     overallRating: lp.overallRating,
     potentialRating: lp.potentialRating,
-    age: estimateAge(lp.player.draftYear, league.currentSeason),
+    age: resolvePlayerAge(lp.player, league.currentSeason),
     position: lp.player.position,
     currentSalaryCents: lp.contract!.years[0].salaryCents,
     injuryStatus: lp.injuryStatus,
@@ -313,7 +310,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
       personality: toLeagueTeam.gmPersonality,
       roster: toTeamRoster.map((lp) => ({
         overallRating: lp.overallRating,
-        age: estimateAge(lp.player.draftYear, league.currentSeason),
+        age: resolvePlayerAge(lp.player, league.currentSeason),
       })),
     },
     currentSeason: league.currentSeason,
@@ -342,7 +339,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
   const fromTeamAvgAge =
     fromTeamRoster.length > 0
       ? fromTeamRoster.reduce(
-          (sum, lp) => sum + estimateAge(lp.player.draftYear, league.currentSeason),
+          (sum, lp) => sum + resolvePlayerAge(lp.player, league.currentSeason),
           0,
         ) / fromTeamRoster.length
       : 27;
@@ -360,7 +357,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
       personality: fromLeagueTeam.gmPersonality,
       roster: fromTeamRoster.map((lp) => ({
         overallRating: lp.overallRating,
-        age: estimateAge(lp.player.draftYear, league.currentSeason),
+        age: resolvePlayerAge(lp.player, league.currentSeason),
       })),
     },
     currentSeason: league.currentSeason,
@@ -444,8 +441,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
   // across, which is exactly what the roster will look like once the writes
   // below land. Frozen here because cap sheets are otherwise always computed
   // from *current* state - see src/lib/trade/capSnapshot.ts.
-  const salaryFor = (lp: (typeof myPlayers)[number]) =>
-    lp.contract?.years[0]?.salaryCents ?? 0n;
+  const salaryFor = (lp: (typeof myPlayers)[number]) => lp.contract?.years[0]?.salaryCents ?? 0n;
 
   const capSnapshot: TradeCapSnapshot = {
     season: tradeSeason,

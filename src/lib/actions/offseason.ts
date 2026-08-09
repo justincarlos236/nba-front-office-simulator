@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { estimateAge, estimateExperience } from "@/lib/players/age";
+import { resolvePlayerAge, resolvePlayerExperience } from "@/lib/players/age";
 import { developPlayerRating } from "@/lib/development/developPlayerRating";
 import { shouldRetire } from "@/lib/development/retirement";
 import {
@@ -461,8 +461,8 @@ export async function advanceSeasonAction(leagueId: string) {
 
   for (const lp of leaguePlayers) {
     const oldRating = lp.overallRating;
-    const newAge = estimateAge(lp.player.draftYear, newSeason);
-    const experience = estimateExperience(lp.player.draftYear, season);
+    const newAge = resolvePlayerAge(lp.player, newSeason);
+    const experience = resolvePlayerExperience(lp.player, season);
     const boxAgg = boxScoreAggByPlayer.get(lp.id);
     const hasRealMinutes = !!boxAgg && boxAgg._count._all > 0;
     // Rotation Management - real per-season minutes feed developPlayerRating
@@ -680,7 +680,7 @@ export async function advanceSeasonAction(leagueId: string) {
       list.push({
         position: lp.player.position,
         overallRating: u.overallRating,
-        age: estimateAge(lp.player.draftYear, newSeason),
+        age: resolvePlayerAge(lp.player, newSeason),
       });
       sureRosterByTeam.set(u.leagueTeamId, list);
     }

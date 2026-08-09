@@ -125,7 +125,7 @@ export async function buildAllStarPerformancePool(
       overallRating: true,
       injuryStatus: true,
       leagueTeamId: true,
-      player: { select: { fullName: true, position: true, draftYear: true } },
+      player: { select: { fullName: true, position: true, draftYear: true, birthDate: true } },
       leagueTeam: {
         select: { wins: true, losses: true, team: { select: { conference: true } } },
       },
@@ -223,6 +223,7 @@ export async function buildAllStarPerformancePool(
         leaguePlayerId: p.id,
         position: p.player.position,
         draftYear: p.player.draftYear,
+        birthDate: p.player.birthDate,
         overallRating: p.overallRating,
       });
     }

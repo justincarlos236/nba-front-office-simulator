@@ -9,7 +9,7 @@ import {
 import { computeFranchiseIconScore, ICON_DEPARTURE_THRESHOLD } from "@/lib/finances/franchiseIcon";
 import { getPlayerValueTier } from "@/lib/valuation/playerValueTier";
 import { computeTeamStrength } from "@/lib/simulation/teamStrength";
-import { ageFromBirthDate, estimateAge } from "@/lib/players/age";
+import { resolvePlayerAge } from "@/lib/players/age";
 import { buildFanCultureHistoryInputs, type TeamCultureContext } from "@/lib/actions/fanCulture";
 import type { FanCultureHistoryInputs } from "@/lib/fans/fanCulture";
 
@@ -92,10 +92,7 @@ export async function recomputeFanMandates(
     teams.map((team) => {
       const teamRoster = rosterByTeam.get(team.leagueTeamId) ?? [];
       const teamStrength = computeTeamStrength(teamRoster.map((p) => p.overallRating));
-      const ages = teamRoster.map(
-        (p) =>
-          ageFromBirthDate(p.player.birthDate, season) ?? estimateAge(p.player.draftYear, season),
-      );
+      const ages = teamRoster.map((p) => resolvePlayerAge(p.player, season));
       const averageRosterAge = ages.length > 0 ? ages.reduce((s, a) => s + a, 0) / ages.length : 26;
       const recentLotteryPicks = lotteryPickCountByTeam.get(team.leagueTeamId) ?? 0;
       const culture = cultureByTeam.get(team.leagueTeamId) ?? {

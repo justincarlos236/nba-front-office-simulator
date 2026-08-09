@@ -6,12 +6,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { planLeaguePlayer } from "@/lib/league/planLeaguePlayer";
 import { generateRoundRobinSchedule } from "@/lib/simulation/generateSchedule";
-import {
-  estimateAge,
-  estimateExperience,
-  ageFromBirthDate,
-  estimateExperienceFromAge,
-} from "@/lib/players/age";
+import { estimateExperience, estimateExperienceFromAge, resolvePlayerAge } from "@/lib/players/age";
 import { MAX_LEAGUES_PER_USER } from "@/lib/league/constants";
 import { computeCapSheet } from "@/lib/cap/capSheet";
 import { computeTeamStrength } from "@/lib/simulation/teamStrength";
@@ -214,7 +209,7 @@ export async function createLeagueAction(formData: FormData) {
     const realTeamLeagueTeamId = player.currentTeamId
       ? (teamIdToLeagueTeamId.get(player.currentTeamId) ?? null)
       : null;
-    const age = ageFromBirthDate(player.birthDate, SEASON) ?? estimateAge(player.draftYear, SEASON);
+    const age = resolvePlayerAge(player, SEASON);
     const yearsOfExperience = player.draftYear
       ? estimateExperience(player.draftYear, SEASON)
       : estimateExperienceFromAge(age);

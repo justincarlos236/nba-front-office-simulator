@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { estimateAge } from "@/lib/players/age";
+import { resolvePlayerAge } from "@/lib/players/age";
 import { computeCompetitivenessPercentiles } from "@/lib/actions/competitiveness";
 import { computeTeamIdentity, type TeamIdentity } from "./teamIdentity";
 import { computeTeamNeeds, type TeamNeed } from "./teamNeeds";
@@ -44,7 +44,7 @@ export async function fetchRostersByTeam(
     list.push({
       position: lp.player.position,
       overallRating: lp.overallRating,
-      age: estimateAge(lp.player.draftYear, season),
+      age: resolvePlayerAge(lp.player, season),
     });
     rosterByTeam.set(leagueTeamId, list);
   }

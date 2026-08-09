@@ -24,7 +24,7 @@ import { departmentQualityDelta } from "@/lib/finances/departments";
 import { sumCompletedProjectEffects } from "@/lib/finances/capitalProjects";
 import { computeTeamIdentity } from "@/lib/gm/teamIdentity";
 import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
-import { estimateAge } from "@/lib/players/age";
+import { resolvePlayerAge } from "@/lib/players/age";
 import { getPlayerValueTier } from "@/lib/valuation/playerValueTier";
 import {
   applyFanHappinessDelta,
@@ -462,7 +462,7 @@ async function maybeExecuteCpuTrade(
           playerName: p.player.fullName,
           rating: p.overallRating,
           potentialRating: p.potentialRating,
-          age: estimateAge(p.player.draftYear, season),
+          age: resolvePlayerAge(p.player, season),
           position: p.player.position,
           salaryCents: p.contract!.years[0].salaryCents,
           noTradeClause: p.contract!.noTradeClause,
@@ -1464,7 +1464,7 @@ async function maybeProposeCpuTradeToUser(
           playerName: p.player.fullName,
           rating: p.overallRating,
           potentialRating: p.potentialRating,
-          age: estimateAge(p.player.draftYear, season),
+          age: resolvePlayerAge(p.player, season),
           position: p.player.position,
           salaryCents: p.contract!.years[0].salaryCents,
           noTradeClause: p.contract!.noTradeClause,

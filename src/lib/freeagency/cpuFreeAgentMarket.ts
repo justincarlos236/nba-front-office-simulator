@@ -9,7 +9,7 @@ import {
   type PlayerValuationStats,
 } from "@/lib/valuation/playerValue";
 import { getSeasonCapRules } from "@/lib/cap/constants";
-import { estimateAge } from "@/lib/players/age";
+import { resolvePlayerAge } from "@/lib/players/age";
 import { computeRivalInterest, type RivalTeam } from "./rivalInterest";
 import { runCpuFreeAgentPass, type CpuSigning, type PursuableFreeAgent } from "./cpuFreeAgentPass";
 import type { GmPersonality } from "@/lib/gm/gmPersonality";
@@ -42,6 +42,7 @@ interface MarketInput {
     player: {
       position: string;
       draftYear: number | null;
+      birthDate: Date | null;
       /** `trueShootingPct` is nullable in the database; defaulted below. */
       seasonStats?: (Omit<PlayerValuationStats, "trueShootingPct"> & {
         trueShootingPct: number | null;
@@ -121,7 +122,7 @@ export async function runCpuFreeAgentMarket(input: MarketInput): Promise<CpuSign
     });
     const avgAge =
       roster.length > 0
-        ? roster.reduce((sum, lp) => sum + estimateAge(lp.player.draftYear, newSeason), 0) /
+        ? roster.reduce((sum, lp) => sum + resolvePlayerAge(lp.player, newSeason), 0) /
           roster.length
         : 27;
     // Players whose position code is not one of the five are skipped rather
@@ -201,7 +202,7 @@ export async function runCpuFreeAgentMarket(input: MarketInput): Promise<CpuSign
       position,
       overallRating: rating,
       potentialRating: lp.potentialRating,
-      age: estimateAge(lp.player.draftYear, newSeason),
+      age: resolvePlayerAge(lp.player, newSeason),
       careerGamesMissedToInjury: lp.careerGamesMissedToInjury,
       estimatedValueCents,
       // Same ordering the board renders, so the club the user was warned about

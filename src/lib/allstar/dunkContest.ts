@@ -1,5 +1,5 @@
 import { createSeededRandom } from "@/lib/contracts/seededRandom";
-import { estimateAge } from "@/lib/players/age";
+import { resolvePlayerAge } from "@/lib/players/age";
 import type { Position } from "@/generated/prisma/client";
 
 /**
@@ -25,7 +25,9 @@ const PARTICIPANTS = 4;
 export interface DunkContestCandidate {
   leaguePlayerId: string;
   position: Position;
+  /** Both age sources - see `resolvePlayerAge`; birthDate is exact where present. */
   draftYear: number | null;
+  birthDate: Date | null;
   overallRating: number;
 }
 
@@ -39,7 +41,7 @@ function clamp01(x: number): number {
 }
 
 function dunkAppealOf(p: DunkContestCandidate, season: number, seed: string): number {
-  const age = estimateAge(p.draftYear, season);
+  const age = resolvePlayerAge(p, season);
   const ageComponent = clamp01(
     (OLDEST_RELEVANT_AGE - age) / (OLDEST_RELEVANT_AGE - YOUNGEST_RELEVANT_AGE),
   );
