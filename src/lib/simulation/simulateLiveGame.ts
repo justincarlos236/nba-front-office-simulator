@@ -20,7 +20,7 @@ import type { PlayerBoxScoreLine } from "./boxScore";
  * of the engine (and GM-facing win-probability displays) says it should.
  */
 
-const AVERAGE_QUARTER_SCORE = 28; // AVERAGE_TEAM_SCORE (112) / 4 - same baseline simulateGame.ts uses, per quarter
+const AVERAGE_QUARTER_SCORE = 28; // ~a quarter of a real team's game total; simulateGame's own baseline is 114
 const QUARTER_SCORE_RANDOMNESS = 9; // +/- swing applied independently to each team's quarter score
 const MIN_QUARTER_SCORE = 12;
 
@@ -33,14 +33,19 @@ const MIN_OT_SCORE = 4;
 // script simulated 20,000 games per strength differential across
 // [-25..+25] and compared the resulting home-win rate against
 // computeHomeWinProbability's prediction at that same differential),
-// not guessed. 0.11 tracks the existing win-probability model within
-// about one percentage point across the whole range tested; see
+// not guessed. 0.35 tracks the win-probability model within about two
+// percentage points across the whole range tested; see
 // simulateLiveGame.test.ts's calibration check for the regression net.
+//
+// Re-calibrated from 0.11 when simulateGame moved to a margin-first model
+// (docs/SIMULATION_AUDIT.md, P1-5): the single-game curve got substantially
+// steeper, and a live playoff game must not use a different win model from
+// the one the rest of the engine and every win-probability display report.
 // Naively reusing a per-game-scale sensitivity here would over-amplify
 // outcomes, since summing 4 independent periods compounds a strength
 // edge more than a single-shot roll does - this constant corrects for
 // that compounding rather than the win-probability model itself changing.
-const QUARTER_STRENGTH_SENSITIVITY = 0.11;
+const QUARTER_STRENGTH_SENSITIVITY = 0.35;
 
 function triangular(rng: () => number, spread: number): number {
   return (rng() + rng() - 1) * spread;

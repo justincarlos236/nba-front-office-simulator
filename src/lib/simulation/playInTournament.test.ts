@@ -35,35 +35,32 @@ describe("simulatePlayIn", () => {
   });
 
   it("7-seed winning game A becomes final 7-seed; loser gets a second chance in game C", () => {
-    // rng < homeWinProbability means home wins - use very low values so the home team always wins.
+    // Outcomes are forced by strength, not by rng internals. A team this far
+    // ahead effectively never loses a single game, so the bracket logic is
+    // what is under test rather than how many rng values simulateGame happens
+    // to consume - which is what these assertions used to depend on.
     const strength = new Map([
-      ["seed7", 80],
-      ["seed8", 78],
-      ["seed9", 76],
-      ["seed10", 74],
+      ["seed7", 200],
+      ["seed8", 20],
+      ["seed9", 190],
+      ["seed10", 10],
     ]);
-    const result = simulatePlayIn(seeds, strength, fixedRng([0.01, 0.5, 0.5]));
-    // Game A: seed7 (home) wins -> finalSeventhSeed = seed7, gameALoser = seed8
+    const result = simulatePlayIn(seeds, strength, Math.random);
     expect(result.finalSeventhSeed).toBe("seed7");
+    // Game A's loser drops into game C, hosted by them against game B's winner.
     expect(result.games[2].homeTeamId).toBe("seed8");
+    expect(result.games[2].awayTeamId).toBe("seed9");
   });
 
   it("a 9/10 winner can still claim the final 8-seed by winning game C", () => {
+    // seed9 is overwhelming: it wins game B, then beats seed8 in game C.
     const strength = new Map([
-      ["seed7", 80],
-      ["seed8", 78],
-      ["seed9", 76],
-      ["seed10", 74],
+      ["seed7", 200],
+      ["seed8", 20],
+      ["seed9", 190],
+      ["seed10", 10],
     ]);
-    // simulateGame consumes 3 rng() calls per game (homeWon draw, then two for
-    // score); each game's "homeWon" draw is the first call in its group of 3.
-    // Game A: home (seed7) wins. Game B: home (seed9) wins. Game C: home
-    // (seed8) loses (rng high -> away/seed9 wins).
-    const result = simulatePlayIn(
-      seeds,
-      strength,
-      fixedRng([0.01, 0.5, 0.5, 0.01, 0.5, 0.5, 0.99, 0.5, 0.5]),
-    );
+    const result = simulatePlayIn(seeds, strength, Math.random);
     expect(result.finalEighthSeed).toBe("seed9");
   });
 
