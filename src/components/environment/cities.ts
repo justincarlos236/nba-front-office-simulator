@@ -362,7 +362,7 @@ export const CITIES: Record<string, CityComposition> = {
   // Empire State and Chrysler at full height - the Knicks' Manhattan, distinct
   // from Brooklyn's bridge-and-distant-skyline view.
   NYK: {
-    landmark: "Empire State Building and Chrysler spire",
+    landmark: "Empire State Building, with Liberty in the harbour",
     signature:
       // Empire State: setbacks, tower, mooring mast.
       "M140 100 V52 H184 V100 Z M148 52 V38 H176 V52 Z M154 38 V16 H170 V38 Z " +
@@ -371,7 +371,22 @@ export const CITIES: Record<string, CityComposition> = {
       // Chrysler: stepped arched crown and needle.
       "M212 100 V50 H242 V100 Z M216 50 V38 H238 V50 Z " +
         "M220 38 Q227 28 234 38 Z M222 28 Q227 22 232 28 Z M226 22 V14 H228 V22 Z",
-      "M270 100 V56 H288 V100 Z M296 100 V46 H312 V100 Z",
+      // Liberty, out in the harbour: pedestal, robed figure, raised torch arm
+      // and the crown's rays. Deliberately small and low - she is the most
+      // recognisable form here, but she belongs to the *harbour*, which
+      // Brooklyn shares. Kept as support so she can never become the thing
+      // that distinguishes the Knicks from the Nets; the Midtown skyline does
+      // that. See the same-metro rule in DESIGN.md.
+      "M330 100 V92 H354 V100 Z M334 92 V86 H350 V92 Z " +
+        // Robe: a tapering column with a slight flare at the hem.
+        "M338 86 L340 66 H344 L346 86 Z " +
+        // Raised right arm and torch.
+        "M344 72 L349 62 H351 L347 72 Z M348 62 V57 H352 V62 Z M349 57 L350 53 L351 57 Z " +
+        // Tablet, held low against the body.
+        "M334 74 L338 70 V76 L334 79 Z " +
+        // Head and the crown's spikes.
+        "M340 66 V62 H344 V66 Z M339 62 L340 58 L341 62 Z M342 62 L342 57 H343 L343 62 Z " +
+        "M344 62 L345 58 L346 62 Z",
     ],
     field: field([
       [0, 26, 22],
@@ -381,9 +396,13 @@ export const CITIES: Record<string, CityComposition> = {
       [108, 26, 23],
       [188, 20, 20],
       [246, 20, 24],
-      [318, 22, 21],
-      [344, 24, 18],
-      [372, 26, 23],
+      // Lower Manhattan running down to the water, dropping toward the harbour
+      // so Liberty reads as standing beyond the city rather than inside it.
+      [270, 18, 26],
+      [292, 16, 22],
+      [312, 14, 16],
+      [360, 22, 14],
+      [386, 14, 11],
     ]),
   },
 
