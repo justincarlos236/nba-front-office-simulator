@@ -6,6 +6,11 @@ import { estimateAge } from "@/lib/players/age";
 import { detectNotableMovement } from "@/lib/draft/lotteryPresentation";
 import { PlayerChip } from "@/components/players/PlayerChip";
 import { PlayerAvatar } from "@/components/players/PlayerAvatar";
+import { BannerRafters } from "@/components/history/BannerRafters";
+import { TrophyCabinet } from "@/components/history/TrophyCabinet";
+import { MemoryTimeline } from "@/components/history/MemoryTimeline";
+import { curateFranchiseMemory } from "@/lib/fans/franchiseMemory";
+import { Label } from "@/components/ui/primitives";
 
 export const dynamic = "force-dynamic";
 
@@ -34,10 +39,25 @@ export default async function HistoryPage({ params }: PageProps) {
   const session = await auth();
   if (!session?.user) redirect("/sign-in");
 
-  const league = await prisma.league.findUnique({ where: { id } });
+  const league = await prisma.league.findUnique({
+    where: { id },
+    include: { teams: { include: { team: true } } },
+  });
   if (!league || league.ownerId !== session.user.id) notFound();
 
-  const [champions, awards, staffAwards, retirees, allStarWeekends, lotteryResults] =
+  // The rafters and the cabinet are *this franchise's*, not the league's -
+  // the league-wide lists below already cover everyone else.
+  const userLeagueTeam = league.teams.find((lt) => lt.id === league.userControlledTeamId);
+
+  const [
+    champions,
+    awards,
+    staffAwards,
+    retirees,
+    allStarWeekends,
+    lotteryResults,
+    memoryCandidates,
+  ] =
     await Promise.all([
       prisma.playoffSeries.findMany({
         where: { leagueId: id, round: 4, winnerTeamId: { not: null } },
@@ -74,6 +94,21 @@ export default async function HistoryPage({ params }: PageProps) {
         },
         orderBy: [{ season: "desc" }, { resultPickNumber: "asc" }],
       }),
+      // Candidates for the franchise-memory timeline. curateFranchiseMemory
+      // applies its own allowlist and weighting; this only narrows to rows
+      // involving the user's own team so a rival's blockbuster never lands in
+      // this franchise's permanent record.
+      league.userControlledTeamId
+        ? prisma.leagueTransaction.findMany({
+            where: {
+              leagueId: id,
+              importance: { in: ["MAJOR", "BREAKING"] },
+              teamIds: { has: league.userControlledTeamId },
+            },
+            orderBy: { createdAt: "desc" },
+            take: 200,
+          })
+        : Promise.resolve([]),
     ]);
 
   const allStarPlayerIds = new Set<string>();
@@ -130,6 +165,52 @@ export default async function HistoryPage({ params }: PageProps) {
       <p className="mt-2 max-w-2xl text-ink-muted">
         Champions, award winners, and retirees from every completed season in this franchise.
       </p>
+
+      {/* YOUR BUILDING. What this franchise has won, before the league-wide
+          record below. Rafters render even when empty - a ceiling with nothing
+          hanging is a fact about the franchise, and the motivation. */}
+      {userLeagueTeam && (
+        <>
+          <BannerRafters
+            className="mt-12"
+            primaryColor={userLeagueTeam.team.primaryColor}
+            secondaryColor={userLeagueTeam.team.secondaryColor}
+            banners={champions.map((c) => ({
+              season: c.season,
+              teamLabel: c.winnerTeam ? `${c.winnerTeam.team.city} ${c.winnerTeam.team.name}` : "",
+              isUserTeam: c.winnerTeamId === userLeagueTeam.id,
+            }))}
+          />
+
+          <TrophyCabinet
+            className="mt-16"
+            awards={awards
+              .filter((a) => a.leaguePlayer.leagueTeamId === userLeagueTeam.id)
+              .map((a) => ({
+                season: a.season,
+                category: a.category,
+                playerName: a.leaguePlayer.player.fullName,
+              }))}
+          />
+
+          <MemoryTimeline
+            className="mt-16"
+            entries={curateFranchiseMemory(
+              memoryCandidates.map((t) => ({
+                id: t.id,
+                season: t.season,
+                type: t.type,
+                description: t.description,
+                importance: t.importance as "MINOR" | "STANDARD" | "MAJOR" | "BREAKING",
+              })),
+            )}
+          />
+
+          <div className="mt-16 border-t border-rule-strong pt-3">
+            <Label tone="ink">Around the league</Label>
+          </div>
+        </>
+      )}
 
       {champions.length === 0 ? (
         <div className="mt-10 rounded-[2px] border border-rule bg-field p-8 text-center">
