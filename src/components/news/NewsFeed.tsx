@@ -269,9 +269,7 @@ function Rollup({
       >
         <span className="flex-1 text-[13px] text-ink-muted">
           {label} <span className="font-mono tabular-nums">· {stories.length}</span>
-          {mine > 0 && (
-            <span className="text-team-accent"> · {mine === 1 ? "1 yours" : `${mine} yours`}</span>
-          )}
+          {mine > 0 && <span className="text-team-accent"> · {mine} of yours</span>}
         </span>
         <span className="shrink-0 text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase">
           {open ? "Hide" : "Show"}
@@ -603,38 +601,30 @@ export function NewsFeed({
     </div>
   );
 
-  // FINDING. One flat, complete list - no editorial hierarchy in the way.
-  if (isFinding) {
-    return (
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_260px] lg:items-start">
-        <div className="min-w-0 lg:order-1">
-          <p
-            aria-live="polite"
-            className="text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase"
-          >
-            {filtered.length} of {transactions.length} filed
-          </p>
-          {filtered.length === 0 ? (
-            <div className="mt-4 border-t border-rule bg-field p-8 text-center">
-              <p className="text-[15px] text-ink-muted">No stories match these filters.</p>
-            </div>
-          ) : (
-            <div className="mt-4">{wire}</div>
-          )}
-        </div>
-        <aside className="lg:sticky lg:top-6 lg:order-2">{filterPanel}</aside>
-      </div>
-    );
-  }
-
-  // BROWSING. The front page.
+  /**
+   * ONE tree for both modes, deliberately.
+   *
+   * These used to be two `return`s - a front page and a results page - which
+   * meant typing the first character into the search box swapped the entire
+   * subtree. React unmounted the input and mounted a different one, so focus
+   * was lost after exactly one keystroke and the box had to be clicked again
+   * for every letter.
+   *
+   * So the structure below never changes shape: the lead, the cards, the
+   * pulse and the franchise strip render as `false` when finding rather than
+   * disappearing from the children array, and the filter panel stays the last
+   * child of the same `<aside>` in both modes. React reconciles it to the same
+   * DOM node and the caret stays put.
+   *
+   * Anything conditional here must keep its slot for the same reason.
+   */
   return (
     <div className="space-y-10">
-      {ranked.lead && (
+      {!isFinding && ranked.lead && (
         <LeadStory item={ranked.lead} leagueId={leagueId} isMine={isMine(ranked.lead)} />
       )}
 
-      {cards.length > 0 && (
+      {!isFinding && cards.length > 0 && (
         <section>
           <Label>Around the league</Label>
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -648,17 +638,28 @@ export function NewsFeed({
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_260px] lg:items-start">
         <div className="min-w-0 lg:order-1">
           <div className="flex items-baseline justify-between gap-3">
-            <Label>The wire</Label>
-            <span className="text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase">
-              {transactions.length} filed
+            <Label>{isFinding ? "Results" : "The wire"}</Label>
+            <span
+              aria-live="polite"
+              className="text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase"
+            >
+              {isFinding
+                ? `${filtered.length} of ${transactions.length} filed`
+                : `${transactions.length} filed`}
             </span>
           </div>
-          <div className="mt-3">{wire}</div>
+          {isFinding && filtered.length === 0 ? (
+            <div className="mt-4 border-t border-rule bg-field p-8 text-center">
+              <p className="text-[15px] text-ink-muted">No stories match these filters.</p>
+            </div>
+          ) : (
+            <div className="mt-3">{wire}</div>
+          )}
         </div>
 
         <aside className="space-y-6 lg:sticky lg:top-6 lg:order-2">
-          <LeaguePulsePanel pulse={pulse} userTeamId={userTeamId} />
-          {franchise.length > 0 && (
+          {!isFinding && <LeaguePulsePanel pulse={pulse} userTeamId={userTeamId} />}
+          {!isFinding && franchise.length > 0 && (
             <section className="border-t border-team-accent bg-field p-4">
               <div className="flex items-baseline justify-between gap-2">
                 <Label tone="accent">Your franchise</Label>

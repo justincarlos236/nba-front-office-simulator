@@ -557,7 +557,12 @@ export async function generateAllStarWeekend(
       performanceSnapshots.find((p) => p.leaguePlayerId === s.leaguePlayerId)?.overallRating ?? 70;
     newsRows.push({
       type: "ALL_STAR_SELECTION",
-      description: `${name} earns their first career All-Star selection.`,
+      // Not "first career": this fires on a player's first selection *in this
+      // save*, and the save holds no real-world career history. Saying "first
+      // career" put LeBron James and Stephen Curry on their maiden All-Star
+      // nod in season one, which is a claim about a real person the simulator
+      // has no basis for.
+      description: `${name} earns an All-Star selection.`,
       importance: importanceForRating(rating),
       teamIds: teamIdsFor(s.leaguePlayerId),
     });
