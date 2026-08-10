@@ -521,65 +521,82 @@ export function NewsFeed({
 
   const isMine = (item: NewsItem) => Boolean(userTeamId && item.teamIds.includes(userTeamId));
 
-  const filterPanel = (
-    <section className="border-t border-rule bg-field p-4">
-      <div className="flex items-baseline justify-between gap-2">
-        <Label>Find a story</Label>
+  /**
+   * The search bar sits at the top of the page, full width, above the lead.
+   *
+   * It used to be the last panel in the sidebar, three screens down - which
+   * made looking a player up a scrolling exercise on a page whose whole point
+   * is that you should not have to scroll to find things.
+   *
+   * Its position in the tree is load-bearing: this must stay the first child
+   * of the root in every render, or React remounts the input and the caret is
+   * lost on the next keystroke. See the component doc and NewsFeed.test.tsx.
+   */
+  const searchBar = (
+    <section className="border-y border-rule bg-field px-4 py-3 sm:px-5">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="relative min-w-0 flex-1">
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search the wire - any player, team or phrase"
+            aria-label="Search the wire"
+            className="w-full rounded-[2px] border border-rule bg-raised px-3 py-2.5 text-[17px] text-ink transition-colors duration-120 placeholder:text-ink-muted/60 focus:border-team-accent"
+          />
+        </div>
         <button
           type="button"
           onClick={() => setShowFilters((v) => !v)}
-          className="text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase hover:text-ink"
           aria-expanded={showFilters}
+          className={pillClass(showFilters)}
         >
-          {showFilters ? "Less" : "Filters"}
+          {showFilters ? "Fewer filters" : "Filters"}
         </button>
+        {isFinding && (
+          <>
+            {/* One template string, not three nodes - so it is announced and
+                read as a single phrase rather than "1", "of", "5". */}
+            <span aria-live="polite" className="font-mono text-[13px] tabular-nums text-ink-muted">
+              {`${filtered.length} of ${transactions.length} filed`}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setCategory("ALL");
+                setMyTeamOnly(false);
+                setSearch("");
+              }}
+              className="text-[11px] font-semibold tracking-[0.09em] text-team-accent uppercase underline decoration-rule underline-offset-4"
+            >
+              Clear
+            </button>
+          </>
+        )}
       </div>
-      <input
-        type="search"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Any name or phrase"
-        className="mt-2 w-full rounded-[2px] border border-rule bg-raised px-3 py-1.5 text-[15px] text-ink transition-colors duration-120 placeholder:text-ink-muted/60 focus:border-rule-strong"
-      />
 
       {(showFilters || category !== "ALL" || myTeamOnly) && (
-        <>
+        <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-hairline pt-3">
           {userTeamId && (
             <button
               type="button"
               onClick={() => setMyTeamOnly((v) => !v)}
-              className={`mt-3 ${pillClass(myTeamOnly)}`}
+              className={`${pillClass(myTeamOnly)} mr-1.5`}
             >
               My franchise
             </button>
           )}
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setCategory(c)}
-                className={pillClass(category === c)}
-              >
-                {CATEGORY_LABEL[c]}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      {isFinding && (
-        <button
-          type="button"
-          onClick={() => {
-            setCategory("ALL");
-            setMyTeamOnly(false);
-            setSearch("");
-          }}
-          className="mt-3 text-[11px] font-semibold tracking-[0.09em] text-team-accent uppercase underline decoration-rule underline-offset-4"
-        >
-          Clear
-        </button>
+          {CATEGORIES.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setCategory(c)}
+              className={pillClass(category === c)}
+            >
+              {CATEGORY_LABEL[c]}
+            </button>
+          ))}
+        </div>
       )}
     </section>
   );
@@ -623,6 +640,8 @@ export function NewsFeed({
    */
   return (
     <div className="space-y-10">
+      {searchBar}
+
       {ranked.lead && (
         <LeadStory item={ranked.lead} leagueId={leagueId} isMine={isMine(ranked.lead)} />
       )}
@@ -642,14 +661,13 @@ export function NewsFeed({
         <div className="min-w-0 lg:order-1">
           <div className="flex items-baseline justify-between gap-3">
             <Label>{isFinding ? "Results" : "The wire"}</Label>
-            <span
-              aria-live="polite"
-              className="text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase"
-            >
-              {isFinding
-                ? `${filtered.length} of ${transactions.length} filed`
-                : `${transactions.length} filed`}
-            </span>
+            {/* The live count lives beside the search input, where the typing
+                is - repeating it here was the same number twice on one screen. */}
+            {!isFinding && (
+              <span className="text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase">
+                {transactions.length} filed
+              </span>
+            )}
           </div>
           {isFinding && filtered.length === 0 ? (
             <div className="mt-4 border-t border-rule bg-field p-8 text-center">
@@ -683,7 +701,6 @@ export function NewsFeed({
               </ul>
             </section>
           )}
-          {filterPanel}
         </aside>
       </div>
     </div>

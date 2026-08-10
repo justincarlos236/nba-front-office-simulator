@@ -52,7 +52,7 @@ describe("NewsFeed search box", () => {
    */
   it("keeps focus while typing, across the switch into results", () => {
     renderFeed(stories);
-    const input = screen.getByPlaceholderText("Any name or phrase");
+    const input = screen.getByRole("searchbox");
     input.focus();
     expect(document.activeElement).toBe(input);
 
@@ -61,12 +61,12 @@ describe("NewsFeed search box", () => {
 
     expect(document.activeElement).toBe(input);
     // Same DOM node, not a replacement that merely looks the same.
-    expect(screen.getByPlaceholderText("Any name or phrase")).toBe(input);
+    expect(screen.getByRole("searchbox")).toBe(input);
   });
 
   it("keeps the caret through several characters", () => {
     renderFeed(stories);
-    const input = screen.getByPlaceholderText("Any name or phrase") as HTMLInputElement;
+    const input = screen.getByRole("searchbox") as HTMLInputElement;
     input.focus();
     for (const value of ["j", "ja", "jam", "jama"]) {
       fireEvent.change(input, { target: { value } });
@@ -77,7 +77,7 @@ describe("NewsFeed search box", () => {
 
   it("actually filters once a query is entered", () => {
     renderFeed(stories);
-    const input = screen.getByPlaceholderText("Any name or phrase");
+    const input = screen.getByRole("searchbox");
     fireEvent.change(input, { target: { value: "Murray" } });
 
     // Twice on purpose: once as its own card, which stays put regardless of
@@ -97,7 +97,7 @@ describe("NewsFeed search box", () => {
    */
   it("holds the page still while typing - only the wire narrows", () => {
     renderFeed(stories);
-    const input = screen.getByPlaceholderText("Any name or phrase");
+    const input = screen.getByRole("searchbox");
 
     expect(screen.getByText("Around the league")).toBeInTheDocument();
     expect(screen.getByText("League pulse")).toBeInTheDocument();
@@ -110,7 +110,7 @@ describe("NewsFeed search box", () => {
 
   it("returns a hit even when that story is the lead", () => {
     renderFeed(stories);
-    fireEvent.change(screen.getByPlaceholderText("Any name or phrase"), {
+    fireEvent.change(screen.getByRole("searchbox"), {
       target: { value: "Jokic" },
     });
     // The lead is normally suppressed from the wire to avoid repeating it.
@@ -120,7 +120,7 @@ describe("NewsFeed search box", () => {
 
   it("says so plainly when nothing matches", () => {
     renderFeed(stories);
-    fireEvent.change(screen.getByPlaceholderText("Any name or phrase"), {
+    fireEvent.change(screen.getByRole("searchbox"), {
       target: { value: "zzzzzz" },
     });
     expect(screen.getByText("No stories match these filters.")).toBeInTheDocument();
