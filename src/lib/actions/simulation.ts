@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { computeLeagueTeamStrengths } from "@/lib/actions/leagueTeamStrength";
+import { decideAllStarBreak, ALL_STAR_BREAK_GAMES_PLAYED } from "@/lib/simulation/allStarBreak";
 import {
   applyLeagueEvents,
   applyPlayerMoraleEvents,
@@ -71,11 +72,6 @@ const TARGET_USER_GAMES: Record<SimulateTarget, number> = {
 // every other team's games in that window still resolve automatically,
 // same simulate/persist/injury-event logic per chunk as before.
 const CHUNK_SIZE = 50;
-
-// Half of an 82-game season - the real NBA's own midseason checkpoint,
-// measured off the user's own team's completed games (not a calendar date),
-// consistent with how this simulator already tracks season progress.
-const ALL_STAR_BREAK_GAMES_PLAYED = 41;
 
 export async function simulateGamesAction(leagueId: string, target: SimulateTarget) {
   const session = await auth();
@@ -554,27 +550,34 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
       break;
     }
 
-    // Mid-season checkpoint: once the user's own team has reached the
-    // All-Star break, generate the whole weekend right now and stop -
-    // even mid-target, per the user's explicit requirement that
-    // regular-season simulation must not continue past the break until
-    // the weekend is resolved. Checked fresh from the DB (not the
-    // increments above) since it must reflect the team's true cumulative
-    // total, not just this batch's delta.
+    // Mid-season checkpoint: the season does not roll past the All-Star break
+    // until the weekend is resolved. Games played is read fresh from the DB
+    // rather than from the increments above, since it has to be the team's
+    // true cumulative total and not just this batch's delta.
+    //
+    // Note the decision keys off the weekend's *status*, not its existence -
+    // see `decideAllStarBreak`. A RESOLVED weekend is history, and stopping on
+    // it capped every request in the back half of the season at one chunk.
     const userTeam = await prisma.leagueTeam.findUnique({
       where: { id: league.userControlledTeamId },
       select: { wins: true, losses: true },
     });
-    const userGamesPlayed = (userTeam?.wins ?? 0) + (userTeam?.losses ?? 0);
-    if (userGamesPlayed >= ALL_STAR_BREAK_GAMES_PLAYED) {
-      const alreadyExists = await prisma.allStarWeekend.findUnique({
-        where: { leagueId_season: { leagueId, season: league.currentSeason } },
-      });
-      if (!alreadyExists) {
-        const lastDayIndex = unplayedGames[unplayedGames.length - 1]?.dayIndex ?? null;
-        await generateAllStarWeekend(leagueId, league.currentSeason, lastDayIndex);
-        allStarWeekendTriggered = true;
-      }
+    const weekend = await prisma.allStarWeekend.findUnique({
+      where: { leagueId_season: { leagueId, season: league.currentSeason } },
+      select: { status: true },
+    });
+    const breakDecision = decideAllStarBreak({
+      userGamesPlayed: (userTeam?.wins ?? 0) + (userTeam?.losses ?? 0),
+      weekendState: weekend?.status ?? null,
+    });
+    if (breakDecision === "generate-and-pause") {
+      const lastDayIndex = unplayedGames[unplayedGames.length - 1]?.dayIndex ?? null;
+      await generateAllStarWeekend(leagueId, league.currentSeason, lastDayIndex);
+      allStarWeekendTriggered = true;
+      break;
+    }
+    if (breakDecision === "pause") {
+      allStarWeekendTriggered = true;
       break;
     }
 
