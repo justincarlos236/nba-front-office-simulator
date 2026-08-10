@@ -553,19 +553,17 @@ export async function generateAllStarWeekend(
   for (const s of selections) {
     if (s.role === "INJURY_REPLACEMENT" || priorSelectionIds.has(s.leaguePlayerId)) continue;
     const name = fullNameById.get(s.leaguePlayerId) ?? "A player";
-    const rating =
-      performanceSnapshots.find((p) => p.leaguePlayerId === s.leaguePlayerId)?.overallRating ?? 70;
-    newsRows.push({
-      type: "ALL_STAR_SELECTION",
-      // Not "first career": this fires on a player's first selection *in this
-      // save*, and the save holds no real-world career history. Saying "first
-      // career" put LeBron James and Stephen Curry on their maiden All-Star
-      // nod in season one, which is a claim about a real person the simulator
-      // has no basis for.
-      description: `${name} earns an All-Star selection.`,
-      importance: importanceForRating(rating),
-      teamIds: teamIdsFor(s.leaguePlayerId),
-    });
+    // No per-selection news row. This loop fires on a player's first selection
+    // *in this save*, which for an imported real player says nothing true: the
+    // simulator holds no real-world career history, so it announced LeBron
+    // James and Stephen Curry as first-time All-Stars in season one. Dropping
+    // the wording to "earns an All-Star selection" made it accurate but not
+    // worth reading - sixteen near-identical lines that pushed real news off
+    // the front page for one simulated weekend.
+    //
+    // The roster announcement, the game result and the snubs still file, and
+    // so does the draft-hindsight beat below, which is about a player this
+    // save drafted itself and therefore does know the whole career of.
     const teamId = teamIdById.get(s.leaguePlayerId);
     if (teamId) {
       addFanHappinessDelta(teamId, computeAllStarSelectionSentimentDelta(), {
