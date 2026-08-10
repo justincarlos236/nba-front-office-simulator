@@ -2399,6 +2399,33 @@ trade-AI valuation) reads or recalibrates against.
   3-and-D wing with modest per-36 counting stats) still land near the
   floor, a limitation no amount of weight-tuning on this input set can
   fully resolve without real advanced metrics.
+- **Efficiency-without-volume fix** (found by `docs/FINANCE_AUDIT.md`
+  P0-1, 2026-08-11): the minutes-normalization fix above corrected one
+  bias and left two behind, both of which pushed the _same_ archetype -
+  the low-minute, high-percentage backup big - to the top of the scale.
+  True shooting was compared against its baseline at full weight
+  regardless of shot volume, making it the largest single term in the
+  model for the players it says least about (Ryan Kalkbrenner, 7.5 ppg
+  at .762 TS, drew **+28.3** from that one term against **+15.3** for
+  Jokić); and per-36 rates were extrapolated without limit, multiplying
+  a 17-minute player's counting stats by 2.1 and treating the result as
+  measured fact. Nine players clamped to the 99 ceiling, five of them
+  backup centres, and contract generation paid them supermax money -
+  league payroll ran **28% above** the real NBA's, with 16 of 30 teams
+  over the second apron. Fixed by scaling the efficiency term by scoring
+  volume against the formula's own 15-ppg baseline
+  (`EFFICIENCY_VOLUME_BASELINE`) and capping rate extrapolation at
+  `36 / FULL_WORKLOAD_MINUTES` - one claim, "24 minutes is a full
+  workload", stated twice, replacing the old `CONFIDENCE_MINUTES` of 16.
+  Correlation against the dataset's own seed ratings rose 0.770 → 0.925;
+  league payroll landed within **1.2%** of the real $5.1B and season-one
+  profitability at 24/30 teams, with no money constant touched.
+  `scoreToCapFraction` was checked and deliberately **not** changed - a
+  sweep showed every alternative to its shipped `MIDPOINT`/`STEEPNESS`
+  made the league poorer, not more realistic. Because this same score
+  also drives All-Star selection and award voting, both carried the bias
+  and both improved. Re-measure with
+  `npx tsx scripts/payroll-calibration.ts`.
 
 ## Player profile
 

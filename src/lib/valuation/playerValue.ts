@@ -48,19 +48,39 @@ export interface PlayerValuationResult {
 // elite.
 const MINUTES_NORMALIZATION_BLEND = 0.7;
 
-// Below this many minutes/game, a per-36 rate is statistically noisy
-// (small-sample garbage-time stats can look artificially great or
-// terrible) - the score gets blended toward REPLACEMENT_LEVEL_SCORE
-// instead of trusted outright. A player at or above this many minutes is
-// scored entirely on their own real production.
-const CONFIDENCE_MINUTES = 16;
+/**
+ * What counts as a full workload, in minutes per game. One number, because
+ * the two things it controls are the same claim stated twice: a per-36 rate
+ * is never extrapolated by more than `36 / FULL_WORKLOAD_MINUTES`, and a
+ * player below that many minutes is blended toward replacement level in
+ * proportion to how far below he is.
+ *
+ * This was 16, which trusted a 17-minute player's per-36 rates outright -
+ * a 2.1x extrapolation taken as fact. Measured on the seeded roster, that
+ * turned backup centres into superstars: Robert Williams III (17.1 mpg) and
+ * Jaxson Hayes (18.3 mpg) both scored a clamped 99.0, tying Jokić and SGA,
+ * and were paid accordingly. 24 minutes is a real rotation player's night;
+ * beyond that the model is inventing production rather than measuring it.
+ */
+const FULL_WORKLOAD_MINUTES = 24;
+const MAX_RATE_EXTRAPOLATION = 36 / FULL_WORKLOAD_MINUTES;
+
 // What a player with too little playing time to trust gets blended
 // toward - "presume fringe/replacement level, not enough evidence,"
 // rather than "presume average" (72). Slightly above the hard floor (60).
 const REPLACEMENT_LEVEL_SCORE = 65;
 
+/**
+ * Scoring volume at which shooting efficiency is taken at face value. Below
+ * it, the efficiency term is scaled down in proportion - see
+ * `computePerformanceScore`. Deliberately the same 15 ppg the formula uses
+ * as its baseline statline, so the model has one zero point rather than two.
+ */
+const EFFICIENCY_VOLUME_BASELINE = 15;
+
 function normalizedRate(perGame: number, minutesPerGame: number): number {
-  const per36 = perGame * (36 / Math.max(minutesPerGame, 1));
+  const extrapolation = Math.min(MAX_RATE_EXTRAPOLATION, 36 / Math.max(minutesPerGame, 1));
+  const per36 = perGame * extrapolation;
   return perGame + MINUTES_NORMALIZATION_BLEND * (per36 - perGame);
 }
 
@@ -71,7 +91,11 @@ function normalizedRate(perGame: number, minutesPerGame: number): number {
  * that exact statline is this formula's zero point (72, the new
  * baseline). Counting stats are partially normalized toward a per-36-
  * minutes rate first (see `MINUTES_NORMALIZATION_BLEND`) so a legitimate
- * bench player isn't penalized twice for playing fewer minutes. Weights
+ * bench player isn't penalized twice for playing fewer minutes, but that
+ * extrapolation is capped and the efficiency term is weighted by scoring
+ * volume - see `FULL_WORKLOAD_MINUTES` and `EFFICIENCY_VOLUME_BASELINE`
+ * for the two ways this formula previously mistook a low-minute,
+ * high-efficiency backup for a superstar. Weights
  * are a hand-tuned heuristic (not a fitted regression) intended to
  * produce sensible relative orderings, calibrated against real NBA 2K24
  * ratings as anchor points across archetypes - not just top scorers, since
@@ -97,6 +121,20 @@ export function computePerformanceScore(stats: PlayerValuationStats): number {
   const blk = normalizedRate(stats.blocksPerGame, stats.minutesPerGame);
   const tov = normalizedRate(stats.turnoversPerGame, stats.minutesPerGame);
 
+  // Efficiency is weighted by how much a player actually shoots. True
+  // shooting percentage is a rate, and treating it as one carried the same
+  // weight for a rim-runner taking four shots a night as for a first option
+  // taking twenty - which made it far and away the largest term in the
+  // model for exactly the players it says least about. Measured on the
+  // seeded roster, Ryan Kalkbrenner (7.5 ppg, .762 TS) drew +28.3 from this
+  // term and Jaxson Hayes (7.5 ppg, .758) +27.7, against +15.3 for Jokić
+  // and +14.7 for SGA: a backup centre earned nearly double the MVP's
+  // efficiency bonus, and every other term combined moved him less than a
+  // point. Scaling by volume leaves every real high-usage scorer untouched
+  // (they are at or above the baseline, so the weight is 1) and removes the
+  // phantom.
+  const efficiencyWeight = Math.min(1, stats.pointsPerGame / EFFICIENCY_VOLUME_BASELINE);
+
   const raw =
     72 +
     (pts - 15) * 0.85 +
@@ -105,9 +143,9 @@ export function computePerformanceScore(stats: PlayerValuationStats): number {
     (stl - 1) * 2.2 +
     (blk - 0.5) * 2.2 +
     (tov - 1.5) * -1.6 +
-    (stats.trueShootingPct - 0.56) * 140;
+    (stats.trueShootingPct - 0.56) * 140 * efficiencyWeight;
 
-  const sampleWeight = Math.min(1, stats.minutesPerGame / CONFIDENCE_MINUTES);
+  const sampleWeight = Math.min(1, stats.minutesPerGame / FULL_WORKLOAD_MINUTES);
   const blended = sampleWeight * raw + (1 - sampleWeight) * REPLACEMENT_LEVEL_SCORE;
 
   return Math.min(99, Math.max(60, blended));

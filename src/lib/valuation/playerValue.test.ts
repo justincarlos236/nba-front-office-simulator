@@ -134,6 +134,93 @@ describe("computePerformanceScore", () => {
   });
 });
 
+/**
+ * The defect these exist for, found by docs/FINANCE_AUDIT.md P0-1 and measured
+ * over the seeded roster: the efficiency term carried full weight regardless of
+ * shot volume, and per-36 rates were extrapolated without limit. Together they
+ * scored rim-running backup centres at a clamped 99.0 - level with Jokić and
+ * SGA - and the contract generator paid them accordingly. League-wide payroll
+ * came out 28% above the real NBA's, with 16 of 30 teams over the second apron.
+ *
+ * Nothing in the suite caught it: every case here played starter minutes or was
+ * bad at everything, so the one combination that broke the model - few minutes,
+ * few shots, excellent percentages - was never asked about.
+ */
+describe("computePerformanceScore - efficiency without volume", () => {
+  // A real archetype: the rim-running backup centre who only ever shoots
+  // dunks and putbacks, so his true shooting is elite on almost no volume.
+  // Modelled on Jaxson Hayes' and Ryan Kalkbrenner's real lines.
+  const RIM_RUNNER = {
+    pointsPerGame: 7.5,
+    reboundsPerGame: 5.0,
+    assistsPerGame: 0.8,
+    stealsPerGame: 0.5,
+    blocksPerGame: 1.0,
+    turnoversPerGame: 1.0,
+    minutesPerGame: 18,
+    trueShootingPct: 0.76,
+  };
+
+  const MVP = {
+    pointsPerGame: 27.3,
+    reboundsPerGame: 12.5,
+    assistsPerGame: 8.7,
+    stealsPerGame: 1.4,
+    blocksPerGame: 0.7,
+    turnoversPerGame: 3.2,
+    minutesPerGame: 34.4,
+    trueShootingPct: 0.669,
+  };
+
+  it("does not rate a low-volume, high-efficiency backup as an MVP", () => {
+    const gap = computePerformanceScore(MVP) - computePerformanceScore(RIM_RUNNER);
+    // Both used to clamp to exactly 99.0, so the gap was 0.
+    expect(gap).toBeGreaterThan(10);
+  });
+
+  it("weights shooting efficiency by how much a player actually shoots", () => {
+    // Isolates the efficiency term itself: how much is a player's score moved
+    // by going from poor to elite percentages, at low volume vs high volume?
+    // The old formula moved both by exactly the same amount, because the term
+    // ignored volume entirely. Comparing raw scores instead would not have
+    // caught that - the scoring term alone separates them.
+    const at = (pointsPerGame: number, trueShootingPct: number) =>
+      computePerformanceScore({
+        ...RIM_RUNNER,
+        minutesPerGame: 30,
+        pointsPerGame,
+        trueShootingPct,
+      });
+    const swingAtLowVolume = at(6, 0.76) - at(6, 0.5);
+    const swingAtHighVolume = at(24, 0.76) - at(24, 0.5);
+    expect(swingAtHighVolume).toBeGreaterThan(swingAtLowVolume * 1.5);
+  });
+
+  it("gives no efficiency bonus at all to a player who never shoots", () => {
+    const base = { ...RIM_RUNNER, pointsPerGame: 0, minutesPerGame: 24 };
+    expect(computePerformanceScore({ ...base, trueShootingPct: 0.9 })).toBe(
+      computePerformanceScore({ ...base, trueShootingPct: 0.2 }),
+    );
+  });
+
+  it("bounds how large the per-36 bonus can get", () => {
+    // The same per-game line in a third of the minutes is genuinely better
+    // per minute, and the model should say so - but only so far. Uncapped,
+    // this produced a 3x extrapolation and a double-digit bonus for playing
+    // less. The bonus survives; its size is bounded.
+    const sameLineAt = (minutesPerGame: number) =>
+      computePerformanceScore({
+        ...RIM_RUNNER,
+        pointsPerGame: 12,
+        minutesPerGame,
+        trueShootingPct: 0.58,
+      });
+    const bonusForPlayingLess = sameLineAt(12) - sameLineAt(36);
+    expect(bonusForPlayingLess).toBeGreaterThan(0);
+    expect(bonusForPlayingLess).toBeLessThan(3);
+  });
+});
+
 describe("computePerformanceScore - real anchor players (2023-24 season lines)", () => {
   // Verified against real NBA 2K24 ratings, spanning archetypes (not just
   // top scorers) - a prior tuning pass found that weighting steals/blocks

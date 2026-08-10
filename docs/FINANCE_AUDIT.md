@@ -8,80 +8,127 @@
 Every figure below was measured by running the shipped functions, not read off
 a comment. Where a claim rests on inspection alone, it says so.
 
-Fourth audit in the refinement phase. It inherits, and finally prices, the
+Fourth audit in the refinement phase. It inherits, prices, and then fixes the
 payroll-calibration question the Cap/Roster work deliberately deferred.
+
+**Status:** P0-1 fixed 2026-08-11 and re-measured; the fix is recorded inline
+below, including a correction to this audit's own attribution. P0-2, P0-3 and
+everything below them remain open.
 
 ---
 
 ## Verdict
 
-**Well built and well calibrated — and currently producing a league where 17 of
-30 teams lose money, because it is faithfully reporting a defect that lives
-somewhere else.**
+**Well built and well calibrated — and it was reporting a defect that lived two
+modules upstream, in a rating formula that mistook backup centres for MVPs.**
 
-The revenue and expense curves are close to right. Point them at realistic
-payrolls and the model lands almost exactly on the real NBA's distribution.
-Point them at the payrolls the game actually generates and a third of the
-league is insolvent in season one.
+The audit's original headline was that 17 of 30 teams lose money. That is now
+fixed, and no finance constant was touched to fix it: the money model was right
+all along. What was wrong was what it was being fed.
 
-There are two genuine finance-side defects — an unbounded debt spiral with no
-failure state, and franchise value being swallowed by hoarded cash. Neither is
-the headline symptom.
+The audit also got the attribution wrong on the way to being right about the
+symptom — it named `scoreToCapFraction`, and correcting that curve would have
+made the league _poorer_, not more realistic. See P0-1.
+
+Two genuine finance-side defects remain open: an unbounded debt spiral with no
+failure state, and franchise value being swallowed by hoarded cash.
 
 ---
 
-## The measurement that decides everything
+## The measurement that decided everything
 
 Same model, same teams, same everything — only payroll changes.
 
-|                                        | Profitable    | League net income | Median team | Worst team |
-| -------------------------------------- | ------------- | ----------------- | ----------- | ---------- |
-| **Current payrolls** (median ~$213M)   | **13 / 30**   | **−$441.5M**      | −$12.6M     | −$290.3M   |
-| **Realistic payrolls** (median ~$175M) | **25 / 30**   | **+$1.83B**       | +$66.5M     | −$154.5M   |
-| _Real NBA_                             | _~20–25 / 30_ | _~+$2B_           | _~+$70M_    | —          |
+|                                         | Profitable    | League net income | Median team | Worst team |
+| --------------------------------------- | ------------- | ----------------- | ----------- | ---------- |
+| **Payrolls as audited** (median ~$213M) | **13 / 30**   | **−$441.5M**      | −$12.6M     | −$290.3M   |
+| **Payrolls as fixed** (median ~$168M)   | **24 / 30**   | **+$2.14B**       | +$70.9M     | −$108.0M   |
+| _Real NBA_                              | _~20–25 / 30_ | _~+$2B_           | _~+$70M_    | —          |
 
-Milwaukee is the clearest case. Payroll **$304.4M** against a **$187.9M** tax
-line produces a **$174.8M** tax bill on **$268.9M** of total revenue. The tax
-alone is 65% of everything the franchise earns.
+Milwaukee was the clearest case. Payroll **$304.4M** against a **$187.9M** tax
+line produced a **$174.8M** tax bill on **$268.9M** of total revenue — the tax
+alone was 65% of everything the franchise earned. Its payroll is now $231.5M.
 
 Note the direction of the error. The model's flat **1.5×** tax multiplier is
 _more forgiving_ than the real CBA's graduated 1.5×–4.75× with repeater
-penalties. A lenient tax still bankrupts a third of the league, which isolates
+penalties. A lenient tax still bankrupted a third of the league, which isolated
 the cause beyond argument: payroll, not the tax.
 
 ---
 
 ## Scores
 
-| Dimension          | Score    | Note                                                     |
-| ------------------ | -------- | -------------------------------------------------------- |
-| **Overall**        | **6/10** | Good model, correct arithmetic, no stabilising feedback  |
-| Calibration        | 8/10     | Matches reality once fed realistic payrolls              |
-| Correctness        | 7/10     | Units and arithmetic sound; two real modelling defects   |
-| Long-run stability | 3/10     | Debt and cash both diverge without bound                 |
-| Gameplay depth     | 5/10     | Revenue barely responds to anything the player does      |
-| Structure          | 9/10     | Pure money model, zero Prisma, fully consumed by the app |
-| Test confidence    | 6/10     | Units well covered; nothing tests the multi-season shape |
+Before → after P0-1. Only calibration and test confidence moved; the two
+remaining defects are untouched, so the scores that describe them are unchanged.
+
+| Dimension          | Score          | Note                                                               |
+| ------------------ | -------------- | ------------------------------------------------------------------ |
+| **Overall**        | **6 → 7.5/10** | Solvent and realistic; still no stabilising feedback at the edges  |
+| Calibration        | 8 → **10/10**  | League payroll within 1.2% of real, net income within 7%           |
+| Correctness        | 7/10           | Units and arithmetic sound; two real modelling defects remain      |
+| Long-run stability | 3/10           | Debt and cash both diverge without bound                           |
+| Gameplay depth     | 5/10           | Revenue barely responds to anything the player does                |
+| Structure          | 9/10           | Pure money model, zero Prisma, fully consumed by the app           |
+| Test confidence    | 6 → **7/10**   | Four regressions added upstream; multi-season shape still untested |
 
 ---
 
 ## Findings
 
-### P0-1 — The league is insolvent, and the cause is upstream
+### P0-1 — The league is insolvent, and the cause is upstream — FIXED
 
 **Observed.** 13/30 teams profitable, league-wide net income −$441.5M, six teams
 with negative cash at the end of season one.
 
-**Root cause.** Not in `finances.ts`. It is the ~20% payroll inflation recorded
-in the cap work — `scoreToCapFraction`'s shape — propagating into the expense
-side and amplified by the luxury tax.
+**Root cause — and a correction to this audit.** This finding originally named
+`scoreToCapFraction` as the culprit, inheriting that attribution from the cap
+work. **That was wrong, and it was wrong in a way that would have made things
+worse.** Sweeping the curve's `MIDPOINT`/`STEEPNESS` against real 2025-26 league
+payroll showed the shipped values were already close to correct: at 0.35/80/0.17
+the simulated league total came out within 1.2% of the real $5.1B once the true
+defect was fixed, and every alternative tried was 17–45% _too low_. Retuning the
+curve, as this audit instructed, would have broken a component that was right.
 
-**Fix.** Correct payroll calibration first. Nothing in this module should be
-tuned beforehand, or the tuning will be compensating for a defect and will need
-undoing once that defect is fixed.
+The actual defect was in `computePerformanceScore`, two modules upstream:
 
-**Validation.** Re-run the replay above; expect roughly 25/30 profitable and a
-median near +$66M without touching a single finance constant.
+1. **Shooting efficiency was not weighted by shooting volume.** The true-shooting
+   term applied in full to a player taking four shots a night. Measured on the
+   seeded roster, Ryan Kalkbrenner (7.5 ppg, .762 TS) drew **+28.3** from this
+   one term and Jaxson Hayes (7.5 ppg, .758) **+27.7**, against **+15.3** for
+   Jokić and **+14.7** for SGA. A backup centre earned nearly double the MVP's
+   efficiency bonus, and every other term combined moved him under a point.
+2. **Per-36 rates were extrapolated without limit.** A 17-minute player's rates
+   were multiplied by 2.1 and taken as fact.
+
+Together these clamped nine players to the 99 ceiling, five of them backup
+centres, and the contract generator paid them accordingly.
+
+**Fix.** Efficiency is now scaled by scoring volume against the formula's own
+15-ppg baseline, and rate extrapolation is capped at `36 / 24` — one claim,
+"24 minutes is a full workload", stated twice. `scoreToCapFraction` was left
+untouched. Four regression tests were added and verified to fail on the previous
+version; the whole 1,306-test suite passes.
+
+**Validation — the prediction held.** Re-running the replay with no finance
+constant changed:
+
+|                    | Before   | After       | Predicted | Real NBA  |
+| ------------------ | -------- | ----------- | --------- | --------- |
+| Profitable         | 13/30    | **24/30**   | ~25/30    | ~20–25/30 |
+| League net income  | −$441.5M | **+$2.14B** | —         | ~+$2B     |
+| Median team        | −$12.6M  | **+$70.9M** | ~+$66M    | ~+$70M    |
+| League payroll     | $6.54B   | **$5.16B**  | —         | $5.10B    |
+| Teams over apron 2 | 16/30    | 6/30        | —         | 1/30      |
+
+Reproduce with `npx tsx scripts/payroll-calibration.ts`.
+
+**Two side-effects worth recording.** The same score drives All-Star selection
+and award voting, so both were carrying the same bias — a 24-man All-Star field
+now contains 19 genuine 85+ players and one sub-24-minute player. And the
+remaining shape error is no longer calibration: the model still has too many
+players in the $30–45M band and too many at the floor, because it prices every
+player at market value, where real teams sign many below market for cap reasons.
+That is a structural gap, not a constant to tune.
 
 ---
 
@@ -223,21 +270,29 @@ correct for a model that has since been replaced.
 
 ## Prioritised plan
 
-**Stage 1 — fix the input, then re-measure**
+**~~Stage 1 — fix the input, then re-measure~~ — DONE**
 
-1. P0-1: correct payroll calibration (`scoreToCapFraction`). Re-run the replay
-   before touching any finance constant.
+1. ~~P0-1: correct payroll calibration.~~ Fixed in `computePerformanceScore`,
+   not `scoreToCapFraction`; the curve was already right. 24/30 profitable.
 
 **Stage 2 — the two real finance defects**
 
-2. P0-3: bound the cash contribution to franchise value.
+2. P0-3: bound the cash contribution to franchise value. Now the _most_ urgent
+   item: with the league solvent, cash compounds faster than before, so the
+   unbounded `CASH_VALUE_WEIGHT` term distorts franchise value sooner.
 3. P0-2: give insolvency a consequence — owner bailout at a confidence cost, a
-   forced salary dump, or ending the save.
+   forced salary dump, or ending the save. Note that Stage 1 changed the shape
+   of this problem rather than removing it: six teams still lose money in season
+   one, and the P0-2 projection should be re-run against the new payrolls before
+   any fix is designed against its old numbers.
 
 **Stage 3 — only if still warranted after Stage 1**
 
-4. P2-6: graduated luxury tax with a revenue-sharing offset.
-5. P1-5: salary floor with the CBA's own penalty.
+4. P2-6: graduated luxury tax with a revenue-sharing offset. Still warranted —
+   the six unprofitable teams are five SMALL/MID markets and Cleveland, which is
+   exactly the asymmetry revenue sharing exists to correct.
+5. P1-5: salary floor with the CBA's own penalty. Still warranted — Houston is
+   at $104.5M and is now the _most_ profitable team in the league at +$239.5M.
 6. P1-4: let winning move revenue.
 
 P2-7 and anything beyond (local TV negotiation, dynamic CPU business strategy)
@@ -255,8 +310,17 @@ still feels thin after the above.
 - **The business-decision catalogue was not audited** — 1,083 lines of card
   content in `businessDecisions.ts`. Whether the choices are balanced, or whether
   any option strictly dominates, is a separate pass.
-- **Real-NBA comparison figures are from memory**, not a fetched dataset. The
-  relative conclusions hold regardless; the exact percentages deserve a real
-  source before they are cited anywhere load-bearing.
+- **Real-NBA comparison figures started as memory and were later sourced.** The
+  original draft of this audit cited remembered numbers, flagged as such. The
+  P0-1 fix needed a real target, so the payroll figures now come from published
+  sources and live in `src/lib/valuation/realPayrollShape.ts` with their
+  provenance. That module records only what two independent sources agreed on —
+  public payroll trackers disagreed by as much as $60M on individual teams, so
+  no per-team table is claimed, only the aggregate shape.
+- **Team-level net income figures are not directly comparable to real NBA
+  ones.** The league's own franchises do not publish audited accounts; the
+  ~$2B/~$70M comparisons are against widely-reported estimates, and the model's
+  expense side omits things a real P&L carries (arena debt service, non-basketball
+  staff, amortisation).
 - **No live save was queried.** Everything here is a replay of the bootstrap
   path over committed fixture data.
