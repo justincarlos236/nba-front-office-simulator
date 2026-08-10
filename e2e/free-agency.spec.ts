@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { signUpAndTakeJob } from "./helpers";
 
 // Bootstrapping a league is slow (~500 rows) - see league-creation.spec.ts.
 test.setTimeout(60_000);
@@ -8,17 +9,11 @@ test("sign a free agent to a minimum deal, and reject an offer bigger than any e
 }) => {
   const email = `fa-e2e-${Date.now()}@example.com`;
 
-  await page.goto("/sign-up");
-  await page.fill('input[name="name"]', "FA E2E");
-  await page.fill('input[name="email"]', email);
-  await page.fill('input[name="password"]', "correct-horse-battery-staple");
-  await page.click('button[type="submit"]');
-  await expect(page.getByRole("heading", { name: "Pick your team" })).toBeVisible({
-    timeout: 20_000,
+  await signUpAndTakeJob(page, {
+    email,
+    name: "FA E2E",
+    team: "Boston Celtics",
   });
-
-  await page.getByText("Boston Celtics").click();
-  await expect(page.getByText("Committed salary")).toBeVisible({ timeout: 30_000 });
 
   // The nav link's text ("Free agents") can collide with the dashboard's
   // Under-the-Cap description ("...can freely sign available free
@@ -26,7 +21,8 @@ test("sign a free agent to a minimum deal, and reject an offer bigger than any e
   // role directly rather than a bare text match, same pattern used below
   // for "Offer contract".
   await page.getByRole("link", { name: "Free agents" }).click();
-  await expect(page.getByText(/unsigned players/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Free agents", level: 1 })).toBeVisible();
+  await expect(page.getByText("Your cap space")).toBeVisible();
 
   // The first cell's PlayerChip renders an avatar (initials fallback text
   // when there's no real photo) immediately before the name - a plain
@@ -45,7 +41,7 @@ test("sign a free agent to a minimum deal, and reject an offer bigger than any e
   // of free agents means `getByText("Offer contract")` resolves against a
   // huge match set (every ancestor element containing that text, not just
   // the link itself), which is slower to resolve than necessary.
-  await page.getByRole("link", { name: "Offer contract" }).first().click();
+  await page.getByRole("link", { name: "Offer", exact: true }).first().click();
   // A real page navigation to a freshly server-rendered page (cap sheet,
   // signing exception usage) - the default 5s assertion timeout is tight
   // for that against a remote database, same reasoning as the season-advance
@@ -54,7 +50,7 @@ test("sign a free agent to a minimum deal, and reject an offer bigger than any e
 
   // An offer far beyond any exception should be rejected.
   await page.locator('input[type="number"]').fill("80000000");
-  await expect(page.getByText("Sign player")).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Sign player" })).toBeDisabled();
 
   // A true minimum-salary offer (at or below the 2023-24 empty-roster-charge
   // threshold, $1,157,000 - src/lib/cap/constants.ts) is always legal
@@ -64,12 +60,16 @@ test("sign a free agent to a minimum deal, and reject an offer bigger than any e
   // fix) isn't guaranteed to have that much free cap room.
   await page.locator('input[type="number"]').fill("1100000");
   await expect(page.getByText(/Legal via/)).toBeVisible();
-  await expect(page.getByText("Sign player")).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Sign player" })).toBeEnabled();
 
-  await page.getByText("Sign player").click();
-  await expect(page.getByText("Committed salary")).toBeVisible({ timeout: 15_000 });
+  // Signing is irreversible, so it sits behind a two-step confirmation.
+  await page.getByRole("button", { name: "Sign player" }).click();
+  await page.getByRole("button", { name: "Confirm signing" }).click();
+  // Signing redirects to the freshly executed contract, not back to the
+  // dashboard - the deal itself is the confirmation.
+  await expect(page.getByText("Contract executed")).toBeVisible({ timeout: 15_000 });
 
-  await page.getByText("News").click();
+  await page.getByRole("link", { name: "Transactions" }).click();
   await expect(page.getByRole("heading", { name: "Transactions & News" })).toBeVisible();
   const escapedName = signedPlayerName!.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   await expect(page.getByText(new RegExp(`signed ${escapedName} to a`))).toBeVisible();

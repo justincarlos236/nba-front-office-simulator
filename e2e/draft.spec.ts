@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { test, expect } from "@playwright/test";
+import { signUpAndTakeJob } from "./helpers";
 
 // Needs a fully-played regular season and a crowned playoff champion
 // before the draft can start, so the regular season is fast-forwarded
@@ -19,17 +20,11 @@ function fastForwardRegularSeason(leagueId: string) {
 test("run the lottery and draft all 60 picks, including the user's own", async ({ page }) => {
   const email = `draft-e2e-${Date.now()}@example.com`;
 
-  await page.goto("/sign-up");
-  await page.fill('input[name="name"]', "Draft E2E");
-  await page.fill('input[name="email"]', email);
-  await page.fill('input[name="password"]', "correct-horse-battery-staple");
-  await page.click('button[type="submit"]');
-  await expect(page.getByRole("heading", { name: "Pick your team" })).toBeVisible({
-    timeout: 20_000,
+  await signUpAndTakeJob(page, {
+    email,
+    name: "Draft E2E",
+    team: "Boston Celtics",
   });
-
-  await page.getByText("Boston Celtics").click();
-  await expect(page.getByText("Committed salary")).toBeVisible({ timeout: 30_000 });
 
   const leagueId = new URL(page.url()).pathname.split("/")[2];
   fastForwardRegularSeason(leagueId);
@@ -54,7 +49,7 @@ test("run the lottery and draft all 60 picks, including the user's own", async (
   for (let i = 0; i < 40; i++) {
     if (
       await page
-        .getByText("League Champion", { exact: true })
+        .getByText(/NBA Champions/)
         .isVisible()
         .catch(() => false)
     ) {
@@ -93,7 +88,7 @@ test("run the lottery and draft all 60 picks, including the user's own", async (
       page.getByText(/Round \d complete|championship series is decided|No other series left/),
     ).toBeVisible({ timeout: 30_000 });
   }
-  await expect(page.getByText("League Champion", { exact: true })).toBeVisible();
+  await expect(page.getByText(/NBA Champions/)).toBeVisible({ timeout: 30_000 });
 
   await page.goto(`/leagues/${leagueId}/draft`);
   await page.getByRole("link", { name: "Go to the Draft Lottery" }).click();
@@ -106,8 +101,12 @@ test("run the lottery and draft all 60 picks, including the user's own", async (
   });
   await page.getByRole("button", { name: "Skip to Results" }).click();
   await expect(page.getByText("Lottery Complete")).toBeVisible({ timeout: 15_000 });
-  await page.getByRole("link", { name: "Go to the Draft" }).click();
+  await page.getByRole("link", { name: "Go to the Draft", exact: true }).click();
   await page.waitForURL(/\/draft$/, { timeout: 15_000 });
+  // The side panel opens on "My Board", which is empty in a fresh save, so
+  // no prospect carries a Draft button there. The Prospects tab is the full
+  // class and is where a pick actually gets made.
+  await page.getByRole("button", { name: "Prospects", exact: true }).click();
 
   // Advance through CPU picks and make the user's own picks until all 60
   // picks are resolved. Each branch waits a beat after its action - the
@@ -139,6 +138,8 @@ test("run the lottery and draft all 60 picks, including the user's own", async (
       const draftButtons = page.getByRole("button", { name: "Draft", exact: true });
       await expect(draftButtons.first()).toBeVisible({ timeout: 15_000 });
       await draftButtons.first().click();
+      // The pick is irreversible, so it sits behind a confirmation.
+      await page.getByRole("button", { name: "Make the pick" }).click();
       await expect(page.getByText(/You selected/)).toBeVisible({ timeout: 15_000 });
       await page.waitForTimeout(500);
     } else {
@@ -148,23 +149,22 @@ test("run the lottery and draft all 60 picks, including the user's own", async (
         continue;
       }
       await advanceButton.click();
-      // A batch reveal follows (PickRevealStage) - skip its animated
-      // pacing, same principle as the lottery's own "Skip to Results";
-      // a single-pick batch has no controls at all, so this is a no-op
-      // then.
-      const skipButton = page.getByRole("button", { name: "Skip Ahead" });
-      if (await skipButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
-        await skipButton.click();
+      // A batch reveal follows (PickRevealStage) - an animated broadcast with
+      // auto-play, pause and speed controls. "Skip Ahead" fast-forwards it,
+      // but the stage takes a moment to mount and a single click can land
+      // before it exists, so keep skipping until the batch's own result
+      // message lands. A single-pick batch has no controls at all, in which
+      // case the loop simply falls through on the first check.
+      const batchDone = page.getByText(/Resolved \d+ pick|Every pick is in the books\./).first();
+      for (let s = 0; s < 12; s += 1) {
+        if (await batchDone.isVisible().catch(() => false)) break;
+        const skipButton = page.getByRole("button", { name: "Skip Ahead" });
+        if (await skipButton.isEnabled({ timeout: 1_000 }).catch(() => false)) {
+          await skipButton.click().catch(() => {});
+        }
+        await page.waitForTimeout(1_000);
       }
-      // On the batch that finishes the draft, both "Resolved N picks." (the
-      // client action message) and "Every pick is in the books." (the new
-      // server-computed phase) can be on the page at once - use .first()
-      // rather than a strict-mode-sensitive combined text match.
-      await expect(
-        page.getByText(/Resolved \d+ pick|Every pick is in the books\./).first(),
-      ).toBeVisible({
-        timeout: 20_000,
-      });
+      await expect(batchDone).toBeVisible({ timeout: 30_000 });
       await page.waitForTimeout(500);
     }
   }

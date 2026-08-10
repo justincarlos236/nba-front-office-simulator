@@ -3,10 +3,11 @@ import { test, expect } from "@playwright/test";
 test("browsing from the league to a team roster to a player profile drawer", async ({ page }) => {
   await page.goto("/teams");
   await expect(page.getByRole("heading", { name: "The League" })).toBeVisible();
-  await expect(page.getByText("Denver Nuggets")).toBeVisible();
-
-  await page.getByText("Denver Nuggets").click();
-  await expect(page.getByRole("heading", { name: "Denver Nuggets" })).toBeVisible();
+  // The card is a link wrapping a heading, so click the link explicitly -
+  // a bare text match can land on the heading and never navigate, and the
+  // index page's own heading would then satisfy the assertion below.
+  await page.getByRole("link", { name: /Denver Nuggets/ }).click();
+  await expect(page.getByRole("heading", { name: "Denver Nuggets", level: 1 })).toBeVisible();
   await expect(page.getByText("Nikola Jokic")).toBeVisible();
 
   // Clicking a player anywhere in the app opens the shared profile drawer

@@ -1,11 +1,20 @@
 import { execFileSync } from "node:child_process";
 import { test, expect } from "@playwright/test";
+import { signUpAndTakeJob } from "./helpers";
 
 // Needs a fully-played regular season and a crowned playoff champion before
 // the offseason can begin, so the regular season is fast-forwarded via a
 // tsx script (see playoffs.spec.ts for why) and only the playoffs +
 // offseason flow itself is driven through the browser.
 test.setTimeout(3 * 60_000);
+
+// A new league starts in the season `createLeagueAction` seeds (SEASON in
+// src/lib/actions/league.ts), so these are derived rather than hardcoded -
+// the dataset moves forward every year and the spec should follow it.
+const START_SEASON = 2025;
+const seasonLabel = (s: number) => `${s}-${(s + 1).toString().slice(-2)}`;
+const THIS_SEASON = seasonLabel(START_SEASON);
+const NEXT_SEASON = seasonLabel(START_SEASON + 1);
 
 const isWindows = process.platform === "win32";
 
@@ -19,17 +28,11 @@ function fastForwardRegularSeason(leagueId: string) {
 test("play through the playoffs, then advance to the next season", async ({ page }) => {
   const email = `offseason-e2e-${Date.now()}@example.com`;
 
-  await page.goto("/sign-up");
-  await page.fill('input[name="name"]', "Offseason E2E");
-  await page.fill('input[name="email"]', email);
-  await page.fill('input[name="password"]', "correct-horse-battery-staple");
-  await page.click('button[type="submit"]');
-  await expect(page.getByRole("heading", { name: "Pick your team" })).toBeVisible({
-    timeout: 20_000,
+  await signUpAndTakeJob(page, {
+    email,
+    name: "Offseason E2E",
+    team: "Boston Celtics",
   });
-
-  await page.getByText("Boston Celtics").click();
-  await expect(page.getByText("Committed salary")).toBeVisible({ timeout: 30_000 });
 
   const leagueId = new URL(page.url()).pathname.split("/")[2];
   fastForwardRegularSeason(leagueId);
@@ -57,7 +60,7 @@ test("play through the playoffs, then advance to the next season", async ({ page
   for (let i = 0; i < 40; i++) {
     if (
       await page
-        .getByText("League Champion", { exact: true })
+        .getByText(/NBA Champions/)
         .isVisible()
         .catch(() => false)
     )
@@ -95,7 +98,7 @@ test("play through the playoffs, then advance to the next season", async ({ page
       page.getByText(/Round \d complete|championship series is decided|No other series left/),
     ).toBeVisible({ timeout: 30_000 });
   }
-  await expect(page.getByText("League Champion", { exact: true })).toBeVisible();
+  await expect(page.getByText(/NBA Champions/)).toBeVisible({ timeout: 30_000 });
 
   // Advancing the season now also requires the draft to be finished (see
   // draft.spec.ts for the full draft-flow test) - run it to completion
@@ -109,8 +112,12 @@ test("play through the playoffs, then advance to the next season", async ({ page
   });
   await page.getByRole("button", { name: "Skip to Results" }).click();
   await expect(page.getByText("Lottery Complete")).toBeVisible({ timeout: 15_000 });
-  await page.getByRole("link", { name: "Go to the Draft" }).click();
+  await page.getByRole("link", { name: "Go to the Draft", exact: true }).click();
   await page.waitForURL(/\/draft$/, { timeout: 15_000 });
+  // The side panel opens on "My Board", which is empty in a fresh save, so
+  // no prospect carries a Draft button there. The Prospects tab is the full
+  // class and is where a pick actually gets made.
+  await page.getByRole("button", { name: "Prospects", exact: true }).click();
   for (let i = 0; i < 15; i++) {
     if (
       await page
@@ -134,6 +141,8 @@ test("play through the playoffs, then advance to the next season", async ({ page
       const draftButtons = page.getByRole("button", { name: "Draft", exact: true });
       await expect(draftButtons.first()).toBeVisible({ timeout: 15_000 });
       await draftButtons.first().click();
+      // The pick is irreversible, so it sits behind a confirmation.
+      await page.getByRole("button", { name: "Make the pick" }).click();
       await expect(page.getByText(/You selected/)).toBeVisible({ timeout: 15_000 });
       await page.waitForTimeout(500);
     } else {
@@ -143,51 +152,65 @@ test("play through the playoffs, then advance to the next season", async ({ page
         continue;
       }
       await advanceButton.click();
-      const skipButton = page.getByRole("button", { name: "Skip Ahead" });
-      if (await skipButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
-        await skipButton.click();
+      // The animated batch reveal takes a moment to mount, and one "Skip
+      // Ahead" click can land before it exists - keep skipping until the
+      // batch's own result message appears. See draft.spec.ts.
+      const batchDone = page.getByText(/Resolved \d+ pick|Every pick is in the books\./).first();
+      for (let s = 0; s < 12; s += 1) {
+        if (await batchDone.isVisible().catch(() => false)) break;
+        const skipButton = page.getByRole("button", { name: "Skip Ahead" });
+        if (await skipButton.isEnabled({ timeout: 1_000 }).catch(() => false)) {
+          await skipButton.click().catch(() => {});
+        }
+        await page.waitForTimeout(1_000);
       }
-      await expect(
-        page.getByText(/Resolved \d+ pick|Every pick is in the books\./).first(),
-      ).toBeVisible({
-        timeout: 20_000,
-      });
+      await expect(batchDone).toBeVisible({ timeout: 30_000 });
       await page.waitForTimeout(500);
     }
   }
   await expect(page.getByText("Every pick is in the books.")).toBeVisible({ timeout: 15_000 });
 
   await page.goto(`/leagues/${leagueId}/offseason`);
-  await expect(page.getByRole("heading", { name: /2023-24 Offseason/ })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: new RegExp(`${THIS_SEASON} Offseason`) }),
+  ).toBeVisible();
   await expect(page.getByText(/Advance to the .* season/)).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(/Salary cap: \$[\d.]+M/)).toBeVisible();
 
-  const advanceButton = page.getByRole("button", { name: /Advance to the 2024-25 season/ });
+  const advanceButton = page.getByRole("button", {
+    name: new RegExp(`Advance to the ${NEXT_SEASON} season`),
+  });
   await expect(advanceButton).toBeVisible();
   await advanceButton.click();
   // advanceSeasonAction is the single heaviest server action in the app
   // (player development for the whole league, retirements, awards, GM
   // accountability evaluation - see docs/ARCHITECTURE.md) - a generous
   // timeout here isn't masking a bug, it's matching the real cost.
-  await expect(page.getByText(/Welcome to the 2024-25 season/)).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByRole("heading", { name: /2024-25 Offseason/ })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "2023-24 Season Awards" })).toBeVisible();
+  await expect(page.getByText(new RegExp(`Welcome to the ${NEXT_SEASON} season`))).toBeVisible({
+    timeout: 60_000,
+  });
+  await expect(
+    page.getByRole("heading", { name: new RegExp(`${NEXT_SEASON} Offseason`) }),
+  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: `${THIS_SEASON} Season Awards` })).toBeVisible();
   await expect(page.getByText("Most Valuable Player")).toBeVisible();
 
   // Standings should have reset for the new season, not carried over wins,
   // and a fresh schedule of unplayed games should exist.
   await page.goto(`/leagues/${leagueId}/standings`);
-  await expect(page.getByRole("heading", { name: /2024-25 Standings/ })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: new RegExp(`${NEXT_SEASON} Standings`) }),
+  ).toBeVisible();
   const remainingText = await page.getByText(/games remaining on your schedule/).textContent();
   const remaining = Number(remainingText?.match(/(\d+) games/)?.[1]);
   expect(remaining).toBeGreaterThan(0);
 
-  // The completed 2023-24 season should now show up in League History, with
+  // The completed season should now show up in League History, with
   // its champion and awards - the same underlying data the offseason page
   // showed transiently, now durably browsable.
   await page.goto(`/leagues/${leagueId}/history`);
   await expect(page.getByRole("heading", { name: "League History" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "2023-24" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: THIS_SEASON })).toBeVisible();
   await expect(page.getByText("NBA Champions")).toBeVisible();
   await expect(page.getByText("Most Valuable Player")).toBeVisible();
 });

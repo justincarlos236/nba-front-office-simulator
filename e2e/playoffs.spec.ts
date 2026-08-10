@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { test, expect } from "@playwright/test";
+import { signUpAndTakeJob } from "./helpers";
 
 const isWindows = process.platform === "win32";
 
@@ -24,17 +25,11 @@ function fastForwardRegularSeason(leagueId: string) {
 test("start the playoffs and simulate to a champion", async ({ page }) => {
   const email = `playoffs-e2e-${Date.now()}@example.com`;
 
-  await page.goto("/sign-up");
-  await page.fill('input[name="name"]', "Playoffs E2E");
-  await page.fill('input[name="email"]', email);
-  await page.fill('input[name="password"]', "correct-horse-battery-staple");
-  await page.click('button[type="submit"]');
-  await expect(page.getByRole("heading", { name: "Pick your team" })).toBeVisible({
-    timeout: 20_000,
+  await signUpAndTakeJob(page, {
+    email,
+    name: "Playoffs E2E",
+    team: "Boston Celtics",
   });
-
-  await page.getByText("Boston Celtics").click();
-  await expect(page.getByText("Committed salary")).toBeVisible({ timeout: 30_000 });
 
   const leagueId = new URL(page.url()).pathname.split("/")[2];
   fastForwardRegularSeason(leagueId);
@@ -75,7 +70,7 @@ test("start the playoffs and simulate to a champion", async ({ page }) => {
   for (let i = 0; i < 40; i++) {
     if (
       await page
-        .getByText("League Champion", { exact: true })
+        .getByText(/NBA Champions/)
         .isVisible()
         .catch(() => false)
     )
@@ -119,7 +114,7 @@ test("start the playoffs and simulate to a champion", async ({ page }) => {
     ).toBeVisible({ timeout: 30_000 });
   }
 
-  await expect(page.getByText("League Champion", { exact: true })).toBeVisible();
+  await expect(page.getByText(/NBA Champions/)).toBeVisible({ timeout: 30_000 });
 
   await page.goto(`/leagues/${leagueId}/standings`);
   await expect(page.getByText("Recent Results")).toBeVisible();
