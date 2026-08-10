@@ -22,6 +22,8 @@ export interface RankableStory {
   season: number;
   teamIds: string[];
   tradeId?: string | null;
+  /** Day of the season, or null for anything with no game day. See newsDay.ts. */
+  dayIndex?: number | null;
 }
 
 /**
@@ -138,58 +140,4 @@ export function rankNews(
   // The wire keeps everything. Promotion is about where a reader's eye lands
   // first, not about hiding rows from the record.
   return { lead, topStories, franchise, wire: stories };
-}
-
-/**
- * Types that arrive in repetitive runs and say roughly the same thing each
- * time. Four consecutive "X is growing frustrated" rows are one fact about
- * the league, not four stories, and left expanded they push real news off
- * the first screen.
- */
-const CONDENSABLE_TYPES = new Set(["PLAYER_MORALE", "ROTATION_CHANGE", "GAME_RESULT"]);
-
-/** Below this a run is not worth collapsing - the digest would cost more than it saves. */
-const MIN_RUN_TO_CONDENSE = 3;
-
-export type WireEntry =
-  | { kind: "story"; story: RankableStory }
-  | { kind: "digest"; type: string; stories: RankableStory[] };
-
-/**
- * Collapses consecutive runs of the same routine type into one expandable
- * line, preserving order. Only *consecutive* rows collapse: a morale note
- * sandwiched between two trades stays where it is, because breaking the
- * chronology to group would misrepresent when things happened.
- *
- * Nothing is discarded - a digest holds its rows and can be opened.
- */
-export function condenseWire(stories: RankableStory[]): WireEntry[] {
-  const entries: WireEntry[] = [];
-  let run: RankableStory[] = [];
-
-  const flush = () => {
-    if (run.length === 0) return;
-    if (run.length >= MIN_RUN_TO_CONDENSE) {
-      entries.push({ kind: "digest", type: run[0].type, stories: run });
-    } else {
-      for (const story of run) entries.push({ kind: "story", story });
-    }
-    run = [];
-  };
-
-  for (const story of stories) {
-    const condensable = CONDENSABLE_TYPES.has(story.type) && story.importance !== "BREAKING";
-    if (condensable && (run.length === 0 || run[0].type === story.type)) {
-      run.push(story);
-      continue;
-    }
-    flush();
-    if (condensable) {
-      run = [story];
-    } else {
-      entries.push({ kind: "story", story });
-    }
-  }
-  flush();
-  return entries;
 }

@@ -112,6 +112,18 @@ export async function applyLeagueEvents(
   season: number,
   userControlledTeamId: string | null,
   simulatedGames: SimulatedGameTeams[],
+  /**
+   * The day this stretch of games ended on, filed onto every story this pass
+   * generates.
+   *
+   * Injuries, CPU trades and signings are rolled per *batch* rather than per
+   * game (see `rollEventCount`), so no single one of them owns a game day.
+   * Filing them under the day the stretch closed is how a real wire reports
+   * something that surfaced over a week: approximate to a few days, and far
+   * more useful than no date at all. Null when the caller has no day - the
+   * offseason, for instance.
+   */
+  dayIndex: number | null = null,
 ): Promise<void> {
   if (simulatedGames.length === 0) return;
 
@@ -406,6 +418,7 @@ export async function applyLeagueEvents(
         description: t.description,
         importance: t.importance,
         teamIds: t.teamIds,
+        dayIndex,
       })),
     });
   }
@@ -907,7 +920,12 @@ const NOTABLE_STREAK_LENGTH = 5;
  * this season's real PlayerGameStat rows for the minutes-shortfall signal
  * - no new derived state, no per-game persistence.
  */
-export async function applyPlayerMoraleEvents(leagueId: string, season: number): Promise<void> {
+export async function applyPlayerMoraleEvents(
+  leagueId: string,
+  season: number,
+  /** The day this stretch closed - see `applyLeagueEvents`. */
+  dayIndex: number | null = null,
+): Promise<void> {
   const [players, teams] = await Promise.all([
     prisma.leaguePlayer.findMany({
       where: { leagueId, isActive: true, leagueTeamId: { not: null } },
@@ -1070,6 +1088,7 @@ export async function applyPlayerMoraleEvents(leagueId: string, season: number):
         importance: row.importance,
         teamIds: row.teamIds,
         subjectLeaguePlayerId: row.subjectLeaguePlayerId,
+        dayIndex,
       })),
     });
   }
@@ -1270,6 +1289,7 @@ export async function applyBusinessDecisionEvents(
             description: row.description,
             importance: row.importance,
             teamIds: [userControlledTeamId],
+            dayIndex: lastDayIndex,
           })),
         }),
         ...fanSentimentCreateOps(businessSentimentRows),

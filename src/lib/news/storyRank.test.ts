@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { condenseWire, rankNews, scoreStory, type RankableStory } from "./storyRank";
+import { rankNews, scoreStory, type RankableStory } from "./storyRank";
 
 const MY_TEAM = "team-mine";
 
@@ -102,76 +102,5 @@ describe("rankNews", () => {
     const many = Array.from({ length: 30 }, () => story({ type: "TRADE", importance: "BREAKING" }));
     const ranked = rankNews(many, { userTeamId: null, maxTopStories: 4 });
     expect(ranked.topStories).toHaveLength(4);
-  });
-});
-
-describe("condenseWire", () => {
-  it("collapses a run of repetitive routine rows into one entry", () => {
-    const entries = condenseWire([
-      story({ type: "PLAYER_MORALE" }),
-      story({ type: "PLAYER_MORALE" }),
-      story({ type: "PLAYER_MORALE" }),
-      story({ type: "PLAYER_MORALE" }),
-    ]);
-    expect(entries).toHaveLength(1);
-    expect(entries[0].kind).toBe("digest");
-  });
-
-  it("loses nothing it collapses", () => {
-    const rows = Array.from({ length: 5 }, () => story({ type: "PLAYER_MORALE" }));
-    const entries = condenseWire(rows);
-    const held = entries.flatMap((e) => (e.kind === "digest" ? e.stories : [e.story]));
-    expect(held.map((s) => s.id)).toEqual(rows.map((s) => s.id));
-  });
-
-  it("leaves a short run alone - a digest would cost more than it saves", () => {
-    const entries = condenseWire([
-      story({ type: "PLAYER_MORALE" }),
-      story({ type: "PLAYER_MORALE" }),
-    ]);
-    expect(entries.every((e) => e.kind === "story")).toBe(true);
-  });
-
-  it("never condenses real news", () => {
-    const entries = condenseWire([
-      story({ type: "TRADE" }),
-      story({ type: "TRADE" }),
-      story({ type: "TRADE" }),
-      story({ type: "TRADE" }),
-    ]);
-    expect(entries).toHaveLength(4);
-  });
-
-  it("does not reorder to group - chronology wins over tidiness", () => {
-    const entries = condenseWire([
-      story({ id: "m1", type: "PLAYER_MORALE" }),
-      story({ id: "trade", type: "TRADE" }),
-      story({ id: "m2", type: "PLAYER_MORALE" }),
-    ]);
-    expect(entries).toHaveLength(3);
-    expect(entries.every((e) => e.kind === "story")).toBe(true);
-  });
-
-  it("keeps a breaking story out of a digest even when its type is routine", () => {
-    const entries = condenseWire([
-      story({ type: "GAME_RESULT" }),
-      story({ id: "huge", type: "GAME_RESULT", importance: "BREAKING" }),
-      story({ type: "GAME_RESULT" }),
-      story({ type: "GAME_RESULT" }),
-    ]);
-    const standalone = entries.filter((e) => e.kind === "story");
-    expect(standalone.some((e) => e.kind === "story" && e.story.id === "huge")).toBe(true);
-  });
-
-  it("preserves order and count across a mixed feed", () => {
-    const rows = [
-      story({ type: "TRADE" }),
-      story({ type: "PLAYER_MORALE" }),
-      story({ type: "PLAYER_MORALE" }),
-      story({ type: "PLAYER_MORALE" }),
-      story({ type: "INJURY" }),
-    ];
-    const held = condenseWire(rows).flatMap((e) => (e.kind === "digest" ? e.stories : [e.story]));
-    expect(held.map((s) => s.id)).toEqual(rows.map((s) => s.id));
   });
 });

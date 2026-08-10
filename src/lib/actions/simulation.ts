@@ -38,6 +38,8 @@ interface RankedEvent {
   event: DescribedEvent;
   teamIds: string[];
   rank: number;
+  /** The day of the season the game was played on, for grouping news by day. */
+  dayIndex: number | null;
 }
 
 // Every qualifying game individually clears a real threshold, but with up
@@ -49,11 +51,11 @@ interface RankedEvent {
 function topRanked(
   candidates: RankedEvent[],
   limit: number,
-): { event: DescribedEvent; teamIds: string[] }[] {
+): { event: DescribedEvent; teamIds: string[]; dayIndex: number | null }[] {
   return [...candidates]
     .sort((a, b) => b.rank - a.rank)
     .slice(0, limit)
-    .map((c) => ({ event: c.event, teamIds: c.teamIds }));
+    .map((c) => ({ event: c.event, teamIds: c.teamIds, dayIndex: c.dayIndex }));
 }
 
 export type SimulateTarget = "NEXT_GAME" | "NEXT_10_GAMES";
@@ -247,6 +249,7 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
       description: string;
       importance: NewsImportance;
       teamIds: string[];
+      dayIndex: number | null;
     }[] = [];
     const gameResultCandidates: RankedEvent[] = [];
     const milestoneCandidates: RankedEvent[] = [];
@@ -319,7 +322,12 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
 
       const winnerStreakEvent = describeWinStreak(winnerLabel, winnerNewStreak);
       if (winnerStreakEvent) {
-        newsRows.push({ type: "WIN_STREAK", ...winnerStreakEvent, teamIds: [winnerId] });
+        newsRows.push({
+          type: "WIN_STREAK",
+          ...winnerStreakEvent,
+          teamIds: [winnerId],
+          dayIndex: game.dayIndex,
+        });
         const rawWinnerDelta = computeStreakSentimentDelta(winnerStreakEvent.importance, 1);
         // Fans Page Redesign (Phase 3).
         const streakDelta = applyScaledFanHappinessDelta(
@@ -343,7 +351,12 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
       }
       const loserStreakEvent = describeWinStreak(loserLabel, loserNewStreak);
       if (loserStreakEvent) {
-        newsRows.push({ type: "WIN_STREAK", ...loserStreakEvent, teamIds: [loserId] });
+        newsRows.push({
+          type: "WIN_STREAK",
+          ...loserStreakEvent,
+          teamIds: [loserId],
+          dayIndex: game.dayIndex,
+        });
         const rawLoserDelta = computeStreakSentimentDelta(loserStreakEvent.importance, -1);
         // Fans Page Redesign (Phase 3).
         const streakDelta = applyScaledFanHappinessDelta(
@@ -381,6 +394,7 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
           event: gameResultEvent,
           teamIds: [winnerId, loserId],
           rank: (1 - winnerWinProbability) * 100 + margin,
+          dayIndex: game.dayIndex,
         });
       }
 
@@ -425,6 +439,7 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
             event: milestoneEvent,
             teamIds: [line.leagueTeamId],
             rank: line.points,
+            dayIndex: game.dayIndex,
           });
         }
       }
@@ -434,17 +449,17 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
     // topRanked) - scales with batch size so a single-game click isn't
     // starved and a 50-game click isn't flooded with every game that
     // technically cleared a threshold.
-    for (const { event, teamIds } of topRanked(
+    for (const { event, teamIds, dayIndex } of topRanked(
       gameResultCandidates,
       Math.max(1, Math.ceil(unplayedGames.length / 20)),
     )) {
-      newsRows.push({ type: "GAME_RESULT", ...event, teamIds });
+      newsRows.push({ type: "GAME_RESULT", ...event, teamIds, dayIndex });
     }
-    for (const { event, teamIds } of topRanked(
+    for (const { event, teamIds, dayIndex } of topRanked(
       milestoneCandidates,
       Math.max(2, Math.ceil(unplayedGames.length / 10)),
     )) {
-      newsRows.push({ type: "GAME_MILESTONE", ...event, teamIds });
+      newsRows.push({ type: "GAME_MILESTONE", ...event, teamIds, dayIndex });
     }
 
     // Each game/team update is independent of the others (this batch doesn't
@@ -505,6 +520,7 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
               description: row.description,
               importance: row.importance,
               teamIds: row.teamIds,
+              dayIndex: row.dayIndex,
             })),
           })
         : Promise.resolve(),
@@ -518,11 +534,16 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
         homeLeagueTeamId: g.homeLeagueTeamId,
         awayLeagueTeamId: g.awayLeagueTeamId,
       })),
+      unplayedGames[unplayedGames.length - 1]?.dayIndex ?? null,
     );
 
     // Player Morale & Personality System - runs after applyLeagueEvents so
     // this batch's box scores and any CPU trades are already reflected.
-    await applyPlayerMoraleEvents(leagueId, league.currentSeason);
+    await applyPlayerMoraleEvents(
+      leagueId,
+      league.currentSeason,
+      unplayedGames[unplayedGames.length - 1]?.dayIndex ?? null,
+    );
 
     // Finances as a Gameplay Pillar (Phase 1) - rolls/expires this batch's
     // business decisions. lastDayIndex anchors both the new deadline and

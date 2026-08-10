@@ -252,6 +252,15 @@ model LeagueTransaction {
   description           String
   createdAt             DateTime        @default(now())
   importance            NewsImportance  @default(STANDARD)
+  /// The day of the season this story belongs to, matching Game.dayIndex.
+  /// Null for anything with no game day - offseason moves, the draft, finance
+  /// reports - and for every row written before this column existed.
+  ///
+  /// Needed because `createdAt` cannot order or group stories: simulation
+  /// writes hundreds of rows in a single createMany, so they all share one
+  /// timestamp to the millisecond. Without this the news feed can only group
+  /// by season, which is why it read as one undifferentiated log.
+  dayIndex              Int?
   teamIds               String[]        @default([])
   subjectLeaguePlayerId String?
   /// The executed trade that generated this row, when one did. Null for the
@@ -263,6 +272,7 @@ model LeagueTransaction {
   trade                 Trade?          @relation(fields: [tradeId], references: [id], onDelete: SetNull)
 
   @@index([leagueId, createdAt])
+  @@index([leagueId, season, dayIndex])
   @@index([subjectLeaguePlayerId])
   @@index([tradeId])
   @@map("league_transactions")

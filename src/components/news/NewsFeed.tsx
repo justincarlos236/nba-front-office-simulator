@@ -5,7 +5,10 @@ import { useMemo, useState } from "react";
 import { Label } from "@/components/ui/primitives";
 import { TRANSACTION_ICON } from "@/components/ui/icons";
 import { Stamp } from "@/components/ui/Stamp";
-import { condenseWire, rankNews, type RankableStory, type WireEntry } from "@/lib/news/storyRank";
+import { rankNews, type RankableStory } from "@/lib/news/storyRank";
+import { dayLabel, groupByDay, ROLLUP_LABEL, type NewsDay } from "@/lib/news/newsDay";
+import { buildStoryCards, type StoryCard } from "@/lib/news/storyCards";
+import { recordLabel, streakLabel, type LeaguePulse } from "@/lib/news/leaguePulse";
 
 export type NewsItem = RankableStory;
 
@@ -95,13 +98,6 @@ const TYPE_LABEL: Record<string, string> = {
   FRANCHISE_MILESTONE: "Franchise Value",
 };
 
-/** Plural phrasing for a collapsed run, so the digest line reads as a sentence. */
-const DIGEST_LABEL: Record<string, (n: number) => string> = {
-  PLAYER_MORALE: (n) => `${n} morale notes from around the league`,
-  ROTATION_CHANGE: (n) => `${n} rotation changes`,
-  GAME_RESULT: (n) => `${n} more results from around the league`,
-};
-
 function seasonLabel(season: number): string {
   return `${season}-${(season + 1).toString().slice(-2)}`;
 }
@@ -139,11 +135,7 @@ function SeeTheDeal({ leagueId, tradeId }: { leagueId: string; tradeId: string }
   );
 }
 
-/**
- * THE LEAD. One story, at broadcast scale, and only when the ranking model
- * says something has genuinely earned it - a quiet week shows no lead at all
- * rather than promoting the least boring thing that happened.
- */
+/** THE LEAD. One story at broadcast scale, and only when one has earned it. */
 function LeadStory({
   item,
   leagueId,
@@ -155,9 +147,9 @@ function LeadStory({
 }) {
   const breaking = item.importance === "BREAKING";
   return (
-    <article className="relative border-t-2 border-team-accent bg-field px-5 py-6 sm:px-7 sm:py-8">
+    <article className="relative border-t-2 border-team-accent bg-field px-5 py-7 sm:px-8 sm:py-10">
       {breaking && (
-        <Stamp tone="signal" className="absolute top-5 right-5 hidden sm:inline-flex">
+        <Stamp tone="signal" className="absolute top-6 right-6 hidden sm:inline-flex">
           Breaking
         </Stamp>
       )}
@@ -170,11 +162,11 @@ function LeadStory({
           </span>
         )}
       </div>
-      <p className="mt-4 max-w-[34ch] text-[clamp(1.5rem,3vw,2.25rem)] leading-[1.15] font-bold tracking-[-0.02em] text-ink sm:max-w-[28ch]">
+      <p className="mt-4 max-w-[24ch] text-[clamp(1.75rem,4vw,3rem)] leading-[1.08] font-bold tracking-[-0.025em] text-ink">
         {item.description}
       </p>
       {item.tradeId && (
-        <div className="mt-4">
+        <div className="mt-5">
           <SeeTheDeal leagueId={leagueId} tradeId={item.tradeId} />
         </div>
       )}
@@ -182,35 +174,38 @@ function LeadStory({
   );
 }
 
-/** A promoted runner-up. Bigger than a wire row, quieter than the lead. */
-function TopStory({
-  item,
-  leagueId,
-  isMine,
-}: {
-  item: NewsItem;
-  leagueId: string;
-  isMine: boolean;
-}) {
+/** AROUND THE LEAGUE. Emitted only when the league actually produced one. */
+function StoryCardTile({ card, leagueId }: { card: StoryCard; leagueId: string }) {
   return (
     <article
-      className={`border-t bg-field px-4 py-4 ${isMine ? "border-t-team-accent" : "border-t-rule-strong"}`}
+      className={`flex min-h-[7.5rem] flex-col bg-field px-4 py-4 ${
+        card.isMine ? "border-t-2 border-t-team-accent" : "border-t border-t-rule-strong"
+      }`}
     >
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <TypeTag type={item.type} strong />
-        {item.importance === "MAJOR" && <Label tone="accent">Major</Label>}
+      <div className="flex items-center justify-between gap-2">
+        <span
+          className={`text-[11px] font-semibold tracking-[0.14em] uppercase ${
+            card.isMine ? "text-team-accent" : "text-ink-muted"
+          }`}
+        >
+          {card.kicker}
+        </span>
+        <TypeTag type={card.type} />
       </div>
-      <p className="mt-2 text-[17px] leading-snug font-medium text-ink">{item.description}</p>
-      {item.tradeId && (
+      <p className="mt-2 flex-1 text-[15px] leading-snug font-medium text-ink">{card.headline}</p>
+      {card.detail && (
+        <p className="mt-2 font-mono text-[11px] tabular-nums text-ink-muted">{card.detail}</p>
+      )}
+      {card.tradeId && (
         <div className="mt-2">
-          <SeeTheDeal leagueId={leagueId} tradeId={item.tradeId} />
+          <SeeTheDeal leagueId={leagueId} tradeId={card.tradeId} />
         </div>
       )}
     </article>
   );
 }
 
-/** One filed line on the chronological wire. */
+/** One filed line on the wire. */
 function WireRow({
   item,
   leagueId,
@@ -224,17 +219,17 @@ function WireRow({
   const minor = item.importance === "MINOR";
   return (
     <article
-      className={`flex gap-x-4 border-b border-l-2 border-b-hairline py-2.5 pr-2 pl-3 transition-colors duration-120 hover:bg-raised ${
+      className={`flex gap-x-4 border-b border-l-2 border-b-hairline py-2 pr-2 pl-3 transition-colors duration-120 hover:bg-raised ${
         isMine ? "border-l-team-accent" : "border-l-transparent"
       }`}
     >
-      <span className="w-28 shrink-0 pt-0.5">
+      <span className="w-24 shrink-0 pt-0.5">
         <TypeTag type={item.type} strong={major} />
       </span>
       <p
         className={`min-w-0 flex-1 ${
           major
-            ? "text-[17px] leading-snug font-medium text-ink"
+            ? "text-[16px] leading-snug font-medium text-ink"
             : minor
               ? "text-[15px] leading-snug text-ink-muted"
               : "text-[15px] leading-snug text-ink"
@@ -252,52 +247,40 @@ function WireRow({
   );
 }
 
-/**
- * A collapsed run of routine rows. Nothing is thrown away - the digest holds
- * its rows and opens on click. Closed, it costs one line instead of twelve.
- */
-function WireDigest({
-  entry,
+/** A day's routine tail, held as one line until asked for. */
+function Rollup({
+  label,
+  stories,
   userTeamId,
 }: {
-  entry: Extract<WireEntry, { kind: "digest" }>;
+  label: string;
+  stories: NewsItem[];
   userTeamId: string | null;
 }) {
   const [open, setOpen] = useState(false);
-  const describe =
-    DIGEST_LABEL[entry.type] ??
-    ((n: number) => `${n} more ${TYPE_LABEL[entry.type] ?? entry.type} notes`);
-  const mineCount = userTeamId
-    ? entry.stories.filter((s) => s.teamIds.includes(userTeamId)).length
-    : 0;
-
+  const mine = userTeamId ? stories.filter((s) => s.teamIds.includes(userTeamId)).length : 0;
   return (
-    <div className="border-b border-l-2 border-b-hairline border-l-transparent">
+    <div className="border-b border-hairline">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full gap-x-4 py-2 pr-2 pl-3 text-left transition-colors duration-120 hover:bg-raised"
+        className="flex w-full items-baseline gap-3 py-1.5 pr-2 pl-3 text-left transition-colors duration-120 hover:bg-raised"
       >
-        <span className="w-28 shrink-0 pt-0.5">
-          <TypeTag type={entry.type} />
+        <span className="flex-1 text-[13px] text-ink-muted">
+          {label} <span className="font-mono tabular-nums">· {stories.length}</span>
+          {mine > 0 && <span className="text-team-accent"> · {mine} yours</span>}
         </span>
-        <span className="min-w-0 flex-1 text-[15px] leading-snug text-ink-muted">
-          {describe(entry.stories.length)}
-          {mineCount > 0 && (
-            <span className="text-team-accent"> · {mineCount} involving your franchise</span>
-          )}
-        </span>
-        <span className="shrink-0 self-center text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase">
+        <span className="shrink-0 text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase">
           {open ? "Hide" : "Show"}
         </span>
       </button>
       {open && (
-        <div className="pb-1 pl-3">
-          {entry.stories.map((s) => (
+        <div className="pb-1">
+          {stories.map((s) => (
             <p
               key={s.id}
-              className={`border-t border-hairline py-1.5 pl-28 text-[15px] leading-snug ${
+              className={`border-t border-hairline py-1.5 pr-2 pl-6 text-[14px] leading-snug ${
                 userTeamId && s.teamIds.includes(userTeamId) ? "text-ink" : "text-ink-muted"
               }`}
             >
@@ -310,79 +293,168 @@ function WireDigest({
   );
 }
 
-/** A compact side module: latest few rows of one kind, as scannable lines. */
-function SideModule({
-  title,
-  items,
+/** One day on the wire: what led it, then what merely happened. */
+function DaySection({
+  day,
+  leagueId,
   userTeamId,
-  empty,
 }: {
-  title: string;
-  items: NewsItem[];
+  day: NewsDay;
+  leagueId: string;
   userTeamId: string | null;
-  empty: string;
 }) {
   return (
+    <section>
+      <div className="flex items-baseline justify-between gap-3 border-b border-rule-strong pt-5 pb-1.5">
+        <h3 className="font-mono text-[13px] font-medium tracking-[0.06em] text-ink uppercase">
+          {dayLabel(day.season, day.dayIndex)}
+        </h3>
+        <span className="font-mono text-[11px] tabular-nums text-ink-muted">{day.total}</span>
+      </div>
+      <div>
+        {day.headlines.map((item) => (
+          <WireRow
+            key={item.id}
+            item={item}
+            leagueId={leagueId}
+            isMine={Boolean(userTeamId && item.teamIds.includes(userTeamId))}
+          />
+        ))}
+        {day.rollups.map((rollup) => (
+          <Rollup
+            key={rollup.key}
+            label={ROLLUP_LABEL[rollup.key] ?? rollup.key}
+            stories={rollup.stories}
+            userTeamId={userTeamId}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** LEAGUE PULSE. Standings and roster state - not a second copy of the feed. */
+function LeaguePulsePanel({
+  pulse,
+  userTeamId,
+}: {
+  pulse: LeaguePulse;
+  userTeamId: string | null;
+}) {
+  const rows: { label: string; value: string; detail?: string; mine: boolean }[] = [];
+  if (pulse.best) {
+    rows.push({
+      label: "Best record",
+      value: pulse.best.label,
+      detail: recordLabel(pulse.best),
+      mine: pulse.best.leagueTeamId === userTeamId,
+    });
+  }
+  if (pulse.hottest) {
+    rows.push({
+      label: "Hottest",
+      value: pulse.hottest.label,
+      detail: streakLabel(pulse.hottest.currentStreak),
+      mine: pulse.hottest.leagueTeamId === userTeamId,
+    });
+  }
+  if (pulse.coldest) {
+    rows.push({
+      label: "Coldest",
+      value: pulse.coldest.label,
+      detail: streakLabel(pulse.coldest.currentStreak),
+      mine: pulse.coldest.leagueTeamId === userTeamId,
+    });
+  }
+  if (pulse.keyInjury) {
+    rows.push({
+      label: "Out",
+      value: pulse.keyInjury.playerName,
+      detail:
+        pulse.keyInjury.gamesRemaining !== null
+          ? `${pulse.keyInjury.teamLabel} · ${pulse.keyInjury.gamesRemaining} games`
+          : pulse.keyInjury.teamLabel,
+      mine: pulse.keyInjury.leagueTeamId === userTeamId,
+    });
+  }
+
+  return (
     <section className="border-t border-rule bg-field p-4">
-      <Label>{title}</Label>
-      {items.length === 0 ? (
-        <p className="mt-2 text-[13px] leading-snug text-ink-muted">{empty}</p>
+      <div className="flex items-baseline justify-between gap-2">
+        <Label>League pulse</Label>
+        {pulse.injuredCount > 0 && (
+          <span className="font-mono text-[11px] tabular-nums text-ink-muted">
+            {pulse.injuredCount} hurt
+          </span>
+        )}
+      </div>
+      {rows.length === 0 ? (
+        <p className="mt-2 text-[13px] leading-snug text-ink-muted">
+          Too early to tell - play some games.
+        </p>
       ) : (
-        <ul className="mt-2 space-y-1.5">
-          {items.map((item) => (
-            <li
-              key={item.id}
-              className={`border-l-2 pl-2 text-[13px] leading-snug ${
-                userTeamId && item.teamIds.includes(userTeamId)
-                  ? "border-l-team-accent text-ink"
-                  : "border-l-hairline text-ink-muted"
-              }`}
+        <dl className="mt-3 space-y-2.5">
+          {rows.map((row) => (
+            <div
+              key={row.label}
+              className={`border-l-2 pl-2.5 ${row.mine ? "border-l-team-accent" : "border-l-hairline"}`}
             >
-              {item.description}
-            </li>
+              <dt className="text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase">
+                {row.label}
+              </dt>
+              <dd className="text-[14px] leading-snug font-medium text-ink">{row.value}</dd>
+              {row.detail && (
+                <dd className="font-mono text-[11px] tabular-nums text-ink-muted">{row.detail}</dd>
+              )}
+            </div>
           ))}
-        </ul>
+        </dl>
       )}
     </section>
   );
 }
 
 /**
- * THE WIRE - a front page, not a database feed.
+ * THE WIRE - a league news homepage, not an event log.
  *
- * The audit finding this rebuild answers: every story used to arrive as a
- * sibling of every other, one chronological list where a franchise-altering
- * trade and a bench player's mood sat a pixel apart. Importance existed in
- * the data and changed a row's *typography*, but never its *placement*, so
- * the top of the page belonged to whatever filed last - usually morale.
+ * Three editorial levels, each earned from data rather than assigned by
+ * category:
  *
- * Now placement is earned. `rankNews` decides what leads from importance,
- * type and recency; `condenseWire` collapses repetitive runs so routine
- * traffic costs a line instead of a screen. Both are pure and tested, so the
- * hierarchy is a thing we assert rather than a thing that emerges from CSS.
+ *   1. THE LEAD - the single biggest story, at broadcast scale. Empty on a
+ *      quiet stretch, because a manufactured lead is a lie.
+ *   2. AROUND THE LEAGUE - four to six cards, each emitted only when the
+ *      league actually produced one. Event cards read the engine's own
+ *      `importance` (already derived at write time from trade player tier,
+ *      injury duration, points scored); Hot/Cold read standings state instead.
+ *   3. THE WIRE - the complete record, filed day by day. Each day shows what
+ *      led it and folds the rest into rollups: `Injuries · 4  [Show]`. A day
+ *      costs a few lines whether it produced eight events or eighty, and
+ *      nothing is discarded.
  *
- * Two modes on purpose:
- *   - **Browsing** (no filters): the full hierarchy, lead down to side modules.
- *   - **Finding** (any filter or search): one flat, complete, chronological
- *     list. Someone searching a player's name wants every hit in order, not
- *     an editor's opinion about which of them matters most.
+ * Duplication is prevented structurally rather than by comparing strings: the
+ * lead's id is excluded from the cards, cards never reuse a story, and the
+ * sidebar reads *state* (streaks, records, who is currently hurt) rather than
+ * events, so it cannot restate a headline.
  *
- * `createdAt` is deliberately never shown: simulation runs in bursts, so
- * hundreds of rows share a real-world second and a clock time would be fake
- * precision. Season is the only honest time unit.
+ * Searching or filtering drops all of it for one flat chronological list.
+ * Someone looking up a player wants every hit in order, not an editor's view
+ * of which matters.
  */
 export function NewsFeed({
   transactions,
   userTeamId,
   leagueId,
+  pulse,
 }: {
   transactions: NewsItem[];
   userTeamId: string | null;
   leagueId: string;
+  pulse: LeaguePulse;
 }) {
   const [category, setCategory] = useState<Category>("ALL");
   const [myTeamOnly, setMyTeamOnly] = useState(false);
   const [search, setSearch] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
 
   const isFinding = category !== "ALL" || myTeamOnly || search.trim().length > 0;
 
@@ -398,25 +470,56 @@ export function NewsFeed({
 
   const ranked = useMemo(() => rankNews(transactions, { userTeamId }), [transactions, userTeamId]);
 
-  /** Filed under the season it happened in - the wire's own structure. */
+  const cards = useMemo(
+    () =>
+      buildStoryCards({
+        stories: transactions,
+        pulse,
+        userTeamId,
+        excludeIds: new Set(ranked.lead ? [ranked.lead.id] : []),
+      }),
+    [transactions, pulse, userTeamId, ranked.lead],
+  );
+
+  /** Their own recent news, minus anything already shown above. */
+  const franchise = useMemo(() => {
+    if (!userTeamId) return [];
+    const shown = new Set([...(ranked.lead ? [ranked.lead.id] : []), ...cards.map((c) => c.key)]);
+    return transactions
+      .filter((t) => t.teamIds.includes(userTeamId) && !shown.has(t.id))
+      .slice(0, 4);
+  }, [transactions, userTeamId, ranked.lead, cards]);
+
+  const wireDays = useMemo(
+    () => groupByDay(isFinding ? filtered : transactions),
+    [isFinding, filtered, transactions],
+  );
+
   const bySeason = useMemo(() => {
-    const groups = new Map<number, NewsItem[]>();
-    for (const item of filtered) {
-      const list = groups.get(item.season) ?? [];
-      list.push(item);
-      groups.set(item.season, list);
+    const groups = new Map<number, NewsDay[]>();
+    for (const day of wireDays) {
+      const list = groups.get(day.season) ?? [];
+      list.push(day);
+      groups.set(day.season, list);
     }
     return [...groups.entries()].sort((a, b) => b[0] - a[0]);
-  }, [filtered]);
-
-  const latest = (types: string[], n: number) =>
-    transactions.filter((t) => types.includes(t.type)).slice(0, n);
+  }, [wireDays]);
 
   const isMine = (item: NewsItem) => Boolean(userTeamId && item.teamIds.includes(userTeamId));
 
-  const filters = (
-    <div className="border-t border-rule bg-field p-4">
-      <Label>Search</Label>
+  const filterPanel = (
+    <section className="border-t border-rule bg-field p-4">
+      <div className="flex items-baseline justify-between gap-2">
+        <Label>Find a story</Label>
+        <button
+          type="button"
+          onClick={() => setShowFilters((v) => !v)}
+          className="text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase hover:text-ink"
+          aria-expanded={showFilters}
+        >
+          {showFilters ? "Less" : "Filters"}
+        </button>
+      </div>
       <input
         type="search"
         value={search}
@@ -425,34 +528,31 @@ export function NewsFeed({
         className="mt-2 w-full rounded-[2px] border border-rule bg-raised px-3 py-1.5 text-[15px] text-ink transition-colors duration-120 placeholder:text-ink-muted/60 focus:border-rule-strong"
       />
 
-      {userTeamId && (
-        <div className="mt-4">
-          <Label>Scope</Label>
-          <button
-            type="button"
-            onClick={() => setMyTeamOnly((v) => !v)}
-            className={`mt-2 ${pillClass(myTeamOnly)}`}
-          >
-            My franchise
-          </button>
-        </div>
-      )}
-
-      <div className="mt-4">
-        <Label>Category</Label>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {CATEGORIES.map((c) => (
+      {(showFilters || isFinding) && (
+        <>
+          {userTeamId && (
             <button
-              key={c}
               type="button"
-              onClick={() => setCategory(c)}
-              className={pillClass(category === c)}
+              onClick={() => setMyTeamOnly((v) => !v)}
+              className={`mt-3 ${pillClass(myTeamOnly)}`}
             >
-              {CATEGORY_LABEL[c]}
+              My franchise
             </button>
-          ))}
-        </div>
-      </div>
+          )}
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {CATEGORIES.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCategory(c)}
+                className={pillClass(category === c)}
+              >
+                {CATEGORY_LABEL[c]}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       {isFinding && (
         <button
@@ -462,49 +562,31 @@ export function NewsFeed({
             setMyTeamOnly(false);
             setSearch("");
           }}
-          className="mt-4 text-[11px] font-semibold tracking-[0.09em] text-team-accent uppercase underline decoration-rule underline-offset-4"
+          className="mt-3 text-[11px] font-semibold tracking-[0.09em] text-team-accent uppercase underline decoration-rule underline-offset-4"
         >
           Back to the front page
         </button>
       )}
-    </div>
+    </section>
   );
 
-  const seasonSections = (
-    <div className="space-y-10">
-      {bySeason.map(([season, items]) => {
-        const entries = condenseWire(items);
-        return (
-          <section key={season}>
-            <div className="flex items-baseline justify-between gap-3 border-b border-rule-strong pb-2">
-              <h2 className="font-mono text-[15px] font-medium tabular-nums text-ink">
-                {seasonLabel(season)}
-              </h2>
-              <span className="font-mono text-[11px] tabular-nums text-ink-muted">
-                {items.length}
-              </span>
-            </div>
-            <div className="mt-1">
-              {entries.map((entry) =>
-                entry.kind === "digest" ? (
-                  <WireDigest
-                    key={`digest-${entry.stories[0].id}`}
-                    entry={entry}
-                    userTeamId={userTeamId}
-                  />
-                ) : (
-                  <WireRow
-                    key={entry.story.id}
-                    item={entry.story}
-                    leagueId={leagueId}
-                    isMine={isMine(entry.story)}
-                  />
-                ),
-              )}
-            </div>
-          </section>
-        );
-      })}
+  const wire = (
+    <div className="space-y-8">
+      {bySeason.map(([season, days]) => (
+        <div key={season}>
+          <h2 className="border-b-2 border-rule-strong pb-1 font-mono text-[15px] font-medium tabular-nums text-ink">
+            {seasonLabel(season)}
+          </h2>
+          {days.map((day) => (
+            <DaySection
+              key={`${day.season}-${day.dayIndex ?? "none"}`}
+              day={day}
+              leagueId={leagueId}
+              userTeamId={userTeamId}
+            />
+          ))}
+        </div>
+      ))}
     </div>
   );
 
@@ -524,10 +606,10 @@ export function NewsFeed({
               <p className="text-[15px] text-ink-muted">No stories match these filters.</p>
             </div>
           ) : (
-            <div className="mt-4">{seasonSections}</div>
+            <div className="mt-4">{wire}</div>
           )}
         </div>
-        <aside className="lg:sticky lg:top-6 lg:order-2">{filters}</aside>
+        <aside className="lg:sticky lg:top-6 lg:order-2">{filterPanel}</aside>
       </div>
     );
   }
@@ -539,12 +621,12 @@ export function NewsFeed({
         <LeadStory item={ranked.lead} leagueId={leagueId} isMine={isMine(ranked.lead)} />
       )}
 
-      {ranked.topStories.length > 0 && (
+      {cards.length > 0 && (
         <section>
-          <Label>Top stories</Label>
-          <div className="mt-3 grid grid-cols-1 gap-px bg-hairline sm:grid-cols-2">
-            {ranked.topStories.map((item) => (
-              <TopStory key={item.id} item={item} leagueId={leagueId} isMine={isMine(item)} />
+          <Label>Around the league</Label>
+          <div className="mt-3 grid grid-cols-1 gap-px bg-hairline sm:grid-cols-2 lg:grid-cols-3">
+            {cards.map((card) => (
+              <StoryCardTile key={card.key} card={card} leagueId={leagueId} />
             ))}
           </div>
         </section>
@@ -552,58 +634,39 @@ export function NewsFeed({
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_260px] lg:items-start">
         <div className="min-w-0 lg:order-1">
-          {ranked.franchise.length > 0 && (
-            <section className="mb-10">
-              <div className="flex items-baseline justify-between gap-3 border-b border-team-accent pb-2">
+          <div className="flex items-baseline justify-between gap-3">
+            <Label>The wire</Label>
+            <span className="text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase">
+              {transactions.length} filed
+            </span>
+          </div>
+          <div className="mt-3">{wire}</div>
+        </div>
+
+        <aside className="space-y-6 lg:sticky lg:top-6 lg:order-2">
+          <LeaguePulsePanel pulse={pulse} userTeamId={userTeamId} />
+          {franchise.length > 0 && (
+            <section className="border-t border-team-accent bg-field p-4">
+              <div className="flex items-baseline justify-between gap-2">
                 <Label tone="accent">Your franchise</Label>
                 <button
                   type="button"
                   onClick={() => setMyTeamOnly(true)}
-                  className="text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase underline decoration-rule underline-offset-4 hover:text-ink"
+                  className="text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase hover:text-ink"
                 >
-                  See all
+                  All
                 </button>
               </div>
-              <div className="mt-1">
-                {ranked.franchise.map((item) => (
-                  <WireRow key={item.id} item={item} leagueId={leagueId} isMine />
+              <ul className="mt-2 space-y-1.5">
+                {franchise.map((item) => (
+                  <li key={item.id} className="text-[13px] leading-snug text-ink">
+                    {item.description}
+                  </li>
                 ))}
-              </div>
+              </ul>
             </section>
           )}
-
-          <div className="flex items-baseline justify-between gap-3">
-            <Label>The wire</Label>
-            <span
-              aria-live="polite"
-              className="text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase"
-            >
-              {transactions.length} filed
-            </span>
-          </div>
-          <div className="mt-4">{seasonSections}</div>
-        </div>
-
-        <aside className="space-y-6 lg:sticky lg:top-6 lg:order-2">
-          {filters}
-          <SideModule
-            title="Injury report"
-            items={latest(["INJURY"], 6)}
-            userTeamId={userTeamId}
-            empty="Nobody is hurt right now."
-          />
-          <SideModule
-            title="Latest deals"
-            items={latest(["TRADE", "SIGNING"], 5)}
-            userTeamId={userTeamId}
-            empty="No trades or signings yet."
-          />
-          <SideModule
-            title="Streaks & milestones"
-            items={latest(["WIN_STREAK", "GAME_MILESTONE"], 5)}
-            userTeamId={userTeamId}
-            empty="Nothing notable on the floor yet."
-          />
+          {filterPanel}
         </aside>
       </div>
     </div>
