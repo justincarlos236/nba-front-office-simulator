@@ -3,7 +3,7 @@
  * `overallRating`) from a roster, weighting the top ~9 rotation players
  * more heavily than deep bench - a starter's rating should matter more to
  * a team's competitiveness than the 15th man's. Heuristic, not a fitted
- * model; see docs/ARCHITECTURE.md.
+ * model; see docs/SYSTEMS.md.
  */
 const ROTATION_SIZE = 9;
 const ROTATION_WEIGHTS = [1.4, 1.3, 1.2, 1.1, 1.0, 0.9, 0.8, 0.7, 0.6];

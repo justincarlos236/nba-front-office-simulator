@@ -52,7 +52,7 @@ function randomLength(min: number, max: number, rng: () => number): number {
 
 /**
  * Generates a plausible contract for a player from their valuation-model
- * score plus deterministic negotiation noise - see docs/ARCHITECTURE.md
+ * score plus deterministic negotiation noise - see docs/SYSTEMS.md
  * for why contracts are simulated rather than hand-curated real salaries.
  */
 export function generateContract(input: GenerateContractInput): GeneratedContract {

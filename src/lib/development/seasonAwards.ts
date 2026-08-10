@@ -91,7 +91,7 @@ const MIN_GAMES_FOR_DEFENSIVE_AWARD = 10;
 
 /**
  * Only steals/blocks/rebounds are available - this engine has no
- * opponent-shooting or on/off defensive data (see docs/ARCHITECTURE.md's
+ * opponent-shooting or on/off defensive data (see docs/SYSTEMS.md's
  * box-score limitations), so this is a real but narrow slice of defensive
  * value, not a claim of complete defensive rating. Per-36 normalized so a
  * lower-minutes defensive specialist isn't crowded out by a high-minutes

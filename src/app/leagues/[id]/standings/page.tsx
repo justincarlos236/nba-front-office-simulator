@@ -151,7 +151,7 @@ export default async function StandingsPage({ params }: PageProps) {
       <p className="mt-2 max-w-2xl text-ink-muted">
         A simplified, strength-based simulation (not possession-by-possession) - each team&apos;s
         rotation ratings determine a win probability per game, with a small home-court edge. See
-        docs/ARCHITECTURE.md for the exact model.
+        docs/SYSTEMS.md for the exact model.
       </p>
 
       <div className="mt-8">

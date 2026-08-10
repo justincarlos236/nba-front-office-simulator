@@ -140,7 +140,7 @@ describe("computePerformanceScore - real anchor players (2023-24 season lines)",
   // far higher than points over-rewarded shot-blocking bigs relative to
   // high-usage scoring wings, invisible only because both used to clamp to
   // the same ceiling. Tolerance is generous (this is a hand-tuned box-score
-  // heuristic, not a fitted regression - see docs/ARCHITECTURE.md).
+  // heuristic, not a fitted regression - see docs/SYSTEMS.md).
   const anchors: [string, Parameters<typeof computePerformanceScore>[0], number][] = [
     [
       "Nikola Jokic (playmaking big, 2K 98)",

@@ -154,7 +154,7 @@ export async function createLeagueAction(formData: FormData) {
 
   // Staff Management (Phase 15a) - every team starts with an algorithmically
   // generated Head Coach, Player Development Coach, and Medical Staff (no
-  // real-world data sourced - see docs/ARCHITECTURE.md's Data sourcing
+  // real-world data sourced - see docs/SYSTEMS.md's Data sourcing
   // section for why, same reasoning as generated contracts), plus a small
   // unemployed pool per role the user can hire from immediately. Shared with
   // the lazy backfill the Staff page runs for leagues created before this
@@ -338,7 +338,7 @@ export async function createLeagueAction(formData: FormData) {
  * (not cascade) foreign key into `LeagueTeam` - a plain `league.delete()`
  * fails with a constraint violation unless those four are cleared first,
  * in dependency order (discovered the hard way cleaning up accumulated
- * e2e test data - see docs/IMPLEMENTATION_PLAN.md's Phase 11a log entry).
+ * e2e test data).
  * Everything else (`LeagueTeam`, `LeaguePlayer`, `Game`, `PlayoffSeries`,
  * `Trade`, `SeasonAward`, `LeagueTransaction`, `SeasonExpectation`,
  * `DraftProspect`, `AssistantThread`/`AssistantMessage`) cascades cleanly

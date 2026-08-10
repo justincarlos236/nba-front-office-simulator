@@ -114,7 +114,7 @@ export default async function DraftPage({ params }: PageProps) {
         Picks 1-14 are decided by the real post-2019 lottery odds (the 3 worst records tied at
         14.0%); picks 15-30 go to playoff teams in reverse regular-season order; round 2 is a
         straight reverse-record sweep. Prospects are procedurally generated - no real future draft
-        class exists yet. See docs/ARCHITECTURE.md.
+        class exists yet. See docs/SYSTEMS.md.
       </p>
 
       {gatePhase === "regular-season" && (
@@ -126,7 +126,9 @@ export default async function DraftPage({ params }: PageProps) {
       )}
       {gatePhase === "playoffs-incomplete" && (
         <div className="mt-8 rounded-[2px] border border-rule bg-field p-6">
-          <p className="text-sm text-ink-muted">Crown a champion in the playoffs before the draft.</p>
+          <p className="text-sm text-ink-muted">
+            Crown a champion in the playoffs before the draft.
+          </p>
         </div>
       )}
       {gatePhase === "active" && draftPicks.length === 0 && (

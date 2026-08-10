@@ -457,7 +457,7 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
     // strictly sequential Postgres transaction - a batch of 50 sequential
     // round trips to a remote DB risked a serverless timeout in production
     // even though it looked fine when tested locally on a lower-latency
-    // connection. See docs/ARCHITECTURE.md.
+    // connection. See docs/SYSTEMS.md.
     const gameTypeById = new Map(unplayedGames.map((g) => [g.id, g.type]));
     const playedAt = new Date();
     await Promise.all([

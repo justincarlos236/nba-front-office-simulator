@@ -8,7 +8,7 @@ import type { Conference, Position } from "@/generated/prisma/client";
  * "reputation/star power" nudge (an existing-data proxy for fan-vote bias,
  * no new field invented), so an elite player having a poor season can
  * still miss out while a breakout player having a great one gets a real
- * shot. See docs/ARCHITECTURE.md's All-Star Weekend section.
+ * shot. See docs/SYSTEMS.md's All-Star Weekend section.
  */
 export interface PlayerSeasonPerformanceSnapshot {
   leaguePlayerId: string;

@@ -10,7 +10,7 @@ export interface TeamSeed {
   // Wikipedia's infobox logo thumbnail (upload.wikimedia.org), not
   // copied/hosted here, just linked. NBA.com's own logo CDN
   // (cdn.nba.com) was tried first but reliably failed to load in
-  // production - see docs/ARCHITECTURE.md.
+  // production - see docs/SYSTEMS.md.
   logoUrl: string;
   name: string;
   city: string;

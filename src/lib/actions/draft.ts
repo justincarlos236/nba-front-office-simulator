@@ -65,7 +65,7 @@ interface ProspectAssignment {
 /**
  * Turns a batch of (pick, prospect) assignments into real roster additions:
  * a reference `Player` row (fictional - no real future draft class exists,
- * see docs/ARCHITECTURE.md), a `LeaguePlayer`, and a rookie-scale contract,
+ * see docs/SYSTEMS.md), a `LeaguePlayer`, and a rookie-scale contract,
  * reusing the exact same `generateContract` engine every other contract in
  * the sim uses. Bulk-writes via `createManyAndReturn` at each stage (same
  * multi-stage pattern league bootstrap uses) rather than one round trip

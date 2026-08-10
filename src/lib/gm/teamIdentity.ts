@@ -2,7 +2,7 @@
  * A team's competitive identity - the lens the trade-AI evaluation engine
  * (Phase 11c) reasons through: a Contender prioritizes immediate impact
  * over future assets, a Rebuilding team values youth and picks, etc. See
- * docs/ARCHITECTURE.md's "GM accountability" section for the sibling
+ * docs/SYSTEMS.md's "GM accountability" section for the sibling
  * concept (`ExpectationLevel`) this deliberately mirrors in spirit but not
  * in scale - identity is about *what a team is right now*, not what
  * ownership expects of it this season.

@@ -6,7 +6,7 @@
  *
  * This is a hand-tuned heuristic curve (peak at age 27, gentle rise before,
  * steeper falloff after), not a fitted regression - a reasonable stand-in
- * documented as such. See docs/ARCHITECTURE.md for the model's scope.
+ * documented as such. See docs/SYSTEMS.md for the model's scope.
  */
 const PEAK_AGE = 27;
 

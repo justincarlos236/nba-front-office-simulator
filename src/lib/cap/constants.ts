@@ -3,7 +3,7 @@
  * 2023 CBA thresholds and exception amounts — close enough to drive
  * realistic cap math in the simulator, but not an authoritative record of
  * the league's actual audited figures (the same approximation policy used
- * for seeded contract data; see docs/ARCHITECTURE.md).
+ * for seeded contract data; see docs/SYSTEMS.md).
  *
  * `tradeMatch*` are the salary-matching formula breakpoints for teams
  * operating below the first apron (2023 CBA Article VII). They're modeled

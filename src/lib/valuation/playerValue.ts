@@ -83,7 +83,7 @@ function normalizedRate(perGame: number, minutesPerGame: number): number {
  * 95/Curry 96/SGA 95 (scoring wings/guards), Kessler ~82/Fontecchio ~76
  * (real rotation players), Horton-Tucker ~72/Potter ~63 (bench). This
  * remains a heuristic, not a claim of precise real-world valuation - see
- * docs/ARCHITECTURE.md for why this runs on raw box-score stats rather
+ * docs/SYSTEMS.md for why this runs on raw box-score stats rather
  * than advanced metrics like BPM/Win Shares/VORP, a limitation no amount
  * of weight-tuning on this input set can fully overcome (a handful of
  * real low-volume, low-efficiency-but-valuable role players will still

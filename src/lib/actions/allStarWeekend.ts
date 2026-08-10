@@ -94,7 +94,7 @@ interface NewsRow {
  * Generates an entire All-Star Weekend synchronously in one call: real
  * selections from this season's actual simulated performance, all three
  * contests, and the All-Star Game itself, all reusing existing engines
- * (see docs/ARCHITECTURE.md's All-Star Weekend section). Called once per
+ * (see docs/SYSTEMS.md's All-Star Weekend section). Called once per
  * league-season, from simulateGamesAction's mid-season checkpoint. Writes
  * the AllStarWeekend row as PENDING - regular-season simulation stays
  * blocked until resolveAllStarWeekendAction below flips it to RESOLVED.

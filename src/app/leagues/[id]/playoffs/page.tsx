@@ -125,7 +125,7 @@ export default async function PlayoffsPage({ params }: PageProps) {
       <p className="mt-2 max-w-2xl text-ink-muted">
         Top 6 seeds per conference qualify directly; seeds 7-10 play into the final two spots via
         the play-in tournament. From there it&apos;s a fixed best-of-7 bracket, same as the real NBA
-        - see docs/ARCHITECTURE.md.
+        - see docs/SYSTEMS.md.
       </p>
 
       {userStatus && (

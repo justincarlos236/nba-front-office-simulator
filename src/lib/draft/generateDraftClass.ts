@@ -58,7 +58,7 @@ export interface GeneratedDraftClass {
 /**
  * Generates one fictional draft class (60 prospects, one per pick). Real
  * future prospects obviously don't exist, so this is a documented
- * simplification - see docs/ARCHITECTURE.md and prospectNames.ts. Ratings
+ * simplification - see docs/SYSTEMS.md and prospectNames.ts. Ratings
  * are correlated with pick position on average (early picks trend better)
  * but with real variance layered on top, so pick order isn't a perfect
  * predictor - some late picks outperform, some early picks bust, the same

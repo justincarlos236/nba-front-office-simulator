@@ -3,7 +3,7 @@ import { ApronLevel } from "./apron";
 /**
  * Casual-facing collapse of the 5 real apron levels into the 3 states a
  * user actually needs to reason about (per the "realistic consequences
- * without complicated rules" design goal - see docs/ARCHITECTURE.md).
+ * without complicated rules" design goal - see docs/SYSTEMS.md).
  * The real `ApronLevel` distinctions (taxpayer/first apron/second apron)
  * keep driving actual trade/exception behavior underneath; this is only
  * what gets displayed.

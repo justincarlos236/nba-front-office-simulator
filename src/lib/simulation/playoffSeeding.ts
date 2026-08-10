@@ -33,7 +33,7 @@ export function pickHigherSeed(a: StandingsEntry, b: StandingsEntry): StandingsE
  * percentage qualify directly, seeds 7-10 go to the play-in tournament for
  * the final two playoff spots. Ties broken by total wins (a simplification
  * of the real tiebreaker rules, which consider head-to-head record,
- * division standing, and more - see docs/ARCHITECTURE.md).
+ * division standing, and more - see docs/SYSTEMS.md).
  */
 export function seedConference(standings: StandingsEntry[]): ConferenceSeeding {
   const sorted = [...standings].sort((a, b) => winPct(b) - winPct(a) || b.wins - a.wins);

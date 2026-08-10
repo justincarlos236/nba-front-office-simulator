@@ -83,8 +83,8 @@ export default async function OffseasonPage({ params }: PageProps) {
 
       <p className="mt-2 max-w-2xl text-ink-muted">
         Players age, develop or decline, and sometimes retire between seasons; contracts that
-        expired become free agents; the salary cap grows. See docs/ARCHITECTURE.md for exactly how
-        each of these is modeled.
+        expired become free agents; the salary cap grows. See docs/SYSTEMS.md for exactly how each
+        of these is modeled.
       </p>
 
       {phase === "ready" && (

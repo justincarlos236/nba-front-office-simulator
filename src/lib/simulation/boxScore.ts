@@ -9,7 +9,7 @@ import { RANK_MINUTE_WEIGHTS, TEAM_MINUTES, WEIGHT_PER_MINUTE } from "@/lib/rota
  * generator. `simulateGame.ts` already decided the team's final score - this
  * module's job is to explain that already-fixed result with a believable
  * individual stat line per player, not to re-decide who won. See
- * docs/ARCHITECTURE.md for the full design rationale.
+ * docs/SYSTEMS.md for the full design rationale.
  */
 
 export interface PlayerBoxScoreLine {

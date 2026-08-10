@@ -105,7 +105,7 @@ export async function startPlayoffsAction(leagueId: string) {
 
   const playInTeamIds = [...eastSeeding.playInTeams, ...westSeeding.playInTeams];
   // Play-in/playoff games don't generate player box scores yet - see
-  // docs/ARCHITECTURE.md's "Player box scores" section for why this is a
+  // docs/SYSTEMS.md's "Player box scores" section for why this is a
   // deliberate, scoped boundary rather than an oversight.
   const { strengthByTeam } = await computeLeagueTeamStrengths(playInTeamIds);
 

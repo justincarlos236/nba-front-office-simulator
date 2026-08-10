@@ -9,7 +9,7 @@ import type { CoachStyle, MarketSize } from "@/generated/prisma/client";
  * spending discipline vs. results) - but it reuses the exact same
  * evaluators wherever the underlying question is the same, rather than
  * re-deriving "did this team do well" from scratch. See
- * docs/ARCHITECTURE.md's Fan engagement section.
+ * docs/SYSTEMS.md's Fan engagement section.
  */
 export interface FanHappinessInputs {
   // Set only for the user's own team (SeasonExpectation is user-team-only
@@ -104,7 +104,7 @@ const MARKET_SIZE_POPULARITY_MULTIPLIER: Record<MarketSize, number> = {
 // doesn't replace having a good team.
 const MARKETING_POPULARITY_SCALE = 0.5;
 
-/** A derived, presentational 0-100 index - not independently simulated (see docs/ARCHITECTURE.md). Half fan happiness, half star power, market-size-adjusted, with an optional Marketing-department nudge. */
+/** A derived, presentational 0-100 index - not independently simulated (see docs/SYSTEMS.md). Half fan happiness, half star power, market-size-adjusted, with an optional Marketing-department nudge. */
 export function computeFranchisePopularity(
   fanHappiness: number,
   starPowerTier: PlayerValueTier | null,
@@ -135,7 +135,7 @@ export type FranchisePopularityTier = "TRENDING" | "STRONG" | "STEADY" | "SOFT" 
  * One tier drives several labeled facets in the UI (merchandise, season
  * tickets, social buzz) - they're all reflections of the same underlying
  * "how hot is this team right now" number, not independently tracked
- * metrics (see docs/ARCHITECTURE.md's Fan engagement section on why).
+ * metrics (see docs/SYSTEMS.md's Fan engagement section on why).
  */
 export function getFranchisePopularityTier(franchisePopularity: number): FranchisePopularityTier {
   if (franchisePopularity >= 85) return "TRENDING";

@@ -8,7 +8,7 @@ import type { PlayerValueTier } from "@/lib/valuation/playerValueTier";
  * getPlayerValueTier, market size from the Team fixture, payroll from the
  * cap engine, playoff depth from PlayoffSeries) rather than a second
  * simulation. Deliberately coarse - a handful of revenue/expense buckets,
- * not a general ledger (see docs/ARCHITECTURE.md's Franchise finances §).
+ * not a general ledger (see docs/SYSTEMS.md's Franchise finances §).
  *
  * All amounts are in **cents, as plain numbers**. A full NBA franchise
  * season tops out around $500M = 5e10 cents, comfortably inside JS's safe

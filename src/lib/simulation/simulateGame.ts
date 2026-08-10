@@ -4,7 +4,7 @@
  * A game is modelled as a **point margin drawn from a normal distribution
  * centred on the strength differential**, with the winner falling out of that
  * margin's sign. This is deliberately NOT a possession-by-possession
- * simulation - a simplification documented in docs/ARCHITECTURE.md, chosen so
+ * simulation - a simplification documented in docs/SYSTEMS.md, chosen so
  * the engine is fast, deterministic given a seed, and easy to reason about.
  *
  * WHY MARGIN-FIRST (see docs/SIMULATION_AUDIT.md, P1-5/P1-6)
