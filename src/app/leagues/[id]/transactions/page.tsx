@@ -35,7 +35,8 @@ export default async function TransactionsPage({ params }: PageProps) {
         </h1>
         <p className="mt-3 max-w-[65ch] text-[15px] leading-relaxed text-ink-muted">
           Every trade, signing, injury, retirement, award, and real on-court moment across the
-          league - including the other 29 teams&apos; own - filed newest first.
+          league - including the other 29 teams&apos; own. The biggest stories lead; everything else
+          stays filed below, in the order it happened.
         </p>
       </div>
 
