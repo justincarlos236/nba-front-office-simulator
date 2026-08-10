@@ -18,7 +18,9 @@ export function ProspectCompareTray({
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-rule bg-field/95 px-4 py-3 backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3">
-        <span className="text-xs font-semibold tracking-wide text-ink-muted uppercase">Comparing</span>
+        <span className="text-xs font-semibold tracking-wide text-ink-muted uppercase">
+          Comparing
+        </span>
         {selectedProspects.map((p) => (
           <span
             key={p.id}

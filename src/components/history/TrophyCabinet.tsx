@@ -46,9 +46,7 @@ export function TrophyCabinet({
   const byCategory = CATEGORY_ORDER.map((category) => ({
     category,
     label: CATEGORY_LABEL[category] ?? category,
-    won: awards
-      .filter((a) => a.category === category)
-      .sort((a, b) => b.season - a.season),
+    won: awards.filter((a) => a.category === category).sort((a, b) => b.season - a.season),
   }));
 
   const total = awards.length;
@@ -75,54 +73,54 @@ export function TrophyCabinet({
           </p>
         </div>
       ) : (
-      <div className="mt-6 grid grid-cols-1 gap-px sm:grid-cols-2 lg:grid-cols-3">
-        {byCategory.map((shelf) => {
-          const empty = shelf.won.length === 0;
-          return (
-            <div
-              key={shelf.category}
-              className={`border-t bg-field p-5 ${
-                empty ? "border-hairline" : "border-team-accent"
-              }`}
-            >
-              <div className="flex items-start gap-2">
-                <span className={empty ? "text-rule" : "text-team-accent"}>
-                  {shelf.category === "MVP" ? <IconTrophy /> : <IconAward />}
-                </span>
-                <p
-                  className={`text-[11px] font-semibold tracking-[0.09em] uppercase ${
-                    empty ? "text-rule" : "text-ink-muted"
-                  }`}
-                >
-                  {shelf.label}
-                </p>
-              </div>
+        <div className="mt-6 grid grid-cols-1 gap-px sm:grid-cols-2 lg:grid-cols-3">
+          {byCategory.map((shelf) => {
+            const empty = shelf.won.length === 0;
+            return (
+              <div
+                key={shelf.category}
+                className={`border-t bg-field p-5 ${
+                  empty ? "border-hairline" : "border-team-accent"
+                }`}
+              >
+                <div className="flex items-start gap-2">
+                  <span className={empty ? "text-rule" : "text-team-accent"}>
+                    {shelf.category === "MVP" ? <IconTrophy /> : <IconAward />}
+                  </span>
+                  <p
+                    className={`text-[11px] font-semibold tracking-[0.09em] uppercase ${
+                      empty ? "text-rule" : "text-ink-muted"
+                    }`}
+                  >
+                    {shelf.label}
+                  </p>
+                </div>
 
-              {empty ? (
-                /* An empty shelf is information: it says what this franchise
+                {empty ? (
+                  /* An empty shelf is information: it says what this franchise
                    has never won. Hiding it would flatter the record. */
-                <p className="mt-4 text-[15px] text-rule">Never won</p>
-              ) : (
-                <ul className="mt-4 space-y-2">
-                  {shelf.won.map((award) => (
-                    <li
-                      key={`${award.category}-${award.season}`}
-                      className="flex items-baseline justify-between gap-3 border-b border-hairline pb-2 last:border-b-0 last:pb-0"
-                    >
-                      <span className="min-w-0 truncate text-[15px] font-semibold text-ink">
-                        {award.playerName}
-                      </span>
-                      <span className="shrink-0 font-mono text-[11px] tabular-nums text-ink-muted">
-                        {award.season}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          );
-        })}
-      </div>
+                  <p className="mt-4 text-[15px] text-rule">Never won</p>
+                ) : (
+                  <ul className="mt-4 space-y-2">
+                    {shelf.won.map((award) => (
+                      <li
+                        key={`${award.category}-${award.season}`}
+                        className="flex items-baseline justify-between gap-3 border-b border-hairline pb-2 last:border-b-0 last:pb-0"
+                      >
+                        <span className="min-w-0 truncate text-[15px] font-semibold text-ink">
+                          {award.playerName}
+                        </span>
+                        <span className="shrink-0 font-mono text-[11px] tabular-nums text-ink-muted">
+                          {award.season}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
     </section>
   );

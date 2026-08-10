@@ -68,9 +68,7 @@ export async function getSaveContinuity(
       },
     }),
     prisma.leagueTransaction.count({
-      where: newsReadThroughAt
-        ? { leagueId, createdAt: { gt: newsReadThroughAt } }
-        : { leagueId },
+      where: newsReadThroughAt ? { leagueId, createdAt: { gt: newsReadThroughAt } } : { leagueId },
     }),
   ]);
 

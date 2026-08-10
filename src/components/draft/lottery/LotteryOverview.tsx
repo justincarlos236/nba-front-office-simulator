@@ -73,7 +73,9 @@ export function LotteryOverview({
                 {t.isUserTeam && <span className="ml-2 text-xs text-team-accent">YOUR TEAM</span>}
               </p>
               {t.ownedByAnotherTeam && (
-                <p className="truncate text-xs text-ink-muted">via {t.originalTeamLabel}&apos;s pick</p>
+                <p className="truncate text-xs text-ink-muted">
+                  via {t.originalTeamLabel}&apos;s pick
+                </p>
               )}
             </div>
             <div className="w-32 shrink-0 text-right">

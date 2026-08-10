@@ -19,7 +19,7 @@ expected next offseason in a fresh league and 38 in the six-season save, against
 zero before. P1-3, P1-4 and P2-5 remain, and were deliberately deferred until
 the roster market behaves normally.
 
-The progression *models* are sound. Development, retirement, and draft-class
+The progression _models_ are sound. Development, retirement, and draft-class
 generation are all well-built, tested, and sensibly shaped. They are also, for
 every real player in the game, **unreachable**.
 
@@ -35,14 +35,14 @@ function to read it already exists.
 
 ## Scores
 
-| Dimension | Score | Note |
-|---|---|---|
-| **Overall** | **3/10** | Good models, disconnected from their main input |
-| Correctness | 3/10 | Age is wrong for 100% of real players, 18 call sites deep |
-| Realism | 3/10 | No ageing, no decline, no attrition |
-| Long-term stability | 2/10 | Population grows without bound; league never turns over |
-| Model quality | 8/10 | Development, retirement and draft generation are all well-built |
-| Test confidence | 5/10 | Units are tested; nothing tests the integration that broke |
+| Dimension           | Score    | Note                                                            |
+| ------------------- | -------- | --------------------------------------------------------------- |
+| **Overall**         | **3/10** | Good models, disconnected from their main input                 |
+| Correctness         | 3/10     | Age is wrong for 100% of real players, 18 call sites deep       |
+| Realism             | 3/10     | No ageing, no decline, no attrition                             |
+| Long-term stability | 2/10     | Population grows without bound; league never turns over         |
+| Model quality       | 8/10     | Development, retirement and draft generation are all well-built |
+| Test confidence     | 5/10     | Units are tested; nothing tests the integration that broke      |
 
 ---
 
@@ -54,12 +54,12 @@ function to read it already exists.
 players**. In the six-season save it returns 27 for the same 537, while the 240
 generated draftees age correctly (22–25).
 
-| | |
-|---|---|
-| Seeded players with `draftYear` set | **0 / 537** |
-| Seeded players with `birthDate` set | **537 / 537** |
+|                                       |                     |
+| ------------------------------------- | ------------------- |
+| Seeded players with `draftYear` set   | **0 / 537**         |
+| Seeded players with `birthDate` set   | **537 / 537**       |
 | Real age spread available in the data | 22 to 44, median 29 |
-| Age the engine actually uses | **27, universally** |
+| Age the engine actually uses          | **27, universally** |
 
 **Evidence.** `src/lib/players/age.ts`:
 
@@ -128,7 +128,7 @@ answer.
 really 33 or older and 13 are 41+; all are still playing. Rosters grow every
 season, which the Simulation audit saw as unbounded roster sizes (P0-3 there) —
 that was the symptom, this is the disease. The Stage 1 roster cap stops teams
-*signing* past 15, but the underlying population still climbs by 60 a year.
+_signing_ past 15, but the underlying population still climbs by 60 a year.
 
 **Fix.** Falls out of P0-1. Worth a follow-up pass to retire the backlog of
 already-old players in existing saves rather than leaving them immortal.
@@ -142,14 +142,14 @@ roughly flat and annual retirements land in a believable band.
 
 **Observed**, share of all active players:
 
-| Tier | Fresh | 6 seasons | NBA |
-|---|---|---|---|
-| 95–99 superstar | 0.9% | 0.5% | ~1.5% |
-| 88–94 star | 3.9% | 3.0% | ~5% |
-| 80–87 starter | 10.4% | 11.1% | ~15% |
-| 73–79 rotation | 18.6% | 24.5% | ~25% |
-| 65–72 fringe | 38.4% | 38.0% | ~35% |
-| 60–64 replacement | **27.7%** | **23.0%** | ~18% |
+| Tier              | Fresh     | 6 seasons | NBA   |
+| ----------------- | --------- | --------- | ----- |
+| 95–99 superstar   | 0.9%      | 0.5%      | ~1.5% |
+| 88–94 star        | 3.9%      | 3.0%      | ~5%   |
+| 80–87 starter     | 10.4%     | 11.1%     | ~15%  |
+| 73–79 rotation    | 18.6%     | 24.5%     | ~25%  |
+| 65–72 fringe      | 38.4%     | 38.0%     | ~35%  |
+| 60–64 replacement | **27.7%** | **23.0%** | ~18%  |
 
 **Assessment.** Directionally right, but thin at the top and heavy at the
 bottom. Partly a consequence of `MIN_RATING = 60` acting as a hard floor that
@@ -166,9 +166,9 @@ ageing will change the shape on its own.
 **Observed.** Counting how many of the league's top 30 players sit on each
 roster:
 
-| | Fresh | 6 seasons | NBA |
-|---|---|---|---|
-| Most on one roster | 3 | 3 | 3–4 |
+|                               | Fresh      | 6 seasons  | NBA      |
+| ----------------------------- | ---------- | ---------- | -------- |
+| Most on one roster            | 3          | 3          | 3–4      |
 | Teams with none of the top 30 | **6 / 30** | **9 / 30** | ~15 / 30 |
 
 **Assessment.** The ceiling is right — a team can hold three of the best 30.
@@ -221,6 +221,7 @@ rather than treat directly.
 ## Prioritised plan
 
 **Stage 1 — make age real (everything else depends on it)**
+
 1. P0-1: resolve age from `birthDate` first, `draftYear` second, constant last.
 2. Update the 18 call sites via the shared helper.
 3. P0-2: verify retirement fires; decide how to handle the existing backlog of
@@ -240,7 +241,7 @@ rather than treat directly.
 
 ## Limitations
 
-- Development curves for *generated* players were not stress-tested over a long
+- Development curves for _generated_ players were not stress-tested over a long
   horizon; no save is old enough to contain a draftee who has reached decline
   age. A headless 20-season harness would settle this and P1-4 together, and has
   still not been built.

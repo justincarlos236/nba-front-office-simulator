@@ -48,9 +48,7 @@ export function BusinessExpansionCard({
           return (
             <div key={kind} className="rounded-[2px] border border-rule bg-raised p-3">
               <div className="flex items-baseline justify-between">
-                <p className="text-sm font-semibold text-ink">
-                  {CAPITAL_PROJECT_LABEL[kind]}
-                </p>
+                <p className="text-sm font-semibold text-ink">{CAPITAL_PROJECT_LABEL[kind]}</p>
                 {built && <span className="text-xs text-positive">Built</span>}
               </div>
               <p className="mt-1 text-xs text-ink-muted">{CAPITAL_PROJECT_DESCRIPTION[kind]}</p>

@@ -271,10 +271,8 @@ export function DraftExperience({
       {pendingDraftPick && (
         <div className="rounded-[2px] border border-team-accent bg-team-accent/10 p-5">
           <p className="text-sm font-semibold text-ink">
-            Draft {pendingDraftPick.fullName} with the {nextPick?.overallPickNumber
-              ? `No. ${nextPick.overallPickNumber} pick`
-              : "next pick"}
-            ?
+            Draft {pendingDraftPick.fullName} with the{" "}
+            {nextPick?.overallPickNumber ? `No. ${nextPick.overallPickNumber} pick` : "next pick"}?
           </p>
           <p className="mt-1 text-sm text-ink-muted">
             This is your selection. Once the card is in, it cannot be taken back.
@@ -345,7 +343,9 @@ export function DraftExperience({
               type="button"
               onClick={() => setSideTab("myBoard")}
               className={`rounded-[2px] px-3 py-1.5 text-xs font-semibold transition ${
-                sideTab === "myBoard" ? "bg-team-accent text-team-accent-ink" : "text-ink-muted hover:text-ink"
+                sideTab === "myBoard"
+                  ? "bg-team-accent text-team-accent-ink"
+                  : "text-ink-muted hover:text-ink"
               }`}
             >
               My Board

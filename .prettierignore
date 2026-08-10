@@ -4,3 +4,9 @@ src/generated
 coverage
 playwright-report
 test-results
+
+# Local editor/tooling config - gitignored, not this project's code
+.claude
+.github/agents
+.github/skills
+.impeccable

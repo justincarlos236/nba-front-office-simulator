@@ -57,8 +57,7 @@ const PATTERNS: { test: RegExp; error: UserFacingError }[] = [
     test: /stepien/i,
     error: {
       summary: "This would leave you without a first-round pick in consecutive years.",
-      remedy:
-        "The Stepien rule blocks it. Swap in a different pick year, or send players instead.",
+      remedy: "The Stepien rule blocks it. Swap in a different pick year, or send players instead.",
       ruling: true,
     },
   },

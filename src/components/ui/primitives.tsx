@@ -27,11 +27,7 @@ export function Label({
   className?: string;
 }) {
   const color =
-    tone === "accent"
-      ? "text-team-accent"
-      : tone === "ink"
-        ? "text-ink"
-        : "text-ink-muted";
+    tone === "accent" ? "text-team-accent" : tone === "ink" ? "text-ink" : "text-ink-muted";
   return (
     <p
       className={`text-[11px] leading-none font-semibold tracking-[0.09em] uppercase ${color} ${className}`}
@@ -131,9 +127,7 @@ export function Status({ tone, children }: { tone: StatusTone; children: ReactNo
     neutral: "text-ink-muted",
   }[tone];
   return (
-    <span
-      className={`text-[11px] font-semibold tracking-[0.09em] uppercase ${color}`}
-    >
+    <span className={`text-[11px] font-semibold tracking-[0.09em] uppercase ${color}`}>
       {children}
     </span>
   );
@@ -268,7 +262,13 @@ export function TextInput({
    DATA TABLE - the Ledger primitive.
 ------------------------------------------------------------------------- */
 
-export function DataTable({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function DataTable({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <div className={`overflow-x-auto ${className}`}>
       <table className="w-full border-collapse text-[15px]">{children}</table>

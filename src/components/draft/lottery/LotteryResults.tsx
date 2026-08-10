@@ -132,7 +132,9 @@ export function LotteryResults({
                 {r.isUserTeam && <span className="ml-2 text-xs text-team-accent">YOUR TEAM</span>}
               </p>
               {r.ownedByAnotherTeam && (
-                <p className="truncate text-xs text-ink-muted">via {r.originalTeamLabel}&apos;s pick</p>
+                <p className="truncate text-xs text-ink-muted">
+                  via {r.originalTeamLabel}&apos;s pick
+                </p>
               )}
             </div>
             <span className="w-20 shrink-0 text-right font-mono text-xs text-ink-muted">
@@ -140,7 +142,11 @@ export function LotteryResults({
             </span>
             <span
               className={`w-16 shrink-0 text-right font-mono text-xs ${
-                r.movement > 0 ? "text-positive" : r.movement < 0 ? "text-negative" : "text-ink-muted"
+                r.movement > 0
+                  ? "text-positive"
+                  : r.movement < 0
+                    ? "text-negative"
+                    : "text-ink-muted"
               }`}
             >
               {r.movement === 0 ? "—" : `${r.movement > 0 ? "▲" : "▼"} ${Math.abs(r.movement)}`}

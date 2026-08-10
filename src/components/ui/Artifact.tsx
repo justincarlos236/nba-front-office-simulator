@@ -135,11 +135,7 @@ export function ArtifactClause({
  * The signature block. A document is executed by someone; saying so is what
  * makes it read as a document rather than a summary panel.
  */
-export function ArtifactSignature({
-  lines,
-}: {
-  lines: { role: string; name: string }[];
-}) {
+export function ArtifactSignature({ lines }: { lines: { role: string; name: string }[] }) {
   return (
     <footer className="grid grid-cols-1 gap-6 border-t border-rule px-6 py-5 sm:grid-cols-2">
       {lines.map((line) => (

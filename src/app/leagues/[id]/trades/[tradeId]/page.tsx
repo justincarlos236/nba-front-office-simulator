@@ -197,8 +197,9 @@ export default async function TradeOutcomePage({ params, searchParams }: PagePro
 
   const teamById = new Map(league.teams.map((lt) => [lt.id, lt]));
   const fromTeam = teamById.get(trade.proposedById);
-  const otherTeamId = trade.assets.find((a) => a.fromLeagueTeamId !== trade.proposedById)
-    ?.fromLeagueTeamId;
+  const otherTeamId = trade.assets.find(
+    (a) => a.fromLeagueTeamId !== trade.proposedById,
+  )?.fromLeagueTeamId;
   const toTeam = otherTeamId ? teamById.get(otherTeamId) : undefined;
 
   const label = (lt: typeof fromTeam) => (lt ? `${lt.team.city} ${lt.team.name}` : "Unknown team");
@@ -218,10 +219,7 @@ export default async function TradeOutcomePage({ params, searchParams }: PagePro
 
   const reactions = trade.transactions.filter((t) => t.type !== "TRADE");
 
-  const fromAccent = resolveTeamAccent(
-    fromTeam?.team.primaryColor,
-    fromTeam?.team.secondaryColor,
-  );
+  const fromAccent = resolveTeamAccent(fromTeam?.team.primaryColor, fromTeam?.team.secondaryColor);
   const toAccent = resolveTeamAccent(toTeam?.team.primaryColor, toTeam?.team.secondaryColor);
 
   return (

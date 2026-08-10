@@ -86,7 +86,9 @@ export function PlayoffBracket({
         <FinalsConnector />
 
         <div className="flex flex-col items-center justify-center gap-2 px-1">
-          <p className="text-[10px] font-semibold tracking-wide text-ink-muted uppercase">NBA Finals</p>
+          <p className="text-[10px] font-semibold tracking-wide text-ink-muted uppercase">
+            NBA Finals
+          </p>
           {finals.length > 0 ? (
             <MatchupBox
               series={finals[0]}
@@ -357,7 +359,10 @@ function MatchupBox({
               const higherScore = higherHome ? g.homeScore : g.awayScore;
               const lowerScore = higherHome ? g.awayScore : g.homeScore;
               return (
-                <li key={g.id} className="flex items-center justify-between text-[9px] text-ink-muted">
+                <li
+                  key={g.id}
+                  className="flex items-center justify-between text-[9px] text-ink-muted"
+                >
                   <span>G{i + 1}</span>
                   <span className="font-mono">
                     {higherScore}-{lowerScore}

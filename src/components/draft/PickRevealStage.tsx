@@ -272,9 +272,7 @@ export function PickRevealStage({
                   overallPickNumber={current.overallPickNumber}
                   season={season}
                   viaTeamLabel={
-                    current.tradedFromTeamId
-                      ? teamLabel(teamsById, current.tradedFromTeamId)
-                      : null
+                    current.tradedFromTeamId ? teamLabel(teamsById, current.tradedFromTeamId) : null
                   }
                 />
                 {holdingOnOwnPick && (
@@ -319,9 +317,7 @@ export function PickRevealStage({
                 <p className="text-xs font-black tracking-wide text-positive uppercase">
                   Hidden Gem
                 </p>
-                <p className="mt-0.5 text-xs text-ink">
-                  A real slide - great value this late
-                </p>
+                <p className="mt-0.5 text-xs text-ink">A real slide - great value this late</p>
               </div>
             )}
             {current.resolutionSummary && (
@@ -342,7 +338,9 @@ export function PickRevealStage({
                 disabled={isFinal}
                 onClick={() => setMode("auto")}
                 className={`px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
-                  mode === "auto" ? "bg-team-accent text-team-accent-ink" : "text-ink hover:bg-raised"
+                  mode === "auto"
+                    ? "bg-team-accent text-team-accent-ink"
+                    : "text-ink hover:bg-raised"
                 }`}
               >
                 Auto-play
@@ -352,7 +350,9 @@ export function PickRevealStage({
                 disabled={isFinal}
                 onClick={() => setMode("manual")}
                 className={`px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
-                  mode === "manual" ? "bg-team-accent text-team-accent-ink" : "text-ink hover:bg-raised"
+                  mode === "manual"
+                    ? "bg-team-accent text-team-accent-ink"
+                    : "text-ink hover:bg-raised"
                 }`}
               >
                 Manual

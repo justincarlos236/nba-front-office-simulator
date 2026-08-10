@@ -46,9 +46,7 @@ export default async function PlayerDetailPage({ params }: PageProps) {
           teamPrimaryColor={data.identity.currentTeam?.primaryColor}
         />
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-ink">
-            {data.identity.fullName}
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight text-ink">{data.identity.fullName}</h1>
           <p className="mt-1 text-ink-muted">
             {data.identity.position}
             {data.identity.currentTeam

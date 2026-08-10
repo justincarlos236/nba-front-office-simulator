@@ -75,9 +75,7 @@ export default function RosterGuidePage() {
           </p>
         </div>
         <div>
-          <p className="font-semibold text-ink">
-            {STAFF_ROLE_LABEL.PLAYER_DEVELOPMENT_COACH}
-          </p>
+          <p className="font-semibold text-ink">{STAFF_ROLE_LABEL.PLAYER_DEVELOPMENT_COACH}</p>
           <p className="mt-1">
             Affects how much young players grow and how gracefully veterans decline at each
             season&apos;s offseason development pass.

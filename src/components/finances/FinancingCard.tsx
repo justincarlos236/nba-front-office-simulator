@@ -50,9 +50,7 @@ export function FinancingCard({
       <p className="text-xs tracking-wide text-ink-muted uppercase">Financing</p>
       <div className="mt-2 grid grid-cols-2 gap-4">
         <div>
-          <p className="text-lg font-bold text-ink tabular-nums">
-            {formatFinanceCents(debtCents)}
-          </p>
+          <p className="text-lg font-bold text-ink tabular-nums">{formatFinanceCents(debtCents)}</p>
           <p className="text-xs text-ink-muted">Outstanding debt</p>
         </div>
         <div>

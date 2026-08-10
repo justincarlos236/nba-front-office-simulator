@@ -57,59 +57,58 @@ export default async function HistoryPage({ params }: PageProps) {
     allStarWeekends,
     lotteryResults,
     memoryCandidates,
-  ] =
-    await Promise.all([
-      prisma.playoffSeries.findMany({
-        where: { leagueId: id, round: 4, winnerTeamId: { not: null } },
-        include: { winnerTeam: { include: { team: true } } },
-        orderBy: { season: "desc" },
-      }),
-      prisma.seasonAward.findMany({
-        where: { leagueId: id },
-        include: { leaguePlayer: { include: { player: true } } },
-      }),
-      prisma.staffAward.findMany({
-        where: { leagueId: id },
-        include: { staff: true },
-      }),
-      prisma.leaguePlayer.findMany({
-        where: { leagueId: id, retiredSeason: { not: null } },
-        include: { player: true },
-      }),
-      prisma.allStarWeekend.findMany({
-        where: { leagueId: id, status: "RESOLVED" },
-        include: {
-          game: true,
-          participants: {
-            where: { OR: [{ result: "CHAMPION" }, { result: { contains: "MVP" } }] },
+  ] = await Promise.all([
+    prisma.playoffSeries.findMany({
+      where: { leagueId: id, round: 4, winnerTeamId: { not: null } },
+      include: { winnerTeam: { include: { team: true } } },
+      orderBy: { season: "desc" },
+    }),
+    prisma.seasonAward.findMany({
+      where: { leagueId: id },
+      include: { leaguePlayer: { include: { player: true } } },
+    }),
+    prisma.staffAward.findMany({
+      where: { leagueId: id },
+      include: { staff: true },
+    }),
+    prisma.leaguePlayer.findMany({
+      where: { leagueId: id, retiredSeason: { not: null } },
+      include: { player: true },
+    }),
+    prisma.allStarWeekend.findMany({
+      where: { leagueId: id, status: "RESOLVED" },
+      include: {
+        game: true,
+        participants: {
+          where: { OR: [{ result: "CHAMPION" }, { result: { contains: "MVP" } }] },
+        },
+      },
+      orderBy: { season: "desc" },
+    }),
+    prisma.lotteryResult.findMany({
+      where: { leagueId: id },
+      include: {
+        currentOwner: { include: { team: true } },
+        originalTeam: { include: { team: true } },
+      },
+      orderBy: [{ season: "desc" }, { resultPickNumber: "asc" }],
+    }),
+    // Candidates for the franchise-memory timeline. curateFranchiseMemory
+    // applies its own allowlist and weighting; this only narrows to rows
+    // involving the user's own team so a rival's blockbuster never lands in
+    // this franchise's permanent record.
+    league.userControlledTeamId
+      ? prisma.leagueTransaction.findMany({
+          where: {
+            leagueId: id,
+            importance: { in: ["MAJOR", "BREAKING"] },
+            teamIds: { has: league.userControlledTeamId },
           },
-        },
-        orderBy: { season: "desc" },
-      }),
-      prisma.lotteryResult.findMany({
-        where: { leagueId: id },
-        include: {
-          currentOwner: { include: { team: true } },
-          originalTeam: { include: { team: true } },
-        },
-        orderBy: [{ season: "desc" }, { resultPickNumber: "asc" }],
-      }),
-      // Candidates for the franchise-memory timeline. curateFranchiseMemory
-      // applies its own allowlist and weighting; this only narrows to rows
-      // involving the user's own team so a rival's blockbuster never lands in
-      // this franchise's permanent record.
-      league.userControlledTeamId
-        ? prisma.leagueTransaction.findMany({
-            where: {
-              leagueId: id,
-              importance: { in: ["MAJOR", "BREAKING"] },
-              teamIds: { has: league.userControlledTeamId },
-            },
-            orderBy: { createdAt: "desc" },
-            take: 200,
-          })
-        : Promise.resolve([]),
-    ]);
+          orderBy: { createdAt: "desc" },
+          take: 200,
+        })
+      : Promise.resolve([]),
+  ]);
 
   const allStarPlayerIds = new Set<string>();
   for (const w of allStarWeekends) {
@@ -320,7 +319,9 @@ export default async function HistoryPage({ params }: PageProps) {
 
                 {seasonAllStar && (
                   <div className="mt-4 rounded-[2px] border border-rule/30 bg-raised p-3">
-                    <p className="text-xs tracking-wide text-ink-muted uppercase">All-Star Weekend</p>
+                    <p className="text-xs tracking-wide text-ink-muted uppercase">
+                      All-Star Weekend
+                    </p>
                     <div className="mt-2 space-y-1 text-sm">
                       {seasonAllStar.game && (
                         <p className="text-ink">

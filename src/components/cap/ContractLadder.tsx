@@ -50,7 +50,10 @@ export function ContractLadder({
         </span>
       </div>
 
-      <div className="mt-4 grid gap-3" style={{ gridTemplateColumns: `repeat(${projections.length}, minmax(0, 1fr))` }}>
+      <div
+        className="mt-4 grid gap-3"
+        style={{ gridTemplateColumns: `repeat(${projections.length}, minmax(0, 1fr))` }}
+      >
         {projections.map((p) => {
           const cap = getSeasonCapRules(p.season).salaryCapCents;
           const overCap = p.committedSalaryCents > cap;

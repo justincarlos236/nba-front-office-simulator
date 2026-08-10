@@ -109,7 +109,10 @@ export function ScheduleExperience({
         {weekendPending && (
           <div className="mb-4 rounded-[2px] border border-rule/30 bg-raised p-3 text-sm">
             <span className="text-ink">All-Star Weekend has arrived.</span>{" "}
-            <Link href={`/leagues/${leagueId}/all-star`} className="text-team-accent hover:underline">
+            <Link
+              href={`/leagues/${leagueId}/all-star`}
+              className="text-team-accent hover:underline"
+            >
               View the weekend
             </Link>{" "}
             <span className="text-ink-muted">to continue the season.</span>
@@ -118,7 +121,10 @@ export function ScheduleExperience({
         {!weekendPending && decisionPending && (
           <div className="mb-4 rounded-[2px] border border-caution/30 bg-caution/5 p-3 text-sm">
             <span className="text-ink">The front office needs your call on something.</span>{" "}
-            <Link href={`/leagues/${leagueId}/finances`} className="text-team-accent hover:underline">
+            <Link
+              href={`/leagues/${leagueId}/finances`}
+              className="text-team-accent hover:underline"
+            >
               Open the inbox
             </Link>{" "}
             <span className="text-ink-muted">to continue the season.</span>
@@ -141,9 +147,13 @@ export function ScheduleExperience({
           >
             {isRevealing ? "Simulating..." : "Sim next 10 games"}
           </button>
-          <span className="text-sm text-ink-muted">{remaining} games remaining on your schedule</span>
+          <span className="text-sm text-ink-muted">
+            {remaining} games remaining on your schedule
+          </span>
         </div>
-        {lastResult && !isRevealing && <p className="mt-3 text-sm text-team-accent">{lastResult}</p>}
+        {lastResult && !isRevealing && (
+          <p className="mt-3 text-sm text-team-accent">{lastResult}</p>
+        )}
       </div>
 
       <div className="mt-6 rounded-[2px] border border-rule bg-field p-5">

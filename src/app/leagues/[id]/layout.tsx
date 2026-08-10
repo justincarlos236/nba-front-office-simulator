@@ -80,7 +80,10 @@ export default async function LeagueLayout({
     // THE WIRE - the franchise colours the interface. Resolved through the
     // contrast cascade (16 of 30 real team primaries fail on this ground), set
     // once here so every descendant inherits `--team-accent`.
-    <div className="flex-1" style={teamAccentStyle(userTeam?.team.primaryColor, userTeam?.team.secondaryColor)}>
+    <div
+      className="flex-1"
+      style={teamAccentStyle(userTeam?.team.primaryColor, userTeam?.team.secondaryColor)}
+    >
       <div className="border-b border-rule bg-field/40">
         <div className="mx-auto max-w-6xl px-4 pt-4 sm:px-6">
           <Link

@@ -70,10 +70,7 @@ export function RosterShape({
               <div className="relative flex h-32 flex-col justify-end gap-px bg-raised/30">
                 {column.players.map((p) => {
                   const minutes = p.targetMinutesPerGame ?? 0;
-                  const height = Math.max(
-                    12,
-                    Math.round((minutes / REFERENCE_MINUTES) * 76),
-                  );
+                  const height = Math.max(12, Math.round((minutes / REFERENCE_MINUTES) * 76));
                   return (
                     <div
                       key={p.leaguePlayerId}

@@ -36,9 +36,7 @@ export function NarrativesSection({ narratives }: { narratives: NarrativeItem[] 
             </div>
             <p className="mt-1 text-sm text-ink-muted">{n.body}</p>
             {n.resolutionBeat && (
-              <p className="mt-2 border-t border-rule pt-2 text-sm text-ink">
-                {n.resolutionBeat}
-              </p>
+              <p className="mt-2 border-t border-rule pt-2 text-sm text-ink">{n.resolutionBeat}</p>
             )}
           </div>
         ))}

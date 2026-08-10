@@ -19,12 +19,7 @@ import { computeLeaguePhase, type LeaguePhase } from "@/lib/league/leaguePhase";
 
 /** Nav section ids, matching `subNavSections.ts`. */
 export type AttentionSection =
-  | "finances"
-  | "draft"
-  | "offseason"
-  | "freeAgents"
-  | "playoffs"
-  | "staff";
+  "finances" | "draft" | "offseason" | "freeAgents" | "playoffs" | "staff";
 
 export type AttentionCounts = Partial<Record<AttentionSection, number>>;
 

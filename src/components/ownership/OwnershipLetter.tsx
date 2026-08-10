@@ -79,13 +79,13 @@ export function OwnershipLetter({
         <span className="font-mono tabular-nums text-ink">
           {formatCentsCompact(demand.targetCents)}
         </span>{" "}
-        before the {seasonLabel(demand.bySeason)} season. I am not interested in how, only
-        that it happens.
+        before the {seasonLabel(demand.bySeason)} season. I am not interested in how, only that it
+        happens.
       </>
     ) : (
       <>
-        This franchise returns to profitability before the {seasonLabel(demand.bySeason)}{" "}
-        season. We are losing money on a team I am told is worth watching.
+        This franchise returns to profitability before the {seasonLabel(demand.bySeason)} season. We
+        are losing money on a team I am told is worth watching.
       </>
     );
 

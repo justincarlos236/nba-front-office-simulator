@@ -252,8 +252,8 @@ export function PreDraftScoutingView({
           <p className="mt-2 text-sm text-ink-muted">
             The draft class is out, but the lottery hasn&apos;t run yet - you&apos;re scouting blind
             on where you&apos;ll actually pick. You have a limited pool of{" "}
-            <span className="text-ink">scouting assignments</span> for this whole window (set
-            by your Scouting department). Spend them to learn more about specific prospects before
+            <span className="text-ink">scouting assignments</span> for this whole window (set by
+            your Scouting department). Spend them to learn more about specific prospects before
             Draft Night:
           </p>
           <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-ink-muted">
@@ -262,22 +262,21 @@ export function PreDraftScoutingView({
               assignment to sharpen your read on him specifically.
             </li>
             <li>
-              <span className="text-ink">Regional Sweep</span> - spend 1 assignment to find
-              new names across a whole pathway (college tier, international, etc.) at once.
+              <span className="text-ink">Regional Sweep</span> - spend 1 assignment to find new
+              names across a whole pathway (college tier, international, etc.) at once.
             </li>
             <li>
-              <span className="text-ink">Private Workout</span> - spend 2 assignments to
-              resolve one specific uncertainty (work ethic or injury outlook) outright, once
-              you&apos;ve scouted him enough.
+              <span className="text-ink">Private Workout</span> - spend 2 assignments to resolve one
+              specific uncertainty (work ethic or injury outlook) outright, once you&apos;ve scouted
+              him enough.
             </li>
           </ul>
           <p className="mt-2 text-sm text-ink-muted">
             Don&apos;t want to manage it yourself?{" "}
-            <span className="text-ink">Get a recommendation</span> below spends your whole
-            remaining budget for you, weighted to your team&apos;s needs. Once spent, assignments
-            don&apos;t come back this window - what you learn (or don&apos;t) here is what you walk
-            into the draft with.{" "}
-            <HowDoesThisWork topic="scouting" className="underline hover:text-ink" />
+            <span className="text-ink">Get a recommendation</span> below spends your whole remaining
+            budget for you, weighted to your team&apos;s needs. Once spent, assignments don&apos;t
+            come back this window - what you learn (or don&apos;t) here is what you walk into the
+            draft with. <HowDoesThisWork topic="scouting" className="underline hover:text-ink" />
           </p>
         </div>
       )}
@@ -320,8 +319,8 @@ export function PreDraftScoutingView({
         <p className="mt-2 text-xs text-ink-muted">
           Open any prospect and use a Focused Look to spend an assignment yourself, or click{" "}
           <span className="text-ink">Get a recommendation</span> to spend your{" "}
-          <span className="text-ink">entire remaining budget at once</span> - your staff will
-          run Focused Looks weighted toward your team&apos;s positional needs.{" "}
+          <span className="text-ink">entire remaining budget at once</span> - your staff will run
+          Focused Looks weighted toward your team&apos;s positional needs.{" "}
           <HowDoesThisWork topic="scouting" className="underline hover:text-ink" />
         </p>
         {recommendError && <p className="mt-2 text-xs text-negative">{recommendError}</p>}

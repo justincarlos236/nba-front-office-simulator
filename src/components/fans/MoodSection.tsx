@@ -30,7 +30,11 @@ function TrendArrow({ delta, label }: { delta: number; label: string }) {
   const direction = trendDirection(delta);
   const symbol = direction === "UP" ? "↑" : direction === "DOWN" ? "↓" : "→";
   const color =
-    direction === "UP" ? "text-positive" : direction === "DOWN" ? "text-negative" : "text-ink-muted";
+    direction === "UP"
+      ? "text-positive"
+      : direction === "DOWN"
+        ? "text-negative"
+        : "text-ink-muted";
   return (
     <span className={`inline-flex items-center gap-1 text-xs font-medium ${color}`}>
       {symbol} {Math.abs(delta)} {label}

@@ -252,7 +252,9 @@ export function LotteryReveal({
               <span
                 key={t.currentOwnerTeamId + t.originalTeamId}
                 className={`rounded-full border px-2.5 py-1 font-mono ${
-                  isRevealed ? "border-team-accent bg-team-accent/10 text-team-accent" : "border-rule text-ink-muted"
+                  isRevealed
+                    ? "border-team-accent bg-team-accent/10 text-team-accent"
+                    : "border-rule text-ink-muted"
                 }`}
               >
                 {t.ownedByAnotherTeam ? `${t.originalTeamLabel} pick` : "Your pick"}:{" "}
@@ -282,7 +284,9 @@ export function LotteryReveal({
               disabled={isFinal}
               onClick={() => setMode("manual")}
               className={`px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30 ${
-                mode === "manual" ? "bg-team-accent text-team-accent-ink" : "text-ink hover:bg-raised"
+                mode === "manual"
+                  ? "bg-team-accent text-team-accent-ink"
+                  : "text-ink hover:bg-raised"
               }`}
             >
               Manual
@@ -373,7 +377,9 @@ export function LotteryReveal({
                   {r.movement > 0 ? "▲" : "▼"} {Math.abs(r.movement)}
                 </span>
               )}
-              <span className="shrink-0 font-mono text-xs text-ink-muted">proj. {r.projectedSeed}</span>
+              <span className="shrink-0 font-mono text-xs text-ink-muted">
+                proj. {r.projectedSeed}
+              </span>
             </div>
           ))}
         </div>

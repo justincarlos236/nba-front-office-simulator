@@ -325,10 +325,10 @@ export default async function AllStarWeekendPage({ params, searchParams }: PageP
                                 size="xs"
                               />
                             </td>
-                            <td className="px-3 py-2 text-right text-ink-muted">{s.minutesPlayed}</td>
-                            <td className="px-3 py-2 text-right font-mono text-ink">
-                              {s.points}
+                            <td className="px-3 py-2 text-right text-ink-muted">
+                              {s.minutesPlayed}
                             </td>
+                            <td className="px-3 py-2 text-right font-mono text-ink">{s.points}</td>
                             <td className="px-3 py-2 text-right font-mono text-ink-muted">
                               {s.rebounds}
                             </td>

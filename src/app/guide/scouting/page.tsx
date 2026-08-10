@@ -38,10 +38,10 @@ export default function ScoutingGuidePage() {
             becomes.
           </li>
           <li>
-            <span className="text-ink">Regional Sweep</span> (1 assignment) - picks a pathway
-            (Power Conference, Mid-Major, International Professional, or Development Pathway) and
-            gives shallow Depth to several Unknown prospects who share it. It finds names you
-            weren&apos;t tracking - it doesn&apos;t confirm them.
+            <span className="text-ink">Regional Sweep</span> (1 assignment) - picks a pathway (Power
+            Conference, Mid-Major, International Professional, or Development Pathway) and gives
+            shallow Depth to several Unknown prospects who share it. It finds names you weren&apos;t
+            tracking - it doesn&apos;t confirm them.
           </li>
           <li>
             <span className="text-ink">Private Workout</span> (2 assignments, once a prospect
@@ -106,18 +106,18 @@ export default function ScoutingGuidePage() {
         </p>
         <ul className="list-inside list-disc space-y-2">
           <li>
-            <span className="text-ink">Manual</span> - assign every sweep, focused look, and
-            workout by hand.
+            <span className="text-ink">Manual</span> - assign every sweep, focused look, and workout
+            by hand.
           </li>
           <li>
-            <span className="text-ink">Recommend</span> - your staff propose a full
-            week&apos;s assignments; accept them, edit them, or override entirely. One click, still
-            a real decision.
+            <span className="text-ink">Recommend</span> - your staff propose a full week&apos;s
+            assignments; accept them, edit them, or override entirely. One click, still a real
+            decision.
           </li>
           <li>
-            <span className="text-ink">Delegate window</span> - pick a strategy once (Best
-            Player Available, Fill Our Needs, Find Sleepers, or Balanced) and let your staff run the
-            entire Pre-Draft window against it.
+            <span className="text-ink">Delegate window</span> - pick a strategy once (Best Player
+            Available, Fill Our Needs, Find Sleepers, or Balanced) and let your staff run the entire
+            Pre-Draft window against it.
           </li>
         </ul>
         <p>
@@ -136,12 +136,11 @@ export default function ScoutingGuidePage() {
           open (&quot;you never got a read on his health&quot;).
         </p>
         <p>
-          It deliberately does <span className="text-ink">not</span> reveal his true
-          potential, and it never says &quot;steal&quot; or &quot;bust.&quot; Revealing that on the
-          spot would turn the draft into a graded quiz instead of a bet. Whether the pick was
-          actually right plays out over real seasons through ordinary player development, exactly
-          like every other player on your roster. Scouting resolves what you knew; development
-          resolves what was true.
+          It deliberately does <span className="text-ink">not</span> reveal his true potential, and
+          it never says &quot;steal&quot; or &quot;bust.&quot; Revealing that on the spot would turn
+          the draft into a graded quiz instead of a bet. Whether the pick was actually right plays
+          out over real seasons through ordinary player development, exactly like every other player
+          on your roster. Scouting resolves what you knew; development resolves what was true.
         </p>
       </GuideSection>
 

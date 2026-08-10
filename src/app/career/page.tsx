@@ -137,9 +137,7 @@ export default async function CareerPage() {
                     {r.reputationDelta !== 0 && (
                       <>
                         {" · "}
-                        <span
-                          className={r.reputationDelta > 0 ? "text-positive" : "text-negative"}
-                        >
+                        <span className={r.reputationDelta > 0 ? "text-positive" : "text-negative"}>
                           {r.reputationDelta > 0 ? "+" : ""}
                           {r.reputationDelta} rep
                         </span>

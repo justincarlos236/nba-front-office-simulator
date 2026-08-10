@@ -76,17 +76,15 @@ export function SentimentLedgerSection({ events }: { events: LedgerEvent[] }) {
             </p>
             <p
               className={`mt-1 text-2xl font-bold tabular-nums ${
-                t.netDelta > 0
-                  ? "text-positive"
-                  : t.netDelta < 0
-                    ? "text-negative"
-                    : "text-ink"
+                t.netDelta > 0 ? "text-positive" : t.netDelta < 0 ? "text-negative" : "text-ink"
               }`}
             >
               {t.netDelta > 0 ? "+" : ""}
               {t.netDelta}
             </p>
-            <p className="mt-1 text-xs text-ink-muted">{FAN_SENTIMENT_THEME_DESCRIPTION[t.theme]}</p>
+            <p className="mt-1 text-xs text-ink-muted">
+              {FAN_SENTIMENT_THEME_DESCRIPTION[t.theme]}
+            </p>
           </div>
         ))}
       </div>

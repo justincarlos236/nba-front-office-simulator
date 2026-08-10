@@ -1,5 +1,10 @@
 import { formatCentsCompact } from "@/lib/money";
-import { Artifact, ArtifactClause, ArtifactHead, ArtifactSignature } from "@/components/ui/Artifact";
+import {
+  Artifact,
+  ArtifactClause,
+  ArtifactHead,
+  ArtifactSignature,
+} from "@/components/ui/Artifact";
 import { Stamp } from "@/components/ui/Stamp";
 
 /**
@@ -123,11 +128,7 @@ export function ContractSheet({
             { role: "General Manager", name: gmName },
           ]}
         />
-        <Stamp
-          tone="positive"
-          rotate={-8}
-          className="pointer-events-none absolute -top-3 right-6"
-        >
+        <Stamp tone="positive" rotate={-8} className="pointer-events-none absolute -top-3 right-6">
           Executed
         </Stamp>
       </div>

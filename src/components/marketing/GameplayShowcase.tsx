@@ -51,7 +51,9 @@ export function GameplayShowcase() {
                 style={{ background: "var(--accent)" }}
               />
               <h3 className="text-xl font-bold text-ink">{experience.title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-ink-muted">{experience.description}</p>
+              <p className="mt-3 text-sm leading-relaxed text-ink-muted">
+                {experience.description}
+              </p>
             </div>
           ))}
         </div>

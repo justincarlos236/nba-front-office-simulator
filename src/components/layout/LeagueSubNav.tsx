@@ -40,9 +40,7 @@ export function LeagueSubNav({
   const base = `/leagues/${leagueId}`;
 
   function Count({ n }: { n: number }) {
-    return (
-      <span className="ml-1.5 font-mono text-[11px] tabular-nums text-team-accent">{n}</span>
-    );
+    return <span className="ml-1.5 font-mono text-[11px] tabular-nums text-team-accent">{n}</span>;
   }
 
   return (
@@ -98,9 +96,7 @@ export function LeagueSubNav({
                     href={href}
                     prefetch={false}
                     className={`text-[15px] transition-colors duration-120 ${
-                      active
-                        ? "font-semibold text-team-accent"
-                        : "text-ink-muted hover:text-ink"
+                      active ? "font-semibold text-team-accent" : "text-ink-muted hover:text-ink"
                     }`}
                   >
                     {section.label}

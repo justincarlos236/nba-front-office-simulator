@@ -39,6 +39,11 @@ export default function GlobalError({
         )}
         <div className="mt-10 flex flex-wrap justify-center gap-3">
           <Button onClick={reset}>Try again</Button>
+          {/* A real anchor, not next/link, on purpose: `reset()` above is the
+              soft retry. If that did not work, the client tree is the thing
+              that is broken, and a client-side navigation would re-enter it.
+              This forces a full document load instead. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a
             href="/"
             className="inline-flex items-center justify-center rounded-[2px] border border-rule px-5 py-2.5 text-[11px] font-semibold tracking-[0.09em] text-ink uppercase transition-colors duration-120 hover:bg-raised"

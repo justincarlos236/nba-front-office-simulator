@@ -33,18 +33,18 @@ case, **exactly zero**.
 Both columns measured the same way. "After" reflects Stages 1-4
 (`3022e55`, `f542b17`, `e8952a6`, `5a18395`).
 
-| Dimension | Before | After | Note |
-|---|---|---|---|
-| **Overall simulation quality** | **4/10** | **8/10** | Competitive range fixed; talent concentration still open |
-| Correctness | 6/10 | 9/10 | Four strength-path defects closed; state integrity was always perfect |
-| NBA realism | 3/10 | 8/10 | Win spread, margins and scoring all land in real bands |
-| Regular-season realism | 3/10 | 8/10 | Best-worst spread 9.1 -> 35.5 games |
-| Playoff realism | 7/10 | 8/10 | Was already good; live-game model now matches the season model |
-| Player-stat realism | 7/10 | 8/10 | Unchanged model, now fed a realistic margin and minutes |
-| Long-term stability | 4/10 | 6/10 | Roster bloat fixed; talent still never concentrates (P1-8) |
-| Test confidence | 4/10 | 8/10 | Nine statistical safeguards; suite now deterministic |
+| Dimension                      | Before   | After    | Note                                                                  |
+| ------------------------------ | -------- | -------- | --------------------------------------------------------------------- |
+| **Overall simulation quality** | **4/10** | **8/10** | Competitive range fixed; talent concentration still open              |
+| Correctness                    | 6/10     | 9/10     | Four strength-path defects closed; state integrity was always perfect |
+| NBA realism                    | 3/10     | 8/10     | Win spread, margins and scoring all land in real bands                |
+| Regular-season realism         | 3/10     | 8/10     | Best-worst spread 9.1 -> 35.5 games                                   |
+| Playoff realism                | 7/10     | 8/10     | Was already good; live-game model now matches the season model        |
+| Player-stat realism            | 7/10     | 8/10     | Unchanged model, now fed a realistic margin and minutes               |
+| Long-term stability            | 4/10     | 6/10     | Roster bloat fixed; talent still never concentrates (P1-8)            |
+| Test confidence                | 4/10     | 8/10     | Nine statistical safeguards; suite now deterministic                  |
 
-**Remaining verdict: strong but needs tuning** — down from *materially flawed*.
+**Remaining verdict: strong but needs tuning** — down from _materially flawed_.
 The one substantive gap left is that talent never concentrates into superteams,
 which is roster construction rather than the engine and belongs to its own audit.
 
@@ -52,7 +52,7 @@ which is roster construction rather than the engine and belongs to its own audit
 
 ## Top 10 findings
 
-### P0-1 — A newly acquired player can contribute *nothing* to team strength
+### P0-1 — A newly acquired player can contribute _nothing_ to team strength
 
 **Observed.** With a saved 12-man rotation, adding a 90-rated superstar changed
 team strength by **+0.00**. Simulated record: 48.7 wins before, 48.7 after.
@@ -69,7 +69,7 @@ the rotation at all and contributes zero weight.
 **Root cause.** Roster mutation does not invalidate or recompute the stored
 rotation. Slot assignment is persisted state that silently goes stale.
 
-**Gameplay impact.** Catastrophic, and *invisible*. The user makes a franchise
+**Gameplay impact.** Catastrophic, and _invisible_. The user makes a franchise
 trade, sees no change in results, and has no feedback explaining why. This
 undermines the single most important feedback loop in the product. It also
 affects box scores — `allocateMinutes` uses the same `resolveRotation`, so the
@@ -77,7 +77,7 @@ new star does not appear in a box score either.
 
 **Fix.** Rotation resolution must treat unslotted players as candidates ranked
 by rating, not as excluded. Simplest correct change: after placing explicitly
-slotted players, fill remaining rotation capacity from *all* remaining healthy
+slotted players, fill remaining rotation capacity from _all_ remaining healthy
 players by rating, and evict a slotted player whose rating is far below an
 unslotted one — or clear `rotationSlot` on roster change.
 
@@ -131,7 +131,7 @@ players** (NBA limit: 15). Active players league-wide had grown from 450 to 777.
 **Root cause.** No enforced roster maximum on the CPU signing/trade paths.
 
 **Gameplay impact.** Compound. `computeTeamStrength` is a weighted average over
-*every* player with a flat 0.4 bench weight, so a 28-man roster is
+_every_ player with a flat 0.4 bench weight, so a 28-man roster is
 mathematically penalised and a 7-man roster rewarded. Measured: carrying the top
 8 instead of all 15 raises strength **72.20 → 75.35** (≈ +4.4 wins) for doing
 nothing but waiving players.
@@ -147,16 +147,16 @@ strength depend only on the rotation, so roster depth beyond it is neutral.
 
 **Observed**, 300 seasons against real league data:
 
-| | Fresh league (spread 5.9) | Developed league (spread 11.6) | NBA |
-|---|---|---|---|
-| Best team avg wins | 45.0 | 49.0 | ~60 |
-| Worst team avg wins | 35.9 | 31.9 | ~20 |
-| Best−worst spread | **9.1 games** | 17.1 | ~40 |
-| League win SD | 5.1 | 5.8 | ~12 |
-| ≥60-win seasons | 0.01% | 0.02% | ~7% |
-| ≤20-win seasons | 0.00% | 0.02% | ~5% |
-| Best team finishes losing | **15.7%** | 3.7% | ~0% |
-| Worst team finishes winning | **12.0%** | 0.7% | ~0% |
+|                             | Fresh league (spread 5.9) | Developed league (spread 11.6) | NBA |
+| --------------------------- | ------------------------- | ------------------------------ | --- |
+| Best team avg wins          | 45.0                      | 49.0                           | ~60 |
+| Worst team avg wins         | 35.9                      | 31.9                           | ~20 |
+| Best−worst spread           | **9.1 games**             | 17.1                           | ~40 |
+| League win SD               | 5.1                       | 5.8                            | ~12 |
+| ≥60-win seasons             | 0.01%                     | 0.02%                          | ~7% |
+| ≤20-win seasons             | 0.00%                     | 0.02%                          | ~5% |
+| Best team finishes losing   | **15.7%**                 | 3.7%                           | ~0% |
+| Worst team finishes winning | **12.0%**                 | 0.7%                           | ~0% |
 
 **Root cause.** Two compounding factors, neither individually wrong:
 
@@ -184,16 +184,16 @@ lever, and it is a one-constant change.**
 
 **Observed.** Average margin was **12.49 points** in all three cases:
 
-| Matchup | Home win % | Avg margin | Max margin |
-|---|---|---|---|
-| 70 v 70 (even) | 55.2% | 12.49 | 22 |
-| 85 v 55 | 90.9% | 12.49 | 22 |
-| 95 v 45 | 97.5% | 12.49 | 22 |
+| Matchup        | Home win % | Avg margin | Max margin |
+| -------------- | ---------- | ---------- | ---------- |
+| 70 v 70 (even) | 55.2%      | 12.49      | 22         |
+| 85 v 55        | 90.9%      | 12.49      | 22         |
+| 95 v 45        | 97.5%      | 12.49      | 22         |
 
 **Evidence.** `simulateGame.ts:71` — `margin = MIN_MARGIN + rng() * (MAX_MARGIN
 − MIN_MARGIN)`, drawn without reference to strength.
 
-**Root cause.** Strength decides *who* wins; nothing decides *by how much*.
+**Root cause.** Strength decides _who_ wins; nothing decides _by how much_.
 
 **Gameplay impact.** Point differential is meaningless as a signal. A 97.5%
 favourite beats a hopeless team by the same distribution as a coin-flip game.
@@ -211,15 +211,15 @@ component around it.
 
 **Observed** over 246,000 games:
 
-| Margin | Engine | NBA |
-|---|---|---|
-| 1–2 pts | **0.0%** | ~7% |
-| 3–5 | 13.2% | ~11% |
-| 6–10 | 26.3% | ~23% |
-| 11–15 | 26.5% | ~20% |
-| 16–20 | 26.3% | ~16% |
-| 21–25 | 7.8% | ~11% |
-| 26+ | **0.0%** | ~12% |
+| Margin  | Engine   | NBA  |
+| ------- | -------- | ---- |
+| 1–2 pts | **0.0%** | ~7%  |
+| 3–5     | 13.2%    | ~11% |
+| 6–10    | 26.3%    | ~23% |
+| 11–15   | 26.5%    | ~20% |
+| 16–20   | 26.3%    | ~16% |
+| 21–25   | 7.8%     | ~11% |
+| 26+     | **0.0%** | ~12% |
 
 **Root cause.** `MIN_MARGIN = 3` and `MAX_MARGIN = 22`, uniformly sampled.
 
@@ -240,12 +240,12 @@ margin (roughly normal, SD ~13, truncated at ±1 with no upper bound).
 **72.20 → 74.56** (≈ +3.3 wins) on an unchanged roster.
 
 **Evidence.** `rotationStrength.ts:36-39` branches on `hasCustomRotation`. CPU
-teams never set one, so they are *always* rated by `computeTeamStrength` over
+teams never set one, so they are _always_ rated by `computeTeamStrength` over
 the full roster; a user who opens Rotation Management is rated by a 12-man
 minutes-weighted curve that excludes their worst players.
 
 **Root cause.** The delegation is documented as preserving behaviour, and it
-does — but it makes the model a function of *whether the user touched a screen*
+does — but it makes the model a function of _whether the user touched a screen_
 rather than of the roster.
 
 **Gameplay impact.** A free, permanent ~3-win advantage for opening a page. Not
@@ -264,23 +264,23 @@ untouched produce equal strength.
 **Observed**, Lakers save across 2025–2029:
 
 | Season | Best | Worst | Win SD |
-|---|---|---|---|
-| 2025 | 51 | 30 | 4.5 |
-| 2026 | 51 | 30 | 5.2 |
-| 2027 | 50 | 31 | 5.2 |
-| 2028 | 49 | 31 | 4.3 |
+| ------ | ---- | ----- | ------ |
+| 2025   | 51   | 30    | 4.5    |
+| 2026   | 51   | 30    | 5.2    |
+| 2027   | 50   | 31    | 5.2    |
+| 2028   | 49   | 31    | 4.3    |
 
 Team-strength spread fell from **11.6 to 4.5** over six seasons.
 
 **CORRECTION (2026-08-10).** This finding was **overstated**. The 11.6 → 4.5
-figure was measured with `computeTeamStrength`, which is *not* the function the
+figure was measured with `computeTeamStrength`, which is _not_ the function the
 simulation uses — `computeRotationAdjustedStrength` is. Re-measured with the
 right function, the same save declines **13.3 → 8.9** over six seasons: real,
 but a third of the reported severity. The audit's own rule — follow the code
 paths, not the names — was broken here by the audit itself.
 
 **Root cause.** Still not diagnosed. Investigation found that talent does not
-*compress* (player rating distributions are stable across saves: max 99, median
+_compress_ (player rating distributions are stable across saves: max 99, median
 ~70-74 in both fresh and six-season leagues). What happens instead is that
 talent never **concentrates**: across all 13 live saves, the top 30 players are
 spread over 20-22 teams with never more than 3 on one roster, and that is
@@ -320,7 +320,7 @@ tenth man does not step into the starter's minutes. Real, but modest.
 
 **FIXED (Stage 3, `e8952a6`)** — and fixing it exposed a worse bug underneath.
 Once Stage 1 let bench players reach the rotation at all, the vacated slot was
-filled *by slot number*, so the thirteenth-best player inherited the injured
+filled _by slot number_, so the thirteenth-best player inherited the injured
 starter's slot 0 and **35 minutes**. Call-ups now slide down past anyone they
 are clearly worse than: same roster, starter out, the second-best man goes
 34 → 39 minutes and the call-up lands on 11.
@@ -360,16 +360,16 @@ These were verified and should be preserved as-is:
 
 ## Test coverage
 
-| Module | Tests | Assessment |
-|---|---|---|
-| leagueEvents | 29 | Strong |
-| boxScore | 15 | Strong |
-| simulateLiveGame | 11 | Good |
-| generateSchedule | 10 | Good |
-| simulateGame | 7 | Mechanical only — no distribution assertions |
-| simulateSeries | 7 | Good |
-| playoffSeeding | 6 | Good |
-| teamStrength | 5 | Ordering only, no calibration |
+| Module               | Tests | Assessment                                      |
+| -------------------- | ----- | ----------------------------------------------- |
+| leagueEvents         | 29    | Strong                                          |
+| boxScore             | 15    | Strong                                          |
+| simulateLiveGame     | 11    | Good                                            |
+| generateSchedule     | 10    | Good                                            |
+| simulateGame         | 7     | Mechanical only — no distribution assertions    |
+| simulateSeries       | 7     | Good                                            |
+| playoffSeeding       | 6     | Good                                            |
+| teamStrength         | 5     | Ordering only, no calibration                   |
 | **rotationStrength** | **3** | **Does not cover mixed units or roster change** |
 
 **Zero statistical or behavioural tests exist.** No test asserts win-total
@@ -385,6 +385,7 @@ monotonicity under roster improvement; roster-size invariant after N seasons.
 ## Prioritised refinement plan
 
 **Stage 1 — correctness (do first, small and surgical)**
+
 1. P0-2 units mismatch — one-line fix plus a shared helper.
 2. P0-1 stale rotation slots — unslotted players must be rotation candidates.
 3. P0-3 roster limit — enforce 15 on every adding path.
@@ -412,18 +413,18 @@ Stages 1 and 2 are the whole audit in practice. Everything else is polish.
 
 ## Classification summary
 
-| Finding | Type |
-|---|---|
-| P0-1 stale rotation | **Real bug** |
-| P0-2 units mismatch | **Real bug** |
-| P0-3 roster bloat | **Real bug** (missing constraint) |
-| P1-4 flat league | **Tuning** — one constant |
-| P1-5 margin independence | **Missing mechanic** |
-| P1-6 margin bounds | **Tuning** |
-| P1-7 dual model | **Real bug** (inconsistency) |
-| P1-8 parity collapse | **Needs investigation** |
-| P2-9 score variance | **Tuning** |
-| P2-10 injury minutes | **Intentional simplification**, worth revisiting |
+| Finding                  | Type                                             |
+| ------------------------ | ------------------------------------------------ |
+| P0-1 stale rotation      | **Real bug**                                     |
+| P0-2 units mismatch      | **Real bug**                                     |
+| P0-3 roster bloat        | **Real bug** (missing constraint)                |
+| P1-4 flat league         | **Tuning** — one constant                        |
+| P1-5 margin independence | **Missing mechanic**                             |
+| P1-6 margin bounds       | **Tuning**                                       |
+| P1-7 dual model          | **Real bug** (inconsistency)                     |
+| P1-8 parity collapse     | **Needs investigation**                          |
+| P2-9 score variance      | **Tuning**                                       |
+| P2-10 injury minutes     | **Intentional simplification**, worth revisiting |
 
 The possession-free game model is an **intentional simplification** and a good
 one — it is fast, deterministic, and testable. None of the above requires
@@ -436,7 +437,7 @@ abandoning it.
 - Long-run analysis used the deepest existing save (6 seasons). A headless
   20-season harness was not built; P1-8 is therefore observed, not diagnosed.
 - Downstream integration (awards, fans, finances, morale) was verified to
-  *receive* simulation output but not audited for correctness — that belongs to
+  _receive_ simulation output but not audited for correctness — that belongs to
   its own audit.
 - One save showed 870 completed games with no player box scores. Likely predates
   box-score generation, but not confirmed.

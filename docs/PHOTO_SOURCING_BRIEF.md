@@ -2,7 +2,7 @@
 
 **Status:** awaiting selection. The authored layer (skylines, phase light,
 textures) shipped in `fdd946e`. This brief covers the photography that layer
-was deliberately built *around*.
+was deliberately built _around_.
 
 ---
 
@@ -22,7 +22,7 @@ cannot look at a photograph and tell you whether it is any good, whether the
 crop works, or whether a face is in the wrong third of the frame. I can specify
 exactly what each slot needs and why, and I can wire in what you pick. I cannot
 pretend to have judged an image I have never seen. Every candidate link below is
-a *search starting point*, not an endorsement of a specific image.
+a _search starting point_, not an endorsement of a specific image.
 
 **Licensing.** Every source listed is CC0 / public-domain-equivalent
 (Unsplash, Pexels, Wikimedia Commons PD). No Getty, no AP, no NBA.com. This is a
@@ -44,12 +44,12 @@ pre-crop — I need the original framing to art-direct the crop in code.
 
 ## Slot 1 — Draft night stage
 
-| | |
-|---|---|
-| **Surface** | `PickRevealStage` — the Broadcast moment behind the pick reveal |
-| **File** | `public/photo/draft-stage.jpg` |
-| **Aspect / size** | 21:9, ≥2400×1030 |
-| **Treatment** | Halftone screen + heavy darkening; sits *behind* type |
+|                   |                                                                 |
+| ----------------- | --------------------------------------------------------------- |
+| **Surface**       | `PickRevealStage` — the Broadcast moment behind the pick reveal |
+| **File**          | `public/photo/draft-stage.jpg`                                  |
+| **Aspect / size** | 21:9, ≥2400×1030                                                |
+| **Treatment**     | Halftone screen + heavy darkening; sits _behind_ type           |
 
 **Subject.** An empty or near-empty stage under theatrical lighting, shot from
 the floor looking toward it. A podium is ideal. Not a basketball court.
@@ -72,6 +72,7 @@ faces.
 `auditorium stage low angle`, `conference stage dark backdrop`
 
 **Candidates:**
+
 - https://unsplash.com/s/photos/empty-stage-spotlight
 - https://www.pexels.com/search/stage%20lights%20dark/
 - https://unsplash.com/s/photos/podium
@@ -81,12 +82,12 @@ faces.
 
 ## Slot 2 — The arena, from the tunnel
 
-| | |
-|---|---|
-| **Surface** | Playoffs / `LiveGameExperience` header |
-| **File** | `public/photo/arena-tunnel.jpg` |
-| **Aspect / size** | 16:9, ≥2000×1125 |
-| **Treatment** | Halftone + accent-tinted duotone |
+|                   |                                        |
+| ----------------- | -------------------------------------- |
+| **Surface**       | Playoffs / `LiveGameExperience` header |
+| **File**          | `public/photo/arena-tunnel.jpg`        |
+| **Aspect / size** | 16:9, ≥2000×1125                       |
+| **Treatment**     | Halftone + accent-tinted duotone       |
 
 **Subject.** An arena bowl seen from a tunnel or vomitory — the threshold view,
 with the dark tunnel framing a lit bowl beyond. This is the single most
@@ -108,6 +109,7 @@ occasion. No players, no faces in focus, no jerseys legible.
 `sports arena interior empty seats`, `basketball arena wide empty`
 
 **Candidates:**
+
 - https://unsplash.com/s/photos/stadium-tunnel
 - https://www.pexels.com/search/arena/
 - https://unsplash.com/s/photos/basketball-arena
@@ -120,15 +122,15 @@ boards and team marks. Check the full frame at 100% before choosing.
 
 ## Slot 3 — Championship confetti
 
-| | |
-|---|---|
-| **Surface** | Title-won moment; `BannerRafters` header on the history page |
-| **File** | `public/photo/championship.jpg` |
-| **Aspect / size** | 16:9, ≥2000×1125 |
-| **Treatment** | Halftone, heavy crush toward black, accent duotone |
+|                   |                                                              |
+| ----------------- | ------------------------------------------------------------ |
+| **Surface**       | Title-won moment; `BannerRafters` header on the history page |
+| **File**          | `public/photo/championship.jpg`                              |
+| **Aspect / size** | 16:9, ≥2000×1125                                             |
+| **Treatment**     | Halftone, heavy crush toward black, accent duotone           |
 
 **Subject.** Confetti falling in an arena, or a rafter view with banners in
-shadow. The abstraction is the point — this reads as *a* championship, not a
+shadow. The abstraction is the point — this reads as _a_ championship, not a
 specific one.
 
 **Camera.** Looking up, or a tight crop on falling confetti with the bowl thrown
@@ -147,6 +149,7 @@ subject; a near-abstract confetti field is preferable to a legible celebration.
 `celebration confetti stadium`, `gold confetti black background`
 
 **Candidates:**
+
 - https://unsplash.com/s/photos/confetti
 - https://www.pexels.com/search/confetti/
 - https://unsplash.com/s/photos/celebration-confetti
@@ -156,16 +159,16 @@ subject; a near-abstract confetti field is preferable to a legible celebration.
 
 ## Slot 4 — The desk
 
-| | |
-|---|---|
-| **Surface** | Sign-in / marketing landing; optionally the empty-save state |
-| **File** | `public/photo/desk.jpg` |
-| **Aspect / size** | 3:2, ≥2000×1333 |
-| **Treatment** | Paper grain, desaturated nearly to monochrome |
+|                   |                                                              |
+| ----------------- | ------------------------------------------------------------ |
+| **Surface**       | Sign-in / marketing landing; optionally the empty-save state |
+| **File**          | `public/photo/desk.jpg`                                      |
+| **Aspect / size** | 3:2, ≥2000×1333                                              |
+| **Treatment**     | Paper grain, desaturated nearly to monochrome                |
 
 **Subject.** A working desk surface, shot from above — paper, a pen, a folder.
 No computer, no phone, nothing that dates the image. This is the most
-on-premise image in the set: it *is* the product's metaphor.
+on-premise image in the set: it _is_ the product's metaphor.
 
 **Camera.** Directly overhead (flat lay), or a steep three-quarter angle.
 
@@ -184,6 +187,7 @@ scandi desk — it must sit inside a `#0B0F14` interface.
 `office desk dark wood notebook`, `paperwork desk top view`
 
 **Candidates:**
+
 - https://unsplash.com/s/photos/desk-flat-lay
 - https://www.pexels.com/search/desk%20paper/
 - https://unsplash.com/s/photos/documents

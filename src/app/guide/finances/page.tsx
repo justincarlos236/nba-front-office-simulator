@@ -82,24 +82,23 @@ export default function FinancialGuidePage() {
         </p>
         <ul className="list-inside list-disc space-y-2">
           <li>
-            <span className="text-ink">Under the Cap:</span> you can take on any salary, up
-            to your available cap space.
+            <span className="text-ink">Under the Cap:</span> you can take on any salary, up to your
+            available cap space.
           </li>
           <li>
-            <span className="text-ink">Over the Cap:</span> the salary you take back has to
-            roughly match what you send out. The further over the cap (and into the Luxury Tax) your
-            team is, the closer that match has to be to a dollar-for-dollar swap - teams deep into
-            the tax get the least flexibility to take on extra salary in a trade.
+            <span className="text-ink">Over the Cap:</span> the salary you take back has to roughly
+            match what you send out. The further over the cap (and into the Luxury Tax) your team
+            is, the closer that match has to be to a dollar-for-dollar swap - teams deep into the
+            tax get the least flexibility to take on extra salary in a trade.
           </li>
           <li>
-            <span className="text-ink">No-trade clauses:</span> a player with one has to
-            agree to the deal - if they haven&apos;t, the trade is blocked outright.
+            <span className="text-ink">No-trade clauses:</span> a player with one has to agree to
+            the deal - if they haven&apos;t, the trade is blocked outright.
           </li>
           <li>
-            <span className="text-ink">Combining contracts:</span> teams with more cap room
-            can combine multiple players&apos; salaries to match one bigger incoming contract. The
-            most expensive rosters lose that flexibility and have to match salaries one-for-one
-            instead.
+            <span className="text-ink">Combining contracts:</span> teams with more cap room can
+            combine multiple players&apos; salaries to match one bigger incoming contract. The most
+            expensive rosters lose that flexibility and have to match salaries one-for-one instead.
           </li>
         </ul>
         <p>
@@ -154,9 +153,7 @@ export default function FinancialGuidePage() {
             {(Object.keys(GM_PERSONALITY_LABEL) as (keyof typeof GM_PERSONALITY_LABEL)[]).map(
               (personality) => (
                 <div key={personality} className="rounded-[2px] border border-rule bg-field p-4">
-                  <p className="font-semibold text-ink">
-                    {GM_PERSONALITY_LABEL[personality]}
-                  </p>
+                  <p className="font-semibold text-ink">{GM_PERSONALITY_LABEL[personality]}</p>
                   <p className="mt-1">{GM_PERSONALITY_DESCRIPTION[personality]}</p>
                 </div>
               ),
@@ -186,10 +183,10 @@ export default function FinancialGuidePage() {
       <GuideSection id="re-signing-rights" title="Re-Signing Rights">
         <p>
           If a player&apos;s contract with your team expires and they become a free agent, you keep
-          their <span className="text-ink">Re-Signing Rights</span> - shown as a badge
-          wherever they appear on your free-agent board. That lets you offer them a new deal that
-          exceeds the salary cap, even if you&apos;re already over it, up to a fair market value for
-          a player of their caliber.
+          their <span className="text-ink">Re-Signing Rights</span> - shown as a badge wherever they
+          appear on your free-agent board. That lets you offer them a new deal that exceeds the
+          salary cap, even if you&apos;re already over it, up to a fair market value for a player of
+          their caliber.
         </p>
         <p>
           Nobody else gets that privilege for that player - an outside team still has to sign them
@@ -203,15 +200,13 @@ export default function FinancialGuidePage() {
           Once your team is over the cap, you still have a limited amount of extra spending power
           for free agents (outside of any Re-Signing Rights): the{" "}
           <span className="text-ink">Signing Exception</span>. Every offer that uses it shows
-          exactly how much you have <span className="text-ink">total</span>, how much
-          you&apos;ve <span className="text-ink">already used</span> this season, and how
-          much is <span className="text-ink">remaining</span> - it resets at the start of
-          each new season.
+          exactly how much you have <span className="text-ink">total</span>, how much you&apos;ve{" "}
+          <span className="text-ink">already used</span> this season, and how much is{" "}
+          <span className="text-ink">remaining</span> - it resets at the start of each new season.
         </p>
         <p>
           Regardless of your Signing Exception or cap situation, every team can always sign a player
-          to a <span className="text-ink">Minimum Contract</span> - that path is never
-          restricted.
+          to a <span className="text-ink">Minimum Contract</span> - that path is never restricted.
         </p>
       </GuideSection>
 
@@ -219,8 +214,7 @@ export default function FinancialGuidePage() {
         <p>
           Long-term contracts affect more than this season - a big four-year deal eats into cap room
           for years after you sign it. Every team gets a single{" "}
-          <span className="text-ink">Financial Flexibility Grade</span> (A through F)
-          summarizing:
+          <span className="text-ink">Financial Flexibility Grade</span> (A through F) summarizing:
         </p>
         <ul className="list-inside list-disc space-y-1">
           <li>Your current Financial Status</li>
@@ -233,8 +227,8 @@ export default function FinancialGuidePage() {
         <p>
           A team with an A has a clean books for years to come; an F means payroll is locked up well
           into the future with little room to maneuver. It&apos;s a snapshot of what&apos;s
-          <span className="text-ink"> already committed</span> from decisions you&apos;ve
-          already made - not a prediction of what you&apos;ll do next.
+          <span className="text-ink"> already committed</span> from decisions you&apos;ve already
+          made - not a prediction of what you&apos;ll do next.
         </p>
       </GuideSection>
 
@@ -270,11 +264,10 @@ export default function FinancialGuidePage() {
         </div>
         <p>
           If your confidence drops low enough while payroll is still high, ownership may issue a{" "}
-          <span className="text-ink">payroll directive</span>: a specific dollar target you
-          need to get your total salary below before a given season. Meeting it repairs some
-          confidence; ignoring it costs you more. Every evaluation, expectation, and directive is
-          posted to your league&apos;s News feed as it happens, so you&apos;re never caught off
-          guard.
+          <span className="text-ink">payroll directive</span>: a specific dollar target you need to
+          get your total salary below before a given season. Meeting it repairs some confidence;
+          ignoring it costs you more. Every evaluation, expectation, and directive is posted to your
+          league&apos;s News feed as it happens, so you&apos;re never caught off guard.
         </p>
       </GuideSection>
     </GuideLayout>

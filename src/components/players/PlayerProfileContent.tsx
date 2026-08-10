@@ -179,7 +179,9 @@ export function PlayerProfileContent({ data }: { data: PlayerProfileData }) {
                       </span>
                     )}
                   </div>
-                  <p className="mt-2 text-sm text-ink-muted">{leagueContext.morale.levelDescription}</p>
+                  <p className="mt-2 text-sm text-ink-muted">
+                    {leagueContext.morale.levelDescription}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs tracking-wide text-ink-muted uppercase">Recent concerns</p>
@@ -322,7 +324,9 @@ export function PlayerProfileContent({ data }: { data: PlayerProfileData }) {
                         <span className="font-mono text-xs text-ink">
                           {g.points} PTS · {g.rebounds} REB · {g.assists} AST
                         </span>
-                        <span className="font-mono text-xs text-ink-muted">{g.minutesPlayed} MIN</span>
+                        <span className="font-mono text-xs text-ink-muted">
+                          {g.minutesPlayed} MIN
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -333,7 +337,9 @@ export function PlayerProfileContent({ data }: { data: PlayerProfileData }) {
                 </p>
               </div>
             )}
-            {seasonStats.length === 0 && <p className="text-sm text-ink-muted">No stats on record.</p>}
+            {seasonStats.length === 0 && (
+              <p className="text-sm text-ink-muted">No stats on record.</p>
+            )}
             {seasonStats.map((s) => (
               <div
                 key={`${s.season}-${s.team}`}
