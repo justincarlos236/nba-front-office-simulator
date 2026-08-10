@@ -178,8 +178,8 @@ function LeadStory({
 function StoryCardTile({ card, leagueId }: { card: StoryCard; leagueId: string }) {
   return (
     <article
-      className={`flex min-h-[7.5rem] flex-col bg-field px-4 py-4 ${
-        card.isMine ? "border-t-2 border-t-team-accent" : "border-t border-t-rule-strong"
+      className={`flex min-h-[7.5rem] flex-col border border-hairline bg-field px-4 py-4 ${
+        card.isMine ? "border-t-2 border-t-team-accent" : "border-t-2 border-t-rule-strong"
       }`}
     >
       <div className="flex items-center justify-between gap-2">
@@ -269,7 +269,9 @@ function Rollup({
       >
         <span className="flex-1 text-[13px] text-ink-muted">
           {label} <span className="font-mono tabular-nums">· {stories.length}</span>
-          {mine > 0 && <span className="text-team-accent"> · {mine} yours</span>}
+          {mine > 0 && (
+            <span className="text-team-accent"> · {mine === 1 ? "1 yours" : `${mine} yours`}</span>
+          )}
         </span>
         <span className="shrink-0 text-[11px] font-semibold tracking-[0.09em] text-ink-muted uppercase">
           {open ? "Hide" : "Show"}
@@ -372,7 +374,9 @@ function LeaguePulsePanel({
       value: pulse.keyInjury.playerName,
       detail:
         pulse.keyInjury.gamesRemaining !== null
-          ? `${pulse.keyInjury.teamLabel} · ${pulse.keyInjury.gamesRemaining} games`
+          ? `${pulse.keyInjury.teamLabel} · ${pulse.keyInjury.gamesRemaining} ${
+              pulse.keyInjury.gamesRemaining === 1 ? "game" : "games"
+            }`
           : pulse.keyInjury.teamLabel,
       mine: pulse.keyInjury.leagueTeamId === userTeamId,
     });
@@ -490,10 +494,19 @@ export function NewsFeed({
       .slice(0, 4);
   }, [transactions, userTeamId, ranked.lead, cards]);
 
-  const wireDays = useMemo(
-    () => groupByDay(isFinding ? filtered : transactions),
-    [isFinding, filtered, transactions],
-  );
+  /**
+   * Browsing, the wire skips whatever the lead and the cards already showed -
+   * a front page does not restate its own lead three inches lower. Finding,
+   * nothing is withheld: a search has to return every hit.
+   */
+  const wireDays = useMemo(() => {
+    if (isFinding) return groupByDay(filtered);
+    const shownAbove = new Set([
+      ...(ranked.lead ? [ranked.lead.id] : []),
+      ...cards.map((c) => c.key),
+    ]);
+    return groupByDay(transactions.filter((t) => !shownAbove.has(t.id)));
+  }, [isFinding, filtered, transactions, ranked.lead, cards]);
 
   const bySeason = useMemo(() => {
     const groups = new Map<number, NewsDay[]>();
@@ -624,7 +637,7 @@ export function NewsFeed({
       {cards.length > 0 && (
         <section>
           <Label>Around the league</Label>
-          <div className="mt-3 grid grid-cols-1 gap-px bg-hairline sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {cards.map((card) => (
               <StoryCardTile key={card.key} card={card} leagueId={leagueId} />
             ))}

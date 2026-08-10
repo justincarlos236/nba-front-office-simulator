@@ -17,7 +17,11 @@ import {
   describePlayerMoraleEvent,
   describeTradeRequest,
 } from "@/lib/transactions/describeTransaction";
-import { highestImportance, importanceForRating } from "@/lib/transactions/newsImportance";
+import {
+  highestImportance,
+  importanceForInjury,
+  importanceForRating,
+} from "@/lib/transactions/newsImportance";
 import { buildAllStarPerformancePool } from "@/lib/actions/allStarWeekend";
 import { selectAllStars } from "@/lib/allstar/selection";
 import { computeCompetitivenessPercentiles } from "@/lib/actions/competitiveness";
@@ -318,12 +322,13 @@ export async function applyLeagueEvents(
       transactions.push({
         type: "INJURY",
         description: `${result.playerName} suffers ${result.injuryName}, expected to miss ${result.durationGames} games.`,
-        // No player-quality signal in this roll (see rollForTeamInjury) -
-        // duration is the real, available severity proxy: a multi-week
-        // absence is bigger news than a day-to-day tweak regardless of who
-        // it happened to.
-        importance:
-          result.durationGames >= 20 ? "MAJOR" : result.durationGames >= 8 ? "STANDARD" : "MINOR",
+        // Duration and player quality together - see importanceForInjury.
+        // Duration alone made a rotation player's stress fracture outrank a
+        // ten-game winning streak on the news page.
+        importance: importanceForInjury(
+          result.durationGames,
+          ratingByPlayerId.get(result.leaguePlayerId) ?? 65,
+        ),
         teamIds: [teamId],
       });
       addFanHappinessDelta(
