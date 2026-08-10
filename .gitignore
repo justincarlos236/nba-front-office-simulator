@@ -49,6 +49,11 @@ next-env.d.ts
 
 /src/generated/prisma
 
-# Claude Code local config - not for the public repo
+# Local tooling config and personal notes - not for the public repo
 CLAUDE.md
 .claude/
+.impeccable/
+.github/agents/
+.github/hooks/
+.github/skills/
+/notes/
