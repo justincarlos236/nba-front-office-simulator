@@ -20,14 +20,16 @@ large simulated samples rather than against the code's own comments. They
 score the system harshly and in places correct earlier claims made elsewhere
 in this repository — including their own.
 
-| Audit                                                        | Scope                           | Headline finding                                                                            |
-| ------------------------------------------------------------ | ------------------------------- | ------------------------------------------------------------------------------------------- |
-| [SIMULATION_AUDIT.md](./SIMULATION_AUDIT.md)                 | Game engine, season results     | The league had no competitive range — the best team won ~45 games                           |
-| [ROSTER_PROGRESSION_AUDIT.md](./ROSTER_PROGRESSION_AUDIT.md) | Ageing, development, retirement | Every real player was permanently 27, so nobody ever retired                                |
-| [SECOND_PASS_AUDIT.md](./SECOND_PASS_AUDIT.md)               | Whole simulator, re-verified    | Re-checked every prior finding against the code; corrected one that had been measured wrong |
+| Audit                                                        | Scope                           | Headline finding                                                                              |
+| ------------------------------------------------------------ | ------------------------------- | --------------------------------------------------------------------------------------------- |
+| [SIMULATION_AUDIT.md](./SIMULATION_AUDIT.md)                 | Game engine, season results     | The league had no competitive range — the best team won ~45 games                             |
+| [ROSTER_PROGRESSION_AUDIT.md](./ROSTER_PROGRESSION_AUDIT.md) | Ageing, development, retirement | Every real player was permanently 27, so nobody ever retired                                  |
+| [SECOND_PASS_AUDIT.md](./SECOND_PASS_AUDIT.md)               | Whole simulator, re-verified    | Re-checked every prior finding against the code; corrected one that had been measured wrong   |
+| [FINANCE_AUDIT.md](./FINANCE_AUDIT.md)                       | Franchise finances, all systems | The money model is well calibrated; it is faithfully reporting a payroll defect from upstream |
 
-All P0 and P1 findings from all three are fixed. Each audit records its own
-scores before and after.
+All P0 and P1 findings from the first three are fixed. The finance audit is
+open — its headline finding depends on a payroll-calibration fix that has not
+been made yet. Each audit records its own scores before and after.
 
 ## Design records
 
