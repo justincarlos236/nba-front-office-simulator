@@ -37,18 +37,18 @@ This is **not** a system-design problem any more. It is a finishing problem.
 
 ## Scores
 
-| Dimension | Score | Note |
-|---|---|---|
-| Feature completeness | 8/10 | Every pillar exists and produces real state |
-| Gameplay depth | 6/10 | Real decisions exist; several systems are safely ignorable |
-| NBA realism | 6/10 | Games are realistic now; careers and the trade market are not |
-| System integration | 8/10 | Verified populated end to end — the strongest dimension |
-| Long-save stability | 4/10 → 6/10 | Attrition now works; DB growth still unaddressed |
-| Exploit resistance | 7/10 | Stage 1 closed the severe ones; no new reproducible exploit found |
-| UX clarity | 7/10 | Attention model is real; a few dead ends remain |
-| Technical robustness | 8/10 | State integrity verified perfect across 13 saves |
-| Test confidence | 6/10 | 1,220 tests, but no cross-system integration coverage |
-| **Release readiness** | **6/10 → 7/10** | P0 since fixed (`ffec212`); the rest is finishing work |
+| Dimension             | Score           | Note                                                              |
+| --------------------- | --------------- | ----------------------------------------------------------------- |
+| Feature completeness  | 8/10            | Every pillar exists and produces real state                       |
+| Gameplay depth        | 6/10            | Real decisions exist; several systems are safely ignorable        |
+| NBA realism           | 6/10            | Games are realistic now; careers and the trade market are not     |
+| System integration    | 8/10            | Verified populated end to end — the strongest dimension           |
+| Long-save stability   | 4/10 → 6/10     | Attrition now works; DB growth still unaddressed                  |
+| Exploit resistance    | 7/10            | Stage 1 closed the severe ones; no new reproducible exploit found |
+| UX clarity            | 7/10            | Attention model is real; a few dead ends remain                   |
+| Technical robustness  | 8/10            | State integrity verified perfect across 13 saves                  |
+| Test confidence       | 6/10            | 1,220 tests, but no cross-system integration coverage             |
+| **Release readiness** | **6/10 → 7/10** | P0 since fixed (`ffec212`); the rest is finishing work            |
 
 ---
 
@@ -58,31 +58,31 @@ Checked against code and database, not diffs.
 
 ### VERIFIED FIXED
 
-| Finding | Evidence |
-|---|---|
-| **P0** Notification fragmentation | `getLeagueAttention` is the single source; consumed by the league layout |
-| **P1** Free agency: no filters | Position, search, affordable-only, rights-only, sort all present |
-| **P1** Free agency: no cap context | Cap space passed in and drives the affordable filter |
-| **P1** Trade partner browse flat | Now a Ledger with cap space and computed needs per team |
-| **P1** Finances inbox duplicated | Overview shows two most urgent, links to the full inbox |
-| **P1** Trade outcome visually plain | Rebuilt: Broadcast on execution, Record on revisit, immutable cap snapshot |
-| **P1** Lottery no return edge | Returns to `/leagues/{id}/draft` |
-| **P2** Focus states absent | `:where(...):focus-visible` in `globals.css` covers every interactive element |
-| **P2** Raw `err.message` as UI | **0** occurrences in `src/lib/actions/*.ts` |
-| **P2** `/all-star` orphaned | Present in `subNavSections` |
-| **P2** Sub-nav "News" mislabelled | Now `label: "Transactions"` |
-| **Step 3** Continuity schema | `lastSeenAt` + `newsReadThroughAt` in schema |
-| **Step 5** Primitive layer | 12 exported primitives |
+| Finding                             | Evidence                                                                      |
+| ----------------------------------- | ----------------------------------------------------------------------------- |
+| **P0** Notification fragmentation   | `getLeagueAttention` is the single source; consumed by the league layout      |
+| **P1** Free agency: no filters      | Position, search, affordable-only, rights-only, sort all present              |
+| **P1** Free agency: no cap context  | Cap space passed in and drives the affordable filter                          |
+| **P1** Trade partner browse flat    | Now a Ledger with cap space and computed needs per team                       |
+| **P1** Finances inbox duplicated    | Overview shows two most urgent, links to the full inbox                       |
+| **P1** Trade outcome visually plain | Rebuilt: Broadcast on execution, Record on revisit, immutable cap snapshot    |
+| **P1** Lottery no return edge       | Returns to `/leagues/{id}/draft`                                              |
+| **P2** Focus states absent          | `:where(...):focus-visible` in `globals.css` covers every interactive element |
+| **P2** Raw `err.message` as UI      | **0** occurrences in `src/lib/actions/*.ts`                                   |
+| **P2** `/all-star` orphaned         | Present in `subNavSections`                                                   |
+| **P2** Sub-nav "News" mislabelled   | Now `label: "Transactions"`                                                   |
+| **Step 3** Continuity schema        | `lastSeenAt` + `newsReadThroughAt` in schema                                  |
+| **Step 5** Primitive layer          | 12 exported primitives                                                        |
 
 ### STILL PRESENT
 
-| Finding | Evidence | Severity |
-|---|---|---|
-| No canonical roster page | `/leagues/[id]/roster` does not exist | P1 |
-| Nav: 14 targets in one row | Still exactly **14** | P2 |
-| Scouting has no cross-session summary | Absent | P2 |
-| "Projected this season" duplicated | **2** occurrences across tabs | P2 |
-| `/fans` is a dead end | **0** outbound links on the page | P3 |
+| Finding                               | Evidence                              | Severity |
+| ------------------------------------- | ------------------------------------- | -------- |
+| No canonical roster page              | `/leagues/[id]/roster` does not exist | P1       |
+| Nav: 14 targets in one row            | Still exactly **14**                  | P2       |
+| Scouting has no cross-session summary | Absent                                | P2       |
+| "Projected this season" duplicated    | **2** occurrences across tabs         | P2       |
+| `/fans` is a dead end                 | **0** outbound links on the page      | P3       |
 
 ### LEDGER ACCURACY — a finding in itself
 
@@ -99,20 +99,20 @@ re-verification pass nearly caused free agency to be rebuilt from scratch.
 This is where I expected to find hollow systems. I mostly did not. Measured on
 the six-season save:
 
-| System | Rows | Reads as |
-|---|---|---|
-| PlayerGameStat | 129,046 | Real per-game box scores |
-| LeagueTransaction | 3,139 | News actually generated |
-| FanSentimentEvent | 1,079 | Fan reactions attributed to causes |
-| DraftPick | 600 | Full pick inventory incl. traded picks |
-| FanHappinessSnapshot | 120 | Per-team, per-season history |
-| FinancialSnapshot | 120 | Per-team, per-season history |
-| Staff | 103 | Populated |
-| PlayoffSeries | 60 | 4 completed finals |
-| LotteryResult | 56 | Real lottery history |
-| BusinessDecision | 49 | Inbox actually fires |
-| SeasonAward | 20 | 5 per season, every season |
-| Trade | 12 | See P1-2 below |
+| System               | Rows    | Reads as                               |
+| -------------------- | ------- | -------------------------------------- |
+| PlayerGameStat       | 129,046 | Real per-game box scores               |
+| LeagueTransaction    | 3,139   | News actually generated                |
+| FanSentimentEvent    | 1,079   | Fan reactions attributed to causes     |
+| DraftPick            | 600     | Full pick inventory incl. traded picks |
+| FanHappinessSnapshot | 120     | Per-team, per-season history           |
+| FinancialSnapshot    | 120     | Per-team, per-season history           |
+| Staff                | 103     | Populated                              |
+| PlayoffSeries        | 60      | 4 completed finals                     |
+| LotteryResult        | 56      | Real lottery history                   |
+| BusinessDecision     | 49      | Inbox actually fires                   |
+| SeasonAward          | 20      | 5 per season, every season             |
+| Trade                | 12      | See P1-2 below                         |
 
 Two tables are empty, both legitimately: `CapitalProject` (user never started
 one) and `CareerRecord` (only written on retirement or firing, neither of which
@@ -125,7 +125,7 @@ largely absent.** This should be protected, not re-architected.
 
 ## 3. Remaining findings
 
-### P0-1 — Nobody ages, declines, or retires · *Bug* · **FIXED** (`ffec212`)
+### P0-1 — Nobody ages, declines, or retires · _Bug_ · **FIXED** (`ffec212`)
 
 Carried from `docs/ROSTER_PROGRESSION_AUDIT.md`, unfixed in code.
 
@@ -146,12 +146,12 @@ construction** — zero retirements in six seasons, population exactly
 
 ---
 
-### P1-2 — League event frequency is coupled to an implementation constant · *Bug / Realism*
+### P1-2 — League event frequency is coupled to an implementation constant · _Bug / Realism_
 
 **Observed.** 12 trades in six seasons — **2 per season, league-wide**. The NBA
 averages roughly 40.
 
-**Root cause.** `shouldTriggerEvent` computes the probability that *at least one*
+**Root cause.** `shouldTriggerEvent` computes the probability that _at least one_
 event occurs across the batch, then performs a **single roll**:
 
 ```ts
@@ -168,12 +168,12 @@ performance constant, not the calendar. Change `CHUNK_SIZE` for speed and the
 trade market silently changes with it. Not currently user-exploitable
 (`CHUNK_SIZE` is fixed), but it is the wrong coupling.
 
-**Fix.** Draw the event *count* for the batch (binomial or Poisson) rather than a
+**Fix.** Draw the event _count_ for the batch (binomial or Poisson) rather than a
 single boolean, so frequency depends on games played and nothing else.
 
 ---
 
-### P1-3 — Talent never concentrates into contenders · *Missing integration*
+### P1-3 — Talent never concentrates into contenders · _Missing integration_
 
 Carried and confirmed. The ceiling is right (a team can hold 3 of the top 30) but
 the floor is wrong: talent spreads across 21–24 teams where the real league
@@ -187,7 +187,7 @@ tuning against a broken baseline. Re-measure after P0-1.
 
 ---
 
-### P1-4 — No canonical roster page · *Missing expected functionality*
+### P1-4 — No canonical roster page · _Missing expected functionality_
 
 Unchanged from the first audit. The dashboard has a roster table and `/rotation`
 has a depth chart; neither is "the place you manage your team". For a franchise
@@ -209,35 +209,36 @@ grep" is exactly the kind of shortcut this audit was supposed to avoid.
 
 ### P2-6 — Deep-dive docs describe a simulation model that no longer exists · **FIXED**
 
-`docs/code-deep-dive/02-simulation.md`, `docs/code-guide/04-simulation-code.md`
-and `docs/extreme-deep-dive/simulation/simulateGame.md` all documented
-`WIN_PROB_STEEPNESS` and `MIN_MARGIN`, both deleted in the Stage 2 rework. These
-are personal reference docs, so the cost is confusion rather than user-facing
-error — but a doc that teaches the wrong model line by line is worse than none.
+Three reference docs still documented `WIN_PROB_STEEPNESS` and `MIN_MARGIN`,
+both deleted in the Stage 2 rework. These were personal reference notes, so the
+cost was confusion rather than user-facing error — but a doc that teaches the
+wrong model line by line is worse than none.
 
 **Fixed.** All rewritten to the margin-first model, each carrying a short note on
-why it changed. The audit undercounted: a **fourth** file
-(`docs/handbook/04-simulation-engine.md`) taught the logistic curve as well, and
-two more still cited the live-game sensitivity of `0.11` after it was
-recalibrated to `0.35`. Found by grepping for the deleted constants rather than
-by trusting the audit's own list.
+why it changed. The audit undercounted: a **fourth** file taught the logistic
+curve as well, and two more still cited the live-game sensitivity of `0.11`
+after it was recalibrated to `0.35`. Found by grepping for the deleted constants
+rather than by trusting the audit's own list.
+
+(Those reference notes have since moved out of this repository — they were
+written as personal study material rather than project documentation.)
 
 ---
 
-### P2-7 — Nav still carries 14 targets · *UX*
+### P2-7 — Nav still carries 14 targets · _UX_
 
 Unchanged. Most are inert in any given phase.
 
-### P2-8 — Scouting has no cross-session summary · *UX*
+### P2-8 — Scouting has no cross-session summary · _UX_
 
 "You scouted 6 of 12" still absent. Scouting is a multi-session activity with no
 progress surface.
 
-### P2-9 — "Projected this season" duplicated across two tabs · *UX*
+### P2-9 — "Projected this season" duplicated across two tabs · _UX_
 
 Two occurrences of the same figure.
 
-### P3-10 — `/fans` is a dead end · *UX*
+### P3-10 — `/fans` is a dead end · _UX_
 
 Zero outbound links from the deepest page in the information architecture.
 
@@ -245,15 +246,15 @@ Zero outbound links from the deepest page in the information architecture.
 
 ## 4. Long-save audit
 
-| Signal | 6 seasons | Assessment |
-|---|---|---|
-| Active players | 777 (from 537) | **Unbounded growth** — P0-1 |
-| Retirements | 0 | **Broken** — P0-1 |
-| PlayerGameStat rows | 129,046 | ~21.5k/season → ~430k at 20 seasons |
-| Scoring drift | 118.0 → 118.4 | Stable, no inflation |
-| Standings integrity | Perfect | Wins = losses = games played, every save |
-| Awards | 5/season, every season | Working |
-| Team strength spread | 13.3 → 8.9 | Mild decline; downstream of P0-1/P1-3 |
+| Signal               | 6 seasons              | Assessment                               |
+| -------------------- | ---------------------- | ---------------------------------------- |
+| Active players       | 777 (from 537)         | **Unbounded growth** — P0-1              |
+| Retirements          | 0                      | **Broken** — P0-1                        |
+| PlayerGameStat rows  | 129,046                | ~21.5k/season → ~430k at 20 seasons      |
+| Scoring drift        | 118.0 → 118.4          | Stable, no inflation                     |
+| Standings integrity  | Perfect                | Wins = losses = games played, every save |
+| Awards               | 5/season, every season | Working                                  |
+| Team strength spread | 13.3 → 8.9             | Mild decline; downstream of P0-1/P1-3    |
 
 **Database growth is the sleeper risk.** At ~21.5k box-score rows per season, a
 20-season save reaches ~430k rows in one table for one league. No pagination or
@@ -282,7 +283,7 @@ unit test of a pure function or a UI-level e2e spec. Nothing exercises a chain.
 
 1. **P0-1 (age)** passes every test today. `estimateAge` is unit-tested and
    correct; `retirementProbability` is unit-tested and correct. Nothing asserts
-   that a league *actually retires anybody*.
+   that a league _actually retires anybody_.
 2. **The stale-rotation P0** (a signed superstar contributing +0.00) passed the
    full suite. `resolveRotation` was tested; the roster-change interaction was not.
 3. **The margin/win-probability defects** passed 1,135 tests. Nothing tested
@@ -329,7 +330,7 @@ Verified, not assumed. **Do not rewrite these.**
 - **Box scores explaining an already-decided score** rather than driving it.
 - **No player likenesses or team marks** — a licensing constraint, correctly
   respected.
-- **Estimated experience/age from draft year** — sound *as a fallback*; the bug
+- **Estimated experience/age from draft year** — sound _as a fallback_; the bug
   is that it is the primary path (P0-1).
 
 ---
@@ -339,7 +340,7 @@ Verified, not assumed. **Do not rewrite these.**
 ### Is the simulator feature-complete?
 
 **Nearly — but not while P0-1 stands.** Every pillar exists and produces real,
-consumed state. What is missing is not a feature but a *consequence*: players do
+consumed state. What is missing is not a feature but a _consequence_: players do
 not age out, so career arcs, succession pressure and the draft's purpose are all
 inert. A franchise simulator where no player ever retires is not complete
 regardless of how many systems it has.
@@ -377,7 +378,7 @@ Sequence I would defend:
 2. Build the headless harness. Add the population and roster invariants.
 3. Fix P1-2 (event frequency) and P1-4 (roster page).
 4. Re-measure P1-3 against a league that now turns over; decide then.
-5. *Then* transition to balancing and playtesting.
+5. _Then_ transition to balancing and playtesting.
 
 Steps 1–2 are the real work. Everything after is finishing.
 

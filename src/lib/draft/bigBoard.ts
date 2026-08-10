@@ -139,9 +139,9 @@ function weightedAverage(entries: [number, number][]): number {
 }
 
 /**
- * `tournamentRevealed` is the caller's own signal - Phase 3's refinement
- * (see docs/FEATURE_REQUESTS.md) ties this to real scouting activity
- * having started this window, not a calendar tick that doesn't exist yet.
+ * `tournamentRevealed` is the caller's own signal, tied to real scouting
+ * activity having started this window rather than to a calendar tick that
+ * doesn't exist yet.
  * Before reveal, the public evaluation is computed from the other four
  * factors alone (renormalized), so the board is well-formed at window-open
  * and then visibly shifts once the tournament factor folds in - a public

@@ -1,7 +1,6 @@
 # Onboarding & New-Player Experience — Design
 
-Status: **Phase 1 and Phase 2 built.** Requested 2026-08-06. The verbatim
-request lives in `docs/FEATURE_REQUESTS.md`.
+Status: **Phase 1 and Phase 2 built.**
 
 - Phase 1 (keystone): `/guide` index, `/guide/roster`, `/guide/season-flow`
   (new), `/guide/finances` refactored onto a shared layout, and the
@@ -49,9 +48,9 @@ work already shipped the two things most such requests ask for:
   anchor-linked, explicitly "no NBA CBA knowledge required").
 - **The "How does this work?" link pattern** — the exact right primitive.
 
-**A prior pass explicitly rejected a tutorial wizard** (FEATURE_REQUESTS
-2026-07-25): it only helps session one, gets skipped, and is a maintenance
-liability. That verdict stands and this design does not overturn it.
+**A prior pass explicitly rejected a tutorial wizard:** it only helps
+session one, gets skipped, and is a maintenance liability. That verdict
+stands and this design does not overturn it.
 
 So the problem is **not** "there's no onboarding." It is that the good
 primitives are **unevenly applied and undiscoverable**.
@@ -256,9 +255,8 @@ explains _why the game is in the state it's in_. If it ever starts
 recommending actions, it has become a duplicate of the Action Center and
 should be cut.
 
-Note: the AI GM assistant (roadmap #5/#49) is explicitly **paused** per
-`IMPLEMENTATION_PLAN.md`. This is not that feature and must not silently
-resume it.
+Note: the AI GM assistant is **not built** (see `docs/ROADMAP.md`). This is
+not that feature and must not silently become it.
 
 ### 4.7 Skip / disable
 

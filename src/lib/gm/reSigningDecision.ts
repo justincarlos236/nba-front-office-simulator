@@ -79,10 +79,9 @@ function scaleCents(cents: bigint, multiplier: number): bigint {
  * Re-Signing Rights ceiling, or lets them walk to free agency. Reuses every
  * valuation primitive `evaluateTradeOffer` uses (same personality weights,
  * same identity/age/need-fit bonus constants) rather than inventing a
- * second scoring system - see docs/FEATURE_REQUESTS.md's CPU Autonomous GM
- * Intelligence entry for why this can't just be a call to
- * `evaluateTradeOffer` itself (there's no real "outgoing" asset in a
- * retention decision, which breaks its score formula).
+ * second scoring system. It can't just call `evaluateTradeOffer` itself:
+ * a retention decision has no real "outgoing" asset, which breaks that
+ * function's score formula.
  *
  * No cap-legality check here: Re-Signing Rights already permit any offer up
  * to this exact ceiling regardless of apron status (see `validateSigning`),

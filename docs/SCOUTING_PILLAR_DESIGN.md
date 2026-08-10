@@ -1,7 +1,6 @@
 # The Scouting Pillar — Redesign
 
-Status: **Phases 1-5 built.** Requested 2026-08-06. The verbatim request
-lives in `docs/FEATURE_REQUESTS.md`.
+Status: **Phases 1-5 built.**
 
 Phase 1 delivered the structural prerequisite: `pre-draft` now exists as a
 real `LeaguePhase`, sitting between `playoffs-incomplete` and

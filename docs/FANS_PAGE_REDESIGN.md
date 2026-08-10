@@ -1,8 +1,10 @@
 # Fans Page - Ground-Up Redesign Proposal
 
-**Status:** proposal, awaiting approval. No code written.
-**Request:** `docs/FEATURE_REQUESTS.md` -> "Fans Page Ground-Up Redesign
-(requested 2026-08-06)".
+**Status: built.** Shipped as `/leagues/[id]/fans`, backed by
+`src/lib/fans/` and the `FanCulture` / `FanMandate` / `FanNarrative` /
+`FanSentimentEvent` models. This document is the design record it was built
+from, kept for the reasoning rather than as a live plan.
+
 **Verdict up front:** the current page is not salvageable as-designed. It is
 a read-only mirror of four derived numbers plus a generic reaction feed. The
 redesign below replaces it entirely.

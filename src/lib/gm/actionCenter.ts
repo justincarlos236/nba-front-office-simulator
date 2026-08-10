@@ -12,11 +12,10 @@ import type { StaffRole } from "@/generated/prisma/client";
 import { GUIDE_TOPICS } from "@/lib/guide/registry";
 
 /**
- * The "Action Center" (Phase 2 of the onboarding/flow work - see
- * docs/FEATURE_REQUESTS.md) - a small, fixed-priority catalog of
- * recommended next actions, each grounded in real already-computable
- * state (never an invented signal). Same "pure decision logic, thin
- * DB-fetch shell" shape as `leaguePhase.ts`.
+ * The "Action Center" - a small, fixed-priority catalog of recommended
+ * next actions, each grounded in real already-computable state (never an
+ * invented signal). Same "pure decision logic, thin DB-fetch shell" shape
+ * as `leaguePhase.ts`.
  */
 export interface ActionCenterItem {
   id: string;

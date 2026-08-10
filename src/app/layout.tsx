@@ -20,10 +20,19 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ["400", "500"],
 });
 
+const DESCRIPTION =
+  "Run an NBA franchise as its GM: build a roster, negotiate trades against " +
+  "the real 2023 CBA salary-cap rules, scout a draft class, and simulate " +
+  "seasons from a real snapshot of the league.";
+
 export const metadata: Metadata = {
   title: "NBA Front Office Simulator",
-  description:
-    "Run an NBA franchise: manage the salary cap, negotiate trades against real CBA rules, and lean on an AI GM assistant grounded in real quantitative analysis.",
+  description: DESCRIPTION,
+  openGraph: {
+    title: "NBA Front Office Simulator",
+    description: DESCRIPTION,
+    type: "website",
+  },
 };
 
 export default function RootLayout({

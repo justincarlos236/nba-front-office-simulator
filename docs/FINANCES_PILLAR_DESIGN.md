@@ -1,8 +1,10 @@
 # Finances as a First-Class Gameplay Pillar - Design Proposal
 
-**Status:** proposal, awaiting approval. No code written.
-**Request:** `docs/FEATURE_REQUESTS.md` -> "Finances as a First-Class Gameplay
-Pillar (requested 2026-08-02)".
+**Status: built.** Shipped as the `/leagues/[id]/finances` section (report,
+operations, arena, inbox), backed by `src/lib/finances/`. This document is
+the design record it was built from, kept for the reasoning rather than as a
+live plan.
+
 **Supersedes nothing.** This extends the existing Franchise Finances &
 Business Operations system (Phases A-D, 2026-07-28) rather than replacing it.
 
@@ -479,11 +481,7 @@ trade and free-agency systems. That is what makes it a pillar.
 3. **Scope.** This is the largest feature in the project's history - larger
    than the entire original Franchise Finances feature. The phasing in Part 6
    is designed so each phase ships something playable on its own.
-4. **CPU cost.** Addressed by the abstraction in finding 1.4.5, pending your
-   confirmation.
-5. **Doc debt.** Four doc sets must be updated per standing rule, including the
-   barely-started `extreme-deep-dive/` Track B. Budgeted into each phase rather
-   than deferred to the end.
+4. **CPU cost.** Addressed by the abstraction in finding 1.4.5.
 
 ---
 
@@ -823,13 +821,11 @@ A new script (`scripts/balance-harness.ts`, following the existing
 
 ### 8.6 - Docs
 
-The four doc sets (`docs/handbook/`, `docs/code-guide/`,
-`docs/code-deep-dive/`, `docs/extreme-deep-dive/`) get brought current with
+`docs/SYSTEMS.md` and `docs/ROADMAP.md` get brought current with
 everything since the last doc pass: Phases 1-5 of the Finances pillar, the
-13-card catalog expansion (Part 7), and this phase's CPU depth work. This
-was deferred through Phases 1-5 per the standing "don't update docs until
-told" instruction - Phase 6 is an explicit ask to close that gap, not a
-reversal of that instruction going forward.
+13-card catalog expansion (Part 7), and this phase's CPU depth work. Done
+last, once the phase's real shape has settled, so the documentation
+describes what shipped rather than what was planned.
 
 ### 8.7 - Design review checklist
 

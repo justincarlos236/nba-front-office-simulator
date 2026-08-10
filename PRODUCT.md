@@ -1,7 +1,5 @@
 # Product
 
-<!-- impeccable:product-schema 1 -->
-
 ## Platform
 
 web
@@ -96,11 +94,10 @@ pillars.
 - The MLE check validates each signing against the exception's full
   per-season ceiling rather than tracking cumulative spend.
 
-**Explicitly undecided / not yet built:** the Claude-powered GM assistant
-and its chat UI (models exist, `@anthropic-ai/sdk` is installed, but it is
-unbuilt — the README calls it planned); Bird/Early-Bird/Non-Bird re-signing
-rights; multiple saves per user; GitHub OAuth; error boundaries;
-observability.
+**Explicitly undecided / not yet built:** the AI GM assistant and its chat
+UI (only the `AssistantThread`/`AssistantMessage` models exist — the README
+calls it planned); GitHub OAuth; observability and error tracking. See
+`docs/ROADMAP.md` for the current list.
 
 **Terminology** is real NBA/CBA vocabulary and should stay real: apron,
 mid-level exception, cap space, dead money, luxury tax, Bird rights, two-way
@@ -135,12 +132,12 @@ recorded for this personal, non-commercial project.
   averages aggregated from ~26k MIT-licensed box scores; 5 name collisions
   hand-resolved by alias.
 - **Real engineering documentation:** `docs/ARCHITECTURE.md` (rationale and
-  candid post-mortems), `docs/ROADMAP.md` (milestone status),
-  `docs/FEATURE_ROADMAP.md` (long-term vision, explicitly not a build
-  queue), plus per-pillar design docs for scouting, finances, fans, and
-  onboarding, and a handbook/code-guide/deep-dive set.
-- **Test suite** as the correctness story: Vitest unit tests over the cap
-  and trade engine, Playwright e2e over the browse → roster → player flow.
+  candid post-mortems), `docs/ROADMAP.md` (what is built vs. not), per-pillar
+  design docs for scouting, finances, fans and onboarding, and three
+  empirical audits of the simulation and roster systems.
+- **Test suite** as the correctness story: 1,240 Vitest unit tests across 139
+  files over the cap, trade, simulation and valuation engines, plus 10
+  Playwright e2e specs over the core journeys, all run in CI on every push.
 
 **Absences that must not be fabricated:** there are no users, no testimonials,
 no traffic or engagement numbers, no press, no customers, no pricing, and no

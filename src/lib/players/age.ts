@@ -1,10 +1,19 @@
 /**
- * Real birth dates aren't available from the free bio API (see
- * docs/ARCHITECTURE.md), so age/experience are estimated from draft year -
- * assumes a player was 22 when drafted (a reasonable league-average, not a
- * claim about any specific player's real draft age). Season-parameterized
- * (rather than a hardcoded bootstrap year) so these stay correct as
- * `League.currentSeason` advances across multiple simulated seasons.
+ * Player age and experience, resolved from whichever source a row carries.
+ *
+ * **Call `resolvePlayerAge` / `resolvePlayerExperience`** (bottom of this
+ * file), not the individual estimators - the estimators are the fallbacks
+ * those two choose between, and picking one directly is how this module
+ * previously returned a constant 27 for every real player. See the note on
+ * `resolvePlayerAge`.
+ *
+ * Everything here is season-parameterized rather than anchored to a
+ * bootstrap year, so ages stay correct as `League.currentSeason` advances.
+ */
+
+/**
+ * The draft-year estimator's assumption: a player was 22 when drafted. A
+ * reasonable league average, not a claim about any specific player.
  */
 const ASSUMED_DRAFT_AGE = 22;
 

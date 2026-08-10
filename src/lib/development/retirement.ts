@@ -3,10 +3,11 @@
  * this is a hand-tuned approximation, not fitted data: retirement risk is
  * zero below 33, climbs ~8%/year after that, is higher for players already
  * struggling to hold a rating, and is forced at 41 so no player ages
- * indefinitely. Deliberately conservative (not aggressive) - without a
- * draft system yet (see docs/ARCHITECTURE.md), retirement only shrinks the
- * league's talent pool, so a slow, realistic rate keeps leagues playable
- * for many seasons rather than emptying rosters out quickly.
+ * indefinitely. The rate was set conservatively while there was still no
+ * draft, so that attrition could not drain a league with no way to refill
+ * it. The draft has since shipped, and the 20-season harness in
+ * `longSave.invariant.test.ts` checks that intake and attrition now
+ * actually balance rather than assuming it.
  */
 const RETIREMENT_RISK_START_AGE = 33;
 const FORCED_RETIREMENT_AGE = 41;

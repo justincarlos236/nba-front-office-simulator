@@ -6,7 +6,8 @@ phase reaches a genuinely polished, tested state before moving on.
 **Status:** the simulator is feature-complete as a single-player franchise
 management game — a full season loop from preseason through the draft, with
 salary-cap, trade, free-agency, scouting, finance, fan and career systems on
-top of real NBA reference data. **1,172 unit tests across 134 files.**
+top of real NBA reference data. **1,240 unit tests across 139 files**, plus
+10 Playwright e2e specs, all run in CI on every push.
 
 The original M0–M6 milestone plan is preserved at the bottom for history. It
 stopped describing the product around the time the season engine landed, so
@@ -104,15 +105,13 @@ phase-aware light, material texture), and the scouting/draft surfaces.
 
 Recorded honestly rather than implied. See `PRODUCT.md`.
 
-- [ ] **AI GM assistant.** The `@anthropic-ai/sdk` dependency and the thread/
-      message schema exist; the assistant itself does not. No chat UI, no
-      tool-use wiring. Do not describe this as a feature.
-- [ ] Competing offers in free agency — a free agent currently waits
-      indefinitely, which drains urgency
-- [ ] Incoming CPU trade offers — trade is outbound-only
-- [ ] A canonical roster page (`/rotation` currently splits the job)
+- [ ] **AI GM assistant.** Only the `AssistantThread` / `AssistantMessage`
+      schema exists. No chat UI, no tool-use wiring, and the unused SDK
+      dependency has been removed. Do not describe this as a feature.
 - [ ] GitHub OAuth (credentials-only)
 - [ ] Observability / error tracking
+- [ ] Photography for the four surfaces in `docs/PHOTO_SOURCING_BRIEF.md`
+      (see Design above) — each degrades to the treatment already shipped
 - [ ] Restore static generation for public pages. A session-aware `NavBar` in
       the root layout made every page dynamic, since `auth()` reads cookies.
       Fixable with a Suspense split or PPR; not worth the complexity yet.

@@ -1,113 +1,3 @@
----
-name: NBA Front Office Simulator
-description: The paperwork of a real front office, rendered at professional-instrument quality, broken deliberately for the moments that matter.
-colors:
-  ground: "#0B0F14"
-  field: "#121820"
-  raised: "#1A222C"
-  hairline: "#2E3A47"
-  rule: "#5A6B7D"
-  rule-strong: "#748799"
-  ink: "#F2F5F7"
-  ink-muted: "#93A1B0"
-  signal-red: "#FF4D4D"
-  positive: "#3DD68C"
-  caution: "#FFB020"
-  negative: "#FF6B6B"
-  team-accent: "#F5B112"
-typography:
-  display:
-    fontFamily: "'Archivo', 'Helvetica Neue', Arial, sans-serif"
-    fontSize: "clamp(2.75rem, 6vw, 4.5rem)"
-    fontWeight: 700
-    lineHeight: 0.95
-    letterSpacing: "-0.02em"
-  headline:
-    fontFamily: "'Archivo', 'Helvetica Neue', Arial, sans-serif"
-    fontSize: "clamp(1.5rem, 3vw, 2rem)"
-    fontWeight: 600
-    lineHeight: 1.15
-    letterSpacing: "-0.01em"
-  title:
-    fontFamily: "'Archivo', 'Helvetica Neue', Arial, sans-serif"
-    fontSize: "0.9375rem"
-    fontWeight: 600
-    lineHeight: 1.35
-    letterSpacing: "normal"
-  body:
-    fontFamily: "'Archivo', 'Helvetica Neue', Arial, sans-serif"
-    fontSize: "0.9375rem"
-    fontWeight: 400
-    lineHeight: 1.55
-    letterSpacing: "normal"
-  label:
-    fontFamily: "'Archivo', 'Helvetica Neue', Arial, sans-serif"
-    fontSize: "0.6875rem"
-    fontWeight: 600
-    lineHeight: 1
-    letterSpacing: "0.09em"
-  numeric:
-    fontFamily: "'JetBrains Mono', ui-monospace, 'SF Mono', monospace"
-    fontSize: "0.9375rem"
-    fontWeight: 400
-    lineHeight: 1.4
-    letterSpacing: "-0.01em"
-  numeric-display:
-    fontFamily: "'JetBrains Mono', ui-monospace, 'SF Mono', monospace"
-    fontSize: "clamp(2rem, 4vw, 3rem)"
-    fontWeight: 500
-    lineHeight: 1
-    letterSpacing: "-0.03em"
-rounded:
-  none: "0px"
-  sm: "2px"
-  full: "9999px"
-spacing:
-  hair: "0.25rem"
-  tight: "0.5rem"
-  snug: "0.75rem"
-  base: "1rem"
-  wide: "1.5rem"
-  field: "2rem"
-  section: "3.5rem"
-components:
-  button-primary:
-    backgroundColor: "{colors.team-accent}"
-    textColor: "{colors.ground}"
-    rounded: "{rounded.sm}"
-    padding: "0.625rem 1.25rem"
-    typography: "{typography.label}"
-  button-secondary:
-    backgroundColor: "transparent"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.sm}"
-    padding: "0.625rem 1.25rem"
-    typography: "{typography.label}"
-  button-danger:
-    backgroundColor: "transparent"
-    textColor: "{colors.signal-red}"
-    rounded: "{rounded.sm}"
-    padding: "0.625rem 1.25rem"
-    typography: "{typography.label}"
-  field-block:
-    backgroundColor: "{colors.field}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.none}"
-    padding: "1.5rem"
-  input:
-    backgroundColor: "{colors.raised}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.sm}"
-    padding: "0.5rem 0.75rem"
-    typography: "{typography.numeric}"
-  status-badge:
-    backgroundColor: "transparent"
-    textColor: "{colors.ink-muted}"
-    rounded: "{rounded.none}"
-    padding: "0.125rem 0.5rem"
-    typography: "{typography.label}"
----
-
 # Design System: NBA Front Office Simulator
 
 > **This document replaces the previous visual world** (near-black ground,
@@ -583,3 +473,120 @@ save.
 - **Don't** let a Ledger adopt Broadcast staging, or a Broadcast render a filter
   bar.
 - **Don't** assume a light mode. There is no light palette.
+
+---
+
+## Appendix: design tokens
+
+The machine-readable form of every binding value above. `src/app/globals.css`
+is the runtime source of truth; this block is the specification it implements.
+
+```yaml
+name: NBA Front Office Simulator
+description: The paperwork of a real front office, rendered at professional-instrument quality, broken deliberately for the moments that matter.
+colors:
+  ground: "#0B0F14"
+  field: "#121820"
+  raised: "#1A222C"
+  hairline: "#2E3A47"
+  rule: "#5A6B7D"
+  rule-strong: "#748799"
+  ink: "#F2F5F7"
+  ink-muted: "#93A1B0"
+  signal-red: "#FF4D4D"
+  positive: "#3DD68C"
+  caution: "#FFB020"
+  negative: "#FF6B6B"
+  team-accent: "#F5B112"
+typography:
+  display:
+    fontFamily: "'Archivo', 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "clamp(2.75rem, 6vw, 4.5rem)"
+    fontWeight: 700
+    lineHeight: 0.95
+    letterSpacing: "-0.02em"
+  headline:
+    fontFamily: "'Archivo', 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "clamp(1.5rem, 3vw, 2rem)"
+    fontWeight: 600
+    lineHeight: 1.15
+    letterSpacing: "-0.01em"
+  title:
+    fontFamily: "'Archivo', 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "0.9375rem"
+    fontWeight: 600
+    lineHeight: 1.35
+    letterSpacing: "normal"
+  body:
+    fontFamily: "'Archivo', 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "0.9375rem"
+    fontWeight: 400
+    lineHeight: 1.55
+    letterSpacing: "normal"
+  label:
+    fontFamily: "'Archivo', 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "0.6875rem"
+    fontWeight: 600
+    lineHeight: 1
+    letterSpacing: "0.09em"
+  numeric:
+    fontFamily: "'JetBrains Mono', ui-monospace, 'SF Mono', monospace"
+    fontSize: "0.9375rem"
+    fontWeight: 400
+    lineHeight: 1.4
+    letterSpacing: "-0.01em"
+  numeric-display:
+    fontFamily: "'JetBrains Mono', ui-monospace, 'SF Mono', monospace"
+    fontSize: "clamp(2rem, 4vw, 3rem)"
+    fontWeight: 500
+    lineHeight: 1
+    letterSpacing: "-0.03em"
+rounded:
+  none: "0px"
+  sm: "2px"
+  full: "9999px"
+spacing:
+  hair: "0.25rem"
+  tight: "0.5rem"
+  snug: "0.75rem"
+  base: "1rem"
+  wide: "1.5rem"
+  field: "2rem"
+  section: "3.5rem"
+components:
+  button-primary:
+    backgroundColor: "{colors.team-accent}"
+    textColor: "{colors.ground}"
+    rounded: "{rounded.sm}"
+    padding: "0.625rem 1.25rem"
+    typography: "{typography.label}"
+  button-secondary:
+    backgroundColor: "transparent"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.sm}"
+    padding: "0.625rem 1.25rem"
+    typography: "{typography.label}"
+  button-danger:
+    backgroundColor: "transparent"
+    textColor: "{colors.signal-red}"
+    rounded: "{rounded.sm}"
+    padding: "0.625rem 1.25rem"
+    typography: "{typography.label}"
+  field-block:
+    backgroundColor: "{colors.field}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.none}"
+    padding: "1.5rem"
+  input:
+    backgroundColor: "{colors.raised}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.sm}"
+    padding: "0.5rem 0.75rem"
+    typography: "{typography.numeric}"
+  status-badge:
+    backgroundColor: "transparent"
+    textColor: "{colors.ink-muted}"
+    rounded: "{rounded.none}"
+    padding: "0.125rem 0.5rem"
+    typography: "{typography.label}"
+```
