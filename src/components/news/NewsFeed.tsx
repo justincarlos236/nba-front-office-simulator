@@ -494,8 +494,11 @@ export function NewsFeed({
 
   /**
    * Browsing, the wire skips whatever the lead and the cards already showed -
-   * a front page does not restate its own lead three inches lower. Finding,
-   * nothing is withheld: a search has to return every hit.
+   * a front page does not restate its own lead three inches lower.
+   *
+   * While filtering, nothing is withheld: searching a player's name has to
+   * return every hit, including one that happens to be the lead. Suppressing
+   * it would show an empty result for a story visible on the same screen.
    */
   const wireDays = useMemo(() => {
     if (isFinding) return groupByDay(filtered);
@@ -539,7 +542,7 @@ export function NewsFeed({
         className="mt-2 w-full rounded-[2px] border border-rule bg-raised px-3 py-1.5 text-[15px] text-ink transition-colors duration-120 placeholder:text-ink-muted/60 focus:border-rule-strong"
       />
 
-      {(showFilters || isFinding) && (
+      {(showFilters || category !== "ALL" || myTeamOnly) && (
         <>
           {userTeamId && (
             <button
@@ -575,7 +578,7 @@ export function NewsFeed({
           }}
           className="mt-3 text-[11px] font-semibold tracking-[0.09em] text-team-accent uppercase underline decoration-rule underline-offset-4"
         >
-          Back to the front page
+          Clear
         </button>
       )}
     </section>
@@ -620,11 +623,11 @@ export function NewsFeed({
    */
   return (
     <div className="space-y-10">
-      {!isFinding && ranked.lead && (
+      {ranked.lead && (
         <LeadStory item={ranked.lead} leagueId={leagueId} isMine={isMine(ranked.lead)} />
       )}
 
-      {!isFinding && cards.length > 0 && (
+      {cards.length > 0 && (
         <section>
           <Label>Around the league</Label>
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -658,8 +661,8 @@ export function NewsFeed({
         </div>
 
         <aside className="space-y-6 lg:sticky lg:top-6 lg:order-2">
-          {!isFinding && <LeaguePulsePanel pulse={pulse} userTeamId={userTeamId} />}
-          {!isFinding && franchise.length > 0 && (
+          <LeaguePulsePanel pulse={pulse} userTeamId={userTeamId} />
+          {franchise.length > 0 && (
             <section className="border-t border-team-accent bg-field p-4">
               <div className="flex items-baseline justify-between gap-2">
                 <Label tone="accent">Your franchise</Label>

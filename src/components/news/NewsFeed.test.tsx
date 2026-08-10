@@ -79,20 +79,43 @@ describe("NewsFeed search box", () => {
     renderFeed(stories);
     const input = screen.getByPlaceholderText("Any name or phrase");
     fireEvent.change(input, { target: { value: "Murray" } });
-    expect(screen.getByText(/Jamal Murray moves west/)).toBeInTheDocument();
-    expect(screen.queryByText(/Jokic traded to Boston/)).not.toBeInTheDocument();
+
+    // Twice on purpose: once as its own card, which stays put regardless of
+    // the query, and once as a result. The cards are the page furniture - they
+    // do not vanish when you type, so a match can legitimately appear in both.
+    expect(screen.getAllByText(/Jamal Murray moves west/).length).toBeGreaterThan(0);
+    // The count is the honest check now that the lead and cards stay on screen
+    // regardless of the query - one of five rows matches.
+    expect(screen.getByText(`1 of ${stories.length} filed`)).toBeInTheDocument();
   });
 
-  it("drops the editorial furniture while searching and restores it after", () => {
+  /**
+   * The page must not reflow around the caret. Everything above the wire is
+   * computed from the full set, so a query narrows the wire and moves nothing
+   * else - an earlier version hid the lead and cards on the first keystroke,
+   * which yanked the search box up the screen mid-word.
+   */
+  it("holds the page still while typing - only the wire narrows", () => {
     renderFeed(stories);
     const input = screen.getByPlaceholderText("Any name or phrase");
+
     expect(screen.getByText("Around the league")).toBeInTheDocument();
+    expect(screen.getByText("League pulse")).toBeInTheDocument();
 
     fireEvent.change(input, { target: { value: "Murray" } });
-    expect(screen.queryByText("Around the league")).not.toBeInTheDocument();
 
-    fireEvent.change(input, { target: { value: "" } });
     expect(screen.getByText("Around the league")).toBeInTheDocument();
+    expect(screen.getByText("League pulse")).toBeInTheDocument();
+  });
+
+  it("returns a hit even when that story is the lead", () => {
+    renderFeed(stories);
+    fireEvent.change(screen.getByPlaceholderText("Any name or phrase"), {
+      target: { value: "Jokic" },
+    });
+    // The lead is normally suppressed from the wire to avoid repeating it.
+    // While searching it must come back, or the result reads as empty.
+    expect(screen.getAllByText(/Jokic traded to Boston/).length).toBeGreaterThan(0);
   });
 
   it("says so plainly when nothing matches", () => {
