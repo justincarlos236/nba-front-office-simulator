@@ -33,11 +33,11 @@ export function planLeaguePlayer(input: PlanLeaguePlayerInput): LeaguePlayerPlan
   const potentialRating = derivePotentialRating(overallRating, input.age);
 
   const performanceScore = computePerformanceScore(input.stats);
-  const ageAdjustedScore = Math.min(99, performanceScore * ageValueMultiplier(input.age));
 
   const contract = generateContract({
     season: input.season,
-    ageAdjustedScore,
+    performanceScore,
+    age: input.age,
     yearsOfExperience: input.yearsOfExperience,
     seed: input.seed,
   });

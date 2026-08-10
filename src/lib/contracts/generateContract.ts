@@ -1,12 +1,15 @@
 import { getSeasonCapRules } from "../cap/constants";
-import { scoreToCapFraction } from "../valuation/playerValue";
+import { ageAdjustedMarketValueCents } from "../valuation/playerValue";
+import { ageValueMultiplier } from "../valuation/ageCurve";
 import { createSeededRandom, randomInRange } from "./seededRandom";
 
 export interface GenerateContractInput {
   /** Season the contract is signed/starts in. */
   season: number;
-  /** The player's age-adjusted performance score (0-100) from the valuation model. */
-  ageAdjustedScore: number;
+  /** Un-aged on-court production score (0-100) from the valuation model. */
+  performanceScore: number;
+  /** Drives both the age discount on salary and the length of the deal. */
+  age: number;
   /** Years of NBA experience - drives the rookie-scale discount. */
   yearsOfExperience: number;
   /** Deterministic seed (e.g. the player's id) so re-running the seed produces the same contracts. */
@@ -59,9 +62,13 @@ export function generateContract(input: GenerateContractInput): GeneratedContrac
   const rules = getSeasonCapRules(input.season);
   const rng = createSeededRandom(input.seed);
 
-  const marketValueCents = BigInt(
-    Math.round(Number(rules.salaryCapCents) * scoreToCapFraction(input.ageAdjustedScore)),
-  );
+  // The age discount applies to the money, not to the score - see
+  // `ageAdjustedMarketValueCents` for why that distinction is load-bearing.
+  const marketValueCents = ageAdjustedMarketValueCents({
+    score: input.performanceScore,
+    age: input.age,
+    season: input.season,
+  });
 
   const discount = rookieScaleDiscount(input.yearsOfExperience);
   const negotiationNoise = randomInRange(rng, 0.85, 1.15);
@@ -70,7 +77,11 @@ export function generateContract(input: GenerateContractInput): GeneratedContrac
   const floorCents = rules.emptyRosterChargeCents; // roughly a veteran-minimum-scale floor
   const firstYearSalaryCents = rawSalaryCents < floorCents ? floorCents : rawSalaryCents;
 
-  const lengthYears = pickContractLength(input.ageAdjustedScore, rng);
+  // Length still keys off the age-adjusted score, where the compounding is
+  // wanted: a 37-year-old star should command star money on a short deal,
+  // not a five-year one.
+  const ageAdjustedScore = Math.min(99, input.performanceScore * ageValueMultiplier(input.age));
+  const lengthYears = pickContractLength(ageAdjustedScore, rng);
   const endSeason = input.season + lengthYears - 1;
 
   const years: GeneratedContractYear[] = [];

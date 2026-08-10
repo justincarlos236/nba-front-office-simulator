@@ -6,13 +6,15 @@ describe("generateContract", () => {
   it("is deterministic for the same seed", () => {
     const a = generateContract({
       season: 2025,
-      ageAdjustedScore: 75,
+      performanceScore: 75,
+      age: 27,
       yearsOfExperience: 5,
       seed: "player-1",
     });
     const b = generateContract({
       season: 2025,
-      ageAdjustedScore: 75,
+      performanceScore: 75,
+      age: 27,
       yearsOfExperience: 5,
       seed: "player-1",
     });
@@ -22,13 +24,15 @@ describe("generateContract", () => {
   it("produces a different salary for a different seed at the same score", () => {
     const a = generateContract({
       season: 2025,
-      ageAdjustedScore: 75,
+      performanceScore: 75,
+      age: 27,
       yearsOfExperience: 5,
       seed: "player-1",
     });
     const b = generateContract({
       season: 2025,
-      ageAdjustedScore: 75,
+      performanceScore: 75,
+      age: 27,
       yearsOfExperience: 5,
       seed: "player-2",
     });
@@ -39,7 +43,8 @@ describe("generateContract", () => {
     const rules = getSeasonCapRules(2025);
     const contract = generateContract({
       season: 2025,
-      ageAdjustedScore: 90,
+      performanceScore: 90,
+      age: 27,
       yearsOfExperience: 8,
       seed: "star-veteran",
     });
@@ -50,13 +55,15 @@ describe("generateContract", () => {
   it("heavily discounts a rookie relative to a veteran with the same score", () => {
     const rookie = generateContract({
       season: 2025,
-      ageAdjustedScore: 85,
+      performanceScore: 85,
+      age: 27,
       yearsOfExperience: 0,
       seed: "rookie-star",
     });
     const veteran = generateContract({
       season: 2025,
-      ageAdjustedScore: 85,
+      performanceScore: 85,
+      age: 27,
       yearsOfExperience: 8,
       seed: "rookie-star", // same seed to isolate the experience effect
     });
@@ -67,7 +74,8 @@ describe("generateContract", () => {
     const rules = getSeasonCapRules(2025);
     const contract = generateContract({
       season: 2025,
-      ageAdjustedScore: 5,
+      performanceScore: 5,
+      age: 27,
       yearsOfExperience: 10,
       seed: "bench-fringe",
     });
@@ -77,7 +85,8 @@ describe("generateContract", () => {
   it("produces a contract length between 1 and 5 years matching start/end season", () => {
     const contract = generateContract({
       season: 2025,
-      ageAdjustedScore: 60,
+      performanceScore: 60,
+      age: 27,
       yearsOfExperience: 4,
       seed: "role-player",
     });
@@ -90,12 +99,70 @@ describe("generateContract", () => {
   it("gives modest year-over-year raises", () => {
     const contract = generateContract({
       season: 2025,
-      ageAdjustedScore: 70,
+      performanceScore: 70,
+      age: 27,
       yearsOfExperience: 6,
       seed: "raise-check",
     });
     for (let i = 1; i < contract.years.length; i++) {
       expect(contract.years[i].salaryCents).toBeGreaterThan(contract.years[i - 1].salaryCents);
     }
+  });
+});
+
+/**
+ * The regression that motivated splitting age out of the score.
+ *
+ * `ageValueMultiplier` is a discount on market *value*, but it used to be
+ * multiplied into the score before `scoreToCapFraction` - a logistic - saw
+ * it. The two compounded, so a modest age discount became a near-total pay
+ * cut. Measured against the seeded roster, this paid Kevin Durant $1.7M,
+ * Stephen Curry $2.3M and LeBron James $1.3M.
+ */
+describe("age discounts the money, not the score", () => {
+  const star = (age: number) =>
+    Number(
+      generateContract({
+        season: 2025,
+        performanceScore: 92,
+        age,
+        yearsOfExperience: 12,
+        seed: "aging-star",
+      }).years[0].salaryCents,
+    );
+
+  it("still pays an ageing superstar like a starter, not the minimum", () => {
+    const rules = getSeasonCapRules(2025);
+    // The old formulation produced roughly the veteran minimum here.
+    expect(star(37)).toBeGreaterThan(Number(rules.emptyRosterChargeCents) * 10);
+  });
+
+  it("discounts with age, but proportionally rather than off a cliff", () => {
+    const prime = star(27);
+    const old = star(37);
+    expect(old).toBeLessThan(prime);
+    // ageValueMultiplier bottoms out at 0.4, so no age may cost more than
+    // 60% of a player's value. The bug cost 96%.
+    expect(old).toBeGreaterThan(prime * 0.35);
+  });
+
+  it("keeps ageing stars on shorter deals - the age signal still shapes length", () => {
+    // Length is drawn from a band rather than fixed, so a single seed can go
+    // either way. The property is about the distribution, not one contract.
+    const meanLength = (age: number, experience: number) => {
+      const lengths = Array.from(
+        { length: 200 },
+        (_, i) =>
+          generateContract({
+            season: 2025,
+            performanceScore: 92,
+            age,
+            yearsOfExperience: experience,
+            seed: `length-${i}`,
+          }).years.length,
+      );
+      return lengths.reduce((sum, n) => sum + n, 0) / lengths.length;
+    };
+    expect(meanLength(38, 16)).toBeLessThan(meanLength(25, 4));
   });
 });

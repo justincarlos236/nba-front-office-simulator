@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
+import { ApronLevel } from "@/lib/cap/apron";
 import { prisma } from "@/lib/prisma";
 import { TradeBuilder } from "@/components/trades/TradeBuilder";
 import { HowDoesThisWork } from "@/components/guide/HowDoesThisWork";
@@ -11,6 +12,24 @@ import { computeTeamNeeds, TEAM_NEED_LABEL } from "@/lib/gm/teamNeeds";
 import { formatCentsCompact } from "@/lib/money";
 import { DataTable, Label, Td, Th } from "@/components/ui/primitives";
 import { estimateAge } from "@/lib/players/age";
+
+/** Short enough for a table cell; the full phrasing lives on the cap page. */
+const APRON_LABEL: Record<ApronLevel, string> = {
+  [ApronLevel.UNDER_CAP]: "Under cap",
+  [ApronLevel.BETWEEN_CAP_AND_TAX]: "Over cap",
+  [ApronLevel.TAXPAYER]: "Luxury tax",
+  [ApronLevel.FIRST_APRON]: "1st apron",
+  [ApronLevel.SECOND_APRON]: "2nd apron",
+};
+
+/** Only the aprons are a warning - being over the cap is the norm. */
+const APRON_TONE: Record<ApronLevel, "positive" | "muted" | "caution"> = {
+  [ApronLevel.UNDER_CAP]: "positive",
+  [ApronLevel.BETWEEN_CAP_AND_TAX]: "muted",
+  [ApronLevel.TAXPAYER]: "muted",
+  [ApronLevel.FIRST_APRON]: "caution",
+  [ApronLevel.SECOND_APRON]: "caution",
+};
 
 export const dynamic = "force-dynamic";
 
@@ -179,8 +198,21 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
         label: `${lt.team.city} ${lt.team.name}`,
         conference: lt.team.conference,
         record: `${lt.wins}-${lt.losses}`,
-        capSpace: formatCentsCompact(capSheet.capSpaceCents),
+        // "Cap space" alone read $0 for 27 of 30 teams, because `capSpaceCents`
+        // is floored at zero once a team is over the cap - which most are, here
+        // as in the real NBA. Payroll and apron status are what actually govern
+        // what a deal with this team can look like.
+        payroll: formatCentsCompact(capSheet.totalSalaryCents),
+        capSpace: capSheet.capSpaceCents > 0n ? formatCentsCompact(capSheet.capSpaceCents) : null,
         hasSpace: capSheet.capSpaceCents > 0n,
+        apronLabel: APRON_LABEL[capSheet.apronLevel],
+        apronTone: APRON_TONE[capSheet.apronLevel],
+        // Room before the first apron is the real constraint on aggregating
+        // salary; below it a team can still absorb, above it the rules bite.
+        roomToFirstApron:
+          capSheet.distanceToFirstApronCents > 0n
+            ? formatCentsCompact(capSheet.distanceToFirstApronCents)
+            : null,
         rosterCount: roster.length,
         needs: computeTeamNeeds(
           roster.map((lp) => ({
@@ -212,7 +244,9 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
               <Th>Team</Th>
               <Th>Conf</Th>
               <Th numeric>Record</Th>
-              <Th numeric>Cap space</Th>
+              <Th numeric>Payroll</Th>
+              <Th>Standing</Th>
+              <Th numeric>Room to 1st apron</Th>
               <Th numeric>Roster</Th>
               <Th>Looking for</Th>
               <Th>
@@ -228,8 +262,23 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
                 <Td numeric className="text-ink-muted">
                   {p.record}
                 </Td>
-                <Td numeric className={p.hasSpace ? "text-positive" : "text-ink-muted"}>
-                  {p.capSpace}
+                <Td numeric className="text-ink">
+                  {p.payroll}
+                </Td>
+                <Td
+                  className={
+                    p.apronTone === "positive"
+                      ? "text-positive"
+                      : p.apronTone === "caution"
+                        ? "text-caution"
+                        : "text-ink-muted"
+                  }
+                >
+                  {p.apronLabel}
+                  {p.capSpace && <span className="text-ink-muted"> · {p.capSpace} space</span>}
+                </Td>
+                <Td numeric className="text-ink-muted">
+                  {p.roomToFirstApron ?? "—"}
                 </Td>
                 <Td numeric className="text-ink-muted">
                   {p.rosterCount}

@@ -34,7 +34,8 @@ export interface DraftPickTradeValueInput {
 // `generateDraftClass.ts`'s age range) - a fixed assumed age keeps this
 // projection simple, since draft classes aren't generated far enough in
 // advance to know an actual prospect's age for a future pick.
-const ASSUMED_ROOKIE_AGE = 20;
+export const DRAFT_ROOKIE_ASSUMED_AGE = 20;
+const ASSUMED_ROOKIE_AGE = DRAFT_ROOKIE_ASSUMED_AGE;
 
 // Real 2nd-round picks are worth much less than their "expected talent"
 // alone would suggest - non-guaranteed rookie contracts and much easier

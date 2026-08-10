@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { generateContract } from "@/lib/contracts/generateContract";
+import { DRAFT_ROOKIE_ASSUMED_AGE } from "@/lib/gm/draftPickTradeValue";
 import { createSeededRandom } from "@/lib/contracts/seededRandom";
 import { computeTeamDraftContexts, fetchRostersByTeam } from "@/lib/gm/teamDraftContext";
 import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
@@ -135,7 +136,11 @@ async function draftProspectsToTeams(
     leagueTeamId: a.leagueTeamId,
     contract: generateContract({
       season: rookieSeason,
-      ageAdjustedScore: a.overallRating,
+      performanceScore: a.overallRating,
+      // Draft classes are generated at 19-22; the exact age isn't carried
+      // through the assignment, and the same fixed assumption is already
+      // used for projecting future picks (`draftPickTradeValue.ts`).
+      age: DRAFT_ROOKIE_ASSUMED_AGE,
       yearsOfExperience: 0,
       seed: a.prospectId,
     }),

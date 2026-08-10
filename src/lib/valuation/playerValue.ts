@@ -129,14 +129,45 @@ export function scoreToCapFraction(score: number): number {
   return MAX_CAP_FRACTION / (1 + Math.exp(-STEEPNESS * (score - MIDPOINT)));
 }
 
-export function evaluatePlayer(input: PlayerValuationInput): PlayerValuationResult {
-  const rules = getSeasonCapRules(input.season);
+/**
+ * What the market would pay a player of this calibre at this age, in cents.
+ *
+ * **The age discount belongs here, on the money - not on the score.**
+ * `ageValueMultiplier` documents itself as affecting market *value*, but it
+ * used to be multiplied into the score before the score was fed through
+ * `scoreToCapFraction`. That curve is a logistic, so scaling its input
+ * compounds: a 35% haircut on a 37-year-old's score became a 96% haircut on
+ * his salary. Measured against the seeded roster, that paid Kevin Durant
+ * (performance score 91.9) $1.7M, Stephen Curry $2.3M and LeBron James
+ * $1.3M - all at or near the veteran minimum, which in turn left Houston
+ * $57.9M below a realistic team salary floor.
+ *
+ * Applying the multiplier to the output instead keeps the curve's shape and
+ * the age discount's intent without the two multiplying into each other.
+ */
+export function ageAdjustedMarketValueCents(args: {
+  /** Un-aged score: raw on-court production, or an overall rating. */
+  score: number;
+  age: number;
+  season: number;
+}): bigint {
+  const rules = getSeasonCapRules(args.season);
+  const value =
+    Number(rules.salaryCapCents) * scoreToCapFraction(args.score) * ageValueMultiplier(args.age);
+  return BigInt(Math.round(value));
+}
 
+export function evaluatePlayer(input: PlayerValuationInput): PlayerValuationResult {
   const performanceScore = computePerformanceScore(input.stats);
+  // Retained for callers that describe *how a player is trending* rather than
+  // what he is paid - it is no longer what sets his price.
   const ageAdjustedScore = Math.min(99, performanceScore * ageValueMultiplier(input.age));
 
-  const capFraction = scoreToCapFraction(ageAdjustedScore);
-  const estimatedMarketValueCents = BigInt(Math.round(Number(rules.salaryCapCents) * capFraction));
+  const estimatedMarketValueCents = ageAdjustedMarketValueCents({
+    score: performanceScore,
+    age: input.age,
+    season: input.season,
+  });
 
   const surplusValueCents = estimatedMarketValueCents - input.actualSalaryCents;
   const surplusValuePct =
