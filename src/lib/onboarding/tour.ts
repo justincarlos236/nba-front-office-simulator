@@ -35,6 +35,11 @@ export interface TourStep {
    */
   anchor: string | null;
   title: string;
+  /**
+   * Body copy. `*asterisks*` mark the one phrase in the step worth landing on -
+   * rendered in full-strength ink against the muted rest, so each card has a
+   * single thing the eye catches. One per step; more and nothing stands out.
+   */
   body: string;
   /** Label on the advance button. Every step has one - nothing is ever a trap. */
   buttonLabel: string;
@@ -55,7 +60,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
     path: "",
     anchor: null,
     title: "You're the general manager.",
-    body: "Build the roster, manage the money, win games. The owner is watching.\n\nThis takes about two minutes.",
+    body: "Build the roster, manage the money, win games. *The owner is watching.*\n\nThis takes about two minutes.",
     buttonLabel: "Show me around",
   },
   {
@@ -63,7 +68,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
     path: "",
     anchor: "action-center",
     title: "Start here, always.",
-    body: "This reads your league and ranks what needs attention. Every item can tell you why it is recommending itself.",
+    body: "It reads your league and ranks *what needs attention right now.* Every item can tell you why it is recommending itself.",
     buttonLabel: "Next",
   },
   {
@@ -71,7 +76,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
     path: "",
     anchor: "sub-nav",
     title: "The rest of the building.",
-    body: "Finances, trades, the draft, your staff. You do not need them yet - the Action Center will send you when it is time.",
+    body: "Finances, trades, the draft, your staff. *You do not need them yet* - the Action Center will send you when it is time.",
     buttonLabel: "Next",
   },
   {
@@ -79,7 +84,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
     path: "/rotation",
     anchor: "rotation-board",
     title: "Your rotation drives the simulation.",
-    body: "Order is minutes. Drag someone into your starting five and the simulation follows it.",
+    body: "*Order is minutes.* Drag someone into your starting five and the simulation follows it.",
     buttonLabel: "Got it",
     advanceOn: "tour:rotation-changed",
   },
@@ -88,7 +93,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
     path: "",
     anchor: "simulate-controls",
     title: "Now play some basketball.",
-    body: "Simulate a game and see what your roster actually does.",
+    body: "Simulate a game and see what your roster *actually does.*",
     buttonLabel: "Skip ahead",
     advanceOn: "tour:simulated",
   },
@@ -97,7 +102,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
     path: "",
     anchor: "action-center",
     title: "That's the loop.",
-    body: "Results, news and standings move as you simulate. The Action Center keeps telling you what is next - you are on your own from here.",
+    body: "Results, news and standings all move as you simulate. The Action Center keeps telling you what is next - *you are on your own from here.*",
     buttonLabel: "Done",
   },
 ];
@@ -153,4 +158,20 @@ export function emitTourEvent(name: TourEventName): void {
 /** localStorage key for the in-progress step, per league. */
 export function tourProgressKey(leagueId: string): string {
   return `tour:progress:${leagueId}`;
+}
+
+/**
+ * Splits body copy on `*emphasis*` markers into runs the card can style.
+ * Deliberately tiny - this is one emphasis level, not a markdown parser, and it
+ * should stay that way.
+ */
+export function parseEmphasis(body: string): { text: string; strong: boolean }[] {
+  return body
+    .split(/(\*[^*]+\*)/g)
+    .filter((chunk) => chunk.length > 0)
+    .map((chunk) =>
+      chunk.startsWith("*") && chunk.endsWith("*") && chunk.length > 2
+        ? { text: chunk.slice(1, -1), strong: true }
+        : { text: chunk, strong: false },
+    );
 }

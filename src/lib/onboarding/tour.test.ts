@@ -4,6 +4,7 @@ import path from "node:path";
 import {
   TOUR_ANCHORS,
   TOUR_STEPS,
+  parseEmphasis,
   runnableSteps,
   shouldAutoLaunchTour,
   tourProgressLabel,
@@ -119,6 +120,44 @@ describe("runnableSteps", () => {
 
   it("keeps anchorless steps", () => {
     expect(runnableSteps(steps, "", () => false).some((s) => s.id === "a")).toBe(true);
+  });
+});
+
+describe("parseEmphasis", () => {
+  it("splits an emphasised phrase out of surrounding copy", () => {
+    expect(parseEmphasis("plain *loud* plain")).toEqual([
+      { text: "plain ", strong: false },
+      { text: "loud", strong: true },
+      { text: " plain", strong: false },
+    ]);
+  });
+
+  it("passes copy with no markers straight through", () => {
+    expect(parseEmphasis("nothing special")).toEqual([{ text: "nothing special", strong: false }]);
+  });
+
+  it("leaves a lone asterisk alone rather than eating the rest of the line", () => {
+    expect(parseEmphasis("2 * 3 = 6")).toEqual([{ text: "2 * 3 = 6", strong: false }]);
+  });
+
+  it("round-trips the text, so no copy can be lost to the parser", () => {
+    for (const step of TOUR_STEPS) {
+      const rebuilt = parseEmphasis(step.body)
+        .map((r) => r.text)
+        .join("");
+      expect(rebuilt).toBe(step.body.replace(/\*/g, ""));
+    }
+  });
+});
+
+describe("tour copy emphasis", () => {
+  it("gives every step exactly one phrase to land on", () => {
+    // More than one and nothing stands out; none and the card reads flat,
+    // which is what the first pass shipped and looked washed out on screen.
+    for (const step of TOUR_STEPS) {
+      const strongRuns = parseEmphasis(step.body).filter((r) => r.strong);
+      expect(strongRuns.length, `step "${step.id}"`).toBe(1);
+    }
   });
 });
 
