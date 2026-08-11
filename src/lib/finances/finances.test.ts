@@ -219,6 +219,57 @@ describe("computeFranchiseValue", () => {
     expect(smoothed).toBeGreaterThan(prior);
     expect(smoothed).toBeLessThan(target);
   });
+
+  /**
+   * docs/FINANCE_AUDIT.md P0-3: the cash term was `cash * 0.5` on an unbounded
+   * quantity. Correct at the scale it was written for and badly wrong once cash
+   * compounded - a team that reached $3.68B in the bank had $1.84B of its
+   * franchise value coming from the balance sheet alone, swamping market,
+   * winning and popularity together.
+   */
+  describe("cash contribution is bounded", () => {
+    it("still rewards a healthy balance sheet", () => {
+      const rich = computeFranchiseValue({ ...base, cashReserveCents: 300 * M });
+      const broke = computeFranchiseValue({ ...base, cashReserveCents: 0 });
+      expect(rich).toBeGreaterThan(broke);
+    });
+
+    it("never lets hoarded cash outweigh the market baseline", () => {
+      // A MID market's baseline is $2.4B. Absurd cash must not approach it.
+      const hoarder = computeFranchiseValue({ ...base, cashReserveCents: 10_000 * M });
+      const modest = computeFranchiseValue({ ...base, cashReserveCents: 0 });
+      expect(hoarder - modest).toBeLessThan(500 * M);
+    });
+
+    it("keeps winning worth more than a fortune in the bank", () => {
+      // The whole point: a title should move value more than compounding cash.
+      const championWithNoCash = computeFranchiseValue({
+        ...base,
+        playoffOutcomeIndex: 6,
+        cashReserveCents: 0,
+      });
+      const lotteryHoarder = computeFranchiseValue({
+        ...base,
+        playoffOutcomeIndex: 0,
+        cashReserveCents: 5_000 * M,
+      });
+      expect(championWithNoCash).toBeGreaterThan(lotteryHoarder);
+    });
+
+    it("leaves ordinary balances behaving as they always did", () => {
+      // The curve's slope at zero is exactly the old CASH_VALUE_WEIGHT, so a
+      // normal starting reserve must land within a few percent of the old
+      // linear result - this fix bounds the runaway end, it does not re-tune
+      // the ordinary case.
+      const startingCash = 120 * M;
+      const withCash = computeFranchiseValue({ ...base, cashReserveCents: startingCash });
+      const withoutCash = computeFranchiseValue({ ...base, cashReserveCents: 0 });
+      const oldLinearContribution = startingCash * 0.5;
+      const actual = withCash - withoutCash;
+      expect(actual).toBeGreaterThan(oldLinearContribution * 0.85);
+      expect(actual).toBeLessThanOrEqual(oldLinearContribution);
+    });
+  });
 });
 
 describe("pickCpuTicketPosture", () => {

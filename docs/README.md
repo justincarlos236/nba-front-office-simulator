@@ -29,8 +29,8 @@ in this repository — including their own.
 
 All P0 and P1 findings from the first three are fixed. The finance audit's
 headline finding is fixed too — and the audit corrects its own attribution,
-having first blamed the wrong module. Two P0s remain open there. Each audit
-records its own scores before and after.
+having first blamed the wrong module. One P0 remains open there: insolvency
+still has no consequence. Each audit records its own scores before and after.
 
 ## Design records
 

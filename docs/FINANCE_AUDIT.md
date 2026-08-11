@@ -11,9 +11,9 @@ a comment. Where a claim rests on inspection alone, it says so.
 Fourth audit in the refinement phase. It inherits, prices, and then fixes the
 payroll-calibration question the Cap/Roster work deliberately deferred.
 
-**Status:** P0-1 fixed 2026-08-11 and re-measured; the fix is recorded inline
-below, including a correction to this audit's own attribution. P0-2, P0-3 and
-everything below them remain open.
+**Status:** P0-1 and P0-3 fixed 2026-08-11 and re-measured; both fixes are
+recorded inline below, P0-1 including a correction to this audit's own
+attribution. P0-2 and everything below it remain open.
 
 ---
 
@@ -30,8 +30,10 @@ The audit also got the attribution wrong on the way to being right about the
 symptom — it named `scoreToCapFraction`, and correcting that curve would have
 made the league _poorer_, not more realistic. See P0-1.
 
-Two genuine finance-side defects remain open: an unbounded debt spiral with no
-failure state, and franchise value being swallowed by hoarded cash.
+Of the two genuine finance-side defects, franchise value being swallowed by
+hoarded cash is now fixed. **One P0 remains open: the debt spiral has no failure
+state** — a franchise can run −$3.7B and keep playing exactly as before, which is
+what still drains the pillar of stakes.
 
 ---
 
@@ -58,18 +60,18 @@ the cause beyond argument: payroll, not the tax.
 
 ## Scores
 
-Before → after P0-1. Only calibration and test confidence moved; the two
-remaining defects are untouched, so the scores that describe them are unchanged.
+Before → after P0-1 and P0-3. Gameplay depth and structure are untouched by both
+fixes, so those scores are unchanged.
 
-| Dimension          | Score          | Note                                                               |
-| ------------------ | -------------- | ------------------------------------------------------------------ |
-| **Overall**        | **6 → 7.5/10** | Solvent and realistic; still no stabilising feedback at the edges  |
-| Calibration        | 8 → **10/10**  | League payroll within 1.2% of real, net income within 7%           |
-| Correctness        | 7/10           | Units and arithmetic sound; two real modelling defects remain      |
-| Long-run stability | 3/10           | Debt and cash both diverge without bound                           |
-| Gameplay depth     | 5/10           | Revenue barely responds to anything the player does                |
-| Structure          | 9/10           | Pure money model, zero Prisma, fully consumed by the app           |
-| Test confidence    | 6 → **7/10**   | Four regressions added upstream; multi-season shape still untested |
+| Dimension          | Score         | Note                                                                         |
+| ------------------ | ------------- | ---------------------------------------------------------------------------- |
+| **Overall**        | **6 → 8/10**  | Solvent, realistic, bounded at one end; insolvency still costs nothing       |
+| Calibration        | 8 → **10/10** | League payroll within 1.2% of real, net income within 7%                     |
+| Correctness        | 7 → **8/10**  | One modelling defect left: insolvency has no consequence                     |
+| Long-run stability | 3 → **6/10**  | Cash no longer diverges in value terms; debt still does                      |
+| Gameplay depth     | 5/10          | Revenue barely responds to anything the player does                          |
+| Structure          | 9/10          | Pure money model, zero Prisma, fully consumed by the app                     |
+| Test confidence    | 6 → **8/10**  | Eight regressions added across both fixes; multi-season shape still untested |
 
 ---
 
@@ -160,7 +162,7 @@ pillar of stakes.
 
 ---
 
-### P0-3 — Franchise value becomes a function of hoarded cash
+### P0-3 — Franchise value becomes a function of hoarded cash — FIXED
 
 **Evidence.** `src/lib/finances/finances.ts`:
 
@@ -177,7 +179,26 @@ rather than by market, winning or popularity.
 **Root cause.** A weight calibrated at one scale, applied to a quantity with no
 upper bound.
 
-**Fix.** Diminishing returns or a hard ceiling on the cash component.
+**Fix.** Diminishing returns rather than a hard ceiling, so there is no cliff
+where one more dollar of cash abruptly stops counting. The contribution now
+saturates toward `MAX_CASH_VALUE_CONTRIBUTION` ($400M), with the saturation
+constant _derived_ so the curve's slope at zero is exactly the old
+`CASH_VALUE_WEIGHT` — ordinary balances behave as they always did, and only the
+runaway end is bounded.
+
+| Cash reserve        | Old contribution | New         |
+| ------------------- | ---------------- | ----------- |
+| $120M (fresh save)  | $60.0M           | $52.2M      |
+| $300M               | $150.0M          | $109.1M     |
+| $1.0B               | $500.0M          | $222.2M     |
+| $3.68B (P0-2's HOU) | **$1,840M**      | **$328.6M** |
+| $10B                | $5,000M          | $370.4M     |
+
+**Validation.** Four tests added, two of which were verified to fail on the
+previous version; the other two assert that the ordinary case is _unchanged_,
+which is the point of deriving the saturation constant rather than picking it.
+Against a MID market's $2.4B baseline, even $10B in the bank now moves franchise
+value less than a championship does.
 
 ---
 
@@ -275,11 +296,10 @@ correct for a model that has since been replaced.
 1. ~~P0-1: correct payroll calibration.~~ Fixed in `computePerformanceScore`,
    not `scoreToCapFraction`; the curve was already right. 24/30 profitable.
 
-**Stage 2 — the two real finance defects**
+**Stage 2 — the two real finance defects — half done**
 
-2. P0-3: bound the cash contribution to franchise value. Now the _most_ urgent
-   item: with the league solvent, cash compounds faster than before, so the
-   unbounded `CASH_VALUE_WEIGHT` term distorts franchise value sooner.
+2. ~~P0-3: bound the cash contribution to franchise value.~~ Done — saturating
+   curve, ordinary balances unchanged.
 3. P0-2: give insolvency a consequence — owner bailout at a confidence cost, a
    forced salary dump, or ending the save. Note that Stage 1 changed the shape
    of this problem rather than removing it: six teams still lose money in season

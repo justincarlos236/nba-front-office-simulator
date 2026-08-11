@@ -284,10 +284,41 @@ const MARKET_VALUE_BASELINE: Record<MarketSize, number> = {
   SMALL: 1_900 * M,
 };
 
-/** How much a healthy cash balance adds to enterprise value. Small next to
- *  the billions of baseline - a strong balance sheet helps, but titles and
- *  market drive value. */
+/** How much the first dollars of a healthy cash balance add to enterprise
+ *  value. Small next to the billions of baseline - a strong balance sheet
+ *  helps, but titles and market drive value. */
 const CASH_VALUE_WEIGHT = 0.5;
+
+/**
+ * Ceiling on what cash can contribute to franchise value, no matter how much
+ * of it has piled up.
+ *
+ * `CASH_VALUE_WEIGHT` used to apply linearly to an unbounded quantity, and the
+ * comment above was only true at the scale it was written for: $120M of
+ * starting cash adds $60M against a $3.5B baseline, which is exactly the
+ * intended "small". It stopped being true once cash compounded. Measured over
+ * 15 seasons (docs/FINANCE_AUDIT.md P0-3), Houston reached $3.68B in the bank
+ * and that term alone added **$1.84B** - franchise value had become a readout
+ * of the bank balance rather than of market, winning and popularity.
+ *
+ * The contribution now saturates instead of a hard cap, so there is no cliff
+ * where one more dollar of cash suddenly stops counting. `CASH_SATURATION` is
+ * derived rather than chosen so that the curve's slope at zero is exactly
+ * `CASH_VALUE_WEIGHT` - small balances behave precisely as they always did,
+ * and only the runaway end is bounded.
+ */
+const MAX_CASH_VALUE_CONTRIBUTION = 400 * M;
+const CASH_SATURATION = MAX_CASH_VALUE_CONTRIBUTION / CASH_VALUE_WEIGHT;
+
+/**
+ * Diminishing-returns contribution of a cash reserve to franchise value.
+ * Approaches `MAX_CASH_VALUE_CONTRIBUTION` asymptotically; negative balances
+ * contribute nothing (debt is already punished through interest expense).
+ */
+export function cashValueContributionCents(cashReserveCents: number): number {
+  const cash = Math.max(0, cashReserveCents);
+  return (MAX_CASH_VALUE_CONTRIBUTION * cash) / (cash + CASH_SATURATION);
+}
 
 /** New value blends slowly toward the computed target so franchise value
  *  behaves like a real appreciating asset, not a number that whipsaws
@@ -315,7 +346,7 @@ export function computeFranchiseValue(inputs: FranchiseValueInputs): number {
   const popularityFactor = 0.8 + (inputs.franchisePopularity / 100) * 0.4;
   const contentionFactor = 1 + inputs.playoffOutcomeIndex * 0.03;
   const iconFactor = 1 + (inputs.iconPremiumFraction ?? 0);
-  const cashComponent = Math.max(0, inputs.cashReserveCents) * CASH_VALUE_WEIGHT;
+  const cashComponent = cashValueContributionCents(inputs.cashReserveCents);
 
   const target = Math.round(
     MARKET_VALUE_BASELINE[inputs.marketSize] * popularityFactor * contentionFactor * iconFactor +
