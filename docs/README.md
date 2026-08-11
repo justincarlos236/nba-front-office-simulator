@@ -27,10 +27,12 @@ in this repository — including their own.
 | [SECOND_PASS_AUDIT.md](./SECOND_PASS_AUDIT.md)               | Whole simulator, re-verified    | Re-checked every prior finding against the code; corrected one that had been measured wrong |
 | [FINANCE_AUDIT.md](./FINANCE_AUDIT.md)                       | Franchise finances, all systems | The money model was right; a rating formula upstream was paying backup centres like MVPs    |
 
-All P0 and P1 findings from the first three are fixed. The finance audit's
-headline finding is fixed too — and the audit corrects its own attribution,
-having first blamed the wrong module. One P0 remains open there: insolvency
-still has no consequence. Each audit records its own scores before and after.
+All P0 and P1 findings from the first three are fixed, and all three P0s in the
+finance audit are now fixed too. That audit is also the one that corrects itself
+twice — it first blamed the wrong module for its headline finding, and got its
+own debt figures wrong by an order of magnitude. What remains open there is
+design rather than correctness. Each audit records its own scores before and
+after.
 
 ## Design records
 

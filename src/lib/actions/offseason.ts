@@ -1988,7 +1988,7 @@ export async function advanceSeasonAction(leagueId: string) {
   // The season-boundary finance pass: the 30-team P&L, capital projects,
   // CPU business policy, CPU relocation, and the news all of that generates.
   // Lives in ./offseasonFinances so the per-team P&L is testable on its own.
-  await runSeasonFinances({
+  const { userBailoutConfidenceCost } = await runSeasonFinances({
     ...financeDeps,
     leagueId,
     newSeason,
@@ -2005,6 +2005,18 @@ export async function advanceSeasonAction(leagueId: string) {
     allCapitalProjects,
     completingThisPassByTeam,
   });
+
+  // docs/FINANCE_AUDIT.md P0-2 - an owner who had to cover the season's
+  // shortfall thinks less of the manager who caused it. Applied here rather
+  // than inside the finance pass so confidence stays owned by one function,
+  // which is also what makes repeated bailouts compound into the existing
+  // firing check below rather than needing a separate failure path.
+  if (userBailoutConfidenceCost > 0) {
+    ownerConfidence = Math.max(
+      MIN_OWNER_CONFIDENCE,
+      Math.min(MAX_OWNER_CONFIDENCE, ownerConfidence - userBailoutConfidenceCost),
+    );
+  }
 
   await prisma.league.update({
     where: { id: leagueId },

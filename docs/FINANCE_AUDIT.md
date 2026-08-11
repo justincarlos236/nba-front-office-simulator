@@ -11,9 +11,9 @@ a comment. Where a claim rests on inspection alone, it says so.
 Fourth audit in the refinement phase. It inherits, prices, and then fixes the
 payroll-calibration question the Cap/Roster work deliberately deferred.
 
-**Status:** P0-1 and P0-3 fixed 2026-08-11 and re-measured; both fixes are
-recorded inline below, P0-1 including a correction to this audit's own
-attribution. P0-2 and everything below it remain open.
+**Status:** all three P0s fixed 2026-08-11 and re-measured, each recorded
+inline below — P0-1 including a correction to this audit's own attribution, and
+P0-2 including a correction to its own numbers. P1 and below remain open.
 
 ---
 
@@ -30,10 +30,14 @@ The audit also got the attribution wrong on the way to being right about the
 symptom — it named `scoreToCapFraction`, and correcting that curve would have
 made the league _poorer_, not more realistic. See P0-1.
 
-Of the two genuine finance-side defects, franchise value being swallowed by
-hoarded cash is now fixed. **One P0 remains open: the debt spiral has no failure
-state** — a franchise can run −$3.7B and keep playing exactly as before, which is
-what still drains the pillar of stakes.
+Both genuine finance-side defects are now fixed as well: franchise value no
+longer tracks the bank balance, and insolvency finally costs something — the
+owner covers the shortfall and thinks less of you for it, which compounds into
+the existing firing check.
+
+**What remains is design, not correctness.** Revenue barely responds to anything
+the player does, there is no salary floor, and the luxury tax is flat. The model
+is now sound; it is not yet a deep business game.
 
 ---
 
@@ -60,18 +64,18 @@ the cause beyond argument: payroll, not the tax.
 
 ## Scores
 
-Before → after P0-1 and P0-3. Gameplay depth and structure are untouched by both
-fixes, so those scores are unchanged.
+Before → after all three P0 fixes. Gameplay depth and structure are untouched,
+so those scores are unchanged.
 
-| Dimension          | Score         | Note                                                                         |
-| ------------------ | ------------- | ---------------------------------------------------------------------------- |
-| **Overall**        | **6 → 8/10**  | Solvent, realistic, bounded at one end; insolvency still costs nothing       |
-| Calibration        | 8 → **10/10** | League payroll within 1.2% of real, net income within 7%                     |
-| Correctness        | 7 → **8/10**  | One modelling defect left: insolvency has no consequence                     |
-| Long-run stability | 3 → **6/10**  | Cash no longer diverges in value terms; debt still does                      |
-| Gameplay depth     | 5/10          | Revenue barely responds to anything the player does                          |
-| Structure          | 9/10          | Pure money model, zero Prisma, fully consumed by the app                     |
-| Test confidence    | 6 → **8/10**  | Eight regressions added across both fixes; multi-season shape still untested |
+| Dimension          | Score          | Note                                                                               |
+| ------------------ | -------------- | ---------------------------------------------------------------------------------- |
+| **Overall**        | **6 → 8.5/10** | Solvent, realistic, bounded, with a real failure state; shallow as a business game |
+| Calibration        | 8 → **10/10**  | League payroll within 1.2% of real, net income within 7%                           |
+| Correctness        | 7 → **9/10**   | No known modelling defects left; remaining gaps are design choices                 |
+| Long-run stability | 3 → **8/10**   | Downside bounded by the bailout; cash still compounds upward without limit         |
+| Gameplay depth     | 5/10           | Revenue barely responds to anything the player does                                |
+| Structure          | 9/10           | Pure money model, zero Prisma, fully consumed by the app                           |
+| Test confidence    | 6 → **8/10**   | 15 regressions added across the three fixes; multi-season shape still untested     |
 
 ---
 
@@ -134,7 +138,7 @@ That is a structural gap, not a constant to tune.
 
 ---
 
-### P0-2 — Unbounded debt spiral, and no failure state
+### P0-2 — Unbounded debt spiral, and no failure state — FIXED
 
 **This finding's original numbers were wrong twice over, and are corrected
 here.** They were measured against the pre-P0-1 inflated payrolls, and the debt
@@ -166,12 +170,39 @@ bailout, no hard payroll constraint. `financialSpendingResistance` returns 1.5×
 at negative cash — a nudge on _adding_ salary that cannot shed a contract already
 signed.
 
-**Gameplay impact — unchanged, and the reason this is still a P0.** Insolvency
-means nothing. A franchise can run −$3.4B and keep playing exactly as before,
-which drains the entire finance pillar of stakes. Note that P0-3 bounded the
-_valuation_ consequence of runaway cash but not the cash itself: franchise values
-now cluster sensibly between $2.0B and $4.3B while the underlying balances still
-span $6.5B.
+**Gameplay impact — this was the reason it was a P0.** Insolvency meant nothing.
+A franchise could run −$3.4B and keep playing exactly as before.
+
+**Fix — an owner bailout, priced in confidence.** `resolveOwnerBailout` in
+`finances.ts`: below −$50M the owner covers the shortfall and leaves a small
+cushion, charging the user roughly 0.3 owner-confidence per $1M he had to find
+(floor 8, ceiling 30). It is automatic rather than offered, deliberately — a
+loan, a capital call and distressed financing are all things you _decide_ to do,
+and being bailed out is the consequence of having run out of decisions. It is
+priced worse than a capital call (~0.23/$1M) because you did not ask for it.
+
+Repeated bailouts compound into the existing `MIN_OWNER_CONFIDENCE` firing
+check rather than needing a separate failure path, so the confidence cost is
+applied in `advanceSeasonAction` where confidence is already owned and clamped.
+For CPU teams the bailout is a pure bound — no confidence exists to charge.
+
+| 15 seasons              | Negative cash at S15 | Worst team | Bailouts (worst team) |
+| ----------------------- | -------------------- | ---------- | --------------------- |
+| Payroll flat — before   | 3 / 30               | −$0.68B    | —                     |
+| Payroll flat — after    | **2 / 30**           | −$0.02B    | 5                     |
+| Payroll +5%/yr — before | 15 / 30              | −$3.43B    | —                     |
+| Payroll +5%/yr — after  | **0 / 30**           | +$0.01B    | 14                    |
+
+Milwaukee needing 14 rescues in 15 seasons is the system working: a user
+franchise run that badly is fired long before season 15. CPU bailout news is
+filed at MINOR so a chronically broke team fills the wire rather than repeatedly
+leading the page; the user's own is BREAKING.
+
+**What this does _not_ fix.** Only the downside is bounded. Cash still diverges
+upward — Houston reaches +$3.0B — and that is P1-4 and P1-5's territory
+(unresponsive revenue, no salary floor), not a failure state. P0-3 bounded the
+_valuation_ consequence of that runaway, so franchise values cluster sensibly
+between $2.0B and $4.3B while the balances behind them still span $3.0B.
 
 ---
 
@@ -309,17 +340,16 @@ correct for a model that has since been replaced.
 1. ~~P0-1: correct payroll calibration.~~ Fixed in `computePerformanceScore`,
    not `scoreToCapFraction`; the curve was already right. 24/30 profitable.
 
-**Stage 2 — the two real finance defects — half done**
+**~~Stage 2 — the two real finance defects~~ — DONE**
 
 2. ~~P0-3: bound the cash contribution to franchise value.~~ Done — saturating
    curve, ordinary balances unchanged.
-3. P0-2: give insolvency a consequence — owner bailout at a confidence cost, a
-   forced salary dump, or ending the save. Note that Stage 1 changed the shape
-   of this problem rather than removing it: six teams still lose money in season
-   one, and the P0-2 projection should be re-run against the new payrolls before
-   any fix is designed against its old numbers.
+3. ~~P0-2: give insolvency a consequence.~~ Done — automatic owner bailout
+   priced in confidence, compounding into the existing firing check. The
+   projection was re-run against corrected payrolls first, which is what caught
+   this finding's own numbers being wrong.
 
-**Stage 3 — only if still warranted after Stage 1**
+**Stage 3 — the remaining work, all design rather than correctness**
 
 4. P2-6: graduated luxury tax with a revenue-sharing offset. Still warranted —
    the six unprofitable teams are five SMALL/MID markets and Cleveland, which is

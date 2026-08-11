@@ -359,6 +359,100 @@ export function computeFranchiseValue(inputs: FranchiseValueInputs): number {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Owner bailout - the failure state for insolvency
+// ---------------------------------------------------------------------------
+
+/**
+ * Below this, the owner stops watching and starts writing cheques.
+ *
+ * Deliberately well past zero: a franchise dipping briefly into the red is an
+ * ordinary consequence of an aggressive season and should stay the manager's
+ * problem to trade out of. This is the point where it is no longer recoverable
+ * by normal means.
+ */
+const BAILOUT_TRIGGER_CENTS = -50 * M;
+
+/**
+ * Where a bailout leaves the balance. A small positive cushion rather than
+ * exactly zero, so a team that is merely losing money does not re-trigger on
+ * the very next season's first expense and turn one bad era into an unbroken
+ * run of humiliations.
+ */
+const BAILOUT_TARGET_CENTS = 10 * M;
+
+/**
+ * What the owner charges, in confidence, per $1M he has to cover.
+ *
+ * Priced worse than a `capitalCall`, which runs about 0.23 confidence per $1M
+ * (see `financing.ts`) - a capital call is asked for, and this is not. The
+ * floor makes even a small rescue sting; the ceiling stops a single
+ * catastrophic season from being an instant firing regardless of everything
+ * else, since repeated bailouts already compound toward `MIN_OWNER_CONFIDENCE`
+ * on their own.
+ */
+const BAILOUT_CONFIDENCE_PER_MILLION = 0.3;
+const BAILOUT_MIN_CONFIDENCE_COST = 8;
+const BAILOUT_MAX_CONFIDENCE_COST = 30;
+
+export interface OwnerBailout {
+  /** 0 when the team is solvent enough to be left alone. */
+  bailoutCents: number;
+  /** Cash after the owner's money lands - the figure to persist. */
+  cashAfterCents: number;
+  /** Owner-confidence penalty. Always 0 for CPU teams, which have no owner
+   *  relationship to damage. */
+  confidenceCost: number;
+}
+
+/**
+ * Resolves whether the owner has to rescue a franchise that has run out of
+ * money, and what that costs.
+ *
+ * **This is the finance pillar's failure state.** Before it existed, insolvency
+ * was free: `docs/FINANCE_AUDIT.md` P0-2 measured teams reaching −$3.4B in cash
+ * over 15 seasons and continuing to play exactly as before, which is what
+ * drained the money game of stakes. Debt could not absorb it either - CPU teams
+ * borrow $15M at a time against nine-figure annual losses.
+ *
+ * The bailout is automatic rather than a choice on purpose. Offering it as an
+ * option would make it a fourth financing instrument next to loans, capital
+ * calls and distressed financing, all of which are things you *decide* to do.
+ * Being bailed out is the consequence of having run out of decisions.
+ *
+ * For CPU teams it is purely a bound: it keeps their books inside a plausible
+ * range without inventing an owner relationship they do not have.
+ */
+export function resolveOwnerBailout(args: {
+  /** Cash after the season's net income has been applied. */
+  cashAfterSeasonCents: number;
+  /** Only the user's franchise has owner confidence to lose. */
+  isUserTeam: boolean;
+}): OwnerBailout {
+  if (args.cashAfterSeasonCents >= BAILOUT_TRIGGER_CENTS) {
+    return {
+      bailoutCents: 0,
+      cashAfterCents: args.cashAfterSeasonCents,
+      confidenceCost: 0,
+    };
+  }
+
+  const bailoutCents = BAILOUT_TARGET_CENTS - args.cashAfterSeasonCents;
+  const confidenceCost = args.isUserTeam
+    ? Math.round(
+        Math.min(
+          BAILOUT_MAX_CONFIDENCE_COST,
+          Math.max(
+            BAILOUT_MIN_CONFIDENCE_COST,
+            (bailoutCents / M) * BAILOUT_CONFIDENCE_PER_MILLION,
+          ),
+        ),
+      )
+    : 0;
+
+  return { bailoutCents, cashAfterCents: BAILOUT_TARGET_CENTS, confidenceCost };
+}
+
 /** How much a CPU team's cash position makes it resist *adding* salary, as a
  *  threshold multiplier (1.0 = no resistance). A franchise in the red actively
  *  sheds salary; a thin cushion makes it cautious; a healthy balance sheet

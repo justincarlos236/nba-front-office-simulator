@@ -25,6 +25,7 @@ import {
   computeNetIncome,
   computeFinancialHealth,
   computeFranchiseValue,
+  resolveOwnerBailout,
 } from "@/lib/finances/finances";
 import { computeCpuSponsorshipRevenueCents } from "@/lib/finances/sponsorship";
 import {
@@ -68,6 +69,7 @@ import {
 import {
   describeSeasonFinancialReport,
   describeFranchiseValueMilestone,
+  describeOwnerBailout,
 } from "@/lib/finances/financeNews";
 
 type LeagueWithTeams = Prisma.LeagueGetPayload<{
@@ -307,7 +309,15 @@ export async function runSeasonFinances(ctx: SeasonFinanceContext) {
       wonChampionship: finals.winnerTeamId === lt.id,
     });
     const priorCash = Number(priorLeagueTeamById.get(lt.id)?.cashReserveCents ?? 0n);
-    const newCash = priorCash + fin.netIncome;
+    // docs/FINANCE_AUDIT.md P0-2 - the finance pillar's failure state. Without
+    // this, cash ran to -$3.4B over 15 seasons and nothing happened. Applied
+    // before franchise value is computed, so a rescued team is valued on the
+    // balance sheet it actually has.
+    const bailout = resolveOwnerBailout({
+      cashAfterSeasonCents: priorCash + fin.netIncome,
+      isUserTeam: lt.id === userLeagueTeamId,
+    });
+    const newCash = bailout.cashAfterCents;
     const priorValue = Number(priorLeagueTeamById.get(lt.id)?.franchiseValueCents ?? 0n);
     const newValue = computeFranchiseValue({
       marketSize,
@@ -352,6 +362,7 @@ export async function runSeasonFinances(ctx: SeasonFinanceContext) {
     return {
       lt,
       fin,
+      bailout,
       newCash: Math.round(newCash),
       newValue: Math.round(newValue),
       newSeasonTicketBase,
@@ -722,57 +733,87 @@ export async function runSeasonFinances(ctx: SeasonFinanceContext) {
     importance: NewsImportance;
     teamIds: string[];
   };
-  const financeNewsRows = financeResults.flatMap(({ lt, fin, newValue, priorValue, health }) => {
-    const rows: FinanceNewsRow[] = [];
-    const teamLabel = `${lt.team.city} ${lt.team.name}`;
-    if (lt.id === userLeagueTeamId) {
-      rows.push({
-        leagueId,
-        season: newSeason,
-        type: "FINANCIAL_REPORT",
-        description: describeSeasonFinancialReport({
-          teamLabel,
-          netIncomeCents: fin.netIncome,
-          health,
-        }),
-        importance: "STANDARD",
-        teamIds: [lt.id],
-      });
-    }
-    if (priorValue > 0) {
-      const priorB = Math.floor(priorValue / ONE_BILLION_CENTS);
-      const newB = Math.floor(newValue / ONE_BILLION_CENTS);
-      if (newB > priorB) {
+  const financeNewsRows = financeResults.flatMap(
+    ({ lt, fin, bailout, newValue, priorValue, health }) => {
+      const rows: FinanceNewsRow[] = [];
+      const teamLabel = `${lt.team.city} ${lt.team.name}`;
+      if (lt.id === userLeagueTeamId) {
         rows.push({
           leagueId,
           season: newSeason,
-          type: "FRANCHISE_MILESTONE",
-          description: describeFranchiseValueMilestone({
+          type: "FINANCIAL_REPORT",
+          description: describeSeasonFinancialReport({
             teamLabel,
-            valueCents: newValue,
-            direction: "up",
-          }),
-          importance: "MAJOR",
-          teamIds: [lt.id],
-        });
-      } else if (newB < priorB) {
-        rows.push({
-          leagueId,
-          season: newSeason,
-          type: "FRANCHISE_MILESTONE",
-          description: describeFranchiseValueMilestone({
-            teamLabel,
-            valueCents: newValue,
-            direction: "down",
+            netIncomeCents: fin.netIncome,
+            health,
           }),
           importance: "STANDARD",
           teamIds: [lt.id],
         });
       }
-    }
-    return rows;
-  });
+      // An owner writing a rescue cheque is real news for any franchise, not
+      // just the user's - it is the visible signal that a CPU team has run
+      // itself into the ground. A badly-run CPU team can need one most
+      // seasons, though, so theirs stay MINOR: notable enough for the wire,
+      // never repeatedly leading the page. The user's own is unmissable.
+      if (bailout.bailoutCents > 0) {
+        rows.push({
+          leagueId,
+          season: newSeason,
+          type: "FRANCHISE_MILESTONE",
+          description: describeOwnerBailout({
+            teamLabel,
+            bailoutCents: bailout.bailoutCents,
+            confidenceCost: bailout.confidenceCost,
+          }),
+          importance: lt.id === userLeagueTeamId ? "BREAKING" : "MINOR",
+          teamIds: [lt.id],
+        });
+      }
+      if (priorValue > 0) {
+        const priorB = Math.floor(priorValue / ONE_BILLION_CENTS);
+        const newB = Math.floor(newValue / ONE_BILLION_CENTS);
+        if (newB > priorB) {
+          rows.push({
+            leagueId,
+            season: newSeason,
+            type: "FRANCHISE_MILESTONE",
+            description: describeFranchiseValueMilestone({
+              teamLabel,
+              valueCents: newValue,
+              direction: "up",
+            }),
+            importance: "MAJOR",
+            teamIds: [lt.id],
+          });
+        } else if (newB < priorB) {
+          rows.push({
+            leagueId,
+            season: newSeason,
+            type: "FRANCHISE_MILESTONE",
+            description: describeFranchiseValueMilestone({
+              teamLabel,
+              valueCents: newValue,
+              direction: "down",
+            }),
+            importance: "STANDARD",
+            teamIds: [lt.id],
+          });
+        }
+      }
+      return rows;
+    },
+  );
   if (financeNewsRows.length > 0) {
     await prisma.leagueTransaction.createMany({ data: financeNewsRows });
   }
+
+  // The user's own bailout is the only thing this pass produces that the
+  // caller has to act on - owner confidence is threaded through
+  // advanceSeasonAction, which also owns the clamp and the firing check.
+  const userBailout = financeResults.find((r) => r.lt.id === userLeagueTeamId)?.bailout;
+  return {
+    userBailoutCents: userBailout?.bailoutCents ?? 0,
+    userBailoutConfidenceCost: userBailout?.confidenceCost ?? 0,
+  };
 }

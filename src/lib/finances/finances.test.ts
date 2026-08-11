@@ -9,6 +9,7 @@ import {
   startingCashReserveCents,
   pickCpuTicketPosture,
   financialSpendingResistance,
+  resolveOwnerBailout,
 } from "./finances";
 
 const M = 1_000_000 * 100; // one million dollars in cents
@@ -269,6 +270,75 @@ describe("computeFranchiseValue", () => {
       expect(actual).toBeGreaterThan(oldLinearContribution * 0.85);
       expect(actual).toBeLessThanOrEqual(oldLinearContribution);
     });
+  });
+});
+
+/**
+ * docs/FINANCE_AUDIT.md P0-2 - the finance pillar's failure state. Before this,
+ * insolvency was free: teams reached −$3.4B in cash over 15 seasons and kept
+ * playing exactly as before.
+ */
+describe("resolveOwnerBailout", () => {
+  it("leaves a solvent team alone", () => {
+    const r = resolveOwnerBailout({ cashAfterSeasonCents: 40 * M, isUserTeam: true });
+    expect(r.bailoutCents).toBe(0);
+    expect(r.confidenceCost).toBe(0);
+    expect(r.cashAfterCents).toBe(40 * M);
+  });
+
+  it("leaves a team that is merely in the red alone", () => {
+    // Dipping slightly negative is an ordinary consequence of an aggressive
+    // season and stays the manager's problem to trade out of.
+    const r = resolveOwnerBailout({ cashAfterSeasonCents: -20 * M, isUserTeam: true });
+    expect(r.bailoutCents).toBe(0);
+    expect(r.cashAfterCents).toBe(-20 * M);
+  });
+
+  it("rescues a team that has genuinely run out of money", () => {
+    const r = resolveOwnerBailout({ cashAfterSeasonCents: -200 * M, isUserTeam: true });
+    expect(r.bailoutCents).toBeGreaterThan(0);
+    expect(r.cashAfterCents).toBeGreaterThan(0);
+    expect(r.confidenceCost).toBeGreaterThan(0);
+  });
+
+  it("bounds the spiral - cash can never run away downward", () => {
+    // The actual P0-2 defect. Whatever the deficit, the balance lands back in
+    // a sane place instead of compounding into the billions.
+    for (const deficit of [-100 * M, -1_000 * M, -100_000 * M]) {
+      const r = resolveOwnerBailout({ cashAfterSeasonCents: deficit, isUserTeam: false });
+      expect(r.cashAfterCents).toBeGreaterThan(0);
+      expect(r.cashAfterCents).toBeLessThan(50 * M);
+    }
+  });
+
+  it("charges more confidence for a bigger hole, within bounds", () => {
+    const small = resolveOwnerBailout({ cashAfterSeasonCents: -60 * M, isUserTeam: true });
+    const large = resolveOwnerBailout({ cashAfterSeasonCents: -300 * M, isUserTeam: true });
+    expect(large.confidenceCost).toBeGreaterThan(small.confidenceCost);
+    // A single catastrophic season must not be an instant firing on its own -
+    // repeated bailouts are what compound toward MIN_OWNER_CONFIDENCE.
+    const catastrophic = resolveOwnerBailout({
+      cashAfterSeasonCents: -10_000 * M,
+      isUserTeam: true,
+    });
+    expect(catastrophic.confidenceCost).toBeLessThanOrEqual(30);
+  });
+
+  it("costs a CPU team no confidence - it has no owner relationship to damage", () => {
+    const cpu = resolveOwnerBailout({ cashAfterSeasonCents: -300 * M, isUserTeam: false });
+    expect(cpu.bailoutCents).toBeGreaterThan(0);
+    expect(cpu.confidenceCost).toBe(0);
+  });
+
+  it("does not re-trigger immediately on the next small loss", () => {
+    // The rescue leaves a cushion rather than exactly zero, so one bad era
+    // does not become an unbroken run of humiliations.
+    const rescued = resolveOwnerBailout({ cashAfterSeasonCents: -200 * M, isUserTeam: true });
+    const nextSeason = resolveOwnerBailout({
+      cashAfterSeasonCents: rescued.cashAfterCents - 5 * M,
+      isUserTeam: true,
+    });
+    expect(nextSeason.bailoutCents).toBe(0);
   });
 });
 

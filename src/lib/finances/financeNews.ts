@@ -34,6 +34,25 @@ export function describeFranchiseValueMilestone(args: {
     : `${teamLabel}'s franchise value has slipped to ${formatFinanceCents(valueCents)}.`;
 }
 
+/**
+ * The owner having to cover a shortfall. Two audiences from one builder: the
+ * user's own bailout carries the confidence cost, because that is the part
+ * that actually hurts; a CPU team's is reported as league news without one,
+ * since a CPU franchise has no owner relationship to damage.
+ */
+export function describeOwnerBailout(args: {
+  teamLabel: string;
+  bailoutCents: number;
+  confidenceCost: number;
+}): string {
+  const { teamLabel, bailoutCents, confidenceCost } = args;
+  const amount = formatFinanceCents(bailoutCents);
+  if (confidenceCost > 0) {
+    return `${teamLabel}'s owner has covered a ${amount} shortfall out of pocket. The books are square again, and the relationship is not - ownership confidence falls ${confidenceCost} points.`;
+  }
+  return `${teamLabel} ran out of money and needed a ${amount} cheque from ownership to settle the season's books.`;
+}
+
 export function describeIconDeparture(playerName: string, teamLabel: string): string {
   return `The end of an era in ${teamLabel}: parting with franchise icon ${playerName} deals a real blow to the franchise's value and fan base, well beyond the box score.`;
 }
