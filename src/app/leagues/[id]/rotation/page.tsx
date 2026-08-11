@@ -77,7 +77,7 @@ export default async function RotationPage({ params }: PageProps) {
         the bottom.
       </p>
 
-      <div className="mt-8">
+      <div className="mt-8" data-tour="rotation-board">
         <RotationBoard
           leagueId={league.id}
           teamPrimaryColor={userLeagueTeam.team.primaryColor}

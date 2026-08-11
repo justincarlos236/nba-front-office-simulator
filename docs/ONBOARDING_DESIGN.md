@@ -1,6 +1,7 @@
 # Onboarding & New-Player Experience — Design
 
-Status: **Phase 1 and Phase 2 built.**
+Status: **Phase 1 and Phase 2 built. The no-tour verdict was reversed on
+2026-08-12 — see Part 7.**
 
 - Phase 1 (keystone): `/guide` index, `/guide/roster`, `/guide/season-flow`
   (new), `/guide/finances` refactored onto a shared layout, and the
@@ -49,8 +50,10 @@ work already shipped the two things most such requests ask for:
 - **The "How does this work?" link pattern** — the exact right primitive.
 
 **A prior pass explicitly rejected a tutorial wizard:** it only helps
-session one, gets skipped, and is a maintenance liability. That verdict
-stands and this design does not overturn it.
+session one, gets skipped, and is a maintenance liability. ~~That verdict
+stands and this design does not overturn it.~~ **Reversed 2026-08-12 —
+see Part 7.** The reasoning above was not wrong; Part 7 explains what
+changed and how each objection is answered rather than ignored.
 
 So the problem is **not** "there's no onboarding." It is that the good
 primitives are **unevenly applied and undiscoverable**.
@@ -390,7 +393,7 @@ one click _in the way_.
 | Purpose lines                 | Fans page purpose work                   | Fans already has one. Reuse, don't rewrite.                                                                    |
 | Jargon definitions            | `simplifyCapStatus` etc.                 | Existing suppression stays authoritative; definitions only fill gaps.                                          |
 | Baselines                     | `cultureLabels.ts`, `JOB_SECURITY_LABEL` | Reuse the convention; one shared helper.                                                                       |
-| Tutorial wizard               | 2026-07-25 rejection                     | **Not proposed.** Verdict stands.                                                                              |
+| Tutorial wizard               | 2026-07-25 rejection                     | **Built 2026-08-12** as a 6-step tour — see Part 7. Sequences; never explains.                                 |
 
 **Explicitly rejected:** a forced walkthrough; coach-mark tours; a modal
 welcome; per-page tutorial state machines; a glossary that restates the
@@ -412,3 +415,66 @@ Revised 2026-08-06: phase 2 now carries the layer-2 work and is the most
 valuable phase in the plan; the former phase-5 GM Advisor is **removed**
 per 4B.4 rather than deferred. Phases 1–2 together resolve most of Part
 1.3 and all of the dead-end bugs in 4B.1.
+
+---
+
+## Part 7 — The first-session tour (2026-08-12)
+
+**This part reverses the no-tour verdict recorded in Part 1.1 and Part 5.**
+Recorded rather than quietly contradicted, because a design doc that
+disagrees with the code teaches the next reader nothing.
+
+### 7.1 What changed
+
+Nothing in the original reasoning was wrong. What changed is that Phases 1
+and 2 shipped, and they did not solve the specific problem a tour solves.
+
+The teaching layer is now genuinely good: `/guide` has four articles, every
+page has a purpose line, and every Action Center item explains its own
+reasoning. All of it is **pull**. A player who does not yet know that a
+rotation exists has no reason to pull on it. Layers 1–3 answer _what should
+I do_, _why_, and _how does this work_ — none of them answers **"what is
+this program?"**, which is the only question a player has in their first
+thirty seconds.
+
+That is a genuine gap, and it is the one gap a tour is actually good at.
+
+### 7.2 How each original objection is answered
+
+| Objection (Part 1.1)     | Answer                                                                                                                                             |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| _Only helps session one_ | Accepted, and it is the point. Session one is where players quit. The Action Center remains the continuous system; the tour's last step hands off. |
+| _Gets skipped_           | Skip on every step, plus Escape. A tour that is cheap to leave is not a tax on people who do not want it.                                          |
+| _Maintenance liability_  | `tour.test.ts` asserts every `data-tour` anchor exists in real source. A rename fails CI. At runtime a missing anchor drops the step.              |
+
+### 7.3 What it is, precisely
+
+Six steps, two screens (dashboard and `/rotation`), about two and a half
+minutes. It **sequences and never explains** — the pages it visits already
+explain themselves, and the moment a step starts restating what is on
+screen, that step should be cut.
+
+Scope discipline worth keeping: the request that prompted this asked for
+seven steps including separate Roster and Rotation stops, plus dedicated
+Finances and Trades stops. Roster and Rotation are one page in this app, so
+they are one step. Finances and Trades were collapsed into a single
+"the rest of the building" pointer at the sub-nav, because neither is part
+of the core loop and both pages have strong purpose lines already. Seven
+steps across seven screens became six across two.
+
+- **Completion** lives on `User.onboardingCompletedAt`, not the league, so a
+  second franchise is silent. Auto-launch additionally requires it to be the
+  user's first league, so no existing player is ever ambushed.
+- **In-progress step** is `localStorage`, per league — six steps should not
+  be six round trips, and losing it costs nothing.
+- **Skip and Done are the same outcome.** Treating a skip as anything less
+  than completion is how onboarding becomes resented (principle 5).
+- **Replay** lives on `/guide` via `?tour=1`, and is absent when the user has
+  no playable save rather than offering a dead link.
+
+### 7.4 What would make this the wrong call again
+
+If the tour ever grows past six steps, starts explaining systems instead of
+pointing at them, or acquires a step that duplicates a purpose line, then
+the original 2026-07-25 verdict was right and this should be deleted rather
+than trimmed. The tests encode the first of those three as a hard limit.

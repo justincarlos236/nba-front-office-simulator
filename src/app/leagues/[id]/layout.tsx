@@ -9,6 +9,8 @@ import { getLeagueAttention } from "@/lib/league/attention";
 import { LeagueSubNav } from "@/components/layout/LeagueSubNav";
 import { CareerEndRecap } from "@/components/career/CareerEndRecap";
 import { computeCareerTitle } from "@/lib/gm/careerRecord";
+import { Tour } from "@/components/onboarding/Tour";
+import { shouldAutoLaunchTour } from "@/lib/onboarding/tour";
 
 export default async function LeagueLayout({
   children,
@@ -76,6 +78,20 @@ export default async function LeagueLayout({
     phase,
   );
 
+  // First-session tour. Gated on the user never having finished it *and* this
+  // being their first franchise, so nobody mid-career is ambushed by it.
+  const [tourUser, leagueCount] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { onboardingCompletedAt: true },
+    }),
+    prisma.league.count({ where: { ownerId: session.user.id } }),
+  ]);
+  const autoStartTour = shouldAutoLaunchTour({
+    onboardingCompletedAt: tourUser?.onboardingCompletedAt ?? null,
+    leagueCount,
+  });
+
   return (
     // THE WIRE - the franchise colours the interface. Resolved through the
     // contrast cascade (16 of 30 real team primaries fail on this ground), set
@@ -100,7 +116,7 @@ export default async function LeagueLayout({
             </span>
           </Link>
 
-          <div className="mt-3">
+          <div className="mt-3" data-tour="sub-nav">
             <LeagueSubNav
               leagueId={league.id}
               primary={primary}
@@ -113,6 +129,8 @@ export default async function LeagueLayout({
       </div>
 
       {children}
+
+      <Tour leagueId={league.id} autoStart={autoStartTour} />
     </div>
   );
 }

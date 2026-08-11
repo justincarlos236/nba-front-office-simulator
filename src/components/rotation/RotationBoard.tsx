@@ -30,6 +30,7 @@ import { getMoraleLevel, MORALE_LEVEL_LABEL, type MoraleLevel } from "@/lib/mora
 import type { Position, InjuryStatus } from "@/generated/prisma/client";
 import { Button } from "@/components/ui/primitives";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
+import { emitTourEvent } from "@/lib/onboarding/tour";
 
 export interface RotationPlayer {
   leaguePlayerId: string;
@@ -331,6 +332,8 @@ export function RotationBoard({
       }));
       await updateRotationAction(leagueId, submission);
       setLastResult("Rotation saved - it takes effect starting your next simulated games.");
+      // Advances the first-session tour's rotation step, if it is running.
+      emitTourEvent("tour:rotation-changed");
     });
   }
 

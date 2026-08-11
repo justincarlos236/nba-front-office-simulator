@@ -461,19 +461,27 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
           <div className="space-y-8">
             <SinceYouLeft continuity={continuity} leagueId={league.id} />
 
-            <ActionCenter
-              items={actionCenterItems}
-              didYouKnowTip={actionCenterItems.length === 0 ? pickDidYouKnowTip(league.id) : null}
-              hiddenCount={allActionCenterItems.length - actionCenterItems.length}
-            />
+            {/* data-tour: spotlight target for the first-session tour
+                (src/lib/onboarding/tour.ts). Asserted to exist by
+                tour.test.ts - renaming it fails CI rather than silently
+                breaking a step. */}
+            <div data-tour="action-center">
+              <ActionCenter
+                items={actionCenterItems}
+                didYouKnowTip={actionCenterItems.length === 0 ? pickDidYouKnowTip(league.id) : null}
+                hiddenCount={allActionCenterItems.length - actionCenterItems.length}
+              />
+            </div>
 
             {dashboardGamesRemaining > 0 && (
-              <SimulateControls
-                leagueId={league.id}
-                gamesRemaining={dashboardGamesRemaining}
-                allStarWeekendPending={dashboardWeekend?.status === "PENDING"}
-                businessDecisionPending={!!dashboardBreakingDecision}
-              />
+              <div data-tour="simulate-controls">
+                <SimulateControls
+                  leagueId={league.id}
+                  gamesRemaining={dashboardGamesRemaining}
+                  allStarWeekendPending={dashboardWeekend?.status === "PENDING"}
+                  businessDecisionPending={!!dashboardBreakingDecision}
+                />
+              </div>
             )}
 
             <FormLine

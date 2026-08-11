@@ -1,0 +1,11 @@
+-- When this user finished (or skipped) the first-session tour.
+--
+-- On the User rather than the League on purpose: the tour teaches the
+-- simulator, not a particular franchise, so starting a second save must never
+-- re-trigger it. That distinction is what separates onboarding from an
+-- interruption.
+--
+-- Nullable with no backfill. NULL means "has not seen it", which is correct for
+-- existing users - but shouldAutoLaunchTour also requires the user to be in
+-- their first league, so nobody mid-career is ambushed by it.
+ALTER TABLE "users" ADD COLUMN "onboardingCompletedAt" TIMESTAMP(3);

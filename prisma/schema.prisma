@@ -8,18 +8,19 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  name          String?
-  email         String?        @unique
-  emailVerified DateTime?
-  image         String?
-  passwordHash  String?
-  createdAt     DateTime       @default(now())
-  gmReputation  Int            @default(50)
-  accounts      Account[]
-  careerRecords CareerRecord[]
-  leagues       League[]
-  sessions      Session[]
+  id                    String         @id @default(cuid())
+  name                  String?
+  email                 String?        @unique
+  emailVerified         DateTime?
+  image                 String?
+  passwordHash          String?
+  createdAt             DateTime       @default(now())
+  gmReputation          Int            @default(50)
+  onboardingCompletedAt DateTime?
+  accounts              Account[]
+  careerRecords         CareerRecord[]
+  leagues               League[]
+  sessions              Session[]
 
   @@map("users")
 }
@@ -715,10 +716,10 @@ model DraftProspect {
 }
 
 model Trade {
-  id               String       @id @default(cuid())
+  id               String              @id @default(cuid())
   leagueId         String
   proposedById     String
-  status           TradeStatus  @default(PROPOSED)
+  status           TradeStatus         @default(PROPOSED)
   validationResult Json?
   /// Immutable cap evidence, frozen at execution. The outcome surface
   /// (/leagues/[id]/trades/[tradeId]) must stay truthful on a revisit years
@@ -730,10 +731,10 @@ model Trade {
   /// read back whole by one surface, never filtered or aggregated. This is
   /// never a source of truth for live cap math - see computeCapSheet.
   capSnapshot      Json?
-  createdAt        DateTime     @default(now())
+  createdAt        DateTime            @default(now())
   resolvedAt       DateTime?
   assets           TradeAsset[]
-  league           League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  league           League              @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   /// Narrative rows (fan sentiment, icon departures, the trade headline) this
   /// trade generated, so the outcome surface can reconstruct the story.
   transactions     LeagueTransaction[]

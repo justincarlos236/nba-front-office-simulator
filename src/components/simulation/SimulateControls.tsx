@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { simulateGamesAction, type SimulateTarget } from "@/lib/actions/simulation";
 import { Button, Label } from "@/components/ui/primitives";
+import { emitTourEvent } from "@/lib/onboarding/tour";
 
 /**
  * Advancing time - the main verb of a season simulator.
@@ -36,6 +37,8 @@ export function SimulateControls({
     startTransition(async () => {
       const result = await simulateGamesAction(leagueId, target);
       setRemaining((r) => Math.max(0, r - result.userGamesCompleted));
+      // Advances the first-session tour's simulate step, if it is running.
+      if (result.userGamesCompleted > 0) emitTourEvent("tour:simulated");
       if (result.allStarWeekendTriggered) {
         setWeekendPending(true);
         setLastResult(
