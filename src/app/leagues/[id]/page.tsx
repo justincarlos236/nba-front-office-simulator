@@ -375,10 +375,15 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
 
   return (
     <main className="flex-1 pb-24">
-      {/* THE FRANCHISE. A full-bleed field in the team's own colour - the
-          single largest perceptual change from the previous world, where team
-          identity was a 4px border stripe. */}
-      <header className="relative isolate border-b border-rule bg-team-accent">
+      {/* THE FRANCHISE. A field in the team's own colour - the single largest
+          perceptual change from the previous world, where team identity was a
+          4px border stripe.
+
+          Held to the same centred column as every other block on the page
+          rather than bleeding to the viewport edges. Full-bleed made the
+          colour run out past the content on wide screens and read as a stray
+          band behind the layout instead of as the page's own masthead. */}
+      <header className="relative isolate">
         {/* THE VIEW. Phase D: the city outside the office, under the light of
             the phase the save is in.
 
@@ -396,41 +401,44 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
             narrow enough that a long wordmark ("Portland Trail Blazers" at
             4.25rem) would reach the band, so the window simply does not exist
             there rather than being allowed to crowd the name. */}
-        <div className="pointer-events-none absolute inset-0 mx-auto hidden max-w-300 xl:block">
-          {/* Wider than the visible result: the component's radial mask fades
+        <div className="relative mx-auto max-w-300 border-b border-rule bg-team-accent">
+          <div className="pointer-events-none absolute inset-0 hidden xl:block">
+            {/* Wider than the visible result: the component's radial mask fades
               it to nothing on every side, so the band is the area the dissolve
               works *within*, not a rectangle with an edge. A narrow band would
               clip the falloff back into a hard boundary - the exact defect
               this replaced. */}
-          <div className="absolute inset-y-0 right-0 w-[52%]">
-            <OfficeWindow
-              abbreviation={userLeagueTeam.team.abbreviation}
-              relocatedCityName={userLeagueTeam.relocatedCityName}
-              phase={phase}
-              accentHue={headerAccentHue}
-            />
+            <div className="absolute inset-y-0 right-0 w-[52%]">
+              <OfficeWindow
+                abbreviation={userLeagueTeam.team.abbreviation}
+                relocatedCityName={userLeagueTeam.relocatedCityName}
+                phase={phase}
+                accentHue={headerAccentHue}
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="relative mx-auto max-w-300 px-6 py-10 sm:px-8 sm:py-14">
-          <p className="text-[11px] font-semibold tracking-[0.09em] text-team-accent-ink/70 uppercase">
-            {seasonLabel} season
-          </p>
-          {/* `xl:max-w-186` (62% of the 75rem column) keeps the wordmark clear
+          <div className="relative px-6 py-10 sm:px-8 sm:py-14">
+            <p className="text-[11px] font-semibold tracking-[0.09em] text-team-accent-ink/70 uppercase">
+              {seasonLabel} season
+            </p>
+            {/* `xl:max-w-186` (62% of the 75rem column) keeps the wordmark clear
               of the window band, which occupies the right 34% of this same
               column. Capped on the heading itself rather than on the container,
               so the text stays flush left instead of re-centring. */}
-          <h1 className="mt-3 text-[clamp(2.5rem,6vw,4.25rem)] leading-[0.95] font-bold tracking-[-0.02em] text-team-accent-ink xl:max-w-186">
-            {userLeagueTeam.team.city} {userLeagueTeam.team.name}
-          </h1>
-          <p className="mt-4 flex flex-wrap items-baseline gap-x-4 font-mono text-[clamp(1.5rem,3vw,2.25rem)] tabular-nums text-team-accent-ink">
-            {userLeagueTeam.wins}&ndash;{userLeagueTeam.losses}
-            {rank > 0 && (
-              <span className="font-sans text-[15px] font-medium tracking-normal normal-case text-team-accent-ink/80">
-                {ordinal(rank)} in the {userLeagueTeam.team.conference === "EAST" ? "East" : "West"}
-              </span>
-            )}
-          </p>
+            <h1 className="mt-3 text-[clamp(2.5rem,6vw,4.25rem)] leading-[0.95] font-bold tracking-[-0.02em] text-team-accent-ink xl:max-w-186">
+              {userLeagueTeam.team.city} {userLeagueTeam.team.name}
+            </h1>
+            <p className="mt-4 flex flex-wrap items-baseline gap-x-4 font-mono text-[clamp(1.5rem,3vw,2.25rem)] tabular-nums text-team-accent-ink">
+              {userLeagueTeam.wins}&ndash;{userLeagueTeam.losses}
+              {rank > 0 && (
+                <span className="font-sans text-[15px] font-medium tracking-normal normal-case text-team-accent-ink/80">
+                  {ordinal(rank)} in the{" "}
+                  {userLeagueTeam.team.conference === "EAST" ? "East" : "West"}
+                </span>
+              )}
+            </p>
+          </div>
         </div>
       </header>
 

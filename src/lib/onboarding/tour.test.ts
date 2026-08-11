@@ -12,22 +12,25 @@ import {
 } from "./tour";
 
 describe("shouldAutoLaunchTour", () => {
-  it("opens for a brand-new player in their first franchise", () => {
-    expect(shouldAutoLaunchTour({ onboardingCompletedAt: null, leagueCount: 1 })).toBe(true);
+  it("opens for a franchise that has not seen it", () => {
+    expect(shouldAutoLaunchTour({ tourCompletedAt: null })).toBe(true);
   });
 
-  it("never opens again once completed or skipped", () => {
-    expect(
-      shouldAutoLaunchTour({ onboardingCompletedAt: new Date("2026-01-01"), leagueCount: 1 }),
-    ).toBe(false);
+  it("never opens again for that franchise once completed or skipped", () => {
+    expect(shouldAutoLaunchTour({ tourCompletedAt: new Date("2026-01-01") })).toBe(false);
   });
 
   /**
-   * The difference between onboarding and an interruption. Completion is stored
-   * on the user rather than the league precisely so a second save is silent.
+   * The gate is per franchise, not per player. An earlier version stored
+   * completion on the user, so the tour ran exactly once ever and every save
+   * after the first was silent - starting a franchise is the moment the tour
+   * is about, so each one gets it.
    */
-  it("does not re-trigger on a second franchise", () => {
-    expect(shouldAutoLaunchTour({ onboardingCompletedAt: null, leagueCount: 2 })).toBe(false);
+  it("opens again for a second franchise, since state is per league", () => {
+    const firstSave = { tourCompletedAt: new Date("2026-01-01") };
+    const brandNewSave = { tourCompletedAt: null };
+    expect(shouldAutoLaunchTour(firstSave)).toBe(false);
+    expect(shouldAutoLaunchTour(brandNewSave)).toBe(true);
   });
 });
 

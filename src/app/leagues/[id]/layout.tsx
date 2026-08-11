@@ -78,19 +78,9 @@ export default async function LeagueLayout({
     phase,
   );
 
-  // First-session tour. Gated on the user never having finished it *and* this
-  // being their first franchise, so nobody mid-career is ambushed by it.
-  const [tourUser, leagueCount] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { onboardingCompletedAt: true },
-    }),
-    prisma.league.count({ where: { ownerId: session.user.id } }),
-  ]);
-  const autoStartTour = shouldAutoLaunchTour({
-    onboardingCompletedAt: tourUser?.onboardingCompletedAt ?? null,
-    leagueCount,
-  });
+  // First-session tour, gated per franchise: every new save runs it, and a
+  // league that has already shown it never shows it again.
+  const autoStartTour = shouldAutoLaunchTour({ tourCompletedAt: league.tourCompletedAt });
 
   return (
     // THE WIRE - the franchise colours the interface. Resolved through the

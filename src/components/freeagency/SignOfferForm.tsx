@@ -30,14 +30,17 @@ export function SignOfferForm({
   team: { apronLevel: string; capSpaceCents: string; signingExceptionUsedCents: string };
   reSigningRights: { held: boolean; maxOfferCents: string };
 }) {
-  const [salaryDollars, setSalaryDollars] = useState(() =>
-    Math.round(Number(suggestedSalaryCents) / 100),
+  // Entered in millions, not dollars. Typing 4500000 to offer $4.5M invited a
+  // zero-counting mistake on the one screen where a mistake is a signed
+  // contract; every salary this form deals with is naturally read in millions.
+  const [salaryMillions, setSalaryMillions] = useState(() =>
+    Number((Number(suggestedSalaryCents) / 100 / 1_000_000).toFixed(2)),
   );
   const [years, setYears] = useState(2);
   const [isPending, startTransition] = useTransition();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const offerSalaryCents = BigInt(Math.round(salaryDollars * 100));
+  const offerSalaryCents = BigInt(Math.round(salaryMillions * 1_000_000 * 100));
   const signingExceptionUsedCents = BigInt(team.signingExceptionUsedCents);
 
   const result = useMemo(
@@ -96,15 +99,29 @@ export function SignOfferForm({
   return (
     <div className="rounded-[2px] border border-rule bg-field p-6">
       <label className="block">
-        <span className="text-sm text-ink-muted">First-year salary</span>
-        <input
-          type="number"
-          min={0}
-          step={100000}
-          value={salaryDollars}
-          onChange={(e) => setSalaryDollars(Number(e.target.value))}
-          className="mt-1 w-full rounded-[2px] border border-rule bg-raised px-3 py-2 font-mono text-ink outline-none focus:border-rule-strong"
-        />
+        <span className="text-sm text-ink-muted">
+          First-year salary <span className="text-ink">(in millions)</span>
+        </span>
+        <div className="relative mt-1">
+          <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 font-mono text-ink-muted">
+            $
+          </span>
+          <input
+            type="number"
+            min={0}
+            step={0.1}
+            value={salaryMillions}
+            onChange={(e) => setSalaryMillions(Number(e.target.value))}
+            className="w-full rounded-[2px] border border-rule bg-raised py-2 pr-10 pl-7 font-mono text-ink outline-none focus:border-rule-strong"
+          />
+          <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 font-mono text-ink-muted">
+            M
+          </span>
+        </div>
+        <span className="mt-1 block text-xs text-ink-muted">
+          Type <span className="font-mono text-ink">4.5</span> to offer{" "}
+          <span className="font-mono text-ink">$4,500,000</span>.
+        </span>
       </label>
 
       <label className="mt-4 block">

@@ -183,7 +183,7 @@ export function Tour({ leagueId, autoStart }: { leagueId: string; autoStart: boo
     finishing.current = true;
     setActive(false);
     window.localStorage.removeItem(tourProgressKey(leagueId));
-    void completeOnboardingAction();
+    void completeOnboardingAction(leagueId);
   }, [leagueId]);
 
   // Side effects stay out of the setState updater: React invokes updaters twice

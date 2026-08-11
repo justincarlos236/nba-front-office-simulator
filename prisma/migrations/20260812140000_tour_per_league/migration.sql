@@ -1,0 +1,12 @@
+-- Move the first-session tour's completion state from the user to the league.
+--
+-- The tour was gated per-user, so it ran once ever and every franchise after
+-- the first was silent. It is now per-franchise: starting a new save runs it
+-- again, because the request is that a new franchise is a new beginning, not
+-- that the player is new.
+--
+-- Additive and nullable, no backfill. NULL means "this league has not shown the
+-- tour", which is correct for every existing save - a player mid-career who has
+-- already seen it can skip in one click, and the alternative (backfilling every
+-- existing league as complete) would silently hide it from anyone who wants it.
+ALTER TABLE "leagues" ADD COLUMN "tourCompletedAt" TIMESTAMP(3);

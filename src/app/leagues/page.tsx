@@ -15,22 +15,6 @@ const STATUS_BADGE_CLASS: Record<string, string> = {
   "Ready for next season": "bg-positive/15 text-positive",
 };
 
-const TXN_TYPE_LABEL: Record<string, string> = {
-  TRADE: "Trade",
-  SIGNING: "Signing",
-  RETIREMENT: "Retirement",
-  INJURY: "Injury",
-  OWNERSHIP_MESSAGE: "Ownership",
-};
-
-const TXN_TYPE_BADGE_CLASS: Record<string, string> = {
-  TRADE: "bg-team-accent/15 text-team-accent",
-  SIGNING: "bg-positive/15 text-positive",
-  RETIREMENT: "bg-ink-muted/20 text-ink-muted",
-  INJURY: "bg-negative/15 text-negative",
-  OWNERSHIP_MESSAGE: "bg-raised text-ink-muted",
-};
-
 const PHASE_LABEL: Record<LeaguePhase, string> = {
   "regular-season": "Regular season in progress",
   "playoffs-incomplete": "Playoffs underway",
@@ -60,28 +44,6 @@ export default async function DashboardPage() {
       const status = await describeStatus(league.id, league.currentSeason);
       return { league, userTeam, status };
     }),
-  );
-
-  // A quick "what's changed since I was last here" pulse across every
-  // franchise at once - nothing else on the site aggregates activity
-  // across leagues, since every other transaction/news view is scoped to
-  // a single league.
-  const recentActivity =
-    leagues.length > 0
-      ? await prisma.leagueTransaction.findMany({
-          where: { leagueId: { in: leagues.map((l) => l.id) } },
-          orderBy: { createdAt: "desc" },
-          take: 8,
-        })
-      : [];
-  const franchiseLabelByLeagueId = new Map(
-    leagueSummaries.map(({ league, userTeam }) => [
-      league.id,
-      userTeam ? `${userTeam.team.city} ${userTeam.team.name}` : league.name,
-    ]),
-  );
-  const franchiseLogoByLeagueId = new Map(
-    leagueSummaries.map(({ league, userTeam }) => [league.id, userTeam?.team.logoUrl ?? null]),
   );
 
   return (
@@ -176,48 +138,6 @@ export default async function DashboardPage() {
               })}
             </div>
           </section>
-
-          {recentActivity.length > 0 && (
-            <section className="mt-10">
-              <h2 className="text-lg font-semibold text-ink">Recent activity</h2>
-              <p className="mt-1 text-sm text-ink-muted">
-                The latest trades, signings, injuries, and retirements across all your franchises.
-              </p>
-              <div className="mt-4 space-y-2">
-                {recentActivity.map((txn) => (
-                  <Link
-                    key={txn.id}
-                    href={`/leagues/${txn.leagueId}/transactions`}
-                    className="flex items-center gap-3 rounded-[2px] border border-rule bg-field p-3 text-sm transition hover:border-team-accent/40"
-                  >
-                    {franchiseLogoByLeagueId.get(txn.leagueId) && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={franchiseLogoByLeagueId.get(txn.leagueId)!}
-                        alt=""
-                        width={20}
-                        height={20}
-                        className="shrink-0"
-                      />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-ink">{txn.description}</p>
-                      <p className="text-xs text-ink-muted">
-                        {franchiseLabelByLeagueId.get(txn.leagueId) ?? "Unknown franchise"}
-                      </p>
-                    </div>
-                    <span
-                      className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold tracking-wide uppercase ${
-                        TXN_TYPE_BADGE_CLASS[txn.type] ?? "bg-ink-muted/20 text-ink-muted"
-                      }`}
-                    >
-                      {TXN_TYPE_LABEL[txn.type] ?? txn.type}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
         </>
       )}
 

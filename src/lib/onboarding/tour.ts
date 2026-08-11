@@ -115,17 +115,16 @@ export const TOUR_ANCHORS: readonly string[] = Array.from(
 /**
  * Whether to open the tour by itself.
  *
- * Only ever for a player who has not seen it and is in their first franchise -
- * a second save never re-triggers it, which is the difference between an
- * onboarding flow and an interruption. Completion lives on the user rather than
- * the league for exactly that reason.
+ * Gated per franchise, not per player: every new save runs it again. That is a
+ * deliberate reversal of the first version, which stored completion on the user
+ * and so ran exactly once ever. Starting a franchise is the moment the tour is
+ * about, and a returning player who does not want it leaves in one click.
+ *
+ * A league that has already shown it never shows it again, which is what keeps
+ * this from becoming an interruption.
  */
-export function shouldAutoLaunchTour(args: {
-  onboardingCompletedAt: Date | null;
-  leagueCount: number;
-}): boolean {
-  if (args.onboardingCompletedAt !== null) return false;
-  return args.leagueCount <= 1;
+export function shouldAutoLaunchTour(args: { tourCompletedAt: Date | null }): boolean {
+  return args.tourCompletedAt === null;
 }
 
 /**

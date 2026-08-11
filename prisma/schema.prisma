@@ -193,6 +193,7 @@ model League {
   financialMandateSeason      Int?
   financialMandateStaked      Boolean                   @default(false)
   payrollDirectiveStaked      Boolean                   @default(false)
+  tourCompletedAt             DateTime?
   allStarWeekends             AllStarWeekend[]
   assistantThreads            AssistantThread[]
   businessDecisions           BusinessDecision[]
