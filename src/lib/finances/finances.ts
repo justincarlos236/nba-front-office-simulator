@@ -163,6 +163,30 @@ const MARKET_OPERATING_BASELINE: Record<MarketSize, number> = {
  *  coarse multiplier keeps this "interesting decision, not accounting." */
 const LUXURY_TAX_MULTIPLIER = 1.5;
 
+/**
+ * The salary floor's penalty, exactly as the CBA writes it: a team that ends
+ * the season below the minimum team salary pays the shortfall anyway, split
+ * among the players who were on the roster.
+ *
+ * So there is no separate fine to invent and no multiplier to tune - the
+ * penalty is that being cheap does not actually save you the money. Modelled
+ * as its own expense bucket rather than by inflating `payrollCents`, because
+ * payroll is the cap-sheet figure and must keep matching the cap engine; this
+ * is money leaving the franchise that was never a cap charge.
+ *
+ * docs/FINANCE_AUDIT.md P1-5: without this, Houston fielded a $104.5M roster
+ * against a $139.2M floor and was rewarded with the best net income in the
+ * league. Fielding a cheap team was the most profitable strategy available and
+ * nothing resisted it.
+ */
+export function computeSalaryFloorShortfall(
+  payrollCents: number,
+  salaryFloorCents: number,
+): number {
+  const under = salaryFloorCents - payrollCents;
+  return under > 0 ? under : 0;
+}
+
 export interface SeasonExpenseInputs {
   marketSize: MarketSize;
   /** Committed player salary for the completed season (cap-sheet total). */
@@ -170,6 +194,11 @@ export interface SeasonExpenseInputs {
   /** The season's luxury-tax line (rules.luxuryTaxCents) - passed in to keep
    *  this module decoupled from the cap-rules table. */
   luxuryTaxLineCents: number;
+  /** The season's minimum team salary (`salaryFloorCents`, src/lib/cap/
+   *  constants.ts) - passed in for the same reason as the tax line. Optional/
+   *  defaults to 0 (no floor), so every existing caller and test keeps
+   *  working unchanged. */
+  salaryFloorCents?: number;
   /** Sum of this team's staff contract salaries. */
   staffCents: number;
   /** Finances as a Gameplay Pillar (Phase 4) - the season's total Front
@@ -192,6 +221,9 @@ export interface SeasonExpenseInputs {
 export interface SeasonExpenses {
   payrollCents: number;
   luxuryTaxCents: number;
+  /** CBA minimum-team-salary shortfall, paid out to the players. 0 for any
+   *  team at or above the floor, which is most of them. */
+  salaryFloorShortfallCents: number;
   staffCents: number;
   investmentCents: number;
   operatingCents: number;
@@ -207,6 +239,10 @@ export function computeLuxuryTax(payrollCents: number, luxuryTaxLineCents: numbe
 
 export function computeSeasonExpenses(inputs: SeasonExpenseInputs): SeasonExpenses {
   const luxuryTaxCents = computeLuxuryTax(inputs.payrollCents, inputs.luxuryTaxLineCents);
+  const salaryFloorShortfallCents = computeSalaryFloorShortfall(
+    inputs.payrollCents,
+    inputs.salaryFloorCents ?? 0,
+  );
   const investmentCents = inputs.departmentBudgetCostCents;
   const operatingCents = MARKET_OPERATING_BASELINE[inputs.marketSize];
   const otherExpenseCents = inputs.otherExpenseCents ?? 0;
@@ -214,6 +250,7 @@ export function computeSeasonExpenses(inputs: SeasonExpenseInputs): SeasonExpens
   return {
     payrollCents: inputs.payrollCents,
     luxuryTaxCents,
+    salaryFloorShortfallCents,
     staffCents: inputs.staffCents,
     investmentCents,
     operatingCents,
@@ -222,6 +259,7 @@ export function computeSeasonExpenses(inputs: SeasonExpenseInputs): SeasonExpens
     totalCents:
       inputs.payrollCents +
       luxuryTaxCents +
+      salaryFloorShortfallCents +
       inputs.staffCents +
       investmentCents +
       operatingCents +

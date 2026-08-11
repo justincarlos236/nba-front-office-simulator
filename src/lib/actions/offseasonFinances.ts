@@ -89,6 +89,8 @@ export interface TeamFinanceDeps {
   otherExpenseByTeam: Map<string, number>;
   staffCentsByTeam: Map<string, bigint>;
   financeTaxLineCents: number;
+  /** CBA minimum team salary for the season - see `computeSalaryFloorShortfall`. */
+  financeSalaryFloorCents: number;
 }
 
 // Finances as a Gameplay Pillar (Phase 4) - reads a LeagueTeam row's 6
@@ -139,6 +141,7 @@ export function computeTeamSeasonFinances(
     otherExpenseByTeam,
     staffCentsByTeam,
     financeTaxLineCents,
+    financeSalaryFloorCents,
   } = deps;
   const projectEffects =
     completedEffectsByTeam.get(args.leagueTeamId) ?? sumCompletedProjectEffects([]);
@@ -199,6 +202,7 @@ export function computeTeamSeasonFinances(
     marketSize: args.marketSize,
     payrollCents: Number(capSheet.totalSalaryCents),
     luxuryTaxLineCents: financeTaxLineCents,
+    salaryFloorCents: financeSalaryFloorCents,
     staffCents: Number(staffCentsByTeam.get(args.leagueTeamId) ?? 0n),
     departmentBudgetCostCents: totalDepartmentBudgetCostCents(args.departmentBudget),
     otherExpenseCents: otherExpenseByTeam.get(args.leagueTeamId) ?? 0,
@@ -393,6 +397,7 @@ export async function runSeasonFinances(ctx: SeasonFinanceContext) {
       operatingExpenseCents: BigInt(fin.expenses.operatingCents),
       otherExpenseCents: BigInt(fin.expenses.otherExpenseCents),
       interestExpenseCents: BigInt(fin.expenses.interestExpenseCents),
+      salaryFloorExpenseCents: BigInt(fin.expenses.salaryFloorShortfallCents),
       netIncomeCents: BigInt(fin.netIncome),
       cashReserveCents: BigInt(newCash),
       franchiseValueCents: BigInt(newValue),

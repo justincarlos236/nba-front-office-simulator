@@ -975,6 +975,7 @@ model FinancialSnapshot {
   otherIncomeCents        BigInt     @default(0)
   sponsorshipRevenueCents BigInt     @default(0)
   interestExpenseCents    BigInt     @default(0)
+  salaryFloorExpenseCents BigInt     @default(0)
   league                  League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   leagueTeam              LeagueTeam @relation(fields: [leagueTeamId], references: [id], onDelete: Cascade)
 

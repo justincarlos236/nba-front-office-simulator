@@ -76,6 +76,19 @@ export const SEASON_CAP_RULES: readonly SeasonCapRules[] = [
 // past the hand-entered table, not a claim about actual future CBA terms.
 const CAP_GROWTH_RATE = 0.05;
 
+/**
+ * The CBA's minimum team salary: 90% of the cap.
+ *
+ * Derived from the cap rather than entered per season, because that is
+ * literally how the CBA defines it - a hand-entered column would be three more
+ * numbers that could drift out of step with the cap they are a percentage of.
+ */
+const SALARY_FLOOR_FRACTION = 0.9;
+
+export function salaryFloorCents(rules: SeasonCapRules): number {
+  return Math.round(Number(rules.salaryCapCents) * SALARY_FLOOR_FRACTION);
+}
+
 function scaleCents(cents: bigint, factor: number): bigint {
   return BigInt(Math.round(Number(cents) * factor));
 }

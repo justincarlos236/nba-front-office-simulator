@@ -25,7 +25,7 @@ import {
   selectTopPerTeam,
   DEFAULT_MAX_ROSTER_SIZE,
 } from "../src/lib/data-sources/rosterConstruction";
-import { getSeasonCapRules } from "../src/lib/cap/constants";
+import { getSeasonCapRules, salaryFloorCents } from "../src/lib/cap/constants";
 import { REAL_TEAM_PAYROLL_SHAPE, REAL_SALARY_BANDS } from "../src/lib/valuation/realPayrollShape";
 import { TEAM_SEEDS } from "../prisma/data/teams";
 import {
@@ -97,6 +97,7 @@ const rules = getSeasonCapRules(SEASON);
 const cap = Number(rules.salaryCapCents);
 const taxLine = Number(rules.luxuryTaxCents);
 const apron2 = Number(rules.secondApronCents);
+const floor = salaryFloorCents(rules);
 
 const M = (cents: number) => "$" + (cents / 100 / 1_000_000).toFixed(1) + "M";
 const pctCap = (cents: number) => ((cents / cap) * 100).toFixed(0) + "%";
@@ -111,7 +112,7 @@ for (const e of rostered) {
 }
 
 console.log(`Season ${SEASON}-${String(SEASON + 1).slice(2)}`);
-console.log(`Cap ${M(cap)} · Tax ${M(taxLine)} · Apron 2 ${M(apron2)}\n`);
+console.log(`Cap ${M(cap)} · Floor ${M(floor)} · Tax ${M(taxLine)} · Apron 2 ${M(apron2)}\n`);
 
 const teams = [...byTeam.entries()]
   .map(([team, v]) => ({ team, ...v }))
@@ -216,6 +217,7 @@ const finances = teams.map((t) => {
     marketSize,
     payrollCents: t.payroll,
     luxuryTaxLineCents: taxLine,
+    salaryFloorCents: floor,
     staffCents: STAFF_ESTIMATE_CENTS,
     departmentBudgetCostCents: departmentCost,
   });
@@ -224,11 +226,11 @@ const finances = teams.map((t) => {
 
 console.log(`\n--- SEASON-ONE FINANCES (fresh league, no playoffs) ---`);
 console.log(
-  `${"TEAM".padEnd(6)}${"MKT".padEnd(7)}${"PAYROLL".padStart(10)}${"TAX".padStart(10)}${"REVENUE".padStart(10)}${"NET".padStart(11)}`,
+  `${"TEAM".padEnd(6)}${"MKT".padEnd(7)}${"PAYROLL".padStart(10)}${"TAX".padStart(10)}${"FLOOR".padStart(9)}${"REVENUE".padStart(10)}${"NET".padStart(11)}`,
 );
 for (const f of [...finances].sort((a, b) => b.net - a.net)) {
   console.log(
-    `${f.team.padEnd(6)}${f.marketSize.padEnd(7)}${M(f.payroll).padStart(10)}${M(f.expenses.luxuryTaxCents).padStart(10)}${M(f.revenue.totalCents).padStart(10)}${((f.net >= 0 ? "+" : "") + M(f.net)).padStart(11)}`,
+    `${f.team.padEnd(6)}${f.marketSize.padEnd(7)}${M(f.payroll).padStart(10)}${M(f.expenses.luxuryTaxCents).padStart(10)}${M(f.expenses.salaryFloorShortfallCents).padStart(9)}${M(f.revenue.totalCents).padStart(10)}${((f.net >= 0 ? "+" : "") + M(f.net)).padStart(11)}`,
   );
 }
 

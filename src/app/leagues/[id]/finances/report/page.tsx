@@ -179,13 +179,32 @@ export default async function FinancesReportPage({ params }: PageProps) {
           : []),
       ]
     : [];
+  // Every persisted expense bucket, so the total below actually reconciles
+  // with netIncomeCents. Debt interest and resolved business-decision costs
+  // were previously omitted, which quietly under-reported expenses for any
+  // team carrying debt; the optional ones follow the revenue side's pattern of
+  // only appearing when non-zero, so a team with no debt sees no debt row.
   const expenseRows: BreakdownRow[] = latestSnapshot
     ? [
         { label: "Player payroll", cents: Number(latestSnapshot.payrollExpenseCents) },
         { label: "Luxury tax", cents: Number(latestSnapshot.luxuryTaxExpenseCents) },
+        ...(Number(latestSnapshot.salaryFloorExpenseCents) > 0
+          ? [
+              {
+                label: "Salary-floor shortfall",
+                cents: Number(latestSnapshot.salaryFloorExpenseCents),
+              },
+            ]
+          : []),
         { label: "Staff & coaching", cents: Number(latestSnapshot.staffExpenseCents) },
         { label: "Facilities & investment", cents: Number(latestSnapshot.investmentExpenseCents) },
         { label: "Operations", cents: Number(latestSnapshot.operatingExpenseCents) },
+        ...(Number(latestSnapshot.interestExpenseCents) > 0
+          ? [{ label: "Debt interest", cents: Number(latestSnapshot.interestExpenseCents) }]
+          : []),
+        ...(Number(latestSnapshot.otherExpenseCents) > 0
+          ? [{ label: "Other business costs", cents: Number(latestSnapshot.otherExpenseCents) }]
+          : []),
       ]
     : [];
   const totalRevenue = revenueRows.reduce((s, r) => s + r.cents, 0);

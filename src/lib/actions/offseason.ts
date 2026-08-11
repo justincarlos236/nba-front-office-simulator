@@ -35,7 +35,7 @@ import {
 import { importanceForRating } from "@/lib/transactions/newsImportance";
 import type { NewsImportance } from "@/generated/prisma/client";
 import { computeCapSheet } from "@/lib/cap/capSheet";
-import { getSeasonCapRules } from "@/lib/cap/constants";
+import { getSeasonCapRules, salaryFloorCents } from "@/lib/cap/constants";
 import { financialSpendingResistance, TICKET_POSTURE_FAN_DELTA } from "@/lib/finances/finances";
 import { computeCpuSponsorshipRevenueCents } from "@/lib/finances/sponsorship";
 import { departmentQualityDelta } from "@/lib/finances/departments";
@@ -963,6 +963,7 @@ export async function advanceSeasonAction(leagueId: string) {
   // end (all 30 teams). Deterministic in its inputs, so both call sites get
   // an identical result for a given team without threading a value through.
   const financeTaxLineCents = Number(getSeasonCapRules(season).luxuryTaxCents);
+  const financeSalaryFloorCents = salaryFloorCents(getSeasonCapRules(season));
   // Finances as a Gameplay Pillar (Phase 1) - this season's resolved
   // business-decision/business-event ledger, summed per team+category so it
   // folds into the P&L exactly like every other bucket (see
@@ -1047,6 +1048,7 @@ export async function advanceSeasonAction(leagueId: string) {
     otherExpenseByTeam,
     staffCentsByTeam,
     financeTaxLineCents,
+    financeSalaryFloorCents,
   };
 
   const mvp = computeMVP(rosteredSnapshots);

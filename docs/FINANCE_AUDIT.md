@@ -269,15 +269,43 @@ until P0-1 lands, since payroll correction changes the whole margin picture.
 
 ---
 
-### P1-5 — Still no salary floor
+### P1-5 — Still no salary floor — FIXED
 
-Carried from the cap audit, and it matters more here. Nothing forces minimum
-spending and no penalty exists. Houston's $106M payroll — roughly $33M below a
-real 90%-of-cap floor — is rewarded with **+$237.6M** net income and the best
-financial health in the league.
+Carried from the cap audit, and it mattered more here. Nothing forced minimum
+spending and no penalty existed. Houston's $104.5M payroll — roughly $35M below
+a real 90%-of-cap floor — was rewarded with the best net income in the league.
 
-**The most profitable strategy available is to field a cheap team**, and the
-finance model offers no resistance.
+**The most profitable strategy available was to field a cheap team**, and the
+finance model offered no resistance.
+
+**Fix — the CBA's own penalty, which needed nothing invented.** A team ending
+the season below the minimum team salary pays the shortfall anyway, split among
+the players on its roster. So there is no fine to design and no multiplier to
+tune: the penalty is simply that being cheap does not save you the money.
+`salaryFloorCents` derives the floor as 90% of the cap rather than hand-entering
+it per season, because that is how the CBA defines it.
+
+It is its own expense bucket rather than an inflation of `payrollCents`, since
+payroll is the cap-sheet figure and has to keep matching the cap engine — this
+is money leaving the franchise that was never a cap charge.
+
+| Season one         | Payroll | Before     | After        |
+| ------------------ | ------- | ---------- | ------------ |
+| Houston (cheapest) | $104.5M | +$239.5M   | **+$204.9M** |
+| Philadelphia       | $144.4M | +$199.7M   | +$199.7M     |
+| Gap                | —       | **$39.8M** | **$5.2M**    |
+
+Five teams pay a shortfall. Note what the rule does and does not do: Houston is
+still the most profitable team in the league, by $5.2M instead of $39.8M. That
+is the real rule working the way it really works — it removes the advantage of
+being cheap without turning frugality into a loss. Making a cheap team
+_unprofitable_ would have required inventing a penalty the CBA does not have.
+
+**Knock-on fix.** The finances report page was summing only five of its eight
+persisted expense buckets, so any team carrying debt saw a total that did not
+reconcile with its own net income. Adding this bucket to that list meant fixing
+the omission rather than adding to it; debt interest and business costs now
+appear too, when non-zero.
 
 ---
 
@@ -354,8 +382,8 @@ correct for a model that has since been replaced.
 4. P2-6: graduated luxury tax with a revenue-sharing offset. Still warranted —
    the six unprofitable teams are five SMALL/MID markets and Cleveland, which is
    exactly the asymmetry revenue sharing exists to correct.
-5. P1-5: salary floor with the CBA's own penalty. Still warranted — Houston is
-   at $104.5M and is now the _most_ profitable team in the league at +$239.5M.
+5. ~~P1-5: salary floor with the CBA's own penalty.~~ Done — the shortfall is
+   paid to the players, exactly as the CBA writes it.
 6. P1-4: let winning move revenue.
 
 P2-7 and anything beyond (local TV negotiation, dynamic CPU business strategy)

@@ -92,9 +92,26 @@ describe("computeSeasonExpenses", () => {
   };
 
   it("sums every bucket", () => {
-    const e = computeSeasonExpenses(base);
+    // Every optional bucket populated, so this actually guards the total. With
+    // the defaults it silently skipped four of them, which is how a new
+    // expense could be added without the sum ever being checked against it.
+    const e = computeSeasonExpenses({
+      ...base,
+      payrollCents: 100 * M,
+      salaryFloorCents: 139 * M,
+      otherExpenseCents: 3 * M,
+      interestExpenseCents: 5 * M,
+    });
+    expect(e.salaryFloorShortfallCents).toBeGreaterThan(0);
     expect(e.totalCents).toBe(
-      e.payrollCents + e.luxuryTaxCents + e.staffCents + e.investmentCents + e.operatingCents,
+      e.payrollCents +
+        e.luxuryTaxCents +
+        e.salaryFloorShortfallCents +
+        e.staffCents +
+        e.investmentCents +
+        e.operatingCents +
+        e.otherExpenseCents +
+        e.interestExpenseCents,
     );
   });
 
@@ -104,6 +121,58 @@ describe("computeSeasonExpenses", () => {
     expect(noDebt.interestExpenseCents).toBe(0);
     expect(withDebt.interestExpenseCents).toBe(8 * M);
     expect(withDebt.totalCents - noDebt.totalCents).toBe(8 * M);
+  });
+
+  /**
+   * docs/FINANCE_AUDIT.md P1-5. The CBA's own penalty: a team under the minimum
+   * team salary pays the shortfall to its players anyway, so being cheap does
+   * not actually save the money. Before this, Houston fielded a $104.5M roster
+   * against a $139.2M floor and posted the best net income in the league.
+   */
+  describe("salary floor", () => {
+    const floor = 139 * M;
+
+    it("charges nothing to a team at or above the floor", () => {
+      expect(
+        computeSeasonExpenses({ ...base, payrollCents: 150 * M, salaryFloorCents: floor })
+          .salaryFloorShortfallCents,
+      ).toBe(0);
+      expect(
+        computeSeasonExpenses({ ...base, payrollCents: floor, salaryFloorCents: floor })
+          .salaryFloorShortfallCents,
+      ).toBe(0);
+    });
+
+    it("charges exactly the shortfall to a team below it", () => {
+      const e = computeSeasonExpenses({
+        ...base,
+        payrollCents: 104 * M,
+        salaryFloorCents: floor,
+      });
+      expect(e.salaryFloorShortfallCents).toBe(35 * M);
+    });
+
+    it("removes the saving from going cheap, dollar for dollar", () => {
+      // The whole point of the rule. Two teams, one $35M cheaper, identical
+      // otherwise - their total expenses must come out the same.
+      const cheap = computeSeasonExpenses({
+        ...base,
+        payrollCents: 104 * M,
+        salaryFloorCents: floor,
+      });
+      const atFloor = computeSeasonExpenses({
+        ...base,
+        payrollCents: floor,
+        salaryFloorCents: floor,
+      });
+      expect(cheap.totalCents).toBe(atFloor.totalCents);
+    });
+
+    it("is inert for callers that do not pass a floor", () => {
+      expect(
+        computeSeasonExpenses({ ...base, payrollCents: 10 * M }).salaryFloorShortfallCents,
+      ).toBe(0);
+    });
   });
 
   it("a tax-paying roster costs more than an under-tax one", () => {
