@@ -136,29 +136,42 @@ That is a structural gap, not a constant to tune.
 
 ### P0-2 — Unbounded debt spiral, and no failure state
 
-**Observed**, 15 seasons with payroll held flat and CPU borrowing exactly as
-`shouldCpuTakeLoan` does:
+**This finding's original numbers were wrong twice over, and are corrected
+here.** They were measured against the pre-P0-1 inflated payrolls, and the debt
+column misread the CPU loan policy — the audit said teams borrow "$90M at a time"
+to a $1.35B balance, but `shouldCpuTakeLoan` takes a **SMALL** loan, $15M, and
+the worst team in the league reaches $135M of debt, not $1.35B. An order of
+magnitude. Re-measured 2026-08-11 against corrected payrolls:
 
-| Team | Cash after S1 | Cash after S15 | Debt   | Annual interest |
-| ---- | ------------- | -------------- | ------ | --------------- |
-| MIL  | −$220M        | **−$3.69B**    | $1.35B | $108M           |
-| IND  | −$173M        | −$2.98B        | $1.35B | $108M           |
-| UTA  | −$100M        | −$1.88B        | $1.35B | $108M           |
-| HOU  | +$358M        | **+$3.68B**    | $0     | $0              |
+| Payroll assumption            | Teams with negative cash at S15 | Worst team | Total league debt |
+| ----------------------------- | ------------------------------- | ---------- | ----------------- |
+| Held flat (as originally run) | **3 / 30**                      | −$0.68B    | $0.27B            |
+| +5%/yr, tracking cap growth   | **15 / 30**                     | −$3.43B    | $0.66B            |
+
+**The finding survives, but its shape has changed.** The debt spiral is far
+milder than first reported — debt is a rounding error against the deficits, because
+$15M loans cannot fund a $108M annual loss. What actually diverges is **cash**,
+and it diverges at the _top_ more than the bottom: Houston reaches **+$3.71B**
+against Milwaukee's −$0.68B, a **$4.39B** spread across a league whose franchises
+are supposed to be broadly comparable.
+
+Which assumption is right matters enormously, and neither is verified — this is
+the single biggest open question in the finance model. Payroll held flat is
+optimistic here, not pessimistic as originally stated: it lets revenue grow with
+the cap while costs stand still. Payroll tracking cap growth is the realistic
+case, and it puts half the league underwater.
 
 Nothing stops either end. There is no bankruptcy, no forced sale, no owner
 bailout, no hard payroll constraint. `financialSpendingResistance` returns 1.5×
-at negative cash — a nudge on _adding_ salary that cannot shed a contract
-already signed. A team locked into bad deals falls forever, borrowing $90M at a
-time at 8%.
+at negative cash — a nudge on _adding_ salary that cannot shed a contract already
+signed.
 
-**Caveat on this projection.** Payroll was held flat, which is pessimistic: real
-CPU behaviour sheds some salary as contracts expire. The divergence is real; its
-slope is gentler than the table shows.
-
-**Gameplay impact.** Insolvency currently means nothing. A franchise can run
-−$3.7B and keep playing exactly as before, which drains the entire finance
-pillar of stakes.
+**Gameplay impact — unchanged, and the reason this is still a P0.** Insolvency
+means nothing. A franchise can run −$3.4B and keep playing exactly as before,
+which drains the entire finance pillar of stakes. Note that P0-3 bounded the
+_valuation_ consequence of runaway cash but not the cash itself: franchise values
+now cluster sensibly between $2.0B and $4.3B while the underlying balances still
+span $6.5B.
 
 ---
 
