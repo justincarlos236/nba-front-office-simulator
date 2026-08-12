@@ -76,7 +76,12 @@ export async function createLeagueAction(formData: FormData) {
     // to). Player is shared global reference data, so this scoping is essential.
     prisma.player.findMany({
       where: { seedOverallRating: { not: null } },
-      include: { seasonStats: { orderBy: { season: "desc" }, take: 1 } },
+      include: {
+        seasonStats: { orderBy: { season: "desc" }, take: 1 },
+        // Real contracts, when the dataset carried them. Ordered so
+        // `planLeaguePlayer` sees the deal in season order.
+        seedContractYears: { orderBy: { season: "asc" } },
+      },
     }),
     prisma.team.findUnique({ where: { id: teamId } }),
     prisma.user.findUnique({ where: { id: session.user.id }, select: { gmReputation: true } }),
@@ -219,6 +224,18 @@ export async function createLeagueAction(formData: FormData) {
           age,
           yearsOfExperience,
           stats: { ...stat, trueShootingPct: stat.trueShootingPct ?? 0.56 },
+          gamesPlayed: stat.gamesPlayed,
+          seedOverallRating: player.seedOverallRating,
+          seedPotentialRating: player.seedPotentialRating,
+          seededContract:
+            player.seedContractYears.length > 0
+              ? {
+                  years: player.seedContractYears.map((y) => ({
+                    season: y.season,
+                    salaryCents: Number(y.salaryCents),
+                  })),
+                }
+              : null,
           seed: player.id,
         })
       : null;
@@ -226,8 +243,11 @@ export async function createLeagueAction(formData: FormData) {
       player,
       realTeamLeagueTeamId,
       plan,
-      overallRating: player.seedOverallRating ?? plan?.overallRating ?? 50,
-      potentialRating: player.seedPotentialRating ?? plan?.potentialRating ?? 50,
+      // `planLeaguePlayer` already resolves the seed rating, and priced the
+      // contract off the result - reading it back from the plan is what keeps
+      // the rating shown and the rating paid from being two different numbers.
+      overallRating: plan?.overallRating ?? player.seedOverallRating ?? 50,
+      potentialRating: plan?.potentialRating ?? player.seedPotentialRating ?? 50,
     };
   });
 

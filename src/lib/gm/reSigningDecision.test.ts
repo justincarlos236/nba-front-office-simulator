@@ -18,7 +18,14 @@ function baseInput(
       rosterSizeBeforeThisDecision: 10,
     },
     currentSeason: SEASON,
-    offerSalaryCents: computeReSigningMaxOfferCents(overrides.player.overallRating, SEASON),
+    offerSalaryCents: computeReSigningMaxOfferCents(
+      overrides.player.overallRating,
+      SEASON,
+      overrides.player.age,
+      // These fixtures describe players by rating and age, not by service time;
+      // a veteran's experience is what keeps the rookie scale out of the price.
+      Math.max(4, overrides.player.age - 22),
+    ),
     ...overrides,
   };
 }
@@ -97,11 +104,20 @@ describe("evaluateReSigningDecision", () => {
     }
   });
 
+  /**
+   * The veteran here was a 78 until the re-signing ceiling gained its age
+   * discount (docs/CONTRACT_AUDIT.md C-P1-3). A 31-year-old 78 used to be
+   * quoted at a 27-year-old's price, which made him an overpay every club
+   * refused; priced correctly he is a bargain a rebuilding team would also take,
+   * so he stopped being the marginal case this test is about. 72 is where the
+   * margin actually sits now. The assertion - that team *context* decides, not
+   * personality alone - is unchanged, and so is the threshold it runs against.
+   */
   it("splits on an aging, redundant veteran depending on team context - a WIN_NOW contender keeps them, most others don't", () => {
     const player = {
       position: "PF" as const,
-      overallRating: 78,
-      potentialRating: 78,
+      overallRating: 72,
+      potentialRating: 72,
       age: 31,
       careerGamesMissedToInjury: 0,
     };
@@ -258,11 +274,14 @@ describe("evaluateReSigningDecision", () => {
   });
 
   it("Franchise Finances: a cash-strapped team (higher financial multiplier) lets a marginal retention walk, while a healthy one keeps him", () => {
+    // Age 30 rather than 29 for the same reason the fixture above moved: with
+    // the age discount reaching the ceiling, a 29-year-old 74 is comfortably
+    // worth keeping and no longer a marginal call.
     const player = {
       position: "SF" as const,
       overallRating: 74,
       potentialRating: 74,
-      age: 29,
+      age: 30,
       careerGamesMissedToInjury: 0,
     };
     const healthy = evaluateReSigningDecision(

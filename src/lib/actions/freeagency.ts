@@ -6,6 +6,7 @@ import { computeCapSheet } from "@/lib/cap/capSheet";
 import { prisma } from "@/lib/prisma";
 import { validateSigning } from "@/lib/freeagency/validateSigning";
 import { computeReSigningMaxOfferCents } from "@/lib/freeagency/reSigningRights";
+import { resolvePlayerAge, resolvePlayerExperience } from "@/lib/players/age";
 import { getSigningExceptionUsage } from "@/lib/actions/signingException";
 import { describeSigning } from "@/lib/transactions/describeTransaction";
 import { importanceForRating } from "@/lib/transactions/newsImportance";
@@ -88,7 +89,12 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
     },
     reSigningRights: {
       held: freeAgent.reSigningTeamId === myLeagueTeamId,
-      maxOfferCents: computeReSigningMaxOfferCents(freeAgent.overallRating, league.currentSeason),
+      maxOfferCents: computeReSigningMaxOfferCents(
+        freeAgent.overallRating,
+        league.currentSeason,
+        resolvePlayerAge(freeAgent.player, league.currentSeason),
+        resolvePlayerExperience(freeAgent.player, league.currentSeason),
+      ),
     },
   });
   if (!validation.isValid) {

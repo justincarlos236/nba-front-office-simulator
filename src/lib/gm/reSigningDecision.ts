@@ -47,15 +47,21 @@ export interface ReSigningDecisionResult {
   reasons: ReSigningReasonCode[];
 }
 
-// A player's Re-Signing ceiling (computeReSigningMaxOfferCents) is built
-// from raw overallRating, while computePlayerTradeValue's internal surplus
-// check compares against *age-adjusted* fair value - so a score of 1.0 only
-// happens exactly at peak age (27); anyone meaningfully past peak scores
-// well below 1.0 even as a clear value-add, because the ceiling itself
-// doesn't discount for age the way a real market would. Calibrated low
-// (verified empirically, not by hand) so a genuinely good past-peak
-// veteran still clears the bar for at least some personalities, while a
-// clearly declined/redundant one doesn't clear it for any.
+// A player's Re-Signing ceiling (computeReSigningMaxOfferCents) and
+// computePlayerTradeValue's internal surplus check both apply the age curve,
+// so a score of 1.0 means "fairly priced for his age" rather than "at peak".
+// Calibrated low (verified empirically, not by hand) so a genuinely good
+// past-peak veteran still clears the bar for at least some personalities,
+// while a clearly declined/redundant one doesn't clear it for any.
+//
+// **Deliberately unchanged when the ceiling gained its age discount**
+// (docs/CONTRACT_AUDIT.md C-P1-3). Cheaper veterans do score higher, and two
+// fixtures moved as a result - but measured across all 537 seeded players x 5
+// team identities x 7 personalities, league-wide retention moved 84.1% -> 84.7%
+// and the 33-and-over band stayed at 0%. The concern that CPU clubs would begin
+// hoarding players they should let walk is not borne out, and re-deriving this
+// constant to restore two fixture outcomes would have cut retention across
+// every age band to fix a problem that does not exist.
 const RESIGN_THRESHOLD = 0.35;
 
 // A standard NBA active roster - once a CPU team already has this many

@@ -48,6 +48,8 @@ export interface PursuableFreeAgent {
   careerGamesMissedToInjury: number;
   /** What this player commands - the offer every pursuing club must meet. */
   estimatedValueCents: bigint;
+  /** Term of the deal, from `pickContractLength`. */
+  years: number;
   /**
    * The teams shown as interested on the board, in the order the board ranked
    * them. Only these clubs may sign him, which is what keeps the display and
@@ -60,6 +62,7 @@ export interface CpuSigning {
   leaguePlayerId: string;
   leagueTeamId: string;
   salaryCents: bigint;
+  years: number;
 }
 
 /**
@@ -130,6 +133,7 @@ export function runCpuFreeAgentPass(
           leaguePlayerId: fa.leaguePlayerId,
           leagueTeamId: teamId,
           salaryCents: fa.estimatedValueCents,
+          years: fa.years,
         });
         team.rosterSize += 1;
         team.capSpaceCents -= fa.estimatedValueCents;

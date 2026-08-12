@@ -28,6 +28,7 @@ function agent(overrides: Partial<PursuableFreeAgent> = {}): PursuableFreeAgent 
     potentialRating: overrides.potentialRating ?? 82,
     age: overrides.age ?? 26,
     careerGamesMissedToInjury: overrides.careerGamesMissedToInjury ?? 0,
+    years: 2,
     estimatedValueCents: overrides.estimatedValueCents ?? 20n * MILLION,
     interestedTeamIds: overrides.interestedTeamIds ?? ["t1"],
   };
@@ -88,6 +89,7 @@ describe("CPU free-agent pass", () => {
     const agents = Array.from({ length: 6 }, (_, i) =>
       agent({
         leaguePlayerId: `p${i}`,
+        years: 2,
         estimatedValueCents: 30n * MILLION,
         interestedTeamIds: ["t1"],
       }),

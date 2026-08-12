@@ -6,14 +6,18 @@ describe("generateContract", () => {
   it("is deterministic for the same seed", () => {
     const a = generateContract({
       season: 2025,
-      performanceScore: 75,
+      overallRating: 75,
+      performanceScore: null,
+      gamesPlayed: 0,
       age: 27,
       yearsOfExperience: 5,
       seed: "player-1",
     });
     const b = generateContract({
       season: 2025,
-      performanceScore: 75,
+      overallRating: 75,
+      performanceScore: null,
+      gamesPlayed: 0,
       age: 27,
       yearsOfExperience: 5,
       seed: "player-1",
@@ -24,14 +28,18 @@ describe("generateContract", () => {
   it("produces a different salary for a different seed at the same score", () => {
     const a = generateContract({
       season: 2025,
-      performanceScore: 75,
+      overallRating: 75,
+      performanceScore: null,
+      gamesPlayed: 0,
       age: 27,
       yearsOfExperience: 5,
       seed: "player-1",
     });
     const b = generateContract({
       season: 2025,
-      performanceScore: 75,
+      overallRating: 75,
+      performanceScore: null,
+      gamesPlayed: 0,
       age: 27,
       yearsOfExperience: 5,
       seed: "player-2",
@@ -43,7 +51,9 @@ describe("generateContract", () => {
     const rules = getSeasonCapRules(2025);
     const contract = generateContract({
       season: 2025,
-      performanceScore: 90,
+      overallRating: 90,
+      performanceScore: null,
+      gamesPlayed: 0,
       age: 27,
       yearsOfExperience: 8,
       seed: "star-veteran",
@@ -55,14 +65,18 @@ describe("generateContract", () => {
   it("heavily discounts a rookie relative to a veteran with the same score", () => {
     const rookie = generateContract({
       season: 2025,
-      performanceScore: 85,
+      overallRating: 85,
+      performanceScore: null,
+      gamesPlayed: 0,
       age: 27,
       yearsOfExperience: 0,
       seed: "rookie-star",
     });
     const veteran = generateContract({
       season: 2025,
-      performanceScore: 85,
+      overallRating: 85,
+      performanceScore: null,
+      gamesPlayed: 0,
       age: 27,
       yearsOfExperience: 8,
       seed: "rookie-star", // same seed to isolate the experience effect
@@ -74,7 +88,9 @@ describe("generateContract", () => {
     const rules = getSeasonCapRules(2025);
     const contract = generateContract({
       season: 2025,
-      performanceScore: 5,
+      overallRating: 5,
+      performanceScore: null,
+      gamesPlayed: 0,
       age: 27,
       yearsOfExperience: 10,
       seed: "bench-fringe",
@@ -85,7 +101,9 @@ describe("generateContract", () => {
   it("produces a contract length between 1 and 5 years matching start/end season", () => {
     const contract = generateContract({
       season: 2025,
-      performanceScore: 60,
+      overallRating: 60,
+      performanceScore: null,
+      gamesPlayed: 0,
       age: 27,
       yearsOfExperience: 4,
       seed: "role-player",
@@ -99,7 +117,9 @@ describe("generateContract", () => {
   it("gives modest year-over-year raises", () => {
     const contract = generateContract({
       season: 2025,
-      performanceScore: 70,
+      overallRating: 70,
+      performanceScore: null,
+      gamesPlayed: 0,
       age: 27,
       yearsOfExperience: 6,
       seed: "raise-check",
@@ -124,7 +144,9 @@ describe("age discounts the money, not the score", () => {
     Number(
       generateContract({
         season: 2025,
-        performanceScore: 92,
+        overallRating: 92,
+        performanceScore: null,
+        gamesPlayed: 0,
         age,
         yearsOfExperience: 12,
         seed: "aging-star",
@@ -155,7 +177,9 @@ describe("age discounts the money, not the score", () => {
         (_, i) =>
           generateContract({
             season: 2025,
-            performanceScore: 92,
+            overallRating: 92,
+            performanceScore: null,
+            gamesPlayed: 0,
             age,
             yearsOfExperience: experience,
             seed: `length-${i}`,

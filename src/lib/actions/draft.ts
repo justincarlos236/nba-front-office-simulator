@@ -136,7 +136,12 @@ async function draftProspectsToTeams(
     leagueTeamId: a.leagueTeamId,
     contract: generateContract({
       season: rookieSeason,
-      performanceScore: a.overallRating,
+      overallRating: a.overallRating,
+      // A rookie has never played an NBA game, so there is no production to
+      // weigh against his rating - `contractQualityScore` prices him off the
+      // rating alone rather than inventing a box score for him.
+      performanceScore: null,
+      gamesPlayed: 0,
       // Draft classes are generated at 19-22; the exact age isn't carried
       // through the assignment, and the same fixed assumption is already
       // used for projecting future picks (`draftPickTradeValue.ts`).

@@ -3,13 +3,14 @@ import { computeCompetitivenessPercentiles } from "@/lib/actions/competitiveness
 import { computeTeamIdentity } from "@/lib/gm/teamIdentity";
 import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
 import { financialSpendingResistance } from "@/lib/finances/finances";
+import { computePerformanceScore, type PlayerValuationStats } from "@/lib/valuation/playerValue";
 import {
-  scoreToCapFraction,
-  computePerformanceScore,
-  type PlayerValuationStats,
-} from "@/lib/valuation/playerValue";
-import { getSeasonCapRules } from "@/lib/cap/constants";
-import { resolvePlayerAge } from "@/lib/players/age";
+  contractQualityScore,
+  pickContractLength,
+  priceContractCents,
+} from "@/lib/contracts/priceContract";
+import { createSeededRandom } from "@/lib/contracts/seededRandom";
+import { resolvePlayerAge, resolvePlayerExperience } from "@/lib/players/age";
 import { computeRivalInterest, type RivalTeam } from "./rivalInterest";
 import { runCpuFreeAgentPass, type CpuSigning, type PursuableFreeAgent } from "./cpuFreeAgentPass";
 import type { GmPersonality } from "@/lib/gm/gmPersonality";
@@ -46,6 +47,7 @@ interface MarketInput {
       /** `trueShootingPct` is nullable in the database; defaulted below. */
       seasonStats?: (Omit<PlayerValuationStats, "trueShootingPct"> & {
         trueShootingPct: number | null;
+        gamesPlayed: number;
       })[];
     };
     contract: { years: { salaryCents: bigint }[] } | null;
@@ -163,8 +165,6 @@ export async function runCpuFreeAgentMarket(input: MarketInput): Promise<CpuSign
 
   if (rivals.length === 0) return [];
 
-  const rules = getSeasonCapRules(newSeason);
-
   const pursuable: PursuableFreeAgent[] = [];
   for (const id of freeAgentIds) {
     const lp = playerById.get(id);
@@ -174,20 +174,32 @@ export async function runCpuFreeAgentMarket(input: MarketInput): Promise<CpuSign
 
     const rating = updateById.get(id)?.overallRating ?? lp.overallRating;
 
-    // Priced off the same valuation model the board shows, so what the user
-    // was quoted is what a rival pays.
+    // Priced through `priceContractCents`, the same function that prices every
+    // other path, so what the user was quoted is what a rival pays. This used
+    // to run a raw performance score through the cap curve with no age term and
+    // no rating anchor, which is how a player could be shown as a 79 and
+    // pursued as an 88 - see docs/CONTRACT_AUDIT.md, C-P1-3 and C-P0-4.
+    //
+    // A player with no season on record is priced off his rating alone rather
+    // than skipped: an in-sim drafted rookie has no `seasonStats` at all, and
+    // dropping him meant every homegrown player was invisible to the market
+    // for as long as he stayed unproven (C-P2-5).
     const stats = lp.player.seasonStats?.[0];
-    if (!stats) continue;
+    const age = resolvePlayerAge(lp.player, newSeason);
+    const yearsOfExperience = resolvePlayerExperience(lp.player, newSeason);
     const estimatedValueCents = BigInt(
-      Math.round(
-        Number(rules.salaryCapCents) *
-          scoreToCapFraction(
-            computePerformanceScore({
-              ...stats,
-              trueShootingPct: stats.trueShootingPct ?? 0.56,
-            }),
-          ),
-      ),
+      priceContractCents({
+        season: newSeason,
+        quality: contractQualityScore({
+          overallRating: rating,
+          performanceScore: stats
+            ? computePerformanceScore({ ...stats, trueShootingPct: stats.trueShootingPct ?? 0.56 })
+            : null,
+          gamesPlayed: stats?.gamesPlayed ?? 0,
+        }),
+        age,
+        yearsOfExperience,
+      }),
     );
     if (estimatedValueCents <= 0n) continue;
 
@@ -202,9 +214,10 @@ export async function runCpuFreeAgentMarket(input: MarketInput): Promise<CpuSign
       position,
       overallRating: rating,
       potentialRating: lp.potentialRating,
-      age: resolvePlayerAge(lp.player, newSeason),
+      age,
       careerGamesMissedToInjury: lp.careerGamesMissedToInjury,
       estimatedValueCents,
+      years: pickContractLength(rating, age, createSeededRandom(`${id}:${newSeason}`)),
       // Same ordering the board renders, so the club the user was warned about
       // is the club that signs him.
       interestedTeamIds: interest.rivals.map((r) => r.leagueTeamId),

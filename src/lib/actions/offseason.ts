@@ -83,6 +83,7 @@ import { computeTeamIdentity } from "@/lib/gm/teamIdentity";
 import { computeTeamNeeds, type TeamNeedRosterPlayer } from "@/lib/gm/teamNeeds";
 import { computePlayerTradeValue } from "@/lib/gm/playerTradeValue";
 import { computeReSigningMaxOfferCents } from "@/lib/freeagency/reSigningRights";
+import { pickContractLength } from "@/lib/contracts/priceContract";
 import { runCpuFreeAgentMarket } from "@/lib/freeagency/cpuFreeAgentMarket";
 import { evaluateReSigningDecision } from "@/lib/gm/reSigningDecision";
 import {
@@ -551,7 +552,12 @@ export async function advanceSeasonAction(leagueId: string) {
         ? computeContractSituationMoraleDelta({
             personality: lp.personalityProfile,
             currentSeasonSalaryCents,
-            marketValueCents: computeReSigningMaxOfferCents(finalRating, newSeason),
+            marketValueCents: computeReSigningMaxOfferCents(
+              finalRating,
+              newSeason,
+              resolvePlayerAge(lp.player, newSeason),
+              resolvePlayerExperience(lp.player, newSeason),
+            ),
             seasonsRemaining,
           })
         : 0;
@@ -622,6 +628,7 @@ export async function advanceSeasonAction(leagueId: string) {
     leagueTeamId: string;
     finalRating: number;
     offerSalaryCents: bigint;
+    years: number;
   }[] = [];
 
   if (pendingCpuReSignings.length > 0) {
@@ -672,7 +679,12 @@ export async function advanceSeasonAction(leagueId: string) {
           overallRating: a.finalRating,
           potentialRating: lpA.potentialRating,
           age: a.newAge,
-          currentSalaryCents: computeReSigningMaxOfferCents(a.finalRating, newSeason),
+          currentSalaryCents: computeReSigningMaxOfferCents(
+            a.finalRating,
+            newSeason,
+            a.newAge,
+            resolvePlayerExperience(lpA.player, newSeason),
+          ),
           injuryStatus: "HEALTHY",
           careerGamesMissedToInjury: lpA.careerGamesMissedToInjury,
         });
@@ -681,7 +693,12 @@ export async function advanceSeasonAction(leagueId: string) {
           overallRating: b.finalRating,
           potentialRating: lpB.potentialRating,
           age: b.newAge,
-          currentSalaryCents: computeReSigningMaxOfferCents(b.finalRating, newSeason),
+          currentSalaryCents: computeReSigningMaxOfferCents(
+            b.finalRating,
+            newSeason,
+            b.newAge,
+            resolvePlayerExperience(lpB.player, newSeason),
+          ),
           injuryStatus: "HEALTHY",
           careerGamesMissedToInjury: lpB.careerGamesMissedToInjury,
         });
@@ -691,7 +708,12 @@ export async function advanceSeasonAction(leagueId: string) {
       let rosterSize = sureRoster.length;
       for (const p of ordered) {
         const lp = leaguePlayerById.get(p.leaguePlayerId)!;
-        const offerSalaryCents = computeReSigningMaxOfferCents(p.finalRating, newSeason);
+        const offerSalaryCents = computeReSigningMaxOfferCents(
+          p.finalRating,
+          newSeason,
+          p.newAge,
+          resolvePlayerExperience(lp.player, newSeason),
+        );
         const result = evaluateReSigningDecision({
           team: { identity, needs, personality, rosterSizeBeforeThisDecision: rosterSize },
           currentSeason: newSeason,
@@ -735,6 +757,15 @@ export async function advanceSeasonAction(leagueId: string) {
             leagueTeamId: teamId,
             finalRating: p.finalRating,
             offerSalaryCents,
+            // Term is the player's own: quality buys years, age takes them
+            // back. Every CPU deal used to be a flat two years, so a single
+            // offseason erased the variety the bootstrap created - see
+            // docs/CONTRACT_AUDIT.md, C-P1-5.
+            years: pickContractLength(
+              p.finalRating,
+              p.newAge,
+              createSeededRandom(`${p.leaguePlayerId}:${newSeason}`),
+            ),
           });
         } else {
           playerUpdates.push({
@@ -1116,9 +1147,7 @@ export async function advanceSeasonAction(leagueId: string) {
   // mechanism tag and a short 2-year term (a 1-year-only cycle would just
   // recreate the churn this phase exists to fix) instead of that function's
   // 1-year veteran-minimum deal.
-  const CPU_RESIGNING_YEARS = 2;
-  /** Same modest term as a CPU re-signing - see the note on that constant. */
-  const CPU_FREE_AGENT_YEARS = 2;
+
   const cpuReSigningNewsRows = cpuReSignings.map((r) => {
     const team = teamById.get(r.leagueTeamId)?.team;
     const player = leaguePlayerById.get(r.leaguePlayerId)!.player;
@@ -1130,10 +1159,10 @@ export async function advanceSeasonAction(leagueId: string) {
         ? describeSigning(
             `${team.city} ${team.name}`,
             player.fullName,
-            CPU_RESIGNING_YEARS,
-            r.offerSalaryCents * BigInt(CPU_RESIGNING_YEARS),
+            r.years,
+            r.offerSalaryCents * BigInt(r.years),
           )
-        : `${player.fullName} re-signs for another ${CPU_RESIGNING_YEARS} seasons.`,
+        : `${player.fullName} re-signs for another ${r.years} seasons.`,
       importance: importanceForRating(r.finalRating),
       teamIds: [r.leagueTeamId],
     };
@@ -1148,12 +1177,12 @@ export async function advanceSeasonAction(leagueId: string) {
             leagueTeamId: r.leagueTeamId,
             signedSeason: newSeason,
             startSeason: newSeason,
-            endSeason: newSeason + CPU_RESIGNING_YEARS - 1,
+            endSeason: newSeason + r.years - 1,
             signedUsing: "BIRD_RIGHTS",
           },
         });
         await prisma.contractYear.createMany({
-          data: Array.from({ length: CPU_RESIGNING_YEARS }, (_, i) => ({
+          data: Array.from({ length: r.years }, (_, i) => ({
             contractId: contract.id,
             season: newSeason + i,
             salaryCents: r.offerSalaryCents,
@@ -1183,12 +1212,12 @@ export async function advanceSeasonAction(leagueId: string) {
             leagueTeamId: s.leagueTeamId,
             signedSeason: newSeason,
             startSeason: newSeason,
-            endSeason: newSeason + CPU_FREE_AGENT_YEARS - 1,
+            endSeason: newSeason + s.years - 1,
             signedUsing: "NONE",
           },
         });
         await prisma.contractYear.createMany({
-          data: Array.from({ length: CPU_FREE_AGENT_YEARS }, (_, i) => ({
+          data: Array.from({ length: s.years }, (_, i) => ({
             contractId: contract.id,
             season: newSeason + i,
             salaryCents: s.salaryCents,

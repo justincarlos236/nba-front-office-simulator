@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { computePerformanceScore, scoreToCapFraction } from "@/lib/valuation/playerValue";
 import { getSeasonCapRules } from "@/lib/cap/constants";
 import { computeReSigningMaxOfferCents } from "@/lib/freeagency/reSigningRights";
+import { contractQualityScore, priceContractCents } from "@/lib/contracts/priceContract";
+import { resolvePlayerAge, resolvePlayerExperience } from "@/lib/players/age";
 import { getSigningExceptionUsage } from "@/lib/actions/signingException";
 import { SignOfferForm } from "@/components/freeagency/SignOfferForm";
 import { PlayerAvatar } from "@/components/players/PlayerAvatar";
@@ -60,23 +62,35 @@ export default async function SignFreeAgentPage({ params }: PageProps) {
   });
 
   const hasReSigningRights = freeAgent.reSigningTeamId === myLeagueTeam.id;
+  const faAge = resolvePlayerAge(freeAgent.player, league.currentSeason);
+  const faExperience = resolvePlayerExperience(freeAgent.player, league.currentSeason);
   const reSigningMaxOfferCents = computeReSigningMaxOfferCents(
     freeAgent.overallRating,
     league.currentSeason,
+    faAge,
+    faExperience,
   );
 
+  // The number quoted to the user is the number a rival would pay - same
+  // pricing function, same inputs. It used to be a raw performance score run
+  // through the cap curve with no age term and no rating anchor, so the board
+  // could suggest a figure no other club in the league would have offered.
   const stat = freeAgent.player.seasonStats[0];
   const rules = getSeasonCapRules(league.currentSeason);
-  const suggestedSalaryCents = stat
-    ? BigInt(
-        Math.round(
-          Number(rules.salaryCapCents) *
-            scoreToCapFraction(
-              computePerformanceScore({ ...stat, trueShootingPct: stat.trueShootingPct ?? 0.56 }),
-            ),
-        ),
-      )
-    : rules.emptyRosterChargeCents;
+  const suggestedSalaryCents = BigInt(
+    priceContractCents({
+      season: league.currentSeason,
+      quality: contractQualityScore({
+        overallRating: freeAgent.overallRating,
+        performanceScore: stat
+          ? computePerformanceScore({ ...stat, trueShootingPct: stat.trueShootingPct ?? 0.56 })
+          : null,
+        gamesPlayed: stat?.gamesPlayed ?? 0,
+      }),
+      age: faAge,
+      yearsOfExperience: faExperience,
+    }),
+  );
 
   return (
     <main className="mx-auto max-w-2xl flex-1 px-4 py-10 sm:px-6 sm:py-16">

@@ -50,6 +50,7 @@ interface Row {
   draftYear: number | null;
   teamAbbreviation: string | null;
   seedOverallRating: number | null;
+  contract?: { years: Array<{ season: number; salaryCents: number }> } | null;
   stats: Record<string, number | null> | null;
 }
 
@@ -80,6 +81,10 @@ const enriched = dataset.players.map((p) => {
           minutesPerGame: Number(s.minutesPerGame ?? 0),
           trueShootingPct: Number(s.trueShootingPct ?? 0.56),
         },
+        gamesPlayed: Number(s.gamesPlayed ?? 0),
+        seedOverallRating: p.seedOverallRating,
+        seedPotentialRating: null,
+        seededContract: p.contract ?? null,
         seed: p.externalId,
       })
     : null;
