@@ -63,10 +63,17 @@ const league: P[] = ds.players
   .filter((p) => p.teamAbbreviation && p.seedOverallRating)
   .map((p) => {
     const year = p.contract?.years.find((y) => y.season === SEASON);
+    // Real remaining years, in order - contract length is a trade input, and
+    // the seeded league genuinely carries deals four and five seasons deep.
+    const future = (p.contract?.years ?? [])
+      .filter((y) => y.season > SEASON)
+      .sort((a, b) => a.season - b.season)
+      .map((y) => BigInt(y.salaryCents));
     return {
       type: "PLAYER" as const,
       name: p.fullName,
       team: p.teamAbbreviation!,
+      futureSalaryCents: future,
       overallRating: p.seedOverallRating!,
       potentialRating: p.seedPotentialRating ?? p.seedOverallRating!,
       age: resolvePlayerAge(
@@ -80,8 +87,7 @@ const league: P[] = ds.players
     };
   });
 
-const value = (p: TradePlayerAsset) =>
-  computePlayerTradeValue({ season: SEASON, ...p, currentSalaryCents: p.currentSalaryCents });
+const value = (p: TradePlayerAsset) => computePlayerTradeValue({ season: SEASON, ...p });
 
 const synth = (over: Partial<TradePlayerAsset> = {}): TradePlayerAsset => ({
   type: "PLAYER",
@@ -568,3 +574,32 @@ console.log(
     `\n                ${goodYoung.name} (ovr ${goodYoung.overallRating}, age ${goodYoung.age}) = ${fmtM(value(goodYoung))}` +
     `\n                -> the MVP is worth ${(Number(value(mvp)) / Number(value(goodYoung))).toFixed(2)}x a good young role player.`,
 );
+
+/* ------------------------------------------------------------------ */
+console.log("\n" + line());
+console.log("T14 CONTRACT LENGTH: is an expiring deal a different asset?");
+console.log(line());
+console.log(
+  "  Same player, same salary this season - only the number of years left\n" +
+    "  changes. Before contract length was modelled these were identical.\n",
+);
+const years = (n: number, perYear: number) => Array.from({ length: n }, () => BigInt(perYear * 100_000_000));
+for (const [label, ovr, age, sal] of [
+  ["BARGAIN  (85 ovr, 27)", 85, 27, 20],
+  ["FAIR     (78 ovr, 28)", 78, 28, 27],
+  ["ALBATROSS(70 ovr, 33)", 70, 33, 50],
+] as [string, number, number, number][]) {
+  console.log(`  ${label}  paid $${sal}M/yr`);
+  for (const n of [0, 1, 2, 3, 4]) {
+    const v = Number(
+      value({
+        ...synth({ overallRating: ovr, potentialRating: ovr, age, currentSalaryCents: BigInt(sal * 100_000_000) }),
+        futureSalaryCents: years(n, sal),
+      }),
+    );
+    console.log(
+      `    ${n === 0 ? "expiring        " : `${n} more year${n > 1 ? "s" : " "}     `} ${fmtM(v).padStart(10)}`,
+    );
+  }
+  console.log("");
+}

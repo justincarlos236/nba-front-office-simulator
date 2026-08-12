@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { generateContract } from "@/lib/contracts/generateContract";
 import { DRAFT_ROOKIE_ASSUMED_AGE } from "@/lib/gm/draftPickTradeValue";
 import { createSeededRandom } from "@/lib/contracts/seededRandom";
+import { computeCompetitivenessPercentiles } from "@/lib/actions/competitiveness";
 import { computeTeamDraftContexts, fetchRostersByTeam } from "@/lib/gm/teamDraftContext";
 import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
 import { pickBestProspectForTeam, type DraftAiTeamContext } from "@/lib/draft/draftAi";
@@ -223,6 +224,8 @@ async function buildCpuTeamStates(
   season: number,
   teams: { id: string; wins: number; losses: number; gmPersonality: string }[],
   userTeamId: string | null,
+  /** Future seasons each team still owns its own first-rounder for - the Stepien input. */
+  ownedFutureFirstsByTeam: Map<string, number[]> = new Map(),
 ): Promise<
   Map<
     string,
@@ -261,6 +264,7 @@ async function buildCpuTeamStates(
         needs,
         personality: t.gmPersonality as DraftAiTeamContext["personality"],
         roster: roster.map((p) => ({ overallRating: p.overallRating, age: p.age })),
+        ownedFutureFirstRoundPickSeasons: ownedFutureFirstsByTeam.get(t.id) ?? [],
       },
     });
   }
@@ -282,12 +286,19 @@ export async function advanceDraftAction(leagueId: string) {
   const season = league.currentSeason;
   const userTeamId = league.userControlledTeamId;
 
-  const [allPicks, allProspects] = await Promise.all([
+  const [allPicks, allProspects, futurePicks] = await Promise.all([
     prisma.draftPick.findMany({
       where: { leagueId, season, overallPickNumber: { not: null } },
       orderBy: { overallPickNumber: "asc" },
     }),
     prisma.draftProspect.findMany({ where: { leagueId, season } }),
+    // Picks in LATER drafts. A future first is the archetypal draft-night
+    // sweetener, and without these a team could only move up when it happened
+    // to hold a second pick in this same draft.
+    prisma.draftPick.findMany({
+      where: { leagueId, season: { gt: season }, selectedProspectId: null },
+      orderBy: [{ season: "asc" }, { round: "asc" }],
+    }),
   ]);
   if (allPicks.length === 0) {
     throw new Error("The draft hasn't started yet for this season.");
@@ -305,14 +316,32 @@ export async function advanceDraftAction(leagueId: string) {
   const expectedRankById = computeExpectedDraftRank(allProspects);
 
   const teamLabelById = new Map(league.teams.map((t) => [t.id, `${t.team.city} ${t.team.name}`]));
-  const teamStates = await buildCpuTeamStates(leagueId, season, league.teams, userTeamId);
+  // Stepien input: which future firsts each team still owns its own copy of.
+  const ownedFutureFirstsByTeam = new Map<string, number[]>();
+  for (const p of futurePicks) {
+    if (p.round !== 1 || p.originalTeamId !== p.currentOwnerId) continue;
+    ownedFutureFirstsByTeam.set(p.currentOwnerId, [
+      ...(ownedFutureFirstsByTeam.get(p.currentOwnerId) ?? []),
+      p.season,
+    ]);
+  }
+  const competitivenessPercentiles = await computeCompetitivenessPercentiles(league.teams);
+  const teamStates = await buildCpuTeamStates(
+    leagueId,
+    season,
+    league.teams,
+    userTeamId,
+    ownedFutureFirstsByTeam,
+  );
   for (const state of teamStates.values())
     state.teamLabel = teamLabelById.get(state.leagueTeamId) ?? "Unknown";
 
   // Mutable in-memory ownership map so an in-draft trade this same batch
   // is immediately reflected for every subsequent pick's evaluation -
   // never written to the DB until this whole batch resolves.
-  const ownerByPickId = new Map(pendingPicks.map((p) => [p.id, p.currentOwnerId]));
+  const ownerByPickId = new Map(
+    [...pendingPicks, ...futurePicks].map((p) => [p.id, p.currentOwnerId]),
+  );
 
   const assignments: ProspectAssignment[] = [];
   const resolvedExtras = new Map<
@@ -341,18 +370,34 @@ export async function advanceDraftAction(leagueId: string) {
 
     // 1. Roll for an in-draft CPU-CPU trade of this pick before it's made.
     const partnersByTeam = new Map<string, DraftPickForTrade[]>();
+    const addOffer = (ownerId: string, offer: DraftPickForTrade) => {
+      partnersByTeam.set(ownerId, [...(partnersByTeam.get(ownerId) ?? []), offer]);
+    };
     for (const other of pendingPicks) {
       if (other.id === pick.id) continue;
       const otherOwner = ownerByPickId.get(other.id)!;
       if (otherOwner === userTeamId || otherOwner === currentOwner) continue;
       if (other.overallPickNumber! <= pick.overallPickNumber!) continue;
-      const list = partnersByTeam.get(otherOwner) ?? [];
-      list.push({
+      addOffer(otherOwner, {
         pickId: other.id,
         overallPickNumber: other.overallPickNumber!,
         round: other.round as 1 | 2,
+        season,
       });
-      partnersByTeam.set(otherOwner, list);
+    }
+    for (const future of futurePicks) {
+      const futureOwner = ownerByPickId.get(future.id)!;
+      if (futureOwner === userTeamId || futureOwner === currentOwner) continue;
+      addOffer(futureOwner, {
+        pickId: future.id,
+        // Not ordered yet - the value model projects a slot from the ORIGINAL
+        // team's competitiveness, not the current holder's.
+        overallPickNumber: null,
+        round: future.round as 1 | 2,
+        season: future.season,
+        originalTeamCompetitivenessPercentile:
+          competitivenessPercentiles.get(future.originalTeamId) ?? 0.5,
+      });
     }
     const partners = [...partnersByTeam.entries()]
       .map(([teamId, picks]) => {
@@ -392,7 +437,13 @@ export async function advanceDraftAction(leagueId: string) {
             },
             {
               teamLabel: partnerLabel,
-              sentAssetNames: tradeResult.picksReceived.map((p) => `Pick ${p.overallPickNumber}`),
+              // A future pick has no slot yet, so name it by draft year and
+              // round rather than printing "Pick null" onto the wire.
+              sentAssetNames: tradeResult.picksReceived.map((p) =>
+                p.overallPickNumber !== null
+                  ? `Pick ${p.overallPickNumber}`
+                  : `${p.season ?? season} ${p.round === 1 ? "1st" : "2nd"} Round Pick`,
+              ),
             },
           ),
           importance: "STANDARD" as NewsImportance,

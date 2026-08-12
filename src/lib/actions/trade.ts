@@ -140,7 +140,19 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
       where: { id: { in: input.myPlayerIds }, leagueTeamId: input.fromTeamId },
       include: {
         player: true,
-        contract: { include: { years: { where: { season: league.currentSeason } } } },
+        // Every remaining season, not just this one: contract length is a real
+        // trade input (docs/TRADE_AUDIT.md) - an expiring deal and a five-year
+        // albatross at the same salary are not the same asset. `years[0]` is
+        // still the current season, so existing salary-matching reads are
+        // unaffected.
+        contract: {
+          include: {
+            years: {
+              where: { season: { gte: league.currentSeason } },
+              orderBy: { season: "asc" },
+            },
+          },
+        },
         personalityProfile: true,
       },
     }),
@@ -148,7 +160,19 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
       where: { id: { in: input.theirPlayerIds }, leagueTeamId: input.toTeamId },
       include: {
         player: true,
-        contract: { include: { years: { where: { season: league.currentSeason } } } },
+        // Every remaining season, not just this one: contract length is a real
+        // trade input (docs/TRADE_AUDIT.md) - an expiring deal and a five-year
+        // albatross at the same salary are not the same asset. `years[0]` is
+        // still the current season, so existing salary-matching reads are
+        // unaffected.
+        contract: {
+          include: {
+            years: {
+              where: { season: { gte: league.currentSeason } },
+              orderBy: { season: "asc" },
+            },
+          },
+        },
         personalityProfile: true,
       },
     }),
@@ -325,6 +349,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
     age: resolvePlayerAge(lp.player, league.currentSeason),
     position: lp.player.position,
     currentSalaryCents: lp.contract!.years[0].salaryCents,
+    futureSalaryCents: lp.contract!.years.slice(1).map((y) => y.salaryCents),
     injuryStatus: lp.injuryStatus,
     careerGamesMissedToInjury: lp.careerGamesMissedToInjury,
   });

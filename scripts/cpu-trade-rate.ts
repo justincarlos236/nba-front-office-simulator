@@ -27,7 +27,7 @@ import { resolvePlayerAge } from "../src/lib/players/age";
 const SEASON = 2025;
 const TARGET_TRADES_PER_SEASON = 15;
 const TOLERANCE = 3;
-const TRADE_CHANCE_PER_GAME = 0.017;
+const TRADE_CHANCE_PER_GAME = 0.013;
 const GAMES_PER_SEASON = 82 * 30 / 2; // league-wide game rows a season
 
 interface Row {
@@ -90,8 +90,21 @@ function buildTeams(seed: number): CpuTeam[] {
       capState: {
         apronLevel: ApronLevel.BETWEEN_CAP_AND_TAX,
         capSpaceCents: 0n,
-        ownedFutureFirstRoundPickSeasons: [SEASON + 1, SEASON + 2, SEASON + 3],
+        ownedFutureFirstRoundPickSeasons: [SEASON + 1, SEASON + 2, SEASON + 3, SEASON + 4],
       } satisfies CpuTeam["capState"],
+      // Its own picks for the next four drafts, which is what a team that has
+      // made no pick trades actually holds. Without these the sweetener path
+      // added for docs/TRADE_AUDIT.md subsystem #8 is never exercised and the
+      // measured rate silently reflects the old player-for-player-only market.
+      tradeablePicks: [1, 2, 3, 4].flatMap((offset) =>
+        ([1, 2] as const).map((round) => ({
+          draftPickId: `${abbr}-${SEASON + offset}-r${round}`,
+          season: SEASON + offset,
+          round,
+          originalTeamCompetitivenessPercentile: percentile,
+          label: `${SEASON + offset} ${round === 1 ? "1st" : "2nd"} Round Pick`,
+        })),
+      ),
       identity: computeTeamIdentity(percentile, avgAge),
       needs: computeTeamNeeds(
         sorted.map((p) => ({ position: p.position, overallRating: p.rating })),

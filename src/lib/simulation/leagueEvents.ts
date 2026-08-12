@@ -9,8 +9,11 @@ import {
   YOUNG_AGE_THRESHOLD,
   VETERAN_AGE_THRESHOLD,
   type TradePlayerAsset,
+  type TradePickAsset,
+  type TradeAssetForEvaluation,
 } from "@/lib/trade/evaluateTradeOffer";
 import { computePlayerTradeValue } from "@/lib/gm/playerTradeValue";
+import { computeDraftPickTradeValue } from "@/lib/gm/draftPickTradeValue";
 import { GM_PERSONALITY_WEIGHTS, type GmPersonality } from "@/lib/gm/gmPersonality";
 import type { TeamIdentity } from "@/lib/gm/teamIdentity";
 import type { TeamNeed } from "@/lib/gm/teamNeeds";
@@ -208,6 +211,8 @@ export interface CpuRosterPlayer {
   age: number;
   position: "PG" | "SG" | "SF" | "PF" | "C";
   salaryCents: bigint;
+  /** Salaries for the seasons after this one - see `PlayerTradeValueInput`. */
+  futureSalaryCents?: bigint[];
   noTradeClause: boolean;
   injuryStatus: "HEALTHY" | "DAY_TO_DAY" | "OUT" | "SEASON_ENDING";
   careerGamesMissedToInjury: number;
@@ -215,10 +220,25 @@ export interface CpuRosterPlayer {
   wantsOut?: boolean;
 }
 
+/** A future pick a CPU team could attach to a trade as a sweetener. */
+export interface CpuTradeablePick {
+  draftPickId: string;
+  season: number;
+  round: 1 | 2;
+  /** The *original* team's competitiveness - see `draftPickTradeValue.ts`. */
+  originalTeamCompetitivenessPercentile: number;
+  label: string;
+}
+
 export interface CpuTeam {
   leagueTeamId: string;
   teamLabel: string;
   roster: CpuRosterPlayer[];
+  /**
+   * Unselected future picks this team owns. Optional: omit and CPU trades stay
+   * strictly player-for-player, which is what they used to be.
+   */
+  tradeablePicks?: CpuTradeablePick[];
   capState: TradeTeamCapState;
   identity: TeamIdentity;
   needs: TeamNeed[];
@@ -228,6 +248,16 @@ export interface CpuTeam {
 export interface CpuTradeResult {
   teamA: { leagueTeamId: string; teamLabel: string; player: CpuRosterPlayer };
   teamB: { leagueTeamId: string; teamLabel: string; player: CpuRosterPlayer };
+  /**
+   * A pick team A attached to get the deal over the line, if one was needed.
+   *
+   * CPU-CPU trades used to be strictly one player for one player, which made
+   * the league's own market structurally simpler than the user's: no CPU team
+   * could ever pay a pick for an upgrade, so none of them ever acted on the
+   * rebuild-through-capital identity the model says they have. See
+   * docs/TRADE_AUDIT.md subsystem #8.
+   */
+  pickFromTeamA?: CpuTradeablePick;
   // The mutual-accept evaluateTradeOffer scores already computed to decide
   // this trade, from each team's own perspective - exposed so callers (Fan
   // Engagement's sentiment hooks) can reuse them instead of recomputing.
@@ -255,6 +285,26 @@ function pickTradeablePlayer(roster: CpuRosterPlayer[], rng: () => number): CpuR
   return pick(sorted.slice(0, poolSize), rng);
 }
 
+function toPickAsset(pick: CpuTradeablePick): TradePickAsset {
+  return {
+    type: "DRAFT_PICK",
+    pickSeason: pick.season,
+    round: pick.round,
+    overallPickNumber: null,
+    originalTeamCompetitivenessPercentile: pick.originalTeamCompetitivenessPercentile,
+  };
+}
+
+function pickAssetValue(pick: CpuTradeablePick, season: number): bigint {
+  return computeDraftPickTradeValue({
+    currentSeason: season,
+    pickSeason: pick.season,
+    round: pick.round,
+    overallPickNumber: null,
+    originalTeamCompetitivenessPercentile: pick.originalTeamCompetitivenessPercentile,
+  });
+}
+
 function toTradeAsset(player: CpuRosterPlayer): TradePlayerAsset {
   return {
     type: "PLAYER",
@@ -263,6 +313,7 @@ function toTradeAsset(player: CpuRosterPlayer): TradePlayerAsset {
     age: player.age,
     position: player.position,
     currentSalaryCents: player.salaryCents,
+    futureSalaryCents: player.futureSalaryCents,
     injuryStatus: player.injuryStatus,
     careerGamesMissedToInjury: player.careerGamesMissedToInjury,
   };
@@ -357,6 +408,7 @@ function pickTradeOffer(
     potentialRating: target.potentialRating,
     age: target.age,
     currentSalaryCents: target.salaryCents,
+    futureSalaryCents: target.futureSalaryCents,
     injuryStatus: target.injuryStatus,
     careerGamesMissedToInjury: target.careerGamesMissedToInjury,
   });
@@ -367,6 +419,7 @@ function pickTradeOffer(
       potentialRating: a.potentialRating,
       age: a.age,
       currentSalaryCents: a.salaryCents,
+      futureSalaryCents: a.futureSalaryCents,
       injuryStatus: a.injuryStatus,
       careerGamesMissedToInjury: a.careerGamesMissedToInjury,
     });
@@ -376,6 +429,7 @@ function pickTradeOffer(
       potentialRating: b.potentialRating,
       age: b.age,
       currentSalaryCents: b.salaryCents,
+      futureSalaryCents: b.futureSalaryCents,
       injuryStatus: b.injuryStatus,
       careerGamesMissedToInjury: b.careerGamesMissedToInjury,
     });
@@ -432,61 +486,94 @@ export function rollForCpuTrade(
     const targetAsset = toTradeAsset(target);
     const offerAsset = toTradeAsset(offer);
 
-    const aAccepts = evaluateTradeOffer({
-      respondingTeam: {
-        identity: teamA.identity,
-        needs: teamA.needs,
-        personality: teamA.personality,
-        roster: teamA.roster.map((p) => ({ overallRating: p.rating, age: p.age })),
-      },
-      currentSeason: season,
-      incoming: [targetAsset],
-      outgoing: [offerAsset],
-    });
-    if (aAccepts.decision !== "ACCEPT") continue;
+    const askA = (outgoing: TradeAssetForEvaluation[]) =>
+      evaluateTradeOffer({
+        respondingTeam: {
+          identity: teamA.identity,
+          needs: teamA.needs,
+          personality: teamA.personality,
+          roster: teamA.roster.map((p) => ({ overallRating: p.rating, age: p.age })),
+        },
+        currentSeason: season,
+        incoming: [targetAsset],
+        outgoing,
+      });
+    const askB = (incoming: TradeAssetForEvaluation[]) =>
+      evaluateTradeOffer({
+        respondingTeam: {
+          identity: teamB.identity,
+          needs: teamB.needs,
+          personality: teamB.personality,
+          roster: teamB.roster.map((p) => ({ overallRating: p.rating, age: p.age })),
+        },
+        currentSeason: season,
+        incoming,
+        outgoing: [targetAsset],
+      });
 
-    const bAccepts = evaluateTradeOffer({
-      respondingTeam: {
-        identity: teamB.identity,
-        needs: teamB.needs,
-        personality: teamB.personality,
-        roster: teamB.roster.map((p) => ({ overallRating: p.rating, age: p.age })),
-      },
-      currentSeason: season,
-      incoming: [offerAsset],
-      outgoing: [targetAsset],
-    });
-    if (bAccepts.decision !== "ACCEPT") continue;
-
-    const assets: TradeAssetInput[] = [
-      {
-        type: "PLAYER",
-        fromTeamId: teamA.leagueTeamId,
-        toTeamId: teamB.leagueTeamId,
-        playerId: offer.leaguePlayerId,
-        salaryCents: offer.salaryCents,
-      },
-      {
-        type: "PLAYER",
-        fromTeamId: teamB.leagueTeamId,
-        toTeamId: teamA.leagueTeamId,
-        playerId: target.leaguePlayerId,
-        salaryCents: target.salaryCents,
-      },
+    // Straight swap first, then the same swap with one pick attached - so a
+    // sweetener is only ever spent on a deal that genuinely needed it, and the
+    // cheapest pick that works is the one that goes.
+    const sweeteners: (CpuTradeablePick | undefined)[] = [
+      undefined,
+      ...[...(teamA.tradeablePicks ?? [])].sort(
+        (x, y) => Number(pickAssetValue(x, season)) - Number(pickAssetValue(y, season)),
+      ),
     ];
-    const validation = validateTrade({
-      season,
-      assets,
-      teamCapStates: {
-        [teamA.leagueTeamId]: teamA.capState,
-        [teamB.leagueTeamId]: teamB.capState,
-      },
-    });
 
-    if (validation.isValid) {
+    for (const sweetener of sweeteners) {
+      const sweetenerAsset = sweetener ? toPickAsset(sweetener) : null;
+      const aSide = sweetenerAsset ? [offerAsset, sweetenerAsset] : [offerAsset];
+
+      const aAccepts = askA(aSide);
+      if (aAccepts.decision !== "ACCEPT") continue;
+      const bAccepts = askB(aSide);
+      if (bAccepts.decision !== "ACCEPT") continue;
+
+      const assets: TradeAssetInput[] = [
+        {
+          type: "PLAYER",
+          fromTeamId: teamA.leagueTeamId,
+          toTeamId: teamB.leagueTeamId,
+          playerId: offer.leaguePlayerId,
+          salaryCents: offer.salaryCents,
+        },
+        {
+          type: "PLAYER",
+          fromTeamId: teamB.leagueTeamId,
+          toTeamId: teamA.leagueTeamId,
+          playerId: target.leaguePlayerId,
+          salaryCents: target.salaryCents,
+        },
+      ];
+      if (sweetener) {
+        // Included in the validated asset list, not bolted on afterwards, so
+        // the Stepien check in `validateTrade` sees it - a CPU team must not be
+        // able to trade away a first it isn't allowed to move.
+        assets.push({
+          type: "DRAFT_PICK",
+          fromTeamId: teamA.leagueTeamId,
+          toTeamId: teamB.leagueTeamId,
+          pickId: sweetener.draftPickId,
+          season: sweetener.season,
+          round: sweetener.round,
+        });
+      }
+
+      const validation = validateTrade({
+        season,
+        assets,
+        teamCapStates: {
+          [teamA.leagueTeamId]: teamA.capState,
+          [teamB.leagueTeamId]: teamB.capState,
+        },
+      });
+      if (!validation.isValid) continue;
+
       return {
         teamA: { leagueTeamId: teamA.leagueTeamId, teamLabel: teamA.teamLabel, player: offer },
         teamB: { leagueTeamId: teamB.leagueTeamId, teamLabel: teamB.teamLabel, player: target },
+        pickFromTeamA: sweetener,
         teamAScore: aAccepts.score,
         teamBScore: bAccepts.score,
       };

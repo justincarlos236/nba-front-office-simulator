@@ -70,7 +70,10 @@ describe("rollForDraftPickTrade", () => {
     expect(result).not.toBeNull();
     expect(result?.partner.leagueTeamId).toBe("partner");
     expect(result?.pickGivenUp.pickId).toBe("p10");
-    expect(result?.picksReceived.map((p) => p.pickId)).toEqual(["p11", "p40"]);
+    // Order-independent: the offer pool is now searched cheapest-first, so the
+    // smallest package that works is the one that fires. Which picks are in it
+    // is the assertion; the order they were assembled in is not.
+    expect(result?.picksReceived.map((p) => p.pickId).sort()).toEqual(["p11", "p40"]);
   });
 
   it("never proposes involving a team whose picks weren't passed in as a partner", () => {
@@ -82,6 +85,74 @@ describe("rollForDraftPickTrade", () => {
       team("on-clock"),
       { pickId: "p10", overallPickNumber: 10, round: 1 },
       [],
+      fixedRng(0),
+    );
+    expect(result).toBeNull();
+  });
+});
+
+// docs/TRADE_AUDIT.md subsystem #11: future picks were out of scope in v1, so a
+// team could only move up when it happened to hold a second pick in this same
+// draft - and a future first is the archetypal draft-night sweetener.
+describe("rollForDraftPickTrade - future picks", () => {
+  function teamWithFutureFirsts(id: string, seasons: number[]): DraftPickTradeTeam {
+    return { ...team(id), ownedFutureFirstRoundPickSeasons: seasons };
+  }
+
+  it("lets a partner move up using a future first-rounder", () => {
+    const result = rollForDraftPickTrade(
+      SEASON,
+      team("on-clock"),
+      { pickId: "p10", overallPickNumber: 10, round: 1 },
+      [
+        {
+          // No later pick in THIS draft at all - only a future one. Before this
+          // was supported the partner had nothing to offer and the roll died.
+          team: teamWithFutureFirsts("partner", [SEASON + 1, SEASON + 2, SEASON + 3]),
+          picks: [
+            {
+              pickId: "future-1st",
+              overallPickNumber: null,
+              round: 1,
+              season: SEASON + 1,
+              // A bottom-quartile team's first, one year out, is worth $20.1M
+              // against pick 10's $19.6M - a genuine near-even swap, so value
+              // coverage is not what decides either of these tests.
+              originalTeamCompetitivenessPercentile: 0.25,
+            },
+          ],
+        },
+      ],
+      fixedRng(0),
+    );
+    expect(result).not.toBeNull();
+    expect(result?.picksReceived.map((p) => p.pickId)).toEqual(["future-1st"]);
+  });
+
+  it("will not accept a future first that would break the Stepien rule", () => {
+    const result = rollForDraftPickTrade(
+      SEASON,
+      team("on-clock"),
+      { pickId: "p10", overallPickNumber: 10, round: 1 },
+      [
+        {
+          // Owns exactly one future first. Giving it up leaves no first-rounder
+          // in back-to-back years, which is the whole point of the rule.
+          team: teamWithFutureFirsts("partner", [SEASON + 1]),
+          picks: [
+            {
+              pickId: "only-future-1st",
+              overallPickNumber: null,
+              round: 1,
+              season: SEASON + 1,
+              // A bottom-quartile team's first, one year out, is worth $20.1M
+              // against pick 10's $19.6M - a genuine near-even swap, so value
+              // coverage is not what decides either of these tests.
+              originalTeamCompetitivenessPercentile: 0.25,
+            },
+          ],
+        },
+      ],
       fixedRng(0),
     );
     expect(result).toBeNull();

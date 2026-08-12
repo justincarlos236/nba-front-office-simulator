@@ -73,13 +73,16 @@ const INJURY_CHANCE_PER_TEAM_GAME = 0.02;
 // closer to 40, but many of those are minor salary filler; 15 meaningful ones
 // reads as an active market without burying the news feed.
 //
-// Was 0.03 against a measured 42.6% roll-success rate. Making the trade model
-// symmetric (docs/TRADE_AUDIT.md, T-P0-4) raised that rate to 75.5%, because
-// two teams now agree when they genuinely want different things rather than
-// when a one-sided bonus made a swap look good to both - so the same 0.03 would
-// have produced ~28 trades a season. Rescaled by 42.6/75.5 to hold the target.
+// This knob has been rescaled twice, both times to hold 15 while the *model*
+// got better rather than to make the model fit the knob:
+//   0.030 - original, against a 42.6% roll-success rate.
+//   0.017 - symmetry (T-P0-4) took the rate to 75.5%, because two teams now
+//           agree when they genuinely want different things rather than when a
+//           one-sided bonus flattered one direction.
+//   0.013 - letting a CPU attach a draft pick (subsystem #8) took it to 94.7%,
+//           since a deal that was just short can now be closed.
 // Re-measure with `scripts/cpu-trade-rate.ts` if either side of this changes.
-const TRADE_CHANCE_PER_GAME = 0.017;
+const TRADE_CHANCE_PER_GAME = 0.013;
 /** Deliberately below the CPU-CPU rate - see the note at the call site. */
 const OFFER_TO_USER_CHANCE_PER_GAME = 0.004;
 const SIGNING_CHANCE_PER_GAME = 0.01;
@@ -459,7 +462,14 @@ async function maybeExecuteCpuTrade(
           where: { isActive: true },
           include: {
             player: true,
-            contract: { include: { years: { where: { season } } } },
+            contract: {
+              include: {
+                // Every remaining season - CPU teams must price contract
+                // length the same way the user's trades do, or the two
+                // sides of the same market disagree. See docs/TRADE_AUDIT.md.
+                years: { where: { season: { gte: season } }, orderBy: { season: "asc" } },
+              },
+            },
             personalityProfile: true,
           },
         },
@@ -471,6 +481,26 @@ async function maybeExecuteCpuTrade(
     }),
   ]);
   const percentileByTeam = await computeCompetitivenessPercentiles(allTeamsWinLoss);
+
+  // Unselected picks in future drafts. CPU trades can now attach one as a
+  // sweetener (docs/TRADE_AUDIT.md subsystem #8), which means pick ownership
+  // genuinely matters here - it is also the Stepien-rule input.
+  const futurePicks = await prisma.draftPick.findMany({
+    where: { leagueId, season: { gt: season }, selectedProspectId: null },
+    select: { id: true, season: true, round: true, currentOwnerId: true, originalTeamId: true },
+    orderBy: [{ season: "asc" }, { round: "asc" }],
+  });
+  const picksByOwner = new Map<string, typeof futurePicks>();
+  const ownedFutureFirstsByTeam = new Map<string, number[]>();
+  for (const fp of futurePicks) {
+    picksByOwner.set(fp.currentOwnerId, [...(picksByOwner.get(fp.currentOwnerId) ?? []), fp]);
+    if (fp.round === 1 && fp.originalTeamId === fp.currentOwnerId) {
+      ownedFutureFirstsByTeam.set(fp.currentOwnerId, [
+        ...(ownedFutureFirstsByTeam.get(fp.currentOwnerId) ?? []),
+        fp.season,
+      ]);
+    }
+  }
 
   // Player Morale & Personality System - CpuRosterPlayer (simulation/
   // leagueEvents.ts) doesn't carry morale/personality (it's shared with
@@ -502,6 +532,7 @@ async function maybeExecuteCpuTrade(
           age: resolvePlayerAge(p.player, season),
           position: p.player.position,
           salaryCents: p.contract!.years[0].salaryCents,
+          futureSalaryCents: p.contract!.years.slice(1).map((y) => y.salaryCents),
           noTradeClause: p.contract!.noTradeClause,
           injuryStatus: p.injuryStatus,
           careerGamesMissedToInjury: p.careerGamesMissedToInjury,
@@ -524,16 +555,22 @@ async function maybeExecuteCpuTrade(
                 salaryCents: p.contract!.years[0].salaryCents,
               })),
           });
-          // Pick ownership isn't tracked yet (same known simplification as
-          // executeTradeAction's Stepien-lite check) - CPU trades never
-          // involve picks anyway, so this only matters for the check's own
-          // internal bookkeeping, not this feature's correctness.
           return {
             apronLevel: capSheet.apronLevel,
             capSpaceCents: capSheet.capSpaceCents,
-            ownedFutureFirstRoundPickSeasons: [] as number[],
+            // Real, not empty: a CPU team can now trade a first, so the
+            // Stepien check inside validateTrade has to be able to see what it
+            // still owns.
+            ownedFutureFirstRoundPickSeasons: ownedFutureFirstsByTeam.get(lt.id) ?? [],
           };
         })(),
+        tradeablePicks: (picksByOwner.get(lt.id) ?? []).map((fp) => ({
+          draftPickId: fp.id,
+          season: fp.season,
+          round: fp.round as 1 | 2,
+          originalTeamCompetitivenessPercentile: percentileByTeam.get(fp.originalTeamId) ?? 0.5,
+          label: `${fp.season} ${fp.round === 1 ? "1st" : "2nd"} Round Pick`,
+        })),
         identity: computeTeamIdentity(percentileByTeam.get(lt.id) ?? 0.5, avgAge),
         needs: computeTeamNeeds(
           roster.map((p) => ({ position: p.position, overallRating: p.rating })),
@@ -577,8 +614,25 @@ async function maybeExecuteCpuTrade(
           toLeagueTeamId: cpuResult.teamA.leagueTeamId,
           leaguePlayerId: cpuResult.teamB.player.leaguePlayerId,
         },
+        ...(cpuResult.pickFromTeamA
+          ? [
+              {
+                tradeId: trade.id,
+                type: "DRAFT_PICK" as const,
+                fromLeagueTeamId: cpuResult.teamA.leagueTeamId,
+                toLeagueTeamId: cpuResult.teamB.leagueTeamId,
+                draftPickId: cpuResult.pickFromTeamA.draftPickId,
+              },
+            ]
+          : []),
       ],
     });
+    if (cpuResult.pickFromTeamA) {
+      await tx.draftPick.update({
+        where: { id: cpuResult.pickFromTeamA.draftPickId },
+        data: { currentOwnerId: cpuResult.teamB.leagueTeamId },
+      });
+    }
     // Player Morale & Personality System - a trade is a fresh start for
     // each moving player, same reasoning as the user-initiated trade path
     // (src/lib/actions/trade.ts).
@@ -1487,7 +1541,14 @@ async function maybeProposeCpuTradeToUser(
           where: { isActive: true },
           include: {
             player: true,
-            contract: { include: { years: { where: { season } } } },
+            contract: {
+              include: {
+                // Every remaining season - CPU teams must price contract
+                // length the same way the user's trades do, or the two
+                // sides of the same market disagree. See docs/TRADE_AUDIT.md.
+                years: { where: { season: { gte: season } }, orderBy: { season: "asc" } },
+              },
+            },
           },
         },
       },
@@ -1498,6 +1559,26 @@ async function maybeProposeCpuTradeToUser(
     }),
   ]);
   const percentileByTeam = await computeCompetitivenessPercentiles(allTeamsWinLoss);
+
+  // Unselected picks in future drafts. CPU trades can now attach one as a
+  // sweetener (docs/TRADE_AUDIT.md subsystem #8), which means pick ownership
+  // genuinely matters here - it is also the Stepien-rule input.
+  const futurePicks = await prisma.draftPick.findMany({
+    where: { leagueId, season: { gt: season }, selectedProspectId: null },
+    select: { id: true, season: true, round: true, currentOwnerId: true, originalTeamId: true },
+    orderBy: [{ season: "asc" }, { round: "asc" }],
+  });
+  const picksByOwner = new Map<string, typeof futurePicks>();
+  const ownedFutureFirstsByTeam = new Map<string, number[]>();
+  for (const fp of futurePicks) {
+    picksByOwner.set(fp.currentOwnerId, [...(picksByOwner.get(fp.currentOwnerId) ?? []), fp]);
+    if (fp.round === 1 && fp.originalTeamId === fp.currentOwnerId) {
+      ownedFutureFirstsByTeam.set(fp.currentOwnerId, [
+        ...(ownedFutureFirstsByTeam.get(fp.currentOwnerId) ?? []),
+        fp.season,
+      ]);
+    }
+  }
 
   const built: CpuTeam[] = leagueTeams
     .map((lt) => {
@@ -1511,6 +1592,7 @@ async function maybeProposeCpuTradeToUser(
           age: resolvePlayerAge(p.player, season),
           position: p.player.position,
           salaryCents: p.contract!.years[0].salaryCents,
+          futureSalaryCents: p.contract!.years.slice(1).map((y) => y.salaryCents),
           noTradeClause: p.contract!.noTradeClause,
           injuryStatus: p.injuryStatus,
           careerGamesMissedToInjury: p.careerGamesMissedToInjury,

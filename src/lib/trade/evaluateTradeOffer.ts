@@ -13,6 +13,8 @@ export interface TradePlayerAsset {
   age: number;
   position: "PG" | "SG" | "SF" | "PF" | "C";
   currentSalaryCents: bigint;
+  /** Salaries for the seasons after this one - see `PlayerTradeValueInput`. */
+  futureSalaryCents?: bigint[];
   injuryStatus: "HEALTHY" | "DAY_TO_DAY" | "OUT" | "SEASON_ENDING";
   careerGamesMissedToInjury: number;
 }
@@ -156,6 +158,7 @@ function toValueInput(asset: TradePlayerAsset, currentSeason: number) {
     potentialRating: asset.potentialRating,
     age: asset.age,
     currentSalaryCents: asset.currentSalaryCents,
+    futureSalaryCents: asset.futureSalaryCents,
     injuryStatus: asset.injuryStatus,
     careerGamesMissedToInjury: asset.careerGamesMissedToInjury,
   };

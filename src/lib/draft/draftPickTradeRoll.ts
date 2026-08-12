@@ -1,5 +1,7 @@
 import { computeDraftPickTradeValue } from "../gm/draftPickTradeValue";
 import { evaluateTradeOffer, type TradePickAsset } from "../trade/evaluateTradeOffer";
+import { validateTrade } from "../trade/validateTrade";
+import { ApronLevel } from "../cap/apron";
 import type { TeamIdentity } from "../gm/teamIdentity";
 import type { TeamNeed } from "../gm/teamNeeds";
 import type { GmPersonality } from "../gm/gmPersonality";
@@ -24,8 +26,20 @@ import type { GmPersonality } from "../gm/gmPersonality";
 
 export interface DraftPickForTrade {
   pickId: string;
-  overallPickNumber: number;
+  /**
+   * Slot within its own draft. Null for a future pick, which has not been
+   * ordered yet - `computeDraftPickTradeValue` projects a slot from the
+   * original team's competitiveness in that case.
+   */
+  overallPickNumber: number | null;
   round: 1 | 2;
+  /** Which draft this pick belongs to. Defaults to the draft being run. */
+  season?: number;
+  /**
+   * The original team's competitiveness percentile, for projecting a future
+   * pick's slot. Ignored when `overallPickNumber` is known.
+   */
+  originalTeamCompetitivenessPercentile?: number;
 }
 
 export interface DraftPickTradeRosterPlayer {
@@ -39,11 +53,21 @@ export interface DraftPickTradeTeam {
   needs: TeamNeed[];
   personality: GmPersonality;
   roster: DraftPickTradeRosterPlayer[];
+  /**
+   * Future seasons this team owns its own first-rounder for, before the trade -
+   * the Stepien-rule input. Omit and the Stepien check is skipped, which is
+   * only safe when no future first-rounders can change hands.
+   */
+  ownedFutureFirstRoundPickSeasons?: number[];
 }
 
 export interface DraftPickTradePartner {
   team: DraftPickTradeTeam;
-  /** This partner's own other not-yet-selected, already-numbered picks this draft. */
+  /**
+   * Picks this partner can offer: its own not-yet-selected picks later in this
+   * draft, and - since a future first is the classic draft-night sweetener -
+   * its unselected picks in later drafts too.
+   */
   picks: DraftPickForTrade[];
 }
 
@@ -67,24 +91,68 @@ const MAX_PARTNER_ASSETS = 2;
 function toPickAsset(pick: DraftPickForTrade, season: number): TradePickAsset {
   return {
     type: "DRAFT_PICK",
-    pickSeason: season,
+    pickSeason: pick.season ?? season,
     round: pick.round,
     overallPickNumber: pick.overallPickNumber,
-    // Unused by computeDraftPickTradeValue/evaluateTradeOffer whenever
-    // overallPickNumber is non-null (always true here - v1 only trades
-    // already-numbered picks) - a documented placeholder, not a real input.
-    originalTeamCompetitivenessPercentile: 0.5,
+    // Only consulted for a pick with no slot yet - i.e. a future one. A pick in
+    // this draft is already numbered, and then this is ignored.
+    originalTeamCompetitivenessPercentile: pick.originalTeamCompetitivenessPercentile ?? 0.5,
   };
 }
 
 function pickValue(pick: DraftPickForTrade, season: number): bigint {
   return computeDraftPickTradeValue({
     currentSeason: season,
-    pickSeason: season,
+    pickSeason: pick.season ?? season,
     round: pick.round,
     overallPickNumber: pick.overallPickNumber,
-    originalTeamCompetitivenessPercentile: 0.5,
+    originalTeamCompetitivenessPercentile: pick.originalTeamCompetitivenessPercentile ?? 0.5,
   });
+}
+
+/**
+ * Would giving up these picks leave the partner without a first-rounder in
+ * back-to-back future years?
+ *
+ * Delegated to `validateTrade` rather than reimplemented: it already owns the
+ * Stepien-lite rule the trade builder and the server action are held to, and a
+ * second copy here would be free to drift. Salary matching inside it is a no-op
+ * for a pick-only trade (it skips any team taking on no salary), so the cap
+ * state passed in is inert.
+ */
+function violatesStepien(
+  partner: DraftPickTradeTeam,
+  teamOnClock: DraftPickTradeTeam,
+  offered: DraftPickForTrade[],
+  draftSeason: number,
+): boolean {
+  const futureFirsts = offered.filter((p) => (p.season ?? draftSeason) > draftSeason && p.round === 1);
+  if (futureFirsts.length === 0) return false;
+
+  const inertCapState = {
+    apronLevel: ApronLevel.UNDER_CAP,
+    capSpaceCents: 0n,
+    ownedFutureFirstRoundPickSeasons: [] as number[],
+  };
+  const result = validateTrade({
+    season: draftSeason,
+    assets: futureFirsts.map((p) => ({
+      type: "DRAFT_PICK" as const,
+      fromTeamId: partner.leagueTeamId,
+      toTeamId: teamOnClock.leagueTeamId,
+      pickId: p.pickId,
+      season: p.season ?? draftSeason,
+      round: p.round,
+    })),
+    teamCapStates: {
+      [partner.leagueTeamId]: {
+        ...inertCapState,
+        ownedFutureFirstRoundPickSeasons: partner.ownedFutureFirstRoundPickSeasons ?? [],
+      },
+      [teamOnClock.leagueTeamId]: inertCapState,
+    },
+  });
+  return result.violations.some((v) => v.rule === "STEPIEN_RULE");
 }
 
 /**
@@ -105,16 +173,28 @@ export function rollForDraftPickTrade(
   const onClockValue = pickValue(teamOnClockPick, season);
 
   for (const partner of partners) {
-    const laterPicks = partner.picks
-      .filter((p) => p.overallPickNumber > teamOnClockPick.overallPickNumber)
-      .sort((a, b) => a.overallPickNumber - b.overallPickNumber);
-    if (laterPicks.length === 0) continue;
+    // Anything the partner can legitimately give up to move up: a later pick in
+    // this same draft, or any pick in a future one. A future first is the
+    // archetypal draft-night sweetener and was previously out of scope
+    // entirely, which left the on-the-clock team able to trade down only when
+    // the partner happened to hold a second pick in this same draft.
+    const offerable = partner.picks
+      .filter((p) => {
+        const pickSeason = p.season ?? season;
+        if (pickSeason > season) return true;
+        return p.overallPickNumber !== null && p.overallPickNumber > teamOnClockPick.overallPickNumber!;
+      })
+      // Cheapest first, so the trade that fires is the smallest one that works
+      // rather than the first combination stumbled upon.
+      .sort((a, b) => Number(pickValue(a, season)) - Number(pickValue(b, season)));
+    if (offerable.length === 0) continue;
 
-    const assetLimit = Math.min(MAX_PARTNER_ASSETS, laterPicks.length);
+    const assetLimit = Math.min(MAX_PARTNER_ASSETS, offerable.length);
     for (let assetCount = 1; assetCount <= assetLimit; assetCount++) {
-      const offeredPicks = laterPicks.slice(0, assetCount);
+      const offeredPicks = offerable.slice(0, assetCount);
       const offeredValue = offeredPicks.reduce((sum, p) => sum + pickValue(p, season), 0n);
       if (Number(offeredValue) < Number(onClockValue) * MIN_VALUE_COVERAGE) continue;
+      if (violatesStepien(partner.team, teamOnClock, offeredPicks, season)) continue;
 
       const onClockDecision = evaluateTradeOffer({
         respondingTeam: teamOnClock,

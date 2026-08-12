@@ -258,6 +258,79 @@ describe("rollForCpuTrade", () => {
     expect(rebuildingResult!.teamB.player.age).toBe(22);
   });
 
+  const futureFirst = (teamId: string, season: number) => ({
+    draftPickId: `${teamId}-first-${season}`,
+    season,
+    round: 1 as const,
+    originalTeamCompetitivenessPercentile: 0.2,
+    label: `${season} 1st Round Pick`,
+  });
+
+  it("attaches a pick to close a deal the player alone could not", () => {
+    // A clearly worse player for a clearly better one. Nothing about the two
+    // rosters alone can make this mutual - only real capital can.
+    const seeker = makeTeam("A", [{ rating: 78 }, { rating: 70 }, { rating: 62 }], {
+      identity: "CONTENDER",
+      personality: "WIN_NOW",
+    });
+    const holder = makeTeam("B", [{ rating: 82 }, { rating: 74 }, { rating: 66 }], {
+      identity: "REBUILDING",
+      personality: "PROSPECT_LOVER",
+    });
+
+    const withoutPicks = rollForCpuTrade([seeker, holder], 2024, () => 0, 20);
+    const withPicks = rollForCpuTrade(
+      [
+        {
+          ...seeker,
+          tradeablePicks: [2026, 2027, 2028].map((s) => futureFirst("A", s)),
+          capState: {
+            ...seeker.capState,
+            ownedFutureFirstRoundPickSeasons: [2026, 2027, 2028],
+          },
+        },
+        holder,
+      ],
+      2024,
+      () => 0,
+      20,
+    );
+
+    // The pick is what changed - so if the bare version already fired, this
+    // fixture proves nothing and should be re-anchored rather than trusted.
+    expect(withoutPicks).toBeNull();
+    expect(withPicks).not.toBeNull();
+    expect(withPicks!.pickFromTeamA).toBeDefined();
+  });
+
+  it("will not attach a first the Stepien rule forbids moving", () => {
+    const seeker = makeTeam("A", [{ rating: 78 }, { rating: 70 }, { rating: 62 }], {
+      identity: "CONTENDER",
+      personality: "WIN_NOW",
+    });
+    const holder = makeTeam("B", [{ rating: 82 }, { rating: 74 }, { rating: 66 }], {
+      identity: "REBUILDING",
+      personality: "PROSPECT_LOVER",
+    });
+    const result = rollForCpuTrade(
+      [
+        {
+          ...seeker,
+          // A single future first. Moving it leaves no first in back-to-back
+          // years, which validateTrade must refuse even though the trade is
+          // otherwise agreeable to both sides.
+          tradeablePicks: [futureFirst("A", 2026)],
+          capState: { ...seeker.capState, ownedFutureFirstRoundPickSeasons: [2026] },
+        },
+        holder,
+      ],
+      2024,
+      () => 0,
+      20,
+    );
+    expect(result).toBeNull();
+  });
+
   it("never executes an objectively lopsided trade, even across many rng values", () => {
     const teamA = makeTeam("A", [{ rating: 65, age: 30 }], { needs: ["STAR_SCORER"] });
     const teamB = makeTeam("B", [{ rating: 96, age: 24 }], { identity: "CONTENDER" });

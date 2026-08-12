@@ -119,6 +119,45 @@ describe("computePlayerTradeValue", () => {
     }
   });
 
+  it("prices an expiring deal differently from a long one at the same salary", () => {
+    // Contract length was invisible: `playerTradeValue` saw one season's salary
+    // and `actions/trade.ts` fetched one row, so a five-year albatross and a
+    // one-year expiring deal were the same asset and "take on bad years to get
+    // a pick" was not a decision the game could express (T-P0-3 follow-up).
+    const albatross = (extraYears: number) =>
+      computePlayerTradeValue({
+        ...BASE,
+        overallRating: 70,
+        potentialRating: 70,
+        age: 33,
+        currentSalaryCents: 50_000_000_00n,
+        futureSalaryCents: Array.from({ length: extraYears }, () => 50_000_000_00n),
+      });
+    // Every extra year of a bad deal costs more to move.
+    expect(albatross(4)).toBeLessThan(albatross(2));
+    expect(albatross(2)).toBeLessThan(albatross(0));
+
+    // And the reverse: a long team-friendly deal is worth MORE than an
+    // expiring one, because the bargain repeats.
+    const bargain = (extraYears: number) =>
+      computePlayerTradeValue({
+        ...BASE,
+        overallRating: 85,
+        potentialRating: 85,
+        age: 27,
+        currentSalaryCents: 20_000_000_00n,
+        futureSalaryCents: Array.from({ length: extraYears }, () => 20_000_000_00n),
+      });
+    expect(bargain(4)).toBeGreaterThan(bargain(2));
+    expect(bargain(2)).toBeGreaterThan(bargain(0));
+
+    // Omitting the field entirely must behave exactly like an expiring deal,
+    // so callers that genuinely only know this season keep the old behaviour.
+    expect(
+      computePlayerTradeValue({ ...BASE, overallRating: 70, age: 33, futureSalaryCents: [] }),
+    ).toBe(computePlayerTradeValue({ ...BASE, overallRating: 70, age: 33 }));
+  });
+
   it("separates an MVP from a good young role player by a real multiple", () => {
     // Reusing the salary curve (capped at 0.35 of the cap because a max
     // contract exists) compressed 70-99 into a 6.2x spread and priced the

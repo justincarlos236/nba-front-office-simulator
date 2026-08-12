@@ -735,3 +735,115 @@ this path either.
    the type for the other; both are unfinished rather than absent.
 4. **Lottery randomness in pick projection (#2).** Turns a known quantity back
    into a bet, which is what pick trading is supposed to be.
+
+---
+
+# SUBSYSTEM BUMP — 2026-08-13
+
+Everything below 7 raised. Scores and evidence classes as defined above.
+
+| #  | Subsystem                 | Was | Now | What changed |
+| -- | ------------------------- | --: | --: | ------------ |
+| 3  | Contract modelling        |   5 | **8** | Contract length is now a trade input |
+| 8  | CPU trade generation      |   6 | **7** | CPU teams can attach a draft pick |
+| 11 | Draft-day pick trading    |   6 | **7** | Future picks are tradeable on draft night |
+
+**Weighted overall: 7.2 → 7.7.**
+
+Verified together: 1,420 tests, clean production build, 0 lint errors. The
+symmetry property from T-P0-4 still holds exactly — 759 round-trip probes on
+neutral GMs, 0 deviating, worst product 1.0000 — so none of this reintroduced
+the arbitrage the P0 work removed.
+
+---
+
+## #3 Contract modelling — 5 → 8
+
+`playerTradeValue` saw one season's salary and `actions/trade.ts` fetched one
+row, so a five-year albatross and a one-year expiring deal were the same asset.
+
+Each remaining year is now its own bargain or liability, priced at the age the
+player will actually be that season and discounted 15%/year — the same
+`FUTURE_YEAR_DISCOUNT` the pick model uses, so there is one notion of "the
+future is uncertain" across the trade model rather than two. Measured:
+
+| Contract | Expiring | +2 years | +4 years |
+| -------- | -------: | -------: | -------: |
+| Bargain (85 ovr, 27, $20M/yr) | $77.6M | $92.9M | **$105.3M** |
+| Fair (78 ovr, 28, $27M/yr) | $19.3M | $16.1M | $14.5M |
+| Albatross (70 ovr, 33, $50M/yr) | −$18.0M | −$51.8M | **−$76.4M** |
+
+A long team-friendly deal gains value because the bargain repeats. A long bad
+deal costs four times as much to move as an expiring one, which is what makes
+an expiring contract a real salary-matching asset. A fairly-paid player slowly
+declines as he ages into a flat deal — the subtle case, and it falls out of the
+model rather than being special-cased.
+
+Against the real league this immediately separates players who used to look
+alike: Wembanyama is now the single most valuable asset at $183M on a rookie
+deal, Jaylen Brown drops to $67.9M under a long max, and **Paul George comes
+out at −$5.5M** — the model naming a genuinely negative contract instead of
+flooring it at zero.
+
+Plumbed through the CPU path too, deliberately: if CPU teams priced length
+differently from the user, the two sides of the same market would disagree.
+
+Not an 9 or 10 because player options, team options and partial guarantees are
+still unmodelled, and those decide a lot of real contract value.
+
+## #8 CPU trade generation — 6 → 7
+
+CPU-CPU trades were strictly one player for one player, so no CPU team could
+ever pay a pick for an upgrade and none of them acted on the
+rebuild-through-capital identity the model says they have.
+
+A CPU team can now attach one future pick to close a deal its player alone
+could not. Deliberate details:
+
+- The straight swap is tried **first**, and picks are searched cheapest-first,
+  so a sweetener is only ever spent on a deal that genuinely needed it.
+- The pick goes into the asset list handed to `validateTrade`, not bolted on
+  afterwards — so the **Stepien rule sees it**, and a CPU team cannot trade a
+  first it is not allowed to move. `ownedFutureFirstRoundPickSeasons` is now
+  populated for real; the comment saying pick ownership "isn't tracked yet …
+  CPU trades never involve picks anyway" was true and is no longer.
+
+Closing more deals raised the roll-success rate 75.5% → 94.7%, so
+`TRADE_CHANCE_PER_GAME` was rescaled 0.017 → 0.013 to hold ~15 trades a season.
+Measured after: **15.2**. That knob has now moved twice, both times to keep
+volume fixed while the model improved — never to make the model fit the knob.
+
+Still not higher because there is no aggregation: no 2-for-1, and only team A
+can sweeten. A CPU team still cannot consolidate two rotation players into one
+better one, which is a common real trade shape.
+
+## #11 Draft-day pick trading — 6 → 7
+
+**Correcting the earlier entry:** I wrote that the on-clock team "can only
+trade down". That was imprecise — the partner moves *up*, which is trading up,
+just always initiated from the on-clock team's side. The real limitation was
+that only **same-season** picks were tradeable, so a partner could move up only
+when it happened to hold a second pick in that same draft.
+
+Future picks are now offerable, which is the archetypal draft-night sweetener.
+The value model already handled them — `computeDraftPickTradeValue` discounts
+by years away and projects a slot from the *original* team's competitiveness —
+so this was mostly plumbing plus one real safeguard: giving up a future first
+can violate the Stepien rule, and that check is delegated to `validateTrade`
+rather than reimplemented, so there is no second copy free to drift. Salary
+matching inside it is inert for a pick-only trade.
+
+The offer pool is also now searched cheapest-first, so the smallest package
+that works is the one that fires rather than the first one stumbled upon.
+
+Still not higher because players cannot be included in a draft-day trade, the
+package is capped at two assets, and the user cannot participate in this path
+at all — it remains CPU-to-CPU only.
+
+---
+
+## Remaining sub-7 items: none
+
+The lowest score is now 7. In fix-order terms, what is left from the original
+list is trade exceptions and cash considerations (#6, both unfinished in the
+schema/types) and lottery randomness in pick projection (#2).

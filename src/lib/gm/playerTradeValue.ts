@@ -20,6 +20,21 @@ export interface PlayerTradeValueInput {
   potentialRating: number;
   age: number;
   currentSalaryCents: bigint;
+  /**
+   * Salaries for the seasons *after* this one, in order. Empty or omitted
+   * means an expiring deal.
+   *
+   * **Contract length used to be invisible here**, and that made a five-year
+   * albatross and a one-year expiring deal at the same salary price
+   * identically - so the entire expiring-contract dimension of real trades
+   * could not be expressed, and "take on two bad years to get a pick" was not a
+   * decision the game could represent. See docs/TRADE_AUDIT.md.
+   *
+   * Optional so callers that genuinely only know this season's number (a
+   * hypothetical offer being priced, a projected rookie) keep the old
+   * single-year behaviour rather than silently assuming a length.
+   */
+  futureSalaryCents?: bigint[];
   injuryStatus: "HEALTHY" | "DAY_TO_DAY" | "OUT" | "SEASON_ENDING";
   /** Career total, not current-injury duration - see `LeaguePlayer.careerGamesMissedToInjury`. */
   careerGamesMissedToInjury: number;
@@ -50,6 +65,13 @@ const INJURY_STATUS_MULTIPLIER: Record<PlayerTradeValueInput["injuryStatus"], nu
 // otherwise great player's value entirely.
 const CAREER_INJURY_DISCOUNT_PER_GAME = 0.002;
 const MAX_CAREER_INJURY_DISCOUNT = 0.3;
+
+// A future year of a contract is worth less than this one, for the same reason
+// a future draft pick is: the further out it sits, the less certain it is that
+// the player is still worth what the model says today. Deliberately the same
+// 0.85 `draftPickTradeValue.ts` applies per year away - one notion of "the
+// future is uncertain" across the trade model, not two.
+const FUTURE_YEAR_DISCOUNT = 0.85;
 
 /**
  * Trade value split into the two things a GM actually reasons about
@@ -103,9 +125,25 @@ export function computePlayerTradeValueParts(
     season: input.season,
   });
 
+  // Every remaining year is its own bargain or its own liability, so the deal
+  // is worth the sum of them rather than this season alone. Each future year is
+  // priced at the age the player will actually be, which is what makes a long
+  // deal for a 33-year-old read differently from the same deal for a 25-year-old.
+  let surplusCents = fairSalaryCents - input.currentSalaryCents;
+  const future = input.futureSalaryCents ?? [];
+  for (let i = 0; i < future.length; i++) {
+    const fairThatYear = ageAdjustedMarketValueCents({
+      score: input.overallRating,
+      age: input.age + 1 + i,
+      season: input.season + 1 + i,
+    });
+    const discount = FUTURE_YEAR_DISCOUNT ** (i + 1);
+    surplusCents += BigInt(Math.round(Number(fairThatYear - future[i]) * discount));
+  }
+
   return {
     talentValueCents: BigInt(Math.round(grossValueCents * riskMultiplier)),
-    contractSurplusCents: fairSalaryCents - input.currentSalaryCents,
+    contractSurplusCents: surplusCents,
   };
 }
 
