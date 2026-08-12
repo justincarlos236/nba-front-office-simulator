@@ -13,6 +13,8 @@ export interface GenerateContractInput extends ContractQualityInput {
   age: number;
   /** Years of NBA experience - drives the rookie-scale discount. */
   yearsOfExperience: number;
+  /** Position, so the price reflects what the league pays for it. */
+  position?: string | null;
   /** Deterministic seed (e.g. the player's id) so re-running the seed produces the same contracts. */
   seed: string;
 }
@@ -48,6 +50,7 @@ export function generateContract(input: GenerateContractInput): GeneratedContrac
     quality,
     age: input.age,
     yearsOfExperience: input.yearsOfExperience,
+    position: input.position,
     noise: randomInRange(rng, 0.85, 1.15),
   });
 

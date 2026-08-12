@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   contractQualityScore,
   pickContractLength,
+  positionalMarketFactor,
   priceContractCents,
   RATING_TO_PRODUCTION_SCALE,
   rookieScaleDiscount,
@@ -181,3 +182,71 @@ describe("pickContractLength (C-P1-5)", () => {
     }
   });
 });
+
+/**
+ * docs/RATING_AUDIT.md R-P1-1. The rating model measures quality correctly -
+ * within each position its correlation with real salary is 0.73-0.88, and
+ * centres and power forwards rank best of all five. What differs is what the
+ * league *pays* a position, so the correction lives in the price.
+ */
+describe("positional market factor", () => {
+  it("pays a centre less than a small forward of identical quality and age", () => {
+    const centre = priceContractCents({ ...base(), position: "C" });
+    const wing = priceContractCents({ ...base(), position: "SF" });
+    expect(centre).toBeLessThan(wing);
+  });
+
+  it("leaves an unknown or missing position unadjusted", () => {
+    const plain = priceContractCents(base());
+    expect(priceContractCents({ ...base(), position: null })).toBe(plain);
+    expect(priceContractCents({ ...base(), position: "XX" })).toBe(plain);
+    expect(positionalMarketFactor(undefined)).toBe(1);
+  });
+
+  it("is case-insensitive, since providers disagree on casing", () => {
+    expect(positionalMarketFactor("c")).toBe(positionalMarketFactor("C"));
+  });
+
+  it("stays a modest adjustment - it reprices positions, it does not re-rank players", () => {
+    for (const pos of ["PG", "SG", "SF", "PF", "C"]) {
+      const f = positionalMarketFactor(pos);
+      expect(f).toBeGreaterThan(0.85);
+      expect(f).toBeLessThan(1.2);
+    }
+    // A better player at the cheapest position still outearns a worse one at
+    // the dearest - the factor must never invert quality.
+    const goodCentre = priceContractCents({
+      season: SEASON,
+      quality: 90,
+      age: 27,
+      yearsOfExperience: 8,
+      position: "C",
+    });
+    const weakWing = priceContractCents({
+      season: SEASON,
+      quality: 78,
+      age: 27,
+      yearsOfExperience: 8,
+      position: "SF",
+    });
+    expect(goodCentre).toBeGreaterThan(weakWing);
+  });
+
+  it("never lets a position premium break the individual maximum", () => {
+    const max = CAP * maxSalaryFractionForAge(31);
+    expect(
+      priceContractCents({
+        season: SEASON,
+        quality: 99,
+        age: 31,
+        yearsOfExperience: 12,
+        position: "SF",
+        noise: 1.15,
+      }),
+    ).toBeLessThanOrEqual(Math.round(max));
+  });
+});
+
+function base() {
+  return { season: SEASON, quality: 82, age: 27, yearsOfExperience: 8 };
+}

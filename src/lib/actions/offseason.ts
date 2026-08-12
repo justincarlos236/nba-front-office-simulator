@@ -557,6 +557,7 @@ export async function advanceSeasonAction(leagueId: string) {
               newSeason,
               resolvePlayerAge(lp.player, newSeason),
               resolvePlayerExperience(lp.player, newSeason),
+              lp.player.position,
             ),
             seasonsRemaining,
           })
@@ -684,6 +685,7 @@ export async function advanceSeasonAction(leagueId: string) {
             newSeason,
             a.newAge,
             resolvePlayerExperience(lpA.player, newSeason),
+            lpA.player.position,
           ),
           injuryStatus: "HEALTHY",
           careerGamesMissedToInjury: lpA.careerGamesMissedToInjury,
@@ -698,6 +700,7 @@ export async function advanceSeasonAction(leagueId: string) {
             newSeason,
             b.newAge,
             resolvePlayerExperience(lpB.player, newSeason),
+            lpB.player.position,
           ),
           injuryStatus: "HEALTHY",
           careerGamesMissedToInjury: lpB.careerGamesMissedToInjury,
@@ -713,6 +716,7 @@ export async function advanceSeasonAction(leagueId: string) {
           newSeason,
           p.newAge,
           resolvePlayerExperience(lp.player, newSeason),
+          lp.player.position,
         );
         const result = evaluateReSigningDecision({
           team: { identity, needs, personality, rosterSizeBeforeThisDecision: rosterSize },

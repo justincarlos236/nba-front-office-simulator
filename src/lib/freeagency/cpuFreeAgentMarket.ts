@@ -199,6 +199,7 @@ export async function runCpuFreeAgentMarket(input: MarketInput): Promise<CpuSign
         }),
         age,
         yearsOfExperience,
+        position,
       }),
     );
     if (estimatedValueCents <= 0n) continue;

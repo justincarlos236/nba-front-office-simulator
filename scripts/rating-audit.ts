@@ -285,3 +285,34 @@ console.log(
     1,
   )} rather than ${(injured.reduce((s, x) => s + x.shipped, 0) / Math.max(1, injured.length)).toFixed(1)}`,
 );
+
+console.log("\n" + "=".repeat(78));
+console.log("8 - IS THE POSITIONAL GAP A MODEL ERROR, OR MARKET ECONOMICS?");
+console.log("=".repeat(78));
+console.log(`The cross-position gap in section 6 cannot tell those apart. This can:
+if the model ranks players correctly *within* a position, it is measuring
+quality fine and the offset is what the league pays for that position.\n`);
+console.log(
+  `${"POS".padEnd(5)}${"N".padStart(4)}${"corr(rating, pay)".padStart(20)}${"MEAN PAY".padStart(11)}`,
+);
+for (const pos of ["PG", "SG", "SF", "PF", "C"]) {
+  const g = vets.filter((x) => x.pos === pos);
+  if (g.length < 10) continue;
+  console.log(
+    `${pos.padEnd(5)}${String(g.length).padStart(4)}${corr(
+      g.map((x) => x.shipped),
+      g.map((x) => x.salary!),
+    )
+      .toFixed(3)
+      .padStart(20)}${M(g.reduce((s, x) => s + x.salary!, 0) / g.length).padStart(11)}`,
+  );
+}
+const overall = corr(
+  vets.map((x) => x.shipped),
+  vets.map((x) => x.salary!),
+);
+console.log(`\nacross all positions: ${overall.toFixed(3)}`);
+console.log(`
+  A within-position correlation at or above the overall one means the ranking
+  is sound and only the cross-position level differs - i.e. the league pays
+  positions differently, which is a pricing fact, not a rating error.`);

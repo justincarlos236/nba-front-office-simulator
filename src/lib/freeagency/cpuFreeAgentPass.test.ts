@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { maxIndividualSalaryCents } from "../cap/maxSalary";
 import {
+  demandAdjustedPriceCents,
   runCpuFreeAgentPass,
   type PursuableFreeAgent,
   type PursuingTeam,
@@ -163,5 +165,39 @@ describe("CPU free-agent pass", () => {
   it("handles an empty market", () => {
     expect(runCpuFreeAgentPass([], [team()], SEASON)).toEqual([]);
     expect(runCpuFreeAgentPass([agent()], [], SEASON)).toEqual([]);
+  });
+});
+
+/**
+ * docs/CONTRACT_AUDIT.md C-P1-4: demand used to decide who signed a player but
+ * never what he cost, so a user could outbid by a dollar and win every time.
+ */
+describe("demandAdjustedPriceCents", () => {
+  const BASE = 20_000_000_00n;
+  const SEASON = 2025;
+  const PEAK_AGE = 27;
+
+  it("charges the asking price when only one club is serious", () => {
+    expect(demandAdjustedPriceCents(BASE, 1, PEAK_AGE, SEASON)).toBe(BASE);
+  });
+
+  it("raises the price as suitors pile up", () => {
+    const prices = [1, 2, 3, 4].map((n) => demandAdjustedPriceCents(BASE, n, PEAK_AGE, SEASON));
+    for (let i = 1; i < prices.length; i++) expect(prices[i]).toBeGreaterThan(prices[i - 1]);
+  });
+
+  it("caps a bidding war rather than letting clubs talk each other into anything", () => {
+    const many = demandAdjustedPriceCents(BASE, 30, PEAK_AGE, SEASON);
+    expect(many).toBeLessThanOrEqual((BASE * 133n) / 100n);
+  });
+
+  it("never breaks the individual maximum", () => {
+    const nearMax = 50_000_000_00n;
+    const bid = demandAdjustedPriceCents(nearMax, 8, 24, SEASON);
+    expect(Number(bid)).toBeLessThanOrEqual(maxIndividualSalaryCents(24, SEASON));
+  });
+
+  it("treats zero suitors as no premium", () => {
+    expect(demandAdjustedPriceCents(BASE, 0, PEAK_AGE, SEASON)).toBe(BASE);
   });
 });

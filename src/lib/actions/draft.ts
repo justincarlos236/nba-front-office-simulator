@@ -147,6 +147,7 @@ async function draftProspectsToTeams(
       // used for projecting future picks (`draftPickTradeValue.ts`).
       age: DRAFT_ROOKIE_ASSUMED_AGE,
       yearsOfExperience: 0,
+      position: a.position,
       seed: a.prospectId,
     }),
   }));

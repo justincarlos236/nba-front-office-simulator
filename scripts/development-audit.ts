@@ -213,7 +213,7 @@ console.log("DO PROSPECTS EVER BUST?");
 console.log("=".repeat(78));
 const rng3 = makeRng(4242);
 console.log(
-  `${"DRAFTED AT".padEnd(22)}${"N".padStart(5)}${"REACHED POT".padStart(13)}${"BUSTED (<+3)".padStart(14)}${"MEAN AT 26".padStart(12)}`,
+  `${"DRAFTED AT".padEnd(22)}${"p10".padStart(6)}${"MEDIAN".padStart(8)}${"p90".padStart(6)}${"MEAN".padStart(7)}${"NEVER 75+".padStart(11)}`,
 );
 for (const [label, ovr, pot] of [
   ["pick 1  (72 / 97)", 72, 97],
@@ -237,13 +237,16 @@ for (const [label, ovr, pot] of [
     }
     finals.push(r);
   }
-  const reached = finals.filter((f) => f >= pot).length;
-  const busted = finals.filter((f) => f < ovr + 3).length;
+  // "Bust" as a spread, not a threshold: what the unlucky end of this draft
+  // slot actually turns into. Never reaching 75 is never becoming a starter.
+  const sorted = [...finals].sort((a, b) => a - b);
+  const q = (f: number) => sorted[Math.min(sorted.length - 1, Math.floor(f * sorted.length))];
+  const neverStarter = finals.filter((f) => f < 75).length;
   console.log(
-    `${label.padEnd(22)}${String(N).padStart(5)}${((reached / N) * 100).toFixed(0).padStart(12)}%${((busted / N) * 100).toFixed(0).padStart(13)}%${(finals.reduce((a, b) => a + b, 0) / N).toFixed(1).padStart(12)}`,
+    `${label.padEnd(22)}${String(q(0.1)).padStart(6)}${String(q(0.5)).padStart(8)}${String(q(0.9)).padStart(6)}${(finals.reduce((a, b) => a + b, 0) / N).toFixed(1).padStart(7)}${((neverStarter / N) * 100).toFixed(0).padStart(10)}%`,
   );
 }
 console.log(`
-  Growth is randomIntInclusive(rng, 1, ...) and then Math.max(1, ...), so the
-  floor is +1 every season. A young player cannot fail to develop, cannot
-  stagnate, and cannot regress. Every prospect marches to his ceiling.`);
+  Scouting reliability scales with the report itself - a consensus star is
+  identified by everyone, a late flier is a coin-flip - so the spread widens
+  as draft position falls. See RELIABILITY_AT_HIGH_POTENTIAL.`);

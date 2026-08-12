@@ -114,6 +114,7 @@ const enriched = dataset.players.map((p) => {
         seedOverallRating: p.seedOverallRating,
         seedPotentialRating: p.seedPotentialRating,
         seededContract: p.contract ?? null,
+        position: p.position,
         seed: p.externalId,
       })
     : null;

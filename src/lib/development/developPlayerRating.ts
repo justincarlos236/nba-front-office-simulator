@@ -46,13 +46,25 @@ const MAX_RATING = 99;
  * the inflation with the same change, because a prospect who is 97 on paper and
  * 80 in reality neither becomes a star nor raises the league's talent floor.
  */
-// 0.8 is a compromise, and the trade-off is worth stating. Lower values give
-// genuine busts and a correct count of 80+ players, but drain the league's
-// stars: at 0.35, measured, the 90+ population falls to 5 by season twenty
-// against a real 14. A league with five stars is a worse game than one carrying
-// some extra good role players, so the star population wins. What that leaves
-// undone is D-P0-1 - see docs/DEVELOPMENT_AUDIT.md.
-const MIN_CEILING_REALIZATION = 0.8;
+/**
+ * How reliably a scouting report holds up, by how good the report is.
+ *
+ * A single floor for everyone could not separate the top of the league from the
+ * middle: lowering it produced genuine busts and a correct count of 80+ players
+ * but drained the 90+ population to five by season twenty, while raising it held
+ * the stars and flooded the middle. Every band moved together.
+ *
+ * Scouting is not uniformly uncertain, and that is the lever. A consensus star
+ * is identified by everyone and rarely turns out to be nothing; a mid-first flier
+ * is a genuine coin-flip. Making reliability scale with the report itself keeps
+ * the star pipeline intact while letting the middle of the draft actually fail -
+ * which is both truer to real drafts and the only way found to move the two
+ * bands independently. See docs/DEVELOPMENT_AUDIT.md, D-P0-1.
+ */
+const RELIABILITY_AT_LOW_POTENTIAL = 0.35;
+const RELIABILITY_AT_HIGH_POTENTIAL = 0.85;
+const LOW_POTENTIAL_ANCHOR = 70;
+const HIGH_POTENTIAL_ANCHOR = 97;
 const MAX_CEILING_REALIZATION = 1.0;
 
 /**
@@ -68,8 +80,14 @@ export function effectiveCeiling(
   potentialRating: number,
   trait: number,
 ): number {
-  const realization =
-    MIN_CEILING_REALIZATION + clamp01(trait) * (MAX_CEILING_REALIZATION - MIN_CEILING_REALIZATION);
+  // A better report is a more reliable one - see RELIABILITY_AT_HIGH_POTENTIAL.
+  const reportQuality = clamp01(
+    (potentialRating - LOW_POTENTIAL_ANCHOR) / (HIGH_POTENTIAL_ANCHOR - LOW_POTENTIAL_ANCHOR),
+  );
+  const floor =
+    RELIABILITY_AT_LOW_POTENTIAL +
+    reportQuality * (RELIABILITY_AT_HIGH_POTENTIAL - RELIABILITY_AT_LOW_POTENTIAL);
+  const realization = floor + clamp01(trait) * (MAX_CEILING_REALIZATION - floor);
 
   // Anchored to the rating floor, not to what the player is rated today.
   // Measuring the shortfall from his *current* rating makes the ceiling chase

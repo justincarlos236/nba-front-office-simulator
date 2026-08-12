@@ -94,6 +94,7 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
         league.currentSeason,
         resolvePlayerAge(freeAgent.player, league.currentSeason),
         resolvePlayerExperience(freeAgent.player, league.currentSeason),
+        freeAgent.player.position,
       ),
     },
   });

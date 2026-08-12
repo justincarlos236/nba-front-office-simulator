@@ -22,6 +22,8 @@ export interface PlanLeaguePlayerInput {
    * place of a generated deal - see `resolveContract`.
    */
   seededContract: SeededContract | null;
+  /** Position, so a generated deal is priced the way the league pays it. */
+  position?: string | null;
   /** Deterministic seed for contract generation - typically the reference Player.id. */
   seed: string;
 }
@@ -61,6 +63,7 @@ export function planLeaguePlayer(input: PlanLeaguePlayerInput): LeaguePlayerPlan
       gamesPlayed: input.gamesPlayed,
       age: input.age,
       yearsOfExperience: input.yearsOfExperience,
+      position: input.position,
       seed: input.seed,
     });
 

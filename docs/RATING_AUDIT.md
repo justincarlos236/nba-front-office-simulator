@@ -155,6 +155,30 @@ Measured as the gap between a player's rating rank and his pay rank among 213 ve
 
 ---
 
+## R-P1-1 RESOLVED — it was never a rating defect
+
+The section above could not tell a mis-measuring model from a league that values
+positions differently. A within-position test settles it: correlation between
+rating and real salary is **0.776 (PG), 0.732 (SG), 0.816 (SF), 0.877 (PF),
+0.850 (C)** against 0.800 across all positions. The two positions supposedly
+biased rank _best of the five_. The model measures quality correctly.
+
+What differs is what the league pays. Controlling for rating, a centre earns
+**0.89x** what his rating predicts and a small forward **1.15x** — a pricing
+fact, not a measurement error, and correcting the rating would have baked a
+market reality into a quality model.
+
+So the correction went into `priceContractCents` as `POSITIONAL_MARKET_FACTOR`,
+normalized so league payroll is unchanged — it moves money between positions
+rather than creating any. Measured against real pay by position, the mean
+absolute error falls **10.3% → 5.8%**; centres go from 19% overpriced to 7%,
+point guards 16% to 7%, small forwards 8% underpriced to 3% over.
+
+Ratings stay an honest claim about quality. Prices reflect what a position
+commands. That is how the two come apart in reality.
+
+---
+
 ## R-P2-1 — The shipped dataset has drifted from the model
 
 **34 players** have a `seedOverallRating` that no longer matches what `computeSeedOverallRating` produces from their own stat line — all off by exactly one point, all fringe players (Keshon Gilbert, Tristen Newton, Norchad Omier, Sean Pedulla, Chris Manon…), all shipped 66 against a recomputed 67.

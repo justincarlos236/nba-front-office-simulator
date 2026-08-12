@@ -22,6 +22,9 @@ export function computeReSigningMaxOfferCents(
   season: number,
   age: number,
   yearsOfExperience: number,
+  position?: string | null,
 ): bigint {
-  return BigInt(priceContractCents({ season, quality: overallRating, age, yearsOfExperience }));
+  return BigInt(
+    priceContractCents({ season, quality: overallRating, age, yearsOfExperience, position }),
+  );
 }

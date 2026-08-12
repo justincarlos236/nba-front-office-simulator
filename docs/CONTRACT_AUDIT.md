@@ -11,7 +11,7 @@ Neither touches a database. Both are reproducible.
 
 **Headline.** The two reported salaries have **two different causes**, and only one of them is a live bug.
 
-- **Garza's $42M is not reachable by the current code.** Sweeping all 4000 possible negotiation seeds, today's code can only produce **$10.3M–$13.9M** for him. $42M sits dead centre of what the *pre-fix* code produced ($39.7M–$53.7M). The playtest save was bootstrapped before commit `decd646` (2026-08-11) and existing saves are never re-priced.
+- **Garza's $42M is not reachable by the current code.** Sweeping all 4000 possible negotiation seeds, today's code can only produce **$10.3M–$13.9M** for him. $42M sits dead centre of what the _pre-fix_ code produced ($39.7M–$53.7M). The playtest save was bootstrapped before commit `decd646` (2026-08-11) and existing saves are never re-priced.
 - **Queta's ~$48M is still reachable today** ($37.3M–$50.5M). That one is a genuine, unfixed defect.
 
 So: start a new franchise and Garza drops to ~$12M. Queta stays broken. The rest of this document is about why.
@@ -26,12 +26,12 @@ the end of this section.
 
 ### What changed
 
-| # | Change | Where |
-|---|---|---|
-| 1 | `gamesPlayed` now weights every valuation, blending an unproven season back toward the scouted rating | `contracts/priceContract.ts` — `contractQualityScore` |
-| 2 | Individual maximum salary, 25/30/35% of cap by age tier, clamped last on every path | `cap/maxSalary.ts` |
-| 3 | One pricing function called by bootstrap, draft, CPU re-signing and CPU free agency | `contracts/priceContract.ts` — `priceContractCents` |
-| 4 | Contract length keyed to quality, then capped by age; CPU deals no longer hardcoded to two flat years | `priceContract.ts` — `pickContractLength` |
+| #   | Change                                                                                                | Where                                                 |
+| --- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| 1   | `gamesPlayed` now weights every valuation, blending an unproven season back toward the scouted rating | `contracts/priceContract.ts` — `contractQualityScore` |
+| 2   | Individual maximum salary, 25/30/35% of cap by age tier, clamped last on every path                   | `cap/maxSalary.ts`                                    |
+| 3   | One pricing function called by bootstrap, draft, CPU re-signing and CPU free agency                   | `contracts/priceContract.ts` — `priceContractCents`   |
+| 4   | Contract length keyed to quality, then capped by age; CPU deals no longer hardcoded to two flat years | `priceContract.ts` — `pickContractLength`             |
 
 `overallRating` is now the pricing anchor everywhere, with production as a
 correction rather than the source — which closes C-P0-4 as a side effect of
@@ -39,30 +39,30 @@ C-P0-2's fix.
 
 ### Measured before → after
 
-| | Before | After | Real |
-|---|---|---|---|
-| **Jayson Tatum** | $35.3M | **$46.4M** | — |
-| **Jaylen Brown** | $37.1M | **$40.9M** | — |
-| **Neemias Queta** | $37.7M | **$29.5M** | — |
-| Ty Jerome (15 games) | $51.5M | **$18.0M** | — |
-| Trae Young (15 games) | $44.5M | **$16.2M** | — |
-| Luka Garza | $10.5M | $8.9M | — |
-| corr(salary, rating) | 0.778 | **0.862** | — |
-| worst anomaly | +$40.7M | **+$13.7M** | — |
-| 70–74 band, max salary | $51.5M | **$24.1M** | — |
-| 65–69 band, max salary | $20.3M | **$11.4M** | — |
-| sub-70 rating on 3+ yr deals | 130 | **9** | — |
-| age 33+ on 4–5 yr deals | 7 | **0** | — |
-| league payroll | $5.13B | **$5.104B** | $5.10B |
-| profitable clubs | 24/30 | **25/30** | 20–25/30 |
-| league net income | +$2.14B | **+$2.16B** | ~+$2B |
+|                              | Before  | After       | Real     |
+| ---------------------------- | ------- | ----------- | -------- |
+| **Jayson Tatum**             | $35.3M  | **$46.4M**  | —        |
+| **Jaylen Brown**             | $37.1M  | **$40.9M**  | —        |
+| **Neemias Queta**            | $37.7M  | **$29.5M**  | —        |
+| Ty Jerome (15 games)         | $51.5M  | **$18.0M**  | —        |
+| Trae Young (15 games)        | $44.5M  | **$16.2M**  | —        |
+| Luka Garza                   | $10.5M  | $8.9M       | —        |
+| corr(salary, rating)         | 0.778   | **0.862**   | —        |
+| worst anomaly                | +$40.7M | **+$13.7M** | —        |
+| 70–74 band, max salary       | $51.5M  | **$24.1M**  | —        |
+| 65–69 band, max salary       | $20.3M  | **$11.4M**  | —        |
+| sub-70 rating on 3+ yr deals | 130     | **9**       | —        |
+| age 33+ on 4–5 yr deals      | 7       | **0**       | —        |
+| league payroll               | $5.13B  | **$5.104B** | $5.10B   |
+| profitable clubs             | 24/30   | **25/30**   | 20–25/30 |
+| league net income            | +$2.14B | **+$2.16B** | ~+$2B    |
 
 **The ordering that opened this audit is fixed: Tatum > Brown > Queta.**
 
 Contract length by tier now runs 1.5 / 1.6 / 2.4 / 3.0 / 3.5 / 3.9 / 3.4 from
 fringe to superstar, against a near-flat 2.9–3.7 before.
 
-### Two things this did *not* fix, and one claim that was wrong
+### Two things this did _not_ fix, and one claim that was wrong
 
 **Wrong claim, corrected.** An earlier pass reported "121 of 450 players paid 40+
 places above their rating rank" and concluded the curve was too generous through
@@ -71,7 +71,7 @@ working feature as error. Measured among veterans only — the correct compariso
 mean |pay rank − rating rank| is **9.2 places** and **no player** is paid 40+
 places above his rating. Queta is the 49th-best-rated veteran and the
 44th-highest-paid one. His salary is internally consistent; what is high is his
-*rating*.
+_rating_.
 
 **The top of the market is still compressed.** 1 player above $50M against a real
 5; 39 above $30M against a real 30. Austin Reaves (rating 89) is paid identically
@@ -96,34 +96,34 @@ contract model.
 
 Every way a player gets a contract, with the actual formula.
 
-| # | Path | Entry point | Quality input | Modifier stack | Length |
-|---|---|---|---|---|---|
-| 1 | **League bootstrap** | `actions/league.ts:217` → `planLeaguePlayer` → `generateContract` | `computePerformanceScore(stats)` | `× ageValueMultiplier(age) × rookieScaleDiscount(exp) × noise(0.85–1.15)` | `pickContractLength`, 1–5y, +5%/yr raises |
-| 2 | **Draft / rookie** | `actions/draft.ts:154` → `generateContract` | `overallRating` | `× ageValueMultiplier(20) × 0.35 × noise` | same, 1–5y |
-| 3 | **CPU re-signing** | `actions/offseason.ts:694` → `computeReSigningMaxOfferCents` | `overallRating` | **none** | **always 2y, flat** |
-| 4 | **CPU free agency** | `freeagency/cpuFreeAgentMarket.ts:180` → `runCpuFreeAgentPass` | `computePerformanceScore(stats)` | **none** | **always 2y, flat** |
-| 5 | **User signing** | `actions/freeagency.ts` → `validateSigning` | user types a number | bounded only by cap space or re-signing ceiling | user picks |
-| 6 | **Trade** | `actions/trade.ts` | — | contract moves unchanged | unchanged |
-| 7 | **Extension** | — | — | **does not exist** | — |
+| #   | Path                 | Entry point                                                       | Quality input                    | Modifier stack                                                            | Length                                    |
+| --- | -------------------- | ----------------------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------- |
+| 1   | **League bootstrap** | `actions/league.ts:217` → `planLeaguePlayer` → `generateContract` | `computePerformanceScore(stats)` | `× ageValueMultiplier(age) × rookieScaleDiscount(exp) × noise(0.85–1.15)` | `pickContractLength`, 1–5y, +5%/yr raises |
+| 2   | **Draft / rookie**   | `actions/draft.ts:154` → `generateContract`                       | `overallRating`                  | `× ageValueMultiplier(20) × 0.35 × noise`                                 | same, 1–5y                                |
+| 3   | **CPU re-signing**   | `actions/offseason.ts:694` → `computeReSigningMaxOfferCents`      | `overallRating`                  | **none**                                                                  | **always 2y, flat**                       |
+| 4   | **CPU free agency**  | `freeagency/cpuFreeAgentMarket.ts:180` → `runCpuFreeAgentPass`    | `computePerformanceScore(stats)` | **none**                                                                  | **always 2y, flat**                       |
+| 5   | **User signing**     | `actions/freeagency.ts` → `validateSigning`                       | user types a number              | bounded only by cap space or re-signing ceiling                           | user picks                                |
+| 6   | **Trade**            | `actions/trade.ts`                                                | —                                | contract moves unchanged                                                  | unchanged                                 |
+| 7   | **Extension**        | —                                                                 | —                                | **does not exist**                                                        | —                                         |
 
 The core money function, in full:
 
 ```ts
 // valuation/playerValue.ts
-scoreToCapFraction(score) = 0.35 / (1 + exp(-0.17 * (score - 80)))
-ageAdjustedMarketValueCents({score, age, season}) =
-  salaryCapCents * scoreToCapFraction(score) * ageValueMultiplier(age)
+scoreToCapFraction(score) = 0.35 / (1 + exp(-0.17 * (score - 80)));
+ageAdjustedMarketValueCents({ score, age, season }) =
+  salaryCapCents * scoreToCapFraction(score) * ageValueMultiplier(age);
 
 // contracts/generateContract.ts
-rawSalary   = marketValue * rookieScaleDiscount(exp) * randomInRange(0.85, 1.15)
-firstYear   = max(rawSalary, emptyRosterChargeCents)   // $1.3M
-year[i]     = firstYear * (1 + 0.05 * i)
+rawSalary = marketValue * rookieScaleDiscount(exp) * randomInRange(0.85, 1.15);
+firstYear = max(rawSalary, emptyRosterChargeCents); // $1.3M
+year[i] = firstYear * (1 + 0.05 * i);
 ```
 
 `rookieScaleDiscount`: 0.35 / 0.40 / 0.45 / 0.55 / 1.0 for 0/1/2/3/4+ years experience.
 `ageValueMultiplier`: peak 27, `min(1.15, 1 + |Δ|·0.015)` below, `max(0.4, 1 − (y·0.02 + max(0,y−5)·0.03))` above.
 
-**What does *not* influence any contract, anywhere:**
+**What does _not_ influence any contract, anywhere:**
 
 - `potentialRating` — **not an argument to `generateContract`.** The user's leading suspicion is wrong: potential has exactly zero weight on salary.
 - `gamesPlayed` — not a field on `PlayerValuationStats`. See §3.
@@ -137,21 +137,21 @@ year[i]     = firstYear * (1 + 0.05 * i)
 
 Line: 25.4 mpg, 10.2 pts, 8.4 reb, 1.7 ast, 1.32 blk, **.674 TS**, 76 games.
 
-| Step | Current code | Pre-fix code |
-|---|---|---|
-| Per-36 extrapolation factor | 1.420 (capped at 1.5) | 1.420 (capped at 2.25) |
-| Efficiency term `(TS−.56)×140` | +15.96 | +15.96 |
-| × volume weight `min(1, 10.2/15)` | **×0.681 → +10.86** | ×1.0 → **+15.96** |
-| Rebound term | +4.66 | +4.66 |
-| Block term | +2.66 | +2.66 |
-| Points term | −1.52 | −1.52 |
-| Sample weight (minutes) | 1.0 | 1.0 |
-| **Performance score** | **88.1** | **93.2** |
-| `scoreToCapFraction` | 28.0% | 31.7% |
-| × cap $154.6M | $43.3M | $49.0M |
-| × age mult 1.015 | $43.9M | $49.7M |
-| × rookie discount (exp 4) | ×1.0 | ×1.0 |
-| **× noise 0.85–1.15** | **$37.3M – $50.5M** | **$42.2M – $57.1M** |
+| Step                              | Current code          | Pre-fix code           |
+| --------------------------------- | --------------------- | ---------------------- |
+| Per-36 extrapolation factor       | 1.420 (capped at 1.5) | 1.420 (capped at 2.25) |
+| Efficiency term `(TS−.56)×140`    | +15.96                | +15.96                 |
+| × volume weight `min(1, 10.2/15)` | **×0.681 → +10.86**   | ×1.0 → **+15.96**      |
+| Rebound term                      | +4.66                 | +4.66                  |
+| Block term                        | +2.66                 | +2.66                  |
+| Points term                       | −1.52                 | −1.52                  |
+| Sample weight (minutes)           | 1.0                   | 1.0                    |
+| **Performance score**             | **88.1**              | **93.2**               |
+| `scoreToCapFraction`              | 28.0%                 | 31.7%                  |
+| × cap $154.6M                     | $43.3M                | $49.0M                 |
+| × age mult 1.015                  | $43.9M                | $49.7M                 |
+| × rookie discount (exp 4)         | ×1.0                  | ×1.0                   |
+| **× noise 0.85–1.15**             | **$37.3M – $50.5M**   | **$42.2M – $57.1M**    |
 
 Observed ~$48M. Consistent with either. **His score of 88.1 exceeds Tatum's 82.6 and Brown's 86.1 on current code** — that is the live defect.
 
@@ -159,27 +159,27 @@ Observed ~$48M. Consistent with either. **His score of 88.1 exceeds Tatum's 82.6
 
 Line: 16.1 mpg, 8.1 pts, 4.1 reb, 0.41 blk, **.682 TS**, 69 games.
 
-| Step | Current code | Pre-fix code |
-|---|---|---|
-| `FULL_WORKLOAD_MINUTES` | 24 | **16** |
-| Per-36 extrapolation | 1.5 (capped) | **2.232 (uncapped, taken as fact)** |
-| Efficiency term | +17.08 × **0.538** = **+9.19** | +17.08 × 1.0 = **+17.08** |
-| Raw score | 76.3 | 90.2 |
-| Sample weight | **0.672** → blended toward 65 | **1.0** (16.1 ≥ 16) |
-| **Performance score** | **72.6** | **90.2** |
-| `scoreToCapFraction` | 7.7% | 29.8% |
-| **Final range over all seeds** | **$10.3M – $13.9M** | **$39.7M – $53.7M** |
+| Step                           | Current code                   | Pre-fix code                        |
+| ------------------------------ | ------------------------------ | ----------------------------------- |
+| `FULL_WORKLOAD_MINUTES`        | 24                             | **16**                              |
+| Per-36 extrapolation           | 1.5 (capped)                   | **2.232 (uncapped, taken as fact)** |
+| Efficiency term                | +17.08 × **0.538** = **+9.19** | +17.08 × 1.0 = **+17.08**           |
+| Raw score                      | 76.3                           | 90.2                                |
+| Sample weight                  | **0.672** → blended toward 65  | **1.0** (16.1 ≥ 16)                 |
+| **Performance score**          | **72.6**                       | **90.2**                            |
+| `scoreToCapFraction`           | 7.7%                           | 29.8%                               |
+| **Final range over all seeds** | **$10.3M – $13.9M**            | **$39.7M – $53.7M**                 |
 
 Observed ~$42M. **Impossible on current code — 3× outside the achievable range.** This is the proof the save predates `decd646`.
 
 ### Why Tatum and Brown are "only" $30M+
 
-| Player | GP | Line | Score | Salary |
-|---|---|---|---|---|
-| Jayson Tatum | **16** | 21.8p / 10.0r / 5.3a, **.541 TS**, 2.44 tov | 82.6 | $35.3M |
-| Jaylen Brown | 74 | 27.7p / 6.7r / 5.0a, .570 TS, 3.50 tov | 86.1 | $37.1M |
+| Player       | GP     | Line                                        | Score | Salary |
+| ------------ | ------ | ------------------------------------------- | ----- | ------ |
+| Jayson Tatum | **16** | 21.8p / 10.0r / 5.3a, **.541 TS**, 2.44 tov | 82.6  | $35.3M |
+| Jaylen Brown | 74     | 27.7p / 6.7r / 5.0a, .570 TS, 3.50 tov      | 86.1  | $37.1M |
 
-Neither is a bug in the way Queta is. Tatum's seeded season is 16 games of an injury-wrecked year at .541 true shooting — below the model's .56 zero point, so efficiency *subtracts* 2.7 points. Brown scores 86.1 honestly: high volume, average efficiency, and 3.5 turnovers costs him 1.8.
+Neither is a bug in the way Queta is. Tatum's seeded season is 16 games of an injury-wrecked year at .541 true shooting — below the model's .56 zero point, so efficiency _subtracts_ 2.7 points. Brown scores 86.1 honestly: high volume, average efficiency, and 3.5 turnovers costs him 1.8.
 
 The real problem is not that they are underpaid. It is that **a 25-minute backup centre outscores both of them**, because rebounds (0.8/each) and blocks (2.2/each) are cheap for a big to accumulate while nothing in the formula rewards perimeter creation or on-ball defence.
 
@@ -189,14 +189,14 @@ The real problem is not that they are underpaid. It is that **a 25-minute backup
 
 `PlayerValuationStats` has eight fields. `gamesPlayed` is not one of them, and no caller filters on it. **An 11-game hot streak and an 82-game season are identical evidence to this model.**
 
-| Player | GP | Seed OVR | Score | Generated salary |
-|---|---|---|---|---|
-| Ty Jerome | **15** | 72 | 91.5 | **$51.5M** — 3rd highest in the league |
-| Cormac Ryan | **11** | 70 | 90.4 | **$46.4M** |
-| Zach Edey | **11** | 71 | 94.9 | $20.3M |
-| Trae Young | **15** | 72 | 88.9 | **$44.5M** |
-| Dejounte Murray | **14** | 72 | 83.0 | $31.2M |
-| Domantas Sabonis | **19** | 74 | 84.3 | $30.0M |
+| Player           | GP     | Seed OVR | Score | Generated salary                       |
+| ---------------- | ------ | -------- | ----- | -------------------------------------- |
+| Ty Jerome        | **15** | 72       | 91.5  | **$51.5M** — 3rd highest in the league |
+| Cormac Ryan      | **11** | 70       | 90.4  | **$46.4M**                             |
+| Zach Edey        | **11** | 71       | 94.9  | $20.3M                                 |
+| Trae Young       | **15** | 72       | 88.9  | **$44.5M**                             |
+| Dejounte Murray  | **14** | 72       | 83.0  | $31.2M                                 |
+| Domantas Sabonis | **19** | 74       | 84.3  | $30.0M                                 |
 
 Exposure across the dataset: **164 of 537 players (30.5%) have under 40 games; 81 have under 20.** Of 450 rostered players, 35 played 15 or fewer.
 
@@ -216,21 +216,21 @@ The OVR the UI shows is `seedOverallRating`, from the dataset. The salary comes 
 
 Across 450 rostered players the mean absolute gap is only 2.6 points — but **15 players disagree by 10+ and 4 by 15+**, and those are exactly the players that look broken:
 
-| Player | GP | Shown OVR | Priced as | Gap |
-|---|---|---|---|---|
-| Zach Edey | 11 | 71 | 94.9 | +23.9 |
-| Cormac Ryan | 11 | 70 | 90.4 | +20.4 |
-| Ty Jerome | 15 | 72 | 91.5 | +19.5 |
-| Trae Young | 15 | 72 | 88.9 | +16.9 |
-| Jalen Duren | 73 | 85 | 99.0 | +14.0 |
-| Jarrett Allen | 56 | 82 | 95.4 | +13.4 |
-| Mark Williams | 60 | 78 | 90.2 | +12.2 |
-| Chet Holmgren | 72 | 83 | 94.7 | +11.7 |
-| Neemias Queta | 76 | 79 | 88.1 | +9.3 |
+| Player        | GP  | Shown OVR | Priced as | Gap   |
+| ------------- | --- | --------- | --------- | ----- |
+| Zach Edey     | 11  | 71        | 94.9      | +23.9 |
+| Cormac Ryan   | 11  | 70        | 90.4      | +20.4 |
+| Ty Jerome     | 15  | 72        | 91.5      | +19.5 |
+| Trae Young    | 15  | 72        | 88.9      | +16.9 |
+| Jalen Duren   | 73  | 85        | 99.0      | +14.0 |
+| Jarrett Allen | 56  | 82        | 95.4      | +13.4 |
+| Mark Williams | 60  | 78        | 90.2      | +12.2 |
+| Chet Holmgren | 72  | 83        | 94.7      | +11.7 |
+| Neemias Queta | 76  | 79        | 88.1      | +9.3  |
 
 Two clusters, and they are the two root causes: **small samples** (§3) and **centres** (§6).
 
-This gap is *why the bug is visible to the player*. A correctly-priced league whose prices are computed from a hidden second number would still read as broken.
+This gap is _why the bug is visible to the player_. A correctly-priced league whose prices are computed from a hidden second number would still read as broken.
 
 ---
 
@@ -238,62 +238,62 @@ This gap is *why the bug is visible to the player*. A correctly-priced league wh
 
 Cap $154.6M.
 
-| | Salary | % of cap |
-|---|---|---|
-| min | $1.3M | 0.8% |
-| p25 | $2.2M | 1.4% |
-| median | $6.4M | 4.1% |
-| mean | $11.5M | 7.4% |
-| p75 | $17.9M | 11.6% |
-| p90 | $31.3M | 20.2% |
-| p95 | $37.1M | 24.0% |
-| max | $58.3M | 37.7% |
+|        | Salary | % of cap |
+| ------ | ------ | -------- |
+| min    | $1.3M  | 0.8%     |
+| p25    | $2.2M  | 1.4%     |
+| median | $6.4M  | 4.1%     |
+| mean   | $11.5M | 7.4%     |
+| p75    | $17.9M | 11.6%    |
+| p90    | $31.3M | 20.2%    |
+| p95    | $37.1M | 24.0%    |
+| max    | $58.3M | 37.7%    |
 
 League payroll **$5.16B** against a real ~$5.10B. **The aggregate is right.** The problem is entirely in how it is distributed.
 
 ### Top 25 earners
 
-| # | Player | Age | OVR | Score | Salary | %cap | Yrs |
-|---|---|---|---|---|---|---|---|
-| 1 | Shai Gilgeous-Alexander | 27 | 98 | 99.0 | $58.3M | 37.7% | 2 |
-| 2 | Luka Doncic | 26 | 95 | 99.0 | $51.8M | 33.5% | 4 |
-| 3 | **Ty Jerome** | 28 | **72** | 91.5 | **$51.5M** | 33.3% | 4 |
-| 4 | Nikola Jokic | 30 | 98 | 99.0 | $51.1M | 33.0% | 4 |
-| 5 | Austin Reaves | 27 | 89 | 91.3 | $50.5M | 32.7% | 2 |
-| 6 | **Deandre Ayton** | 27 | **79** | 88.3 | **$49.3M** | 31.9% | 2 |
-| 7 | Joel Embiid | 31 | 90 | 93.2 | $48.2M | 31.2% | 2 |
-| 8 | **Jakob Poeltl** | 29 | **79** | 89.0 | **$47.6M** | 30.8% | 4 |
-| 9 | Giannis Antetokounmpo | 30 | 96 | 99.0 | $46.5M | 30.0% | 4 |
-| 10 | Jamal Murray | 28 | 90 | 91.6 | $46.4M | 30.0% | 3 |
-| 11 | **Cormac Ryan** | 26 | **70** | 90.4 | **$46.4M** | 30.0% | 5 |
-| 12 | Donovan Mitchell | 29 | 89 | 92.9 | $45.5M | 29.5% | 2 |
-| 13 | Karl-Anthony Towns | 29 | 85 | 91.8 | $45.5M | 29.4% | 4 |
-| 14 | **Trae Young** | 27 | **72** | 88.9 | **$44.5M** | 28.8% | 4 |
-| 15 | **Jarrett Allen** | 27 | **82** | 95.4 | **$44.1M** | 28.5% | 4 |
-| 16 | Kawhi Leonard | 34 | 91 | 98.2 | $43.1M | 27.9% | 4 |
-| 17 | Michael Porter Jr. | 27 | 86 | 86.8 | $42.0M | 27.1% | 3 |
-| 18 | Lauri Markkanen | 28 | 89 | 90.3 | $41.1M | 26.6% | 3 |
-| 19 | **John Collins** | 28 | **77** | 84.0 | **$39.3M** | 25.4% | 5 |
-| 20 | **Neemias Queta** | 26 | **79** | 88.1 | **$37.7M** | 24.4% | 2 |
-| 21 | Rudy Gobert | 33 | 83 | 87.4 | $37.5M | 24.3% | 2 |
-| 22 | **Isaiah Hartenstein** | 27 | **77** | 84.4 | **$37.5M** | 24.2% | 5 |
-| 23 | Jaylen Brown | 28 | 88 | 86.1 | $37.1M | 24.0% | 5 |
-| 24 | Julius Randle | 30 | 85 | 83.6 | $37.0M | 23.9% | 3 |
-| 25 | Nickeil Alexander-Walker | 27 | 85 | 84.7 | $36.8M | 23.8% | 4 |
+| #   | Player                   | Age | OVR    | Score | Salary     | %cap  | Yrs |
+| --- | ------------------------ | --- | ------ | ----- | ---------- | ----- | --- |
+| 1   | Shai Gilgeous-Alexander  | 27  | 98     | 99.0  | $58.3M     | 37.7% | 2   |
+| 2   | Luka Doncic              | 26  | 95     | 99.0  | $51.8M     | 33.5% | 4   |
+| 3   | **Ty Jerome**            | 28  | **72** | 91.5  | **$51.5M** | 33.3% | 4   |
+| 4   | Nikola Jokic             | 30  | 98     | 99.0  | $51.1M     | 33.0% | 4   |
+| 5   | Austin Reaves            | 27  | 89     | 91.3  | $50.5M     | 32.7% | 2   |
+| 6   | **Deandre Ayton**        | 27  | **79** | 88.3  | **$49.3M** | 31.9% | 2   |
+| 7   | Joel Embiid              | 31  | 90     | 93.2  | $48.2M     | 31.2% | 2   |
+| 8   | **Jakob Poeltl**         | 29  | **79** | 89.0  | **$47.6M** | 30.8% | 4   |
+| 9   | Giannis Antetokounmpo    | 30  | 96     | 99.0  | $46.5M     | 30.0% | 4   |
+| 10  | Jamal Murray             | 28  | 90     | 91.6  | $46.4M     | 30.0% | 3   |
+| 11  | **Cormac Ryan**          | 26  | **70** | 90.4  | **$46.4M** | 30.0% | 5   |
+| 12  | Donovan Mitchell         | 29  | 89     | 92.9  | $45.5M     | 29.5% | 2   |
+| 13  | Karl-Anthony Towns       | 29  | 85     | 91.8  | $45.5M     | 29.4% | 4   |
+| 14  | **Trae Young**           | 27  | **72** | 88.9  | **$44.5M** | 28.8% | 4   |
+| 15  | **Jarrett Allen**        | 27  | **82** | 95.4  | **$44.1M** | 28.5% | 4   |
+| 16  | Kawhi Leonard            | 34  | 91     | 98.2  | $43.1M     | 27.9% | 4   |
+| 17  | Michael Porter Jr.       | 27  | 86     | 86.8  | $42.0M     | 27.1% | 3   |
+| 18  | Lauri Markkanen          | 28  | 89     | 90.3  | $41.1M     | 26.6% | 3   |
+| 19  | **John Collins**         | 28  | **77** | 84.0  | **$39.3M** | 25.4% | 5   |
+| 20  | **Neemias Queta**        | 26  | **79** | 88.1  | **$37.7M** | 24.4% | 2   |
+| 21  | Rudy Gobert              | 33  | 83     | 87.4  | $37.5M     | 24.3% | 2   |
+| 22  | **Isaiah Hartenstein**   | 27  | **77** | 84.4  | **$37.5M** | 24.2% | 5   |
+| 23  | Jaylen Brown             | 28  | 88     | 86.1  | $37.1M     | 24.0% | 5   |
+| 24  | Julius Randle            | 30  | 85     | 83.6  | $37.0M     | 23.9% | 3   |
+| 25  | Nickeil Alexander-Walker | 27  | 85     | 84.7  | $36.8M     | 23.8% | 4   |
 
 **9 of the top 25 have a seed OVR below 80.** Bolded rows are the anomalies.
 
 ### Salary by quality tier
 
-| Tier (seed OVR) | N | min | median | max | median %cap |
-|---|---|---|---|---|---|
-| superstar 90+ | 14 | $22.4M | $43.1M | $58.3M | 27.9% |
-| all-star 85–89 | 30 | $10.4M | $30.9M | $50.5M | 20.0% |
-| high starter 80–84 | 38 | $4.6M | $20.8M | $44.1M | 13.5% |
-| starter 75–79 | 71 | $4.9M | $15.8M | **$49.3M** | 10.2% |
-| role 70–74 | 87 | $2.6M | $7.5M | **$51.5M** | 4.9% |
-| bench 65–69 | 136 | $1.3M | $2.7M | **$20.3M** | 1.7% |
-| fringe <65 | 74 | $1.3M | $1.6M | $4.8M | 1.0% |
+| Tier (seed OVR)    | N   | min    | median | max        | median %cap |
+| ------------------ | --- | ------ | ------ | ---------- | ----------- |
+| superstar 90+      | 14  | $22.4M | $43.1M | $58.3M     | 27.9%       |
+| all-star 85–89     | 30  | $10.4M | $30.9M | $50.5M     | 20.0%       |
+| high starter 80–84 | 38  | $4.6M  | $20.8M | $44.1M     | 13.5%       |
+| starter 75–79      | 71  | $4.9M  | $15.8M | **$49.3M** | 10.2%       |
+| role 70–74         | 87  | $2.6M  | $7.5M  | **$51.5M** | 4.9%        |
+| bench 65–69        | 136 | $1.3M  | $2.7M  | **$20.3M** | 1.7%        |
+| fringe <65         | 74  | $1.3M  | $1.6M  | $4.8M      | 1.0%        |
 
 Medians are ordered correctly and sensibly spaced. **The tails are the failure**: the 70–74 band reaches $51.5M, higher than the superstar band's median. Bands overlap almost completely.
 
@@ -301,37 +301,37 @@ Correlations: salary↔seed OVR **0.778**, salary↔perf score **0.873**, perf s
 
 ### 15 worst anomalies (paid above what the displayed OVR justifies)
 
-| # | Player | OVR | Score | Actual | Expected | Gap |
-|---|---|---|---|---|---|---|
-| 1 | Ty Jerome | 72 | 91.5 | $51.5M | $10.8M | +$40.7M |
-| 2 | Cormac Ryan | 70 | 90.4 | $46.4M | $8.5M | +$37.9M |
-| 3 | Trae Young | 72 | 88.9 | $44.5M | $11.1M | +$33.4M |
-| 4 | Deandre Ayton | 79 | 88.3 | $49.3M | $24.8M | +$24.5M |
-| 5 | Jakob Poeltl | 79 | 89.0 | $47.6M | $23.8M | +$23.8M |
-| 6 | Dejounte Murray | 72 | 83.0 | $31.2M | $10.6M | +$20.5M |
-| 7 | Daniel Gafford | 75 | 82.9 | $36.5M | $16.2M | +$20.3M |
-| 8 | John Collins | 77 | 84.0 | $39.3M | $19.9M | +$19.4M |
-| 9 | Collin Sexton | 75 | 82.9 | $35.0M | $16.5M | +$18.5M |
-| 10 | Sandro Mamukelashvili | 74 | 80.6 | $32.9M | $14.6M | +$18.3M |
-| 11 | Anthony Davis | 76 | 85.2 | $33.8M | $16.4M | +$17.4M |
-| 12 | Isaiah Hartenstein | 77 | 84.4 | $37.5M | $20.3M | +$17.2M |
-| 13 | Kristaps Porzingis | 75 | 85.0 | $32.0M | $15.2M | +$16.8M |
-| 14 | Marvin Bagley III | 73 | 80.0 | $29.3M | $12.8M | +$16.5M |
-| 15 | Domantas Sabonis | 74 | 84.3 | $30.0M | $13.8M | +$16.3M |
+| #   | Player                | OVR | Score | Actual | Expected | Gap     |
+| --- | --------------------- | --- | ----- | ------ | -------- | ------- |
+| 1   | Ty Jerome             | 72  | 91.5  | $51.5M | $10.8M   | +$40.7M |
+| 2   | Cormac Ryan           | 70  | 90.4  | $46.4M | $8.5M    | +$37.9M |
+| 3   | Trae Young            | 72  | 88.9  | $44.5M | $11.1M   | +$33.4M |
+| 4   | Deandre Ayton         | 79  | 88.3  | $49.3M | $24.8M   | +$24.5M |
+| 5   | Jakob Poeltl          | 79  | 89.0  | $47.6M | $23.8M   | +$23.8M |
+| 6   | Dejounte Murray       | 72  | 83.0  | $31.2M | $10.6M   | +$20.5M |
+| 7   | Daniel Gafford        | 75  | 82.9  | $36.5M | $16.2M   | +$20.3M |
+| 8   | John Collins          | 77  | 84.0  | $39.3M | $19.9M   | +$19.4M |
+| 9   | Collin Sexton         | 75  | 82.9  | $35.0M | $16.5M   | +$18.5M |
+| 10  | Sandro Mamukelashvili | 74  | 80.6  | $32.9M | $14.6M   | +$18.3M |
+| 11  | Anthony Davis         | 76  | 85.2  | $33.8M | $16.4M   | +$17.4M |
+| 12  | Isaiah Hartenstein    | 77  | 84.4  | $37.5M | $20.3M   | +$17.2M |
+| 13  | Kristaps Porzingis    | 75  | 85.0  | $32.0M | $15.2M   | +$16.8M |
+| 14  | Marvin Bagley III     | 73  | 80.0  | $29.3M | $12.8M   | +$16.5M |
+| 15  | Domantas Sabonis      | 74  | 84.3  | $30.0M | $13.8M   | +$16.3M |
 
 **11 of 15 are centres or power forwards.**
 
 ### Most underpaid — all young
 
-| Player | OVR | Score | Actual | Expected | Gap |
-|---|---|---|---|---|---|
-| Amen Thompson | 88 | 83.5 | $13.7M | $46.3M | −$32.6M |
-| Paolo Banchero | 86 | 81.8 | $10.4M | $42.8M | −$32.4M |
-| Victor Wembanyama | 95 | 99.0 | $22.4M | $54.7M | −$32.4M |
-| Cooper Flagg | 85 | 80.0 | $11.4M | $43.0M | −$31.7M |
-| Jalen Johnson | 89 | 88.6 | $18.3M | $47.2M | −$28.9M |
-| Cade Cunningham | 89 | 87.6 | $18.3M | $46.5M | −$28.2M |
-| Anthony Edwards | 93 | 92.6 | $24.0M | $51.0M | −$27.0M |
+| Player            | OVR | Score | Actual | Expected | Gap     |
+| ----------------- | --- | ----- | ------ | -------- | ------- |
+| Amen Thompson     | 88  | 83.5  | $13.7M | $46.3M   | −$32.6M |
+| Paolo Banchero    | 86  | 81.8  | $10.4M | $42.8M   | −$32.4M |
+| Victor Wembanyama | 95  | 99.0  | $22.4M | $54.7M   | −$32.4M |
+| Cooper Flagg      | 85  | 80.0  | $11.4M | $43.0M   | −$31.7M |
+| Jalen Johnson     | 89  | 88.6  | $18.3M | $47.2M   | −$28.9M |
+| Cade Cunningham   | 89  | 87.6  | $18.3M | $46.5M   | −$28.2M |
+| Anthony Edwards   | 93  | 92.6  | $24.0M | $51.0M   | −$27.0M |
 
 This one is **mostly correct** — it is the rookie-scale discount doing its job, which is exactly what real rookie-scale contracts look like. It becomes an exploit only in combination with §10.
 
@@ -341,13 +341,13 @@ This one is **mostly correct** — it is the rookie-scale discount doing its job
 
 The `decd646` fix removed the phantom efficiency bonus. It did not remove the underlying tilt.
 
-| Pos | N | mean seed OVR | mean score | gap | median value |
-|---|---|---|---|---|---|
-| PG | 114 | 71.6 | 71.9 | +0.3 | $8.1M |
-| SG | 101 | 72.2 | 72.7 | +0.5 | $8.9M |
-| SF | 103 | 71.7 | 72.3 | +0.6 | $10.0M |
-| PF | 61 | 72.1 | 73.7 | +1.6 | $10.7M |
-| **C** | **71** | **73.1** | **76.8** | **+3.7** | **$19.8M** |
+| Pos   | N      | mean seed OVR | mean score | gap      | median value |
+| ----- | ------ | ------------- | ---------- | -------- | ------------ |
+| PG    | 114    | 71.6          | 71.9       | +0.3     | $8.1M        |
+| SG    | 101    | 72.2          | 72.7       | +0.5     | $8.9M        |
+| SF    | 103    | 71.7          | 72.3       | +0.6     | $10.0M       |
+| PF    | 61     | 72.1          | 73.7       | +1.6     | $10.7M       |
+| **C** | **71** | **73.1**      | **76.8**   | **+3.7** | **$19.8M**   |
 
 **Centres are 16% of the league and 40% of the 30 highest-valued players** (12 of 30). Guards are 48% of the league and also 12 of 30. A centre's median valuation is **2.2× a guard's**.
 
@@ -361,19 +361,20 @@ This is the direct answer to "why a backup centre outearns Tatum."
 
 Length is chosen by `pickContractLength(ageAdjustedScore, rng)`: ≥80 → 60% chance of 4–5y else 2–3y; ≥55 → 2–4y; else 1–2y. Because almost every rostered player scores above 55, **essentially the whole league draws from 2–4 years.**
 
-| Tier | N | 1y | 2y | 3y | 4y | 5y | avg |
-|---|---|---|---|---|---|---|---|
-| superstar 90+ | 14 | 1 | 4 | 2 | 5 | 2 | 3.2 |
-| all-star 85–89 | 30 | 0 | 5 | 8 | 7 | 10 | 3.7 |
-| high starter 80–84 | 38 | 0 | 10 | 7 | 15 | 6 | 3.4 |
-| starter 75–79 | 71 | 0 | 13 | 22 | 24 | 12 | 3.5 |
-| role 70–74 | 87 | 1 | 29 | 25 | 27 | 5 | 3.1 |
-| bench 65–69 | 136 | 4 | 49 | 45 | 38 | 0 | 2.9 |
-| fringe <65 | 74 | 2 | 25 | 25 | 22 | 0 | 2.9 |
+| Tier               | N   | 1y  | 2y  | 3y  | 4y  | 5y  | avg |
+| ------------------ | --- | --- | --- | --- | --- | --- | --- |
+| superstar 90+      | 14  | 1   | 4   | 2   | 5   | 2   | 3.2 |
+| all-star 85–89     | 30  | 0   | 5   | 8   | 7   | 10  | 3.7 |
+| high starter 80–84 | 38  | 0   | 10  | 7   | 15  | 6   | 3.4 |
+| starter 75–79      | 71  | 0   | 13  | 22  | 24  | 12  | 3.5 |
+| role 70–74         | 87  | 1   | 29  | 25  | 27  | 5   | 3.1 |
+| bench 65–69        | 136 | 4   | 49  | 45  | 38  | 0   | 2.9 |
+| fringe <65         | 74  | 2   | 25  | 25  | 22  | 0   | 2.9 |
 
 Superstars average **3.2 years — shorter than all-stars (3.7) and shorter than fringe players' 2.9 is close to.** The ordering is nearly flat and partly inverted.
 
 Specific failures:
+
 - **130 of 450 players with OVR below 70 are on 3+ year guaranteed deals.**
 - Kawhi Leonard (34) and Kyrie Irving (33) get 4 years; Paul George (35) and DeMar DeRozan (36) get 4.
 - SGA (98 OVR) gets 2 years; Haliburton (90) gets 2.
@@ -383,22 +384,22 @@ Specific failures:
 
 ## 8. Cap and max-salary constraints — P0
 
-| Concept | Present? |
-|---|---|
-| Salary cap | Yes |
-| Luxury tax, aprons | Yes |
-| Minimum team salary (floor) | Yes (added in the finance audit) |
-| Rookie scale | Approximated by experience discount |
-| Minimum salary | `emptyRosterChargeCents` = **$1.3M** (real vet min $2.1M–$3.6M) |
-| **Maximum individual salary** | **No. None. Anywhere.** |
-| Percentage-of-cap max | No |
-| Veteran max tiers (25/30/35%) | No |
+| Concept                       | Present?                                                        |
+| ----------------------------- | --------------------------------------------------------------- |
+| Salary cap                    | Yes                                                             |
+| Luxury tax, aprons            | Yes                                                             |
+| Minimum team salary (floor)   | Yes (added in the finance audit)                                |
+| Rookie scale                  | Approximated by experience discount                             |
+| Minimum salary                | `emptyRosterChargeCents` = **$1.3M** (real vet min $2.1M–$3.6M) |
+| **Maximum individual salary** | **No. None. Anywhere.**                                         |
+| Percentage-of-cap max         | No                                                              |
+| Veteran max tiers (25/30/35%) | No                                                              |
 
 `validateSigning` bounds an offer by cap space or the re-signing ceiling. Nothing else. The observed max of 37.7% of cap is **not** the result of a rule — it is an accident of `scoreToCapFraction`'s 0.35 asymptote combined with up to +15% noise. Change the curve and salaries would run past it unchecked.
 
 Against real structure the top of the market is also **compressed**: 19 players over 25% of cap (real ~30), 9 over 30% (real ~14). The simulator has too few genuine max contracts and too many mid-tier ones — the tiers are mush, not steps.
 
-**Is the absence of max rules responsible for the $40–50M mediocre players?** Partly. It is not the cause — the cause is the valuation score — but a max rule is the cheapest available *bound* on the damage any valuation error can do.
+**Is the absence of max rules responsible for the $40–50M mediocre players?** Partly. It is not the cause — the cause is the valuation score — but a max rule is the cheapest available _bound_ on the damage any valuation error can do.
 
 ---
 
@@ -416,13 +417,16 @@ The dataset's own stats are real (hoopR, roster date 2026-07-31, 518 players on 
 
 ```ts
 // cpuFreeAgentPass.ts:132
-signings.push({ leaguePlayerId: fa.leaguePlayerId, leagueTeamId: teamId,
-                salaryCents: fa.estimatedValueCents });
+signings.push({
+  leaguePlayerId: fa.leaguePlayerId,
+  leagueTeamId: teamId,
+  salaryCents: fa.estimatedValueCents,
+});
 ```
 
-**Every free agent has exactly one deterministic price.** One interested team, five interested teams, the whole league — same number. Demand determines *who signs him*, never *what he costs*. There is no bidding, no escalation, no scarcity premium.
+**Every free agent has exactly one deterministic price.** One interested team, five interested teams, the whole league — same number. Demand determines _who signs him_, never _what he costs_. There is no bidding, no escalation, no scarcity premium.
 
-**On cap-space inflation specifically (the Houston $67.9M concern): the fear is unfounded for CPU teams.** `MAX_SHARE_OF_CAP_SPACE = 0.7` means cap space only gates *whether* a club can participate:
+**On cap-space inflation specifically (the Houston $67.9M concern): the fear is unfounded for CPU teams.** `MAX_SHARE_OF_CAP_SPACE = 0.7` means cap space only gates _whether_ a club can participate:
 
 ```ts
 const spendCeiling = capSpaceCents * 0.7;
@@ -441,12 +445,12 @@ The user side is the opposite: a user with $67.9M of room may legally offer all 
 
 Two prices for the same man, diverging every season:
 
-| Player | Frozen FA price (all seasons) | y0 | y4 | y8 | y10 |
-|---|---|---|---|---|---|
-| Wembanyama | $52.1M | ovr 95 → $50.2M | ovr 99 → $52.1M | ovr 99 → $52.1M | ovr 96 → $50.8M |
-| Cooper Flagg | **$27.0M** | ovr 85 → $37.9M | ovr 95 → $50.2M | ovr 96 → $50.8M | ovr 98 → **$51.7M** |
-| Nikola Jokic | **$52.1M** | ovr 98 → $51.7M | ovr 89 → $44.5M | ovr 74 → $14.3M | ovr 65 → **$3.9M** |
-| LeBron James | **$41.6M** | ovr 92 → $47.9M | ovr 72 → $11.1M | ovr 60 → $1.7M | ovr 60 → $1.7M |
+| Player       | Frozen FA price (all seasons) | y0              | y4              | y8              | y10                 |
+| ------------ | ----------------------------- | --------------- | --------------- | --------------- | ------------------- |
+| Wembanyama   | $52.1M                        | ovr 95 → $50.2M | ovr 99 → $52.1M | ovr 99 → $52.1M | ovr 96 → $50.8M     |
+| Cooper Flagg | **$27.0M**                    | ovr 85 → $37.9M | ovr 95 → $50.2M | ovr 96 → $50.8M | ovr 98 → **$51.7M** |
+| Nikola Jokic | **$52.1M**                    | ovr 98 → $51.7M | ovr 89 → $44.5M | ovr 74 → $14.3M | ovr 65 → **$3.9M**  |
+| LeBron James | **$41.6M**                    | ovr 92 → $47.9M | ovr 72 → $11.1M | ovr 60 → $1.7M  | ovr 60 → $1.7M      |
 
 By year 10 a declined Jokic re-signs for $3.9M but any team can sign him out of free agency at **$52.1M** — a 13× contradiction inside one offseason, from one player, in two adjacent code paths.
 
@@ -467,22 +471,22 @@ Retired players aside, this also means **rookies drafted in-sim have no `seasonS
 
 Measured on current code: **14 of 450 rostered players (3.1%) have a seed OVR below 75 and a valuation above 15% of cap.** Ten of thirty teams carry at least one; Utah carries three.
 
-That is a real problem but a *contained* one — CPU teams are not routinely destroying themselves. The pre-fix code was far worse (21 players over 30% of cap vs 9 today, league payroll $6.42B vs $5.16B). The GM decision layer (`evaluateReSigningDecision`, `financialSpendingResistance`) is doing its job; it is being fed bad prices.
+That is a real problem but a _contained_ one — CPU teams are not routinely destroying themselves. The pre-fix code was far worse (21 players over 30% of cap vs 9 today, league payroll $6.42B vs $5.16B). The GM decision layer (`evaluateReSigningDecision`, `financialSpendingResistance`) is doing its job; it is being fed bad prices.
 
 ---
 
 ## 14. Downstream systems affected
 
-| System | Effect |
-|---|---|
-| Cap space | Directly wrong. Teams carrying a $50M Ty Jerome show no room they should have. |
-| Free agency | Prices come from the same broken score. |
-| Trades | Salary-matching runs on inflated numbers; trade value runs on a *different* number, so the two disagree. |
-| Roster construction | Teams over-committed to bigs; the positional tilt propagates into `computeTeamNeeds`. |
-| Team strength | Not affected — strength uses `overallRating`, which is fine. |
-| Luxury tax | Tax bills computed on distorted payrolls. |
+| System                      | Effect                                                                                                                                    |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Cap space                   | Directly wrong. Teams carrying a $50M Ty Jerome show no room they should have.                                                            |
+| Free agency                 | Prices come from the same broken score.                                                                                                   |
+| Trades                      | Salary-matching runs on inflated numbers; trade value runs on a _different_ number, so the two disagree.                                  |
+| Roster construction         | Teams over-committed to bigs; the positional tilt propagates into `computeTeamNeeds`.                                                     |
+| Team strength               | Not affected — strength uses `overallRating`, which is fine.                                                                              |
+| Luxury tax                  | Tax bills computed on distorted payrolls.                                                                                                 |
 | Owner confidence / finances | Payroll aggregate is right, so franchise finances are broadly OK. This is why the finance audit passed while contracts were still broken. |
-| Long saves | §11. |
+| Long saves                  | §11.                                                                                                                                      |
 
 ---
 
@@ -490,40 +494,40 @@ That is a real problem but a *contained* one — CPU teams are not routinely des
 
 ### P0 — simulator-breaking
 
-| ID | Type | Finding |
-|---|---|---|
-| **C-P0-1** | DATA ISSUE | **The playtest save predates commit `decd646`.** Garza's $42M is outside the current code's achievable range ($10.3–13.9M) and inside the pre-fix range. Existing saves are never re-priced. |
-| **C-P0-2** | CONTRACT FORMULA | **`gamesPlayed` is not an input to any valuation.** Ty Jerome, 15 games, $51.5M — 3rd-highest salary in the league. 35 rostered players have ≤15 games. |
-| **C-P0-3** | CAP RULE | **No maximum individual salary exists.** The only ceiling is cap space. The observed 37.7% max is an accident of the logistic's asymptote. |
-| **C-P0-4** | INTEGRATION GAP | **Two unreconciled rating systems.** UI shows `seedOverallRating`; salary uses `computePerformanceScore(stats)`. 15 players disagree by 10+ points. This is why the bug is *visible*. |
+| ID         | Type             | Finding                                                                                                                                                                                      |
+| ---------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **C-P0-1** | DATA ISSUE       | **The playtest save predates commit `decd646`.** Garza's $42M is outside the current code's achievable range ($10.3–13.9M) and inside the pre-fix range. Existing saves are never re-priced. |
+| **C-P0-2** | CONTRACT FORMULA | **`gamesPlayed` is not an input to any valuation.** Ty Jerome, 15 games, $51.5M — 3rd-highest salary in the league. 35 rostered players have ≤15 games.                                      |
+| **C-P0-3** | CAP RULE         | **No maximum individual salary exists.** The only ceiling is cap space. The observed 37.7% max is an accident of the logistic's asymptote.                                                   |
+| **C-P0-4** | INTEGRATION GAP  | **Two unreconciled rating systems.** UI shows `seedOverallRating`; salary uses `computePerformanceScore(stats)`. 15 players disagree by 10+ points. This is why the bug is _visible_.        |
 
 ### P1 — major realism failure
 
-| ID | Type | Finding |
-|---|---|---|
+| ID         | Type             | Finding                                                                                                                                                                                                      |
+| ---------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **C-P1-1** | PLAYER VALUATION | **Residual centre bias.** C mean score exceeds mean OVR by +3.7 vs PG +0.3. Centres are 16% of the league, 40% of the top 30 earners, and have 2.2× a guard's median value. Directly explains Queta > Tatum. |
-| **C-P1-2** | LONG-SAVE DRIFT | **`seasonStats` never updates.** FA prices frozen at real 2025-26 forever. Year-10 Jokic: re-signs at $3.9M, signs as a free agent at $52.1M. |
-| **C-P1-3** | INTEGRATION GAP | **Four pricing paths, three inputs, three modifier stacks.** At age 39 quality 85, a re-signing costs **82% more** than the same player bootstrapped. Age risk is priced on one path and free on three. |
-| **C-P1-4** | MARKET LOGIC | **No market.** FA price is deterministic; demand picks the winner, never the price. |
-| **C-P1-5** | CONTRACT FORMULA | **Contract length is near-random w.r.t. quality.** Superstars average 3.2y, all-stars 3.7y. 130 sub-70-OVR players on 3+ year guaranteed deals. All CPU deals are exactly 2y flat. |
+| **C-P1-2** | LONG-SAVE DRIFT  | **`seasonStats` never updates.** FA prices frozen at real 2025-26 forever. Year-10 Jokic: re-signs at $3.9M, signs as a free agent at $52.1M.                                                                |
+| **C-P1-3** | INTEGRATION GAP  | **Four pricing paths, three inputs, three modifier stacks.** At age 39 quality 85, a re-signing costs **82% more** than the same player bootstrapped. Age risk is priced on one path and free on three.      |
+| **C-P1-4** | MARKET LOGIC     | **No market.** FA price is deterministic; demand picks the winner, never the price.                                                                                                                          |
+| **C-P1-5** | CONTRACT FORMULA | **Contract length is near-random w.r.t. quality.** Superstars average 3.2y, all-stars 3.7y. 130 sub-70-OVR players on 3+ year guaranteed deals. All CPU deals are exactly 2y flat.                           |
 
 ### P2 — calibration
 
-| ID | Type | Finding |
-|---|---|---|
-| C-P2-1 | CALIBRATION | Minimum salary is `emptyRosterChargeCents` $1.3M vs a real vet min of $2.1M–$3.6M; 39 players sit pinned to it. |
-| C-P2-2 | CALIBRATION | Top of market compressed: 19 players over 25% of cap (real ~30), 9 over 30% (real ~14). |
-| C-P2-3 | CONTRACT FORMULA | Raises hardcoded at 5%/yr in bootstrap, 0% on every CPU deal. Real deals use 5% (Bird) / 8% (non-Bird) with declines also legal. |
-| C-P2-4 | CALIBRATION | `ageValueMultiplier` has a slope kink at 32 (0.02/yr → 0.05/yr). Not a discontinuity, but it makes 33–36 a cliff in practice. |
-| C-P2-5 | INTEGRATION GAP | In-sim drafted rookies have no `seasonStats`, so `cpuFreeAgentMarket` skips them entirely (`if (!stats) continue`). |
-| C-P2-6 | INTENTIONAL SIMPLIFICATION | No extension mechanism exists at all. Acceptable for now; note it is why every good player eventually reaches free agency. |
+| ID     | Type                       | Finding                                                                                                                          |
+| ------ | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| C-P2-1 | CALIBRATION                | Minimum salary is `emptyRosterChargeCents` $1.3M vs a real vet min of $2.1M–$3.6M; 39 players sit pinned to it.                  |
+| C-P2-2 | CALIBRATION                | Top of market compressed: 19 players over 25% of cap (real ~30), 9 over 30% (real ~14).                                          |
+| C-P2-3 | CONTRACT FORMULA           | Raises hardcoded at 5%/yr in bootstrap, 0% on every CPU deal. Real deals use 5% (Bird) / 8% (non-Bird) with declines also legal. |
+| C-P2-4 | CALIBRATION                | `ageValueMultiplier` has a slope kink at 32 (0.02/yr → 0.05/yr). Not a discontinuity, but it makes 33–36 a cliff in practice.    |
+| C-P2-5 | INTEGRATION GAP            | In-sim drafted rookies have no `seasonStats`, so `cpuFreeAgentMarket` skips them entirely (`if (!stats) continue`).              |
+| C-P2-6 | INTENTIONAL SIMPLIFICATION | No extension mechanism exists at all. Acceptable for now; note it is why every good player eventually reaches free agency.       |
 
 ### Confirmed NOT the problem — do not change
 
 - **Potential.** Not an argument to `generateContract`. Zero weight on salary. The leading hypothesis is disproved.
 - **Cap space inflating CPU offers.** `MAX_SHARE_OF_CAP_SPACE` gates participation only; ability to pay is already separated from willingness to overpay.
 - **Seeded salary data.** There is none. Nothing stale to fix.
-- **`scoreToCapFraction`.** Verified in the finance audit by parameter sweep; every alternative made the league 17–45% poorer. The curve is fine — its *input* is wrong.
+- **`scoreToCapFraction`.** Verified in the finance audit by parameter sweep; every alternative made the league 17–45% poorer. The curve is fine — its _input_ is wrong.
 - **Aggregate payroll calibration.** $5.16B vs a real $5.10B. Do not retune to chase individual salaries.
 - **The GM decision layer.** `evaluateReSigningDecision` and `financialSpendingResistance` behave correctly on the prices they are given.
 - **The age curve's shape.** Peak 27 with accelerating decline is right; it is simply not applied on three of four paths.
@@ -533,18 +537,21 @@ That is a real problem but a *contained* one — CPU teams are not routinely des
 ## 16. Realism classification
 
 **NECESSARY** — required for believable contracts:
+
 - Maximum individual salary as a percentage of cap (25/30/35% by experience)
 - Sample-size confidence on the valuation input
 - One pricing function shared by all paths
 - Contract length keyed to quality and age
 
 **USEFUL** — real gain, can be simplified:
+
 - Realistic minimum salary
 - Raises as a real structure rather than a constant
 - Live in-sim stats feeding valuation
 - Demand affecting price within a bounded band
 
 **UNNECESSARY** — complexity without gameplay benefit:
+
 - Exact per-pick rookie-scale table
 - Bird / Early-Bird / Non-Bird distinctions beyond what exists
 - Trade kickers, poison pills, set-off rights
@@ -555,9 +562,10 @@ That is a real problem but a *contained* one — CPU teams are not routinely des
 
 ## 17. Recommended test suite
 
-Existing coverage: `generateContract.test.ts` (10 tests), `playerValue.test.ts` (anchor players, efficiency-without-volume), `ageCurve.test.ts`, `cpuFreeAgentPass.test.ts`. None assert a *relationship* between quality and pay, and none guard the distribution.
+Existing coverage: `generateContract.test.ts` (10 tests), `playerValue.test.ts` (anchor players, efficiency-without-volume), `ageCurve.test.ts`, `cpuFreeAgentPass.test.ts`. None assert a _relationship_ between quality and pay, and none guard the distribution.
 
 Add — behavioural:
+
 1. A superstar earns materially more than a rotation player at the same age.
 2. A player with a low seed OVR cannot reach a max-level salary from any statline.
 3. High potential alone never produces a superstar salary (guards the property that potential is not an input).
@@ -569,28 +577,23 @@ Add — behavioural:
 9. FA demand moves price within a bounded band and never past the max.
 10. CPU cap space never raises an offer (locks in the currently-correct behaviour).
 
-Add — statistical, run over the full dataset:
-11. corr(salary, seed OVR) ≥ 0.90 (currently **0.778**).
-12. Fewer than 3 players with OVR < 75 earning above 20% of cap (currently **14 above 15%**).
-13. Median salary by tier is strictly ordered and each tier's p90 sits below the next tier's p90.
-14. Count of players above 30% of cap lands in 10–18 (currently 9).
-15. No position's mean (score − seed OVR) exceeds +1.5 (centres currently **+3.7**).
+Add — statistical, run over the full dataset: 11. corr(salary, seed OVR) ≥ 0.90 (currently **0.778**). 12. Fewer than 3 players with OVR < 75 earning above 20% of cap (currently **14 above 15%**). 13. Median salary by tier is strictly ordered and each tier's p90 sits below the next tier's p90. 14. Count of players above 30% of cap lands in 10–18 (currently 9). 15. No position's mean (score − seed OVR) exceeds +1.5 (centres currently **+3.7**).
 
 ---
 
 ## 18. Scores
 
-| Dimension | Score | Note |
-|---|---|---|
-| Dimension | Before | After | Note |
-|---|---|---|---|
-| Contract Realism | 4/10 | **8/10** | Tails bounded; top of market still compressed |
-| Salary Calibration | 6/10 | **9/10** | Payroll $5.104B vs real $5.10B; corr 0.778 → 0.862 |
-| Free Agency Market | 3/10 | **5/10** | Priced correctly now, but still no bidding (C-P1-4 open) |
-| Contract Length | 3/10 | **8/10** | Ordered by quality, capped by age, CPU deals varied |
-| Cap Integration | 5/10 | **8/10** | Individual maximum now exists and clamps last |
-| Long-Save Stability | 3/10 | **5/10** | Paths unified; frozen stats still open (C-P1-2) |
-| Exploit Resistance | 3/10 | **6/10** | Max salary and sample weighting close two of four |
+| Dimension           | Score  | Note     |
+| ------------------- | ------ | -------- |
+| Dimension           | Before | After    | Note                                                     |
+| ---                 | ---    | ---      | ---                                                      |
+| Contract Realism    | 4/10   | **8/10** | Tails bounded; top of market still compressed            |
+| Salary Calibration  | 6/10   | **9/10** | Payroll $5.104B vs real $5.10B; corr 0.778 → 0.862       |
+| Free Agency Market  | 3/10   | **5/10** | Priced correctly now, but still no bidding (C-P1-4 open) |
+| Contract Length     | 3/10   | **8/10** | Ordered by quality, capped by age, CPU deals varied      |
+| Cap Integration     | 5/10   | **8/10** | Individual maximum now exists and clamps last            |
+| Long-Save Stability | 3/10   | **5/10** | Paths unified; frozen stats still open (C-P1-2)          |
+| Exploit Resistance  | 3/10   | **6/10** | Max salary and sample weighting close two of four        |
 
 ---
 

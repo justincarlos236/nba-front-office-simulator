@@ -123,6 +123,42 @@ export function rookieScaleDiscount(yearsOfExperience: number): number {
   return 1;
 }
 
+/**
+ * What the league actually pays a position, relative to what a player's rating
+ * alone predicts.
+ *
+ * **Quality and price are different things, and this is where they separate.**
+ * docs/RATING_AUDIT.md R-P1-1 found centres rated about ten rank places above
+ * what the market pays them and forwards about eleven below, and it could not
+ * tell whether the rating model was wrong or the league simply values positions
+ * differently. The follow-up settled it: within each position the model's
+ * correlation with real salary is 0.73-0.88, and the two positions supposedly
+ * biased - centres at 0.850 and power forwards at 0.877 - rank *best* of all
+ * five. The model measures quality fine. The league pays centres less.
+ *
+ * So the correction belongs here rather than in the rating. A rating stays an
+ * honest claim about how good a player is; the price reflects what his position
+ * commands, which is exactly how the two come apart in reality.
+ *
+ * Measured as actual pay over rating-predicted pay across 213 veterans on real
+ * contracts, then normalized so the league's total payroll is unchanged - this
+ * moves money between positions, it does not create or destroy any. Reproduce
+ * with `scripts/rating-audit.ts`.
+ */
+const POSITIONAL_MARKET_FACTOR: Record<string, number> = {
+  PG: 0.917,
+  SG: 0.978,
+  SF: 1.149,
+  PF: 1.066,
+  C: 0.89,
+};
+
+/** 1.0 - no adjustment - for anything without a recognised position. */
+export function positionalMarketFactor(position: string | null | undefined): number {
+  if (!position) return 1;
+  return POSITIONAL_MARKET_FACTOR[position.toUpperCase()] ?? 1;
+}
+
 export interface PriceContractInput {
   season: number;
   /** From `contractQualityScore`. */
@@ -135,6 +171,11 @@ export interface PriceContractInput {
    * and a free agent's asking price are figures, not outcomes.
    */
   noise?: number;
+  /**
+   * The player's position, so the price reflects what the league pays for it -
+   * see `POSITIONAL_MARKET_FACTOR`. Omitted means no adjustment.
+   */
+  position?: string | null;
 }
 
 /**
@@ -152,6 +193,7 @@ export function priceContractCents(input: PriceContractInput): number {
     scoreToCapFraction(input.quality) *
     ageValueMultiplier(input.age) *
     rookieScaleDiscount(input.yearsOfExperience) *
+    positionalMarketFactor(input.position) *
     (input.noise ?? 1);
 
   const floored = Math.max(value, Number(rules.emptyRosterChargeCents));

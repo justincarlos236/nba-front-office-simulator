@@ -69,6 +69,7 @@ export default async function SignFreeAgentPage({ params }: PageProps) {
     league.currentSeason,
     faAge,
     faExperience,
+    freeAgent.player.position,
   );
 
   // The number quoted to the user is the number a rival would pay - same
@@ -89,6 +90,7 @@ export default async function SignFreeAgentPage({ params }: PageProps) {
       }),
       age: faAge,
       yearsOfExperience: faExperience,
+      position: freeAgent.player.position,
     }),
   );
 

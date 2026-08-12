@@ -2,6 +2,7 @@ import { evaluateReSigningDecision } from "@/lib/gm/reSigningDecision";
 import type { GmPersonality } from "@/lib/gm/gmPersonality";
 import type { TeamIdentity } from "@/lib/gm/teamIdentity";
 import type { TeamNeed } from "@/lib/gm/teamNeeds";
+import { clampToMaxSalary } from "@/lib/cap/maxSalary";
 
 /**
  * The CPU free-agent market: rival teams actually signing the players they
@@ -76,6 +77,44 @@ const MAX_SHARE_OF_CAP_SPACE = 0.7;
 const ROSTER_LIMIT = 15;
 
 /**
+ * What each additional serious suitor adds to a free agent's price, and where a
+ * bidding war stops.
+ *
+ * **Demand used to decide who signed a player but never what he cost.** Every
+ * free agent had one deterministic price: one interested club, five, or the
+ * whole league produced the same number, so a user could outbid by a dollar and
+ * win every time, forever, with no escalation. See docs/CONTRACT_AUDIT.md,
+ * C-P1-4.
+ *
+ * The premium is bounded because an unbounded auction is the other failure -
+ * clubs talking each other into a salary nobody should pay. A player wanted by
+ * four teams costs about a quarter more than one wanted by a single club, which
+ * is enough to make competition matter without letting it run away.
+ */
+const PREMIUM_PER_RIVAL = 0.08;
+const MAX_DEMAND_PREMIUM = 0.32;
+
+/**
+ * What a free agent actually costs once his suitors are counted.
+ *
+ * Exported so the market board can quote the same figure the pass will charge -
+ * a board that advertises one price and then charges another is worse than one
+ * that says nothing.
+ */
+export function demandAdjustedPriceCents(
+  baseCents: bigint,
+  seriousSuitors: number,
+  age: number,
+  season: number,
+): bigint {
+  const premium = Math.min(MAX_DEMAND_PREMIUM, PREMIUM_PER_RIVAL * Math.max(0, seriousSuitors - 1));
+  const bid = Math.round(Number(baseCents) * (1 + premium));
+  // A bidding war cannot break a league rule. The individual maximum binds here
+  // exactly as it binds every other pricing path - see cap/maxSalary.ts.
+  return BigInt(Math.round(clampToMaxSalary(bid, age, season)));
+}
+
+/**
  * Runs one market pass.
  *
  * Best players first, because that is the order a real market clears in - a
@@ -98,48 +137,67 @@ export function runCpuFreeAgentPass(
   const ordered = [...freeAgents].sort((a, b) => b.overallRating - a.overallRating);
 
   for (const fa of ordered) {
-    for (const teamId of fa.interestedTeamIds) {
-      const team = byId.get(teamId);
-      if (!team) continue;
-      if (team.rosterSize >= ROSTER_LIMIT) continue;
-
+    // A club is a serious suitor only if it can fit him *and* its GM says yes
+    // at the asking price. Interest alone is not a bid.
+    const wouldSignAt = (team: PursuingTeam, priceCents: bigint): boolean => {
+      if (team.rosterSize >= ROSTER_LIMIT) return false;
       // Re-checked against *live* cap space, which falls as this same pass
       // spends it - the board's snapshot was taken before any of these
       // signings happened.
       const spendCeiling = BigInt(Math.floor(Number(team.capSpaceCents) * MAX_SHARE_OF_CAP_SPACE));
-      if (fa.estimatedValueCents > spendCeiling) continue;
+      if (priceCents > spendCeiling) return false;
 
-      const result = evaluateReSigningDecision({
-        team: {
-          identity: team.identity,
-          needs: team.needs,
-          personality: team.personality,
-          rosterSizeBeforeThisDecision: team.rosterSize,
-        },
-        currentSeason,
-        player: {
-          position: fa.position,
-          overallRating: fa.overallRating,
-          potentialRating: fa.potentialRating,
-          age: fa.age,
-          careerGamesMissedToInjury: fa.careerGamesMissedToInjury,
-        },
-        offerSalaryCents: fa.estimatedValueCents,
-        financialThresholdMultiplier: team.financialThresholdMultiplier,
-      });
+      return (
+        evaluateReSigningDecision({
+          team: {
+            identity: team.identity,
+            needs: team.needs,
+            personality: team.personality,
+            rosterSizeBeforeThisDecision: team.rosterSize,
+          },
+          currentSeason,
+          player: {
+            position: fa.position,
+            overallRating: fa.overallRating,
+            potentialRating: fa.potentialRating,
+            age: fa.age,
+            careerGamesMissedToInjury: fa.careerGamesMissedToInjury,
+          },
+          offerSalaryCents: priceCents,
+          financialThresholdMultiplier: team.financialThresholdMultiplier,
+        }).decision === "RESIGN"
+      );
+    };
 
-      if (result.decision === "RESIGN") {
-        signings.push({
-          leaguePlayerId: fa.leaguePlayerId,
-          leagueTeamId: teamId,
-          salaryCents: fa.estimatedValueCents,
-          years: fa.years,
-        });
-        team.rosterSize += 1;
-        team.capSpaceCents -= fa.estimatedValueCents;
-        break; // signed; no other club gets him
-      }
-    }
+    const suitors = fa.interestedTeamIds
+      .map((id) => byId.get(id))
+      .filter((t): t is PursuingTeam => t !== undefined)
+      .filter((t) => wouldSignAt(t, fa.estimatedValueCents));
+
+    if (suitors.length === 0) continue;
+
+    // Competition moves the price. Whoever is still willing once it has moved
+    // gets him; if the premium prices everyone out, the sole remaining bidder
+    // pays the ask rather than the market silently failing to clear.
+    const asking = demandAdjustedPriceCents(
+      fa.estimatedValueCents,
+      suitors.length,
+      fa.age,
+      currentSeason,
+    );
+    const stillIn = suitors.filter((t) => wouldSignAt(t, asking));
+
+    const winner = stillIn[0] ?? suitors[0];
+    const price = stillIn.length > 0 ? asking : fa.estimatedValueCents;
+
+    signings.push({
+      leaguePlayerId: fa.leaguePlayerId,
+      leagueTeamId: winner.leagueTeamId,
+      salaryCents: price,
+      years: fa.years,
+    });
+    winner.rosterSize += 1;
+    winner.capSpaceCents -= price;
   }
 
   return signings;

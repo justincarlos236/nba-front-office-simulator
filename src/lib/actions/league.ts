@@ -227,6 +227,7 @@ export async function createLeagueAction(formData: FormData) {
           gamesPlayed: stat.gamesPlayed,
           seedOverallRating: player.seedOverallRating,
           seedPotentialRating: player.seedPotentialRating,
+          position: player.position,
           seededContract:
             player.seedContractYears.length > 0
               ? {
