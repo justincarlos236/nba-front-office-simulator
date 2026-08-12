@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { computeLeagueTeamStrengths } from "@/lib/actions/leagueTeamStrength";
-import { decideAllStarBreak, ALL_STAR_BREAK_GAMES_PLAYED } from "@/lib/simulation/allStarBreak";
+import { decideAllStarBreak } from "@/lib/simulation/allStarBreak";
 import {
   applyLeagueEvents,
   applyPlayerMoraleEvents,
@@ -572,23 +572,33 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
     }
 
     // Mid-season checkpoint: the season does not roll past the All-Star break
-    // until the weekend is resolved. Games played is read fresh from the DB
-    // rather than from the increments above, since it has to be the team's
-    // true cumulative total and not just this batch's delta.
+    // until the weekend is resolved.
     //
-    // Note the decision keys off the weekend's *status*, not its existence -
-    // see `decideAllStarBreak`. A RESOLVED weekend is history, and stopping on
-    // it capped every request in the back half of the season at one chunk.
-    const userTeam = await prisma.leagueTeam.findUnique({
-      where: { id: league.userControlledTeamId },
-      select: { wins: true, losses: true },
-    });
-    const weekend = await prisma.allStarWeekend.findUnique({
-      where: { leagueId_season: { leagueId, season: league.currentSeason } },
-      select: { status: true },
-    });
+    // Keyed off the *schedule*, not the user's game count. The break is a real
+    // six-day gap on the calendar now, and a game count put it a month away
+    // from where the schedule page said it was - see `decideAllStarBreak`.
+    //
+    // Note the decision also keys off the weekend's *status*, not its
+    // existence. A RESOLVED weekend is history, and stopping on it capped
+    // every request in the back half of the season at one chunk.
+    const [nextGame, weekend] = await Promise.all([
+      prisma.game.findFirst({
+        where: {
+          leagueId,
+          season: league.currentSeason,
+          type: "REGULAR_SEASON",
+          playedAt: null,
+        },
+        orderBy: { dayIndex: "asc" },
+        select: { dayIndex: true },
+      }),
+      prisma.allStarWeekend.findUnique({
+        where: { leagueId_season: { leagueId, season: league.currentSeason } },
+        select: { status: true },
+      }),
+    ]);
     const breakDecision = decideAllStarBreak({
-      userGamesPlayed: (userTeam?.wins ?? 0) + (userTeam?.losses ?? 0),
+      nextGameDayIndex: nextGame?.dayIndex ?? null,
       weekendState: weekend?.status ?? null,
     });
     if (breakDecision === "generate-and-pause") {

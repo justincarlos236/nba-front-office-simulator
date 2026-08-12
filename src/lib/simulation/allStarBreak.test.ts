@@ -1,42 +1,62 @@
 import { describe, expect, it } from "vitest";
 import {
-  ALL_STAR_BREAK_GAMES_PLAYED,
+  ALL_STAR_BREAK_START_DAY_INDEX,
   decideAllStarBreak,
   type AllStarWeekendState,
 } from "./allStarBreak";
+import { ALL_STAR_BREAK_END_DAY_INDEX } from "../calendar/seasonCalendar";
 
-const decide = (userGamesPlayed: number, weekendState: AllStarWeekendState) =>
-  decideAllStarBreak({ userGamesPlayed, weekendState });
+/**
+ * The break is keyed off the schedule now, not the user's game count - see
+ * `allStarBreak.ts`. `nextGameDayIndex` is the day of the league's next
+ * unplayed regular-season game, and `null` means there are none left.
+ */
+const decide = (nextGameDayIndex: number | null, weekendState: AllStarWeekendState) =>
+  decideAllStarBreak({ nextGameDayIndex, weekendState });
+
+const BEFORE = ALL_STAR_BREAK_START_DAY_INDEX - 1;
+// No games are scheduled inside the break window, so the first game the loop
+// can actually reach after the break is the day it ends plus one.
+const AFTER = ALL_STAR_BREAK_END_DAY_INDEX + 1;
 
 describe("the All-Star break", () => {
   it("does not interrupt the first half of the season", () => {
-    expect(decide(0, null)).toBe("continue");
-    expect(decide(ALL_STAR_BREAK_GAMES_PLAYED - 1, null)).toBe("continue");
+    expect(decide(1, null)).toBe("continue");
+    expect(decide(BEFORE, null)).toBe("continue");
   });
 
   it("creates the weekend the moment the break is reached", () => {
-    expect(decide(ALL_STAR_BREAK_GAMES_PLAYED, null)).toBe("generate-and-pause");
+    // The next unplayed game is on the far side of the break, which means
+    // every pre-break game has been played.
+    expect(decide(AFTER, null)).toBe("generate-and-pause");
   });
 
   it("stops without regenerating a weekend the user has not resolved", () => {
-    expect(decide(ALL_STAR_BREAK_GAMES_PLAYED, "PENDING")).toBe("pause");
-    expect(decide(60, "PENDING")).toBe("pause");
+    expect(decide(AFTER, "PENDING")).toBe("pause");
+    expect(decide(AFTER + 20, "PENDING")).toBe("pause");
   });
 
   /**
-   * The regression. This returned "stop" for every game from 41 to 82, so a
-   * ten-game request quietly delivered whatever one 50-game league-wide chunk
-   * happened to contain - about three.
+   * The regression. This returned "stop" for the entire back half of the
+   * season, so a ten-game request quietly delivered whatever one 50-game
+   * league-wide chunk happened to contain - about three.
    */
   it("stops blocking the season once the weekend is resolved", () => {
-    expect(decide(ALL_STAR_BREAK_GAMES_PLAYED, "RESOLVED")).toBe("continue");
-    expect(decide(47, "RESOLVED")).toBe("continue");
-    expect(decide(81, "RESOLVED")).toBe("continue");
+    expect(decide(AFTER, "RESOLVED")).toBe("continue");
+    expect(decide(AFTER + 30, "RESOLVED")).toBe("continue");
   });
 
-  it("treats every game in the back half the same way", () => {
-    for (let played = ALL_STAR_BREAK_GAMES_PLAYED; played <= 82; played += 1) {
-      expect(decide(played, "RESOLVED"), `game ${played}`).toBe("continue");
+  it("treats every day in the back half the same way", () => {
+    for (let day = AFTER; day <= 180; day += 1) {
+      expect(decide(day, "RESOLVED"), `day ${day}`).toBe("continue");
     }
+  });
+
+  it("does not hold up a season that has no games left", () => {
+    // Null means every game has been played. A finished season cannot still
+    // have the break ahead of it, whatever the weekend's status says.
+    expect(decide(null, null)).toBe("continue");
+    expect(decide(null, "PENDING")).toBe("continue");
+    expect(decide(null, "RESOLVED")).toBe("continue");
   });
 });
