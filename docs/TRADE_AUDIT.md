@@ -544,3 +544,194 @@ npx tsx scripts/trade-curve-calibration.ts      # how the curve was fitted
 npx tsx scripts/cpu-trade-rate.ts               # CPU trade volume
 npx tsx scripts/resign-threshold-calibration.ts # the re-signing knock-on
 ```
+
+---
+
+# SUBSYSTEM SCORECARD — 2026-08-13 (post-fix)
+
+Scores are out of 10 against *what a trade system in this genre should do*, not
+against the previous version of this file. Every score is marked by the evidence
+behind it: **measured** (a number from a harness), **inspected** (read the code
+and reasoned), or **partial** (wired and exercised by tests, never calibrated).
+
+| #  | Subsystem                    | Score | Evidence  |
+| -- | ---------------------------- | ----: | --------- |
+| 1  | Player valuation             | **8** | measured  |
+| 2  | Draft pick valuation         | **7** | measured  |
+| 3  | Contract modelling           | **5** | inspected |
+| 4  | Team preference modelling    | **7** | measured  |
+| 5  | Acceptance decision          | **8** | measured  |
+| 6  | CBA legality                 | **7** | inspected |
+| 7  | Server authority & execution | **9** | inspected |
+| 8  | CPU trade generation         | **6** | measured  |
+| 9  | Counter-offer & feedback     | **8** | inspected |
+| 10 | Downstream consequences      | **7** | partial   |
+| 11 | Draft-day pick trading       | **6** | inspected |
+
+**Weighted overall: 7.2.** Weighted by blast radius — valuation and acceptance
+carry the system; a weak explainer annoys, a weak valuation breaks the game.
+
+---
+
+### 1. Player valuation — 8
+
+Age applies to money not score; the curve is fitted to two real market ratios;
+value is monotone in rating at every age (swept 60-99 x 7 ages, zero
+inversions); bad contracts are real liabilities; injury status and career injury
+history both discount, bounded.
+
+Holding it back: `UPSIDE_WEIGHT = 0.4` and the injury multipliers are hand-picked
+and have never been calibrated against anything. Trade value reads the scouting
+`potentialRating`, not the real `effectiveCeiling` from
+`docs/DEVELOPMENT_AUDIT.md` — defensible, since nobody knows a prospect's true
+ceiling, but it systematically overvalues high-potential/low-trait players and a
+user who knows the model can farm it. Positional scarcity now prices contracts
+(`POSITIONAL_MARKET_FACTOR`) but not trade value.
+
+### 2. Draft pick valuation — 7
+
+#1:#30 = 8.0x against a chart target of 8; MVP:#1 = 3.0x against 3. Future picks
+discount 15%/year compounding, second-rounders carry a 0.4 multiplier, and an
+undrafted pick's slot is projected from the original team's competitiveness.
+
+Holding it back: that projection is **linear and deterministic** — no lottery
+randomness, so a tanking team's future pick is a known quantity rather than a
+distribution, which is most of what makes pick trading interesting. **Protected
+picks and pick swaps are not modelled at all**, and both are ubiquitous in real
+trades. `ROUND_2_VALUE_MULTIPLIER` and the 0.85 yearly discount are hand-picked.
+The development audit's unresolved "top picks never bust" residual inflates
+lottery picks from underneath.
+
+### 3. Contract modelling — 5
+
+The lowest score here, and it is a structural gap rather than a bug.
+
+**Trade value sees only the current season's salary.** `playerTradeValue.ts` has
+no notion of contract length, and `actions/trade.ts` fetches
+`years: { where: { season } }` — one row. A five-year albatross and a one-year
+expiring deal at the same salary are priced identically.
+
+Expiring contracts are one of the most traded assets in the real NBA, and
+"taking on two bad years to get a pick" is a core front-office decision that
+cannot be expressed here at all. What *is* right: the surplus term compares
+against a proper market-salary model, it is signed correctly, bad-contract
+sensitivity is directional and now actually wired in, and no-trade clauses are
+enforced.
+
+### 4. Team preference modelling — 7
+
+Five identities x seven personalities x five need types, applied symmetrically
+(round-trip price ratio exactly 1.0000 across 819 probes), and no personality
+can be talked into a robbery.
+
+Holding it back: needs are computed from the roster *including* the player being
+sent away, so trading your only centre is not penalised — the need only appears
+next time. Position fit is coarse (five need buckets). All the bonus multipliers
+are hand-picked. There is no contention-window or timeline model beyond the
+identity label.
+
+### 5. Acceptance decision — 8
+
+The margin test survives negative values, which a ratio cannot. The untouchable
+gate is priced off talent so a player's own max contract cannot pay his ransom.
+Thresholds are calibrated and the CPU-CPU rate is measured, not assumed.
+
+Holding it back: `COUNTER_THRESHOLD = 0.75` is arbitrary and untested against
+anything. The untouchable gate is a cliff (1.75x or nothing) rather than a
+rising premium. There is no memory between offers — a user can re-propose the
+same rejected trade endlessly, and nothing models a soured negotiation.
+
+### 6. CBA legality — 7
+
+Genuinely good: the three-tier matching formula, first/second apron multipliers,
+the no-aggregation rule, cap-space rooms, Stepien-lite and no-trade clauses, all
+applied per-team and checked before desire.
+
+Holding it back, and these are real absences rather than nitpicks:
+
+- **`TradeException` exists in the schema and is never created or read** — the
+  only reference outside the generated client is a `deleteMany` on league
+  teardown. A team sending out more salary than it takes back gets no credit,
+  which is a real and frequently used CBA mechanism.
+- **Cash considerations are a declared union branch that is never constructed.**
+- No "recently signed players can't be traded" window, no two-way/10-day
+  handling.
+- Stepien is genuinely "lite" — adjacent years only.
+- `validateTrade` supports multi-team trades; `executeTradeAction` is
+  hard-wired to two.
+
+### 7. Server authority & execution — 9
+
+The strongest part of the system and the hardest thing to retrofit. State is
+re-fetched and both the validator and the evaluator re-run server-side; player
+*and* pick ownership are re-verified against the DB; roster limits are enforced
+on both sides; writes are transactional; an immutable `capSnapshot` receipt is
+frozen onto the trade so a revisit years later shows what the deal actually did
+rather than recomputing today's numbers.
+
+Holding it back only mildly: `executeTradeAction` is 845 lines mixing the
+authorization gate with a dozen downstream effects, and the only idempotency
+guard is the `PROPOSED` status check.
+
+### 8. CPU trade generation — 6
+
+Mutual accept is required, so the AI cannot rob itself by construction.
+Targeting is driven by needs, identity and personality rather than being
+uniform-random, disgruntled players surface into the pool, the user's roster is
+never touched without consent, and volume is calibrated to 15.8 a season.
+
+Holding it back, and this is the main thing: **CPU-CPU trades are strictly one
+player for one player.** `incoming: [targetAsset]` — a single-element array. CPU
+teams never trade a pick, never aggregate two salaries, never do 2-for-1. So the
+league's own market is structurally simpler than what the user can do, the news
+feed only ever reports swaps, and no CPU team ever rebuilds through picks the
+way the identity system says it wants to.
+
+### 9. Counter-offer & feedback — 8
+
+`suggestCounterOffer` uses `evaluateTradeOffer` *itself* as the judge rather
+than a second heuristic, so a suggestion can never contradict the actual
+decision; it finds the cheapest sufficient sweetener, and handles an untouchable
+rejection by dropping the blocking player rather than uselessly adding value.
+`describeTradeFeasibility` turns real CBA output into "send out about $8M more".
+Rejection messages are deterministic per trade so they don't flicker.
+
+Holding it back: suggestions are one asset at a time — it cannot propose a
+combination, and it cannot suggest *removing* a bad contract. Four reason codes
+is thin; the CPU can never say "we don't need another centre" or "he's too old
+for where we are", which are the two things a user most wants to hear.
+
+### 10. Downstream consequences — 7, and the least verified score here
+
+Wired and exercised: fan sentiment computed from *both* sides via the same
+evaluator, morale updates, franchise-icon departure fallout, sponsorship
+star-clause voiding, news rows with importance tiers, transaction records.
+
+The honest caveat: I confirmed these fire and are covered by tests. I did not
+measure whether their magnitudes are sensible — no equivalent of the sweeps
+behind scores 1, 2, 4, 5 and 8 exists for any of them. Treat 7 as "correctly
+wired, uncalibrated", not as a measured result.
+
+### 11. Draft-day pick trading — 6
+
+A real value-coverage floor, mutual accept through the same evaluator, and
+trade-down packages now work the way the fitted curve implies.
+
+Holding it back: the on-clock team can only trade **down** — the partner must
+hold a later pick, so nobody ever moves up for a prospect they love, which is
+the archetypal draft-night trade. Pick-for-player draft trades don't exist on
+this path either.
+
+---
+
+## What to fix first, by expected return
+
+1. **Contract length (#3).** Biggest gap, and it unlocks a whole class of real
+   decisions — expirings, taking on bad years for capital. Everything needed is
+   already in the DB; only the query and the valuation are missing.
+2. **CPU trades beyond one-for-one (#8).** The league's market is currently
+   simpler than the user's, which shows in the news feed every season.
+3. **Trade exceptions and cash (#6).** The schema is already there for one and
+   the type for the other; both are unfinished rather than absent.
+4. **Lottery randomness in pick projection (#2).** Turns a known quantity back
+   into a bet, which is what pick trading is supposed to be.
