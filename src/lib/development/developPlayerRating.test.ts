@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { developPlayerRating } from "./developPlayerRating";
+import {
+  developPlayerRating,
+  developmentTraitFromId,
+  effectiveCeiling,
+} from "./developPlayerRating";
 
 function fixedRng(value: number): () => number {
   return () => value;
@@ -236,5 +240,59 @@ describe("decline scales with quality", () => {
     const at31 = 95 - developPlayerRating({ overallRating: 95, potentialRating: 95, age: 31, rng });
     const at39 = 95 - developPlayerRating({ overallRating: 95, potentialRating: 95, age: 39, rng });
     expect(at39).toBeGreaterThan(at31);
+  });
+});
+
+/**
+ * docs/DEVELOPMENT_AUDIT.md D-P0-2: potential used to be a certainty, so every
+ * prospect reached the number on his scouting report and the league drifted to
+ * 221 players at 80+ against a real 82.
+ */
+describe("the scouting report is an estimate", () => {
+  it("gives a worse prospect a lower real ceiling from the same report", () => {
+    expect(effectiveCeiling(70, 95, 0.1)).toBeLessThan(effectiveCeiling(70, 95, 0.9));
+  });
+
+  it("never puts a player's ceiling below where he already is", () => {
+    for (const trait of [0, 0.25, 0.5, 1]) {
+      expect(effectiveCeiling(88, 90, trait)).toBeGreaterThanOrEqual(88);
+    }
+  });
+
+  it("is stable as the player develops, rather than chasing him upward", () => {
+    // Measuring the shortfall from a player's *current* rating makes the
+    // ceiling recede every season - an asymptote toward full potential, which
+    // is the certainty this replaces.
+    const trait = 0.4;
+    const early = effectiveCeiling(70, 95, trait);
+    const later = effectiveCeiling(80, 95, trait);
+    expect(later).toBe(Math.max(80, early));
+  });
+
+  it("is deterministic for a player, so a career replays identically", () => {
+    expect(developmentTraitFromId("abc123")).toBe(developmentTraitFromId("abc123"));
+    expect(developmentTraitFromId("abc123")).not.toBe(developmentTraitFromId("abc124"));
+  });
+
+  it("spreads traits across the whole range", () => {
+    const ids = Array.from({ length: 400 }, (_, i) => `player-${i}`);
+    const traits = ids.map(developmentTraitFromId);
+    expect(Math.min(...traits)).toBeLessThan(0.1);
+    expect(Math.max(...traits)).toBeGreaterThan(0.9);
+  });
+
+  it("never develops a young player past his real ceiling", () => {
+    const rng = () => 0.99;
+    let rating = 70;
+    for (let age = 20; age <= 26; age++) {
+      rating = developPlayerRating({
+        overallRating: rating,
+        potentialRating: 95,
+        age,
+        rng,
+        developmentTrait: 0.2,
+      });
+    }
+    expect(rating).toBeLessThanOrEqual(effectiveCeiling(70, 95, 0.2));
   });
 });

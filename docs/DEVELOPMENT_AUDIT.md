@@ -128,7 +128,40 @@ A 37-year-old star is possible again, which the seeded league requires of it.
 Cost: the 90+ population rises slightly (32.8 against 28.0 at season 10) because
 stars persist longer. Four regression tests cover it.
 
-**D-P0-1 and D-P0-2 are NOT fixed, deliberately.** Two attempts failed and are
+### D-P0-2 fixed 2026-08-12 (second pass)
+
+Potential is no longer a certainty. A player's real ceiling is a fraction of his
+_scouted_ potential, drawn once from a career-stable trait
+(`effectiveCeiling` / `developmentTraitFromId`), and the draft's potential curve
+is now convex rather than linear — real classes are top-heavy, a couple of
+genuine star ceilings above a long tail. Growth is also paced against the
+remaining climb, because a flat 1–4 per season meant a prospect with a real 95
+ceiling gained ~17 points over seven years and stalled in the high 80s: he could
+never actually arrive, so the top drained no matter how the ceiling was set.
+
+| Season | 90+ before | 90+ after | 85+ before | 85+ after | 80+ before | 80+ after |
+| ------ | ---------- | --------- | ---------- | --------- | ---------- | --------- |
+| 0      | 14.0       | 14.0      | 46.0       | 46.0      | 90.0       | 90.0      |
+| 10     | 28.0       | **12.1**  | 95.0       | 53.1      | 194.1      | 128.1     |
+| 20     | 34.1       | **12.8**  | 103.9      | 53.2      | 232.1      | 141.4     |
+
+Real: ~14 / ~44 / ~82. **The star population now holds at 14 across two
+decades** instead of drifting to 34.
+
+**The residual, stated plainly.** 85+ settles around 53 against a real 44, and
+80+ around 141 against 82. Both are far better than the 104 / 232 they were, and
+both are stable rather than compounding, but neither is right.
+
+That gap is a deliberate trade. `MIN_CEILING_REALIZATION` moves every band
+together: at 0.35, measured, 80+ lands at 69 (better than real) and prospects
+look realistic — but the 90+ population drains to **5** by season twenty. A
+league with five stars is a worse game than one carrying extra good role
+players, so the star count won. Anyone revisiting this needs a lever that
+separates the top from the middle — most likely making scouting _more_ reliable
+for genuine top prospects than for mid-round ones, which is also true of real
+drafts.
+
+**D-P0-1 is NOT fixed.** Two attempts failed and are
 recorded here so the next one does not repeat them:
 
 1. _Growth proportional to remaining ceiling_ (`room × rate`, rate driven by a

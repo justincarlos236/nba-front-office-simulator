@@ -4,6 +4,7 @@ import { ageValueMultiplier } from "../valuation/ageCurve";
 import {
   CLASS_SIZE,
   expectedRatingForPick,
+  expectedPotentialForPick,
   OVERALL_AT_PICK_1,
   OVERALL_AT_PICK_60,
   POTENTIAL_AT_PICK_1,
@@ -80,7 +81,10 @@ export function computeDraftPickTradeValue(input: DraftPickTradeValueInput): big
     projectedPickNumber(input.round, input.originalTeamCompetitivenessPercentile);
 
   const expectedOverall = expectedRatingForPick(pickNumber, OVERALL_AT_PICK_1, OVERALL_AT_PICK_60);
-  const expectedPotential = expectedRatingForPick(
+  // Potential falls convexly across a class - see POTENTIAL_FALLOFF_EXPONENT.
+  // Projecting it linearly here would value late picks well above what the
+  // draft actually produces.
+  const expectedPotential = expectedPotentialForPick(
     pickNumber,
     POTENTIAL_AT_PICK_1,
     POTENTIAL_AT_PICK_60,

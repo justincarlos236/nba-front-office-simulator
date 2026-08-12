@@ -45,9 +45,36 @@ function randomIntInclusive(rng: () => number, min: number, max: number): number
   return min + Math.floor(rng() * (max - min + 1));
 }
 
+/**
+ * How sharply potential falls across a class. 1 is the straight line this used
+ * to be; below 1 drops steeply through the lottery and flattens out late, which
+ * is the shape of a real class.
+ *
+ * **A straight line made every class better than the league it joined.**
+ * Linear interpolation from 97 to 70 puts the mean potential of a 60-man class
+ * at 83.5, against a league median of 71 - so intake beat the population every
+ * year, forever, and the league drifted to 221 players at 80+ against a real 82
+ * (docs/DEVELOPMENT_AUDIT.md, D-P0-2). Real classes are far more top-heavy: a
+ * couple of players with genuine star ceilings and a long tail of rotation
+ * talent.
+ *
+ * Applied to potential only. Current ability already falls gently across a
+ * class - rookies are all roughly equally unproven - and it is the *ceiling*
+ * that was mispriced.
+ */
+const POTENTIAL_FALLOFF_EXPONENT = 0.5;
+
 export function expectedRatingForPick(pick: number, atPick1: number, atPick60: number): number {
   const t = (pick - 1) / (CLASS_SIZE - 1); // 0 at pick 1, 1 at pick 60
   return atPick1 + (atPick60 - atPick1) * t;
+}
+
+/**
+ * The same curve for potential, but convex - see `POTENTIAL_FALLOFF_EXPONENT`.
+ */
+export function expectedPotentialForPick(pick: number, atPick1: number, atPick60: number): number {
+  const t = (pick - 1) / (CLASS_SIZE - 1);
+  return atPick1 + (atPick60 - atPick1) * Math.pow(t, POTENTIAL_FALLOFF_EXPONENT);
 }
 
 export interface GeneratedDraftClass {
@@ -84,7 +111,7 @@ export function generateDraftClass(rng: () => number = Math.random): GeneratedDr
       OVERALL_AT_PICK_1 + mods.overallAtPick1Delta,
       OVERALL_AT_PICK_60 + mods.overallAtPick60Delta,
     );
-    const basePotential = expectedRatingForPick(
+    const basePotential = expectedPotentialForPick(
       pick,
       POTENTIAL_AT_PICK_1 + mods.potentialAtPick1Delta,
       POTENTIAL_AT_PICK_60,

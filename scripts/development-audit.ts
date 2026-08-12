@@ -15,7 +15,10 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { developPlayerRating } from "../src/lib/development/developPlayerRating";
+import {
+  developPlayerRating,
+  developmentTraitFromId,
+} from "../src/lib/development/developPlayerRating";
 import { shouldRetire } from "../src/lib/development/retirement";
 import {
   OVERALL_AT_PICK_1,
@@ -23,6 +26,7 @@ import {
   POTENTIAL_AT_PICK_1,
   POTENTIAL_AT_PICK_60,
   expectedRatingForPick,
+  expectedPotentialForPick,
 } from "../src/lib/draft/generateDraftClass";
 import { resolvePlayerAge } from "../src/lib/players/age";
 
@@ -79,7 +83,9 @@ function draftClass(rng: () => number, year: number): P[] {
   const out: P[] = [];
   for (let pick = 1; pick <= CLASS_SIZE; pick++) {
     const o = Math.round(expectedRatingForPick(pick, OVERALL_AT_PICK_1, OVERALL_AT_PICK_60));
-    const pt = Math.round(expectedRatingForPick(pick, POTENTIAL_AT_PICK_1, POTENTIAL_AT_PICK_60));
+    const pt = Math.round(
+      expectedPotentialForPick(pick, POTENTIAL_AT_PICK_1, POTENTIAL_AT_PICK_60),
+    );
     const ov = Math.max(60, Math.min(99, o + Math.floor(rng() * 13) - 6));
     const pv = Math.max(ov, Math.min(99, pt + Math.floor(rng() * 13) - 6));
     out.push({ name: `R${year}-${pick}`, ovr: ov, pot: pv, age: 19 + Math.floor(rng() * 4) });
@@ -132,6 +138,7 @@ function run(seed: number): Snapshot[] {
         potentialRating: p.pot,
         age: p.age,
         rng,
+        developmentTrait: developmentTraitFromId(p.name),
       });
       p.age += 1;
     }
@@ -149,7 +156,7 @@ function run(seed: number): Snapshot[] {
 }
 
 // Average across seeds so a single unlucky run is not mistaken for a trend.
-const RUNS = 12;
+const RUNS = Number(process.env.RUNS ?? 12);
 const all = Array.from({ length: RUNS }, (_, i) => run(i + 1));
 const avg = (year: number, key: keyof Snapshot) =>
   all.reduce((s, run) => s + (run[year][key] as number), 0) / RUNS;
@@ -218,12 +225,14 @@ for (const [label, ovr, pot] of [
   const finals: number[] = [];
   for (let i = 0; i < N; i++) {
     let r = ovr;
+    const trait = developmentTraitFromId(`${label}#${i}`);
     for (let age = 20; age <= 26; age++) {
       r = developPlayerRating({
         overallRating: r,
         potentialRating: pot,
         age,
         rng: rng3,
+        developmentTrait: trait,
       });
     }
     finals.push(r);
