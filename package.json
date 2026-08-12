@@ -20,6 +20,7 @@
     "import:season-stats": "tsx scripts/import-season-stats.ts",
     "import:players": "tsx scripts/import-players.ts",
     "import:dataset": "tsx scripts/import-hoopr-dataset.ts",
+    "import:contracts": "tsx scripts/import-contracts.ts",
     "postinstall": "prisma generate",
     "prepare": "husky"
   },

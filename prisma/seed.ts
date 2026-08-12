@@ -43,6 +43,8 @@ interface DatasetPlayer {
     boxPlusMinus: number | null;
     valueOverReplacement: number | null;
   };
+  /** Real contract, when `scripts/import-contracts.ts` has run. */
+  contract?: { years: Array<{ season: number; salaryCents: number }> } | null;
 }
 
 interface DatasetFile {
@@ -111,6 +113,7 @@ async function seedPlayers() {
     `Seeding ${file.players.length} players (dataset ${file.manifest.version}, ${file.manifest.seasonYear} season)...`,
   );
   let seededPlayers = 0;
+  let seededContracts = 0;
   let skippedNoTeam = 0;
 
   for (const player of file.players) {
@@ -150,11 +153,27 @@ async function seedPlayers() {
       create: { playerId: dbPlayer.id, season, team, ...statFields },
     });
 
+    // Real contract years, when the dataset carries them. Replaced wholesale
+    // rather than merged: a refreshed contract is a different deal, and leaving
+    // a stale year behind would extend a contract that has actually ended.
+    if (player.contract && player.contract.years.length > 0) {
+      await prisma.playerSeedContractYear.deleteMany({ where: { playerId: dbPlayer.id } });
+      await prisma.playerSeedContractYear.createMany({
+        data: player.contract.years.map((y) => ({
+          playerId: dbPlayer.id,
+          season: y.season,
+          salaryCents: BigInt(y.salaryCents),
+        })),
+      });
+      seededContracts++;
+    }
+
     seededPlayers++;
   }
 
   console.log(
-    `Done. Seeded ${seededPlayers} players (${skippedNoTeam} skipped - team abbreviation not found).`,
+    `Done. Seeded ${seededPlayers} players, ${seededContracts} real contracts ` +
+      `(${skippedNoTeam} skipped - team abbreviation not found).`,
   );
 }
 

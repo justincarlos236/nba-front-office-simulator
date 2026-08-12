@@ -140,6 +140,12 @@ export function mergeCanonicalPlayers(input: MergeInput): MergeResult {
       seedOverallRating: overall,
       seedPotentialRating: computeSeedPotentialRating(overall, age),
       overrideApplied: override.applied,
+      // Contracts arrive from a separate source and a separate run (they are
+      // behind a paid tier - see balldontlieContracts.ts), so the roster/stats
+      // build always emits null here and `scripts/import-contracts.ts` fills
+      // it in afterwards. That keeps a dataset refresh from requiring a
+      // contract subscription just to update box scores.
+      contract: null,
     });
   }
 

@@ -41,10 +41,32 @@ export const REAL_TEAM_PAYROLL_SHAPE = {
  * cap. This is what `scoreToCapFraction` controls directly, so it is the
  * calibration target that matters most.
  *
- * Roughly 450-500 players hold standard contracts across the league.
+ * **These counts were wrong until real contracts were imported, and wrong in a
+ * way that inverted a conclusion.** They were hand-assembled from published
+ * trackers and read 5 / 10 / 30. Measured against the 462 real 2025-26
+ * contracts the dataset now carries (`scripts/import-contracts.ts`), the true
+ * counts are 14 / 26 / 59 - two to three times higher across every band.
+ *
+ * docs/CONTRACT_AUDIT.md judged the generated distribution against the old
+ * numbers and concluded it was too fat through $30-40M. Against the real ones
+ * it is the opposite: the generator is too *thin* at the top, producing one
+ * player above $50M where the league has fourteen. Any future calibration
+ * should be measured against these, not the old figures.
+ *
+ * Source: the committed dataset's own `contract` field, counted over players
+ * holding a roster spot. Reproduce with `scripts/contract-audit.ts`.
  */
 export const REAL_SALARY_BANDS = [
-  { atLeastFractionOfCap: 0.323, dollars: "$50M+", players: 5 },
-  { atLeastFractionOfCap: 0.259, dollars: "$40M+", players: 10 },
-  { atLeastFractionOfCap: 0.194, dollars: "$30M+", players: 30 },
+  { atLeastFractionOfCap: 0.323, dollars: "$50M+", players: 14 },
+  { atLeastFractionOfCap: 0.259, dollars: "$40M+", players: 26 },
+  { atLeastFractionOfCap: 0.194, dollars: "$30M+", players: 59 },
 ] as const;
+
+/**
+ * What the real contracts actually total across the 462 matched players. Kept
+ * separate from `REAL_TEAM_PAYROLL_SHAPE.leagueTotalCents` (an external
+ * estimate) because the two are measured differently: this one excludes the
+ * ~75 rostered players on two-way deals, which carry no cap contract and never
+ * appear in a contract feed.
+ */
+export const SEEDED_REAL_PAYROLL_CENTS = 5_291_000_000_00;

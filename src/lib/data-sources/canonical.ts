@@ -97,6 +97,22 @@ export interface CanonicalPlayer {
   seedPotentialRating: number;
   /** True when `seedOverallRating` was nudged by the consensus override layer. */
   overrideApplied: boolean;
+  /**
+   * The player's real contract as of the dataset's season, when a contract
+   * source contributed one. Null means the seed pipeline had no real deal for
+   * him and the simulator generates one instead - see `planLeaguePlayer`.
+   *
+   * Seeding real contracts is what keeps the opening league recognisable:
+   * without it every salary in year one came from the valuation model, which
+   * prices a player off his rating and therefore cannot know that a real
+   * backup centre is on a real minimum deal.
+   */
+  contract: SeededContract | null;
+}
+
+/** A real contract, as seeded from a contract provider. Cents throughout. */
+export interface SeededContract {
+  years: Array<{ season: number; salaryCents: number }>;
 }
 
 /**
@@ -115,7 +131,7 @@ export interface DatasetManifest {
   /** Every source that contributed, with the role it played. */
   dataSources: Array<{
     provider: string;
-    role: "bios" | "stats" | "rosters" | "draft" | "photos";
+    role: "bios" | "stats" | "rosters" | "draft" | "photos" | "contracts";
     url?: string;
     license?: string;
   }>;

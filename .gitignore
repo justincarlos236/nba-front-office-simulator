@@ -57,3 +57,4 @@ CLAUDE.md
 .github/hooks/
 .github/skills/
 /notes/
+prisma/data/.contracts-cache.json

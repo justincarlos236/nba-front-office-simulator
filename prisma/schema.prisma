@@ -106,8 +106,8 @@ model Team {
 }
 
 model Player {
-  id                  String             @id @default(cuid())
-  externalId          String?            @unique
+  id                  String                   @id @default(cuid())
+  externalId          String?                  @unique
   fullName            String
   position            Position
   birthDate           DateTime?
@@ -121,14 +121,30 @@ model Player {
   seedOverallRating   Int?
   seedPotentialRating Int?
   pathway             ProspectPathway?
-  draftProspectId     String?            @unique
+  draftProspectId     String?                  @unique
   leaguePlayers       LeaguePlayer[]
   seasonStats         PlayerSeasonStat[]
-  currentTeam         Team?              @relation(fields: [currentTeamId], references: [id])
-  draftProspect       DraftProspect?     @relation(fields: [draftProspectId], references: [id], onDelete: SetNull)
+  seedContractYears   PlayerSeedContractYear[]
+  currentTeam         Team?                    @relation(fields: [currentTeamId], references: [id])
+  draftProspect       DraftProspect?           @relation(fields: [draftProspectId], references: [id], onDelete: SetNull)
 
   @@index([currentTeamId])
   @@map("players")
+}
+
+/// A year of a player's real, imported contract, used to seed a new league so
+/// year one matches the real NBA instead of the valuation model's opinion.
+/// Absent for players the contract source did not cover - those get a
+/// generated deal. See src/lib/league/planLeaguePlayer.ts.
+model PlayerSeedContractYear {
+  id          String @id @default(cuid())
+  playerId    String
+  season      Int
+  salaryCents BigInt
+  player      Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, season])
+  @@map("player_seed_contract_years")
 }
 
 model PlayerSeasonStat {

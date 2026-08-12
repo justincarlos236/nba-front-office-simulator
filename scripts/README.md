@@ -15,9 +15,40 @@ committed so a fresh clone can seed offline.
 | `import-season-stats.ts`  | Aggregates ~26k real box scores into per-player season averages |
 | `import-players.ts`       | Fetches real player bios and joins them onto the stats fixture  |
 | `import-hoopr-dataset.ts` | Reads the upstream hoopR parquet dataset into `nbaDataset.json` |
+| `import-contracts.ts`     | Merges real NBA contracts into `nbaDataset.json` (see below)    |
 
 `import-players.ts` and `import-season-stats.ts` need a free
 [balldontlie](https://balldontlie.io) API key in `.env`.
+
+### Real contracts
+
+`import-contracts.ts` seeds the opening league with real salaries instead of
+generated ones, so year one looks like the actual NBA. Run it _after_
+`import:dataset` — it reads that script's output and writes the `contract` field
+back into it.
+
+```
+npm run import:dataset     # rosters, bios, box scores  (free)
+npm run import:contracts   # real salaries + draft data (needs GOAT)
+npx prisma db seed
+```
+
+The contracts endpoint is balldontlie **GOAT tier** ($39.99/month as of August
+2026), but the output is committed to the repo, so a refresh costs one run — and
+balldontlie offers a 48-hour GOAT trial. The script is resumable and checkpoints
+to `prisma/data/.contracts-cache.json` after every request, so a rate limit, an
+expired trial or a closed laptop never costs more than the call in flight. About
+150 requests, ~33 minutes at the trial's 5/min; set `BDL_REQUEST_MS=200` on a
+paid tier to go faster.
+
+Players it cannot match by name keep `contract: null` and get a generated deal,
+which is what every player got before this existed — so a partial run degrades
+rather than breaks. The script prints its match rate and the unmatched names.
+
+It also backfills `draftYear` / `draftRound` / `draftPick`, which the hoopR
+dataset does not carry for a single player. That is what lets experience-based
+rules (the rookie scale, the max-salary tiers) use real service time instead of
+falling back to `age - 22`.
 
 ## Backfills
 
