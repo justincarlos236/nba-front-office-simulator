@@ -8,6 +8,62 @@
 
 ---
 
+## RESOLUTION — R-P0-1 fixed 2026-08-12
+
+`REGRESSION_TARGET` is no longer a constant. Where a veteran has a real
+contract, the regression pulls him toward the rating his **market price**
+implies (`seedPriorFromSalary`) rather than toward a flat 67. Rookie-scale
+money is set by rule rather than by the market, so those players keep the flat
+baseline, as do two-way players and generated prospects — anyone the market has
+not priced.
+
+The salary→rating table is measured, not chosen: median rating by salary band
+across the 126 full-season veterans on real contracts, i.e. exactly the players
+this model already rates correctly. Two adjacent bands inverted on small samples
+(n=11, n=19) and were pooled — the standard isotonic fix for a relationship
+known to be monotone.
+
+Ratings are re-derived in `scripts/import-contracts.ts` rather than in the
+roster build, because the roster build has no contracts to read. That also keeps
+the free roster/stats refresh independent of the paid contract one.
+
+### Measured
+
+|                                  | Before | After     |
+| -------------------------------- | ------ | --------- |
+| Paid 20%+ of cap, rated under 80 | 13     | **6**     |
+| …of those, short-season          | 9      | **2**     |
+| corr(rating, real salary)        | 0.760  | **0.800** |
+| mean pay-vs-rating rank drift    | 33.4   | **30.9**  |
+| Tatum, model rating              | 74     | **88**    |
+| Worst override rescue            | +19    | **+6**    |
+
+| Player           | GP  | Before | After  | Real pay |
+| ---------------- | --- | ------ | ------ | -------- |
+| Anthony Davis    | 20  | 76     | **87** | $54.1M   |
+| Trae Young       | 15  | 72     | **85** | $46.4M   |
+| Domantas Sabonis | 19  | 74     | **84** | $42.3M   |
+| Ja Morant        | 20  | 73     | **82** | $39.4M   |
+
+The six that remain are the confidence-1.00 rows this audit already identified
+as _correct_ — Middleton, Suggs, Holiday, Grant are genuinely declining or
+overpaid, and the model is right about them.
+
+**The distribution did not inflate**, which was the risk in raising 95 ratings:
+95+ held at 5, 90+ at 14, 85+ moved 44 → 46, mean 70.4 → 70.7.
+
+### What this did not fix
+
+**Queta is still 79.** He played 76 games, so there is no regression to
+re-target and the prior carries no weight. His rating was never R-P0-1 — it is
+R-P1-1, the positional bias, which remains open. His _contract_ is now his real
+$2.3M, so year one reads correctly regardless; the rating still overstates him
+to trade value, rotation and re-signing.
+
+R-P1-1 and R-P2-1 are untouched.
+
+---
+
 ## The model
 
 `src/lib/data-sources/seedRating.ts` is a considered piece of work, and most of it holds up:

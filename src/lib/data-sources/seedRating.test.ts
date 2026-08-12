@@ -4,6 +4,7 @@ import {
   computeSeedOverallRating,
   computeSeedPotentialRating,
   sampleConfidence,
+  seedPriorFromSalary,
   seedProductionScore,
 } from "./seedRating";
 
@@ -133,5 +134,91 @@ describe("computeSeedPotentialRating", () => {
     expect(computeSeedPotentialRating(75, 20)).toBeGreaterThan(75);
     expect(computeSeedPotentialRating(75, 31)).toBe(75);
     expect(computeSeedPotentialRating(95, 19)).toBeLessThanOrEqual(99);
+  });
+});
+
+/**
+ * The salary prior, added after docs/RATING_AUDIT.md found the regression had
+ * none: every unproven line was pulled toward a flat 67, which rated Anthony
+ * Davis 76 on a max contract and needed a hand-written override list to rescue
+ * fifteen stars one at a time.
+ */
+describe("seedPriorFromSalary", () => {
+  const CAP = 154_647_000_00;
+
+  it("rises with salary", () => {
+    const fractions = [0.02, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3];
+    const priors = fractions.map((f) => seedPriorFromSalary(CAP * f, CAP)!);
+    for (let i = 1; i < priors.length; i++) {
+      expect(priors[i]).toBeGreaterThanOrEqual(priors[i - 1]);
+    }
+  });
+
+  it("puts a max-salary player near the top of the scale", () => {
+    expect(seedPriorFromSalary(CAP * 0.35, CAP)!).toBeGreaterThanOrEqual(88);
+  });
+
+  it("puts a minimum-salary player near the fringe baseline", () => {
+    expect(seedPriorFromSalary(CAP * 0.015, CAP)!).toBeLessThanOrEqual(74);
+  });
+
+  it("interpolates between the measured anchors rather than stepping", () => {
+    const lo = seedPriorFromSalary(CAP * 0.225, CAP)!;
+    const mid = seedPriorFromSalary(CAP * 0.25, CAP)!;
+    const hi = seedPriorFromSalary(CAP * 0.275, CAP)!;
+    expect(mid).toBeGreaterThan(lo);
+    expect(mid).toBeLessThan(hi);
+  });
+
+  it("is flat outside the measured range rather than extrapolating", () => {
+    expect(seedPriorFromSalary(CAP * 0.9, CAP)).toBe(seedPriorFromSalary(CAP * 0.35, CAP));
+    expect(seedPriorFromSalary(1, CAP)).toBe(seedPriorFromSalary(CAP * 0.005, CAP));
+  });
+
+  it("returns null when there is no salary to read", () => {
+    expect(seedPriorFromSalary(0, CAP)).toBeNull();
+    expect(seedPriorFromSalary(-1, CAP)).toBeNull();
+    expect(seedPriorFromSalary(CAP * 0.2, 0)).toBeNull();
+  });
+});
+
+describe("computeSeedOverallRating - the prior only applies where evidence is thin", () => {
+  const line = (gamesPlayed: number) =>
+    ({
+      season: 2025,
+      team: "BOS",
+      gamesPlayed,
+      minutesPerGame: 33,
+      pointsPerGame: 22,
+      reboundsPerGame: 6,
+      assistsPerGame: 5,
+      stealsPerGame: 1.2,
+      blocksPerGame: 0.4,
+      turnoversPerGame: 2.4,
+      trueShootingPct: 0.58,
+    }) as CanonicalSeasonStat;
+
+  it("ignores the prior when a full season stands behind the line", () => {
+    expect(computeSeedOverallRating(line(78), 90)).toBe(computeSeedOverallRating(line(78), 60));
+  });
+
+  it("leans on the prior when the sample is short", () => {
+    expect(computeSeedOverallRating(line(15), 90)).toBeGreaterThan(
+      computeSeedOverallRating(line(15), 67),
+    );
+  });
+
+  /**
+   * The regression test for R-P0-1. Jayson Tatum played 16 games and the model,
+   * unaided, rated him 74 - a rotation player - which is what the override list
+   * existed to undo.
+   */
+  it("keeps a star on an injury-shortened season near star level", () => {
+    const withMarketPrior = computeSeedOverallRating(line(16), 89);
+    expect(withMarketPrior).toBeGreaterThan(83);
+  });
+
+  it("still regresses an unproven player with no prior", () => {
+    expect(computeSeedOverallRating(line(10))).toBeLessThan(computeSeedOverallRating(line(78)));
   });
 });

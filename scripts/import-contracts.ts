@@ -28,6 +28,15 @@ import {
   type BallDontLieContract,
 } from "../src/lib/data-sources/balldontlieContracts";
 import { normalizePlayerName } from "../src/lib/data-sources/normalizeName";
+import {
+  computeSeedOverallRating,
+  computeSeedPotentialRating,
+  seedPriorFromSalary,
+} from "../src/lib/data-sources/seedRating";
+import { applyRatingOverride } from "../src/lib/data-sources/ratingOverrides";
+import { resolvePlayerAge } from "../src/lib/players/age";
+import { getSeasonCapRules } from "../src/lib/cap/constants";
+import type { CanonicalSeasonStat } from "../src/lib/data-sources/canonical";
 
 const SEASON = 2025; // start-year convention => the 2025-26 season
 const FUTURE_SEASONS = 4; // how far forward to follow a multi-year deal
@@ -38,11 +47,15 @@ const CHECKPOINT = path.join(import.meta.dirname, "..", "prisma", "data", ".cont
 
 interface DatasetPlayer {
   fullName: string;
-  stats: { minutesPerGame: number } | null;
+  stats: ({ minutesPerGame: number } & Record<string, unknown>) | null;
+  birthDate: string | null;
   teamAbbreviation: string | null;
   draftYear: number | null;
   draftRound: number | null;
   draftPick: number | null;
+  seedOverallRating: number | null;
+  seedPotentialRating: number | null;
+  overrideApplied?: boolean;
   contract?: { years: Array<{ season: number; salaryCents: number }> } | null;
 }
 interface DatasetFile {
@@ -250,6 +263,66 @@ async function main() {
       player.contract = null;
       if (player.teamAbbreviation) unmatched.push(player.fullName);
     }
+  }
+
+  // --- re-derive seed ratings, now that a prior exists -----------------------
+  //
+  // The roster/stats build has no contracts to read, so it regresses every
+  // unproven player toward a flat 67. With real salaries in hand a veteran's
+  // market price is a far better prior, so ratings are recomputed here rather
+  // than there - which also keeps the free roster refresh independent of this
+  // paid one. See seedRating.ts `seedPriorFromSalary` and docs/RATING_AUDIT.md.
+  const rules = getSeasonCapRules(SEASON);
+  const cap = Number(rules.salaryCapCents);
+  let reRated = 0;
+  let biggestMove = { name: "", from: 0, to: 0 };
+  const nowRedundant: string[] = [];
+
+  for (const player of file.players) {
+    if (!player.stats) continue;
+    const salary = player.contract?.years.find((y) => y.season === SEASON)?.salaryCents ?? 0;
+    // Rookie-scale money is set by rule, not by the market, so it says nothing
+    // about how good a player is. Those keep the flat baseline.
+    const experience = player.draftYear === null ? null : SEASON - player.draftYear;
+    const prior =
+      (experience ?? 0) >= 4 ? (seedPriorFromSalary(salary, cap) ?? undefined) : undefined;
+
+    const stat = player.stats as unknown as CanonicalSeasonStat;
+    const model = computeSeedOverallRating(stat, prior);
+    const withOverride = applyRatingOverride(player.fullName, model);
+
+    const before = player.seedOverallRating;
+    if (before !== withOverride.rating) {
+      reRated++;
+      if (
+        Math.abs(withOverride.rating - (before ?? 0)) > Math.abs(biggestMove.to - biggestMove.from)
+      )
+        biggestMove = { name: player.fullName, from: before ?? 0, to: withOverride.rating };
+    }
+    // An override that now agrees with the model is no longer doing any work.
+    if (withOverride.applied && model === withOverride.rating) nowRedundant.push(player.fullName);
+
+    player.seedOverallRating = withOverride.rating;
+    player.seedPotentialRating = computeSeedPotentialRating(
+      withOverride.rating,
+      resolvePlayerAge(
+        {
+          birthDate: player.birthDate ? new Date(player.birthDate) : null,
+          draftYear: player.draftYear,
+        },
+        SEASON,
+      ),
+    );
+    player.overrideApplied = withOverride.applied;
+  }
+  console.log(`\nRe-rated ${reRated} players against their real salary.`);
+  if (biggestMove.name) {
+    console.log(`  biggest move: ${biggestMove.name} ${biggestMove.from} -> ${biggestMove.to}`);
+  }
+  if (nowRedundant.length > 0) {
+    console.log(
+      `  ${nowRedundant.length} overrides now agree with the model and could be retired: ${nowRedundant.join(", ")}`,
+    );
   }
 
   const sources = file.manifest.dataSources.filter((s) => s.role !== "contracts");

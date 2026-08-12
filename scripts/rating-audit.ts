@@ -18,6 +18,7 @@ import {
   computeSeedOverallRating,
   seedProductionScore,
   sampleConfidence,
+  seedPriorFromSalary,
 } from "../src/lib/data-sources/seedRating";
 import { applyRatingOverride } from "../src/lib/data-sources/ratingOverrides";
 import { resolvePlayerAge } from "../src/lib/players/age";
@@ -60,7 +61,11 @@ const players = ds.players
       turnoversPerGame: Number(s.turnoversPerGame ?? 0),
       trueShootingPct: s.trueShootingPct === null ? null : Number(s.trueShootingPct),
     } as CanonicalSeasonStat;
-    const model = computeSeedOverallRating(stat);
+    const salaryForPrior = p.contract?.years.find((y) => y.season === SEASON)?.salaryCents ?? 0;
+    const expForPrior = p.draftYear !== null ? SEASON - p.draftYear : null;
+    const prior =
+      (expForPrior ?? 0) >= 4 ? (seedPriorFromSalary(salaryForPrior, CAP) ?? undefined) : undefined;
+    const model = computeSeedOverallRating(stat, prior);
     const override = applyRatingOverride(p.fullName, model);
     const salary = p.contract?.years.find((y) => y.season === SEASON)?.salaryCents ?? null;
     const age = resolvePlayerAge(
