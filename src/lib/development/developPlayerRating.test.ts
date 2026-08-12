@@ -182,3 +182,59 @@ describe("developPlayerRating", () => {
     expect(happy).toBeGreaterThanOrEqual(miserable);
   });
 });
+
+/**
+ * docs/DEVELOPMENT_AUDIT.md D-P1-1: decline used to be absolute, so a 99 and a
+ * 70 lost the same 1-3 points at 30 and no player could be elite past 34 -
+ * while the seeded league opens with LeBron at 40, Durant and Curry at 37 and
+ * Kawhi at 34.
+ */
+describe("decline scales with quality", () => {
+  const rng = () => 0.5;
+
+  it("takes less from an elite player than from a fringe one at the same age", () => {
+    const eliteLoss =
+      95 - developPlayerRating({ overallRating: 95, potentialRating: 95, age: 34, rng });
+    const fringeLoss =
+      70 - developPlayerRating({ overallRating: 70, potentialRating: 70, age: 34, rng });
+    expect(eliteLoss).toBeLessThan(fringeLoss);
+  });
+
+  it("still declines every elite player - damping is never a reprieve", () => {
+    for (const age of [31, 34, 37, 40]) {
+      const after = developPlayerRating({ overallRating: 99, potentialRating: 99, age, rng });
+      expect(after).toBeLessThan(99);
+    }
+  });
+
+  it("lets a star still be a star in his mid-thirties", () => {
+    // The property the old model made impossible: measured across a cohort
+    // rather than one career, since a single unlucky run of rolls says nothing.
+    const N = 300;
+    let seed = 7;
+    const rand = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+    const finals: number[] = [];
+    for (let i = 0; i < N; i++) {
+      let rating = 95;
+      for (let age = 27; age < 35; age++) {
+        rating = developPlayerRating({
+          overallRating: rating,
+          potentialRating: 95,
+          age,
+          rng: rand,
+        });
+      }
+      finals.push(rating);
+    }
+    const mean = finals.reduce((a, b) => a + b, 0) / N;
+    expect(mean).toBeGreaterThan(85);
+    // And it is not merely the average surviving - real ones do too.
+    expect(finals.filter((r) => r >= 90).length / N).toBeGreaterThan(0.05);
+  });
+
+  it("accelerates with age regardless of quality", () => {
+    const at31 = 95 - developPlayerRating({ overallRating: 95, potentialRating: 95, age: 31, rng });
+    const at39 = 95 - developPlayerRating({ overallRating: 95, potentialRating: 95, age: 39, rng });
+    expect(at39).toBeGreaterThan(at31);
+  });
+});

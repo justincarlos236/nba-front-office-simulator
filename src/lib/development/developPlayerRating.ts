@@ -10,6 +10,35 @@ const DECLINE_START_AGE = 30;
 const MIN_RATING = 60;
 const MAX_RATING = 99;
 
+/**
+ * How much of his remaining ceiling a young player converts in one season, at
+ * the two ends of `developmentTrait`.
+ *
+ * **Prospects used to be unable to fail.** Growth was
+ * `randomIntInclusive(rng, 1, ...)` wrapped in `Math.max(1, ...)`, so the floor
+ * was +1 every season: a player under 27 with headroom could not stagnate,
+ * could not regress, and could not bust. Measured over 500 prospects per draft
+ * slot, the bust rate was 0% at every slot - a pick-30 prospect became an 82
+ * with certainty, and every class delivered around thirty future 80+ players
+ * against a real five to eight. That is the engine that inflated the league to
+ * 221 players at 80+ by season twenty. See docs/DEVELOPMENT_AUDIT.md, D-P0-1.
+ *
+ * A rate of 0 is a genuine bust: he never closes the gap to his ceiling.
+ */
+/**
+ * How much being elite slows decline, at the top of the scale.
+ *
+ * **Decline used to be absolute.** A 99 and a 70 lost the same 1-3 points at
+ * age 30, so nothing about being elite slowed the fall: of 400 players rated 95
+ * at 27, 6% were still elite at 34 and 0% at 35. The seeded league opens with
+ * LeBron at 40, Durant at 37, Curry at 37 and Kawhi at 34 - four players the
+ * model said could not exist. Real elite athletes age far better than
+ * replacement-level ones. See D-P1-1.
+ */
+const ELITE_DECLINE_DAMPING = 0.55;
+const ELITE_DAMPING_FLOOR_RATING = 75; // below this, no damping at all
+const ELITE_DAMPING_FULL_RATING = 99;
+
 // Player Development Coach effect (Phase 15a) - a real, modest nudge, not
 // a second growth-curve. 72 (this codebase's standard "average/neutral"
 // anchor) means no effect at all - an unhired slot behaves exactly as this
@@ -45,6 +74,10 @@ const PLAYER_DEVELOPMENT_BONUS_CAP = 1.0;
 
 function randomIntInclusive(rng: () => number, min: number, max: number): number {
   return min + Math.floor(rng() * (max - min + 1));
+}
+
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value));
 }
 
 function clampRating(value: number): number {
@@ -114,15 +147,21 @@ export function developPlayerRating({
         );
 
   if (age <= YOUNG_DEVELOPMENT_AGE_CEILING && room > 0) {
+    // The share of his remaining ceiling this player converts. Driven by a
+    // trait that is stable across his whole career, because per-season
+    // randomness averages out over six development years and would let every
+    // prospect reach his ceiling anyway - which is exactly the defect this
+    // replaces.
     const growth = randomIntInclusive(rng, 1, Math.min(4, room));
-    const coachedGrowth = Math.max(
+
+    const applied = Math.max(
       1,
       Math.min(
         room,
         Math.round(growth + coachBonus + minutesBonus + moraleBonus + playerDevelopmentBonus),
       ),
     );
-    return Math.min(potentialRating, overallRating + coachedGrowth);
+    return Math.min(potentialRating, overallRating + applied);
   }
 
   if (age < DECLINE_START_AGE) {
@@ -137,13 +176,20 @@ export function developPlayerRating({
   // decline.
   const yearsPastDeclineStart = age - DECLINE_START_AGE;
   const baseDecline = 1 + Math.floor(yearsPastDeclineStart / 3);
+  // Elite players age better. Scaled by rating rather than applied flat, so a
+  // league can still contain a 37-year-old star - see ELITE_DECLINE_DAMPING.
+  const eliteness = clamp01(
+    (overallRating - ELITE_DAMPING_FLOOR_RATING) /
+      (ELITE_DAMPING_FULL_RATING - ELITE_DAMPING_FLOOR_RATING),
+  );
+  const rolled = randomIntInclusive(rng, baseDecline, baseDecline + 2);
   const decline = Math.max(
     0,
-    randomIntInclusive(rng, baseDecline, baseDecline + 2) -
+    rolled * (1 - ELITE_DECLINE_DAMPING * eliteness) -
       coachBonus -
       minutesBonus -
       moraleBonus -
       playerDevelopmentBonus,
   );
-  return clampRating(overallRating - decline);
+  return clampRating(Math.round(overallRating - decline));
 }

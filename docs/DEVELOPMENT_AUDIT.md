@@ -111,6 +111,50 @@ It also flattens the game: when half the league is 80+, "good player" stops mean
 
 ---
 
+## RESOLUTION — D-P1-1 fixed, D-P0-1 and D-P0-2 still open
+
+**D-P1-1 is fixed.** Decline now scales with rating: `ELITE_DECLINE_DAMPING`
+removes up to 55% of the yearly drop, ramping from no effect at 75 to full
+effect at 99. Measured across 400 players rated 95 at age 27:
+
+| Age | Still 90+ before | Still 90+ after |
+| --- | ---------------- | --------------- |
+| 33  | 39%              | **80%**         |
+| 34  | 6%               | **44%**         |
+| 35  | 0%               | **16%**         |
+| 37  | 0%               | **2%**          |
+
+A 37-year-old star is possible again, which the seeded league requires of it.
+Cost: the 90+ population rises slightly (32.8 against 28.0 at season 10) because
+stars persist longer. Four regression tests cover it.
+
+**D-P0-1 and D-P0-2 are NOT fixed, deliberately.** Two attempts failed and are
+recorded here so the next one does not repeat them:
+
+1. _Growth proportional to remaining ceiling_ (`room × rate`, rate driven by a
+   stable per-player trait). This inverted the intent — the players with the
+   most headroom grew fastest — and **doubled** the inflation it was meant to
+   fix: 90+ went from 28 to 56 by season 10.
+2. _An explicit busted/not-busted split._ Bimodal: below a threshold the league
+   inflated exactly as before (season 20: 34 / 117 / 232), above it the league
+   collapsed (season 20: 0 / 0 / 11). Nothing in between, because every prospect
+   was either a full developer or a total stall.
+
+A continuous version got closest — season 10 at 12.8 / 40.2 / 130.2 against a
+target of 14 / 44 / 82 — but season 20 still drained the top to 1 player at 90+,
+and the growth-ceiling parameter stopped changing the outcome at all, which
+means the interaction is not yet understood. Shipping a number that cannot be
+justified into the model that governs every season of every save is worse than
+shipping nothing, so this half is left undone.
+
+What the attempts do establish: the inflation is **not** primarily about how
+fast prospects grow. It is that draft classes arrive with a mean potential near
+83 into a league with a median of 71, so intake is better than the population
+every single year. The fix probably belongs in the draft's potential curve, or
+in a ceiling that is itself uncertain, rather than in the growth rate.
+
+---
+
 ## Recommendation
 
 Two changes, in order:

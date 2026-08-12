@@ -219,7 +219,12 @@ for (const [label, ovr, pot] of [
   for (let i = 0; i < N; i++) {
     let r = ovr;
     for (let age = 20; age <= 26; age++) {
-      r = developPlayerRating({ overallRating: r, potentialRating: pot, age, rng: rng3 });
+      r = developPlayerRating({
+        overallRating: r,
+        potentialRating: pot,
+        age,
+        rng: rng3,
+      });
     }
     finals.push(r);
   }
