@@ -21,9 +21,11 @@ function conferenceOf(teamId: string): string {
   return teamId.split("-")[0];
 }
 
+const SEASON = 2025;
+
 describe("generateRoundRobinSchedule", () => {
   it("gives every team exactly 82 games, 1230 total league-wide", () => {
-    const schedule = generateRoundRobinSchedule(TEAMS, "seed-1");
+    const schedule = generateRoundRobinSchedule(TEAMS, "seed-1", SEASON);
     expect(schedule).toHaveLength(1230);
 
     const gamesPerTeam = new Map<string, number>();
@@ -38,7 +40,7 @@ describe("generateRoundRobinSchedule", () => {
   });
 
   it("gives every team the exact real-NBA split: 16 division + 36 conference-non-division + 30 other-conference", () => {
-    const schedule = generateRoundRobinSchedule(TEAMS, "seed-1");
+    const schedule = generateRoundRobinSchedule(TEAMS, "seed-1", SEASON);
     const gamesAgainst = new Map<string, Map<string, number>>();
     for (const game of schedule) {
       for (const [a, b] of [
@@ -69,14 +71,14 @@ describe("generateRoundRobinSchedule", () => {
   });
 
   it("never schedules a team against itself", () => {
-    const schedule = generateRoundRobinSchedule(TEAMS, "seed-1");
+    const schedule = generateRoundRobinSchedule(TEAMS, "seed-1", SEASON);
     for (const game of schedule) {
       expect(game.homeLeagueTeamId).not.toBe(game.awayLeagueTeamId);
     }
   });
 
   it("never double-books a team on the same day", () => {
-    const schedule = generateRoundRobinSchedule(TEAMS, "seed-1");
+    const schedule = generateRoundRobinSchedule(TEAMS, "seed-1", SEASON);
     const teamsByDay = new Map<number, Set<string>>();
     for (const game of schedule) {
       const teams = teamsByDay.get(game.dayIndex) ?? new Set<string>();
@@ -89,7 +91,7 @@ describe("generateRoundRobinSchedule", () => {
   });
 
   it("never lets a team play 3 days in a row", () => {
-    const schedule = generateRoundRobinSchedule(TEAMS, "seed-1");
+    const schedule = generateRoundRobinSchedule(TEAMS, "seed-1", SEASON);
     const daysByTeam = new Map<string, number[]>();
     for (const game of schedule) {
       for (const teamId of [game.homeLeagueTeamId, game.awayLeagueTeamId]) {
@@ -109,14 +111,14 @@ describe("generateRoundRobinSchedule", () => {
   });
 
   it("keeps the season length in a realistic range", () => {
-    const schedule = generateRoundRobinSchedule(TEAMS, "seed-1");
+    const schedule = generateRoundRobinSchedule(TEAMS, "seed-1", SEASON);
     const maxDay = Math.max(...schedule.map((g) => g.dayIndex));
     expect(maxDay).toBeGreaterThanOrEqual(150);
     expect(maxDay).toBeLessThanOrEqual(230);
   });
 
   it("keeps every team's final game close to the league's last day", () => {
-    const schedule = generateRoundRobinSchedule(TEAMS, "seed-1");
+    const schedule = generateRoundRobinSchedule(TEAMS, "seed-1", SEASON);
     const lastDayByTeam = new Map<string, number>();
     for (const game of schedule) {
       for (const teamId of [game.homeLeagueTeamId, game.awayLeagueTeamId]) {
@@ -130,7 +132,7 @@ describe("generateRoundRobinSchedule", () => {
   });
 
   it("assigns sequential, unique game numbers consistent with dayIndex order", () => {
-    const schedule = generateRoundRobinSchedule(TEAMS, "seed-1");
+    const schedule = generateRoundRobinSchedule(TEAMS, "seed-1", SEASON);
     const gameNumbers = schedule.map((g) => g.gameNumber).sort((a, b) => a - b);
     expect(gameNumbers).toEqual(Array.from({ length: schedule.length }, (_, i) => i + 1));
 
@@ -141,14 +143,14 @@ describe("generateRoundRobinSchedule", () => {
   });
 
   it("is deterministic for the same seed", () => {
-    const a = generateRoundRobinSchedule(TEAMS, "same-seed");
-    const b = generateRoundRobinSchedule(TEAMS, "same-seed");
+    const a = generateRoundRobinSchedule(TEAMS, "same-seed", SEASON);
+    const b = generateRoundRobinSchedule(TEAMS, "same-seed", SEASON);
     expect(a).toEqual(b);
   });
 
   it("produces a different ordering for a different seed", () => {
-    const a = generateRoundRobinSchedule(TEAMS, "seed-a");
-    const b = generateRoundRobinSchedule(TEAMS, "seed-b");
+    const a = generateRoundRobinSchedule(TEAMS, "seed-a", SEASON);
+    const b = generateRoundRobinSchedule(TEAMS, "seed-b", SEASON);
     expect(a).not.toEqual(b);
   });
 });

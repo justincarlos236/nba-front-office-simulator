@@ -178,6 +178,7 @@ export async function createLeagueAction(formData: FormData) {
       return { leagueTeamId: lt.id, conference: team.conference, division: team.division };
     }),
     league.id,
+    league.currentSeason,
   );
   await prisma.game.createMany({
     data: schedule.map((game) => ({

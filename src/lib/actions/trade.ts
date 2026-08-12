@@ -36,6 +36,7 @@ import { describeIconDeparture } from "@/lib/finances/financeNews";
 import { computeSponsorshipVoidPenaltyCents } from "@/lib/finances/sponsorship";
 import { formatCentsCompact } from "@/lib/money";
 import { DEFAULT_MAX_ROSTER_SIZE } from "@/lib/data-sources/rosterConstruction";
+import { tradesAreClosed } from "@/lib/calendar/seasonCalendar";
 
 // The real floor is 14 with a short grace period at 13; 13 is the number the
 // dataset validator already holds every seeded roster to, so a trade must not
@@ -135,6 +136,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
     // rows (CPU teams use a formula baseline, never a signed deal), so
     // theirPlayers never needs the same check.
     voidCandidateDeals,
+    seasonGames,
   ] = await Promise.all([
     prisma.leaguePlayer.findMany({
       where: { id: { in: input.myPlayerIds }, leagueTeamId: input.fromTeamId },
@@ -226,6 +228,13 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
         conditionLeaguePlayerId: { in: input.myPlayerIds },
       },
     }),
+    // The league's own schedule, to place it on the calendar. Only the day and
+    // whether it has been played matter - the deadline is a real position on
+    // that axis now, not a proxy for games played.
+    prisma.game.findMany({
+      where: { leagueId: league.id, season: league.currentSeason, type: "REGULAR_SEASON" },
+      select: { dayIndex: true, playedAt: true },
+    }),
   ]);
 
   if (myPlayers.length !== input.myPlayerIds.length) {
@@ -279,6 +288,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
   const validation = validateTrade({
     season: league.currentSeason,
     assets,
+    isAfterTradeDeadline: tradesAreClosed(seasonGames),
     teamCapStates: {
       [input.fromTeamId]: {
         apronLevel: myCapState.capSheet.apronLevel,

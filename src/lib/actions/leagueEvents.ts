@@ -51,6 +51,7 @@ import {
   describeInjurySentiment,
 } from "@/lib/fans/describeSentiment";
 import { playerFillsNeed } from "@/lib/trade/evaluateTradeOffer";
+import { tradesAreClosed } from "@/lib/calendar/seasonCalendar";
 import {
   computeMoraleAfterTrade,
   computeTeamPerformanceMoraleDelta,
@@ -583,6 +584,14 @@ async function maybeExecuteCpuTrade(
   const identityByTeam = new Map(
     cpuTeams.map((t) => [t.leagueTeamId, { identity: t.identity, needs: t.needs }]),
   );
+
+  // CPU teams are held to the same deadline the user is - a league where the
+  // AI keeps trading in March would make the deadline meaningless.
+  const seasonGames = await prisma.game.findMany({
+    where: { leagueId, season, type: "REGULAR_SEASON" },
+    select: { dayIndex: true, playedAt: true },
+  });
+  if (tradesAreClosed(seasonGames)) return;
 
   const result = rollForCpuTrade(cpuTeams, season);
   if (!result) return;

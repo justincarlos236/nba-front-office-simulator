@@ -1,7 +1,12 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { dayIndexToDate, getSeasonMonthRange } from "@/lib/calendar/seasonCalendar";
+import {
+  dayIndexToDate,
+  getSeasonMonthRange,
+  currentRegularSeasonDayIndex,
+} from "@/lib/calendar/seasonCalendar";
+import { SeasonCalendarPanel } from "@/components/schedule/SeasonCalendarPanel";
 import type { ScheduleGame } from "@/components/schedule/MonthlyScheduleCalendar";
 import { ScheduleExperience } from "@/components/schedule/ScheduleExperience";
 
@@ -22,7 +27,8 @@ export default async function SchedulePage({ params }: PageProps) {
   const myLeagueTeamId = league.userControlledTeamId;
   if (!myLeagueTeamId) notFound();
 
-  const [myGames, gamesRemaining, pendingWeekend, pendingBreakingDecision] = await Promise.all([
+  const [myGames, gamesRemaining, pendingWeekend, pendingBreakingDecision, leagueGames] =
+    await Promise.all([
     prisma.game.findMany({
       where: {
         leagueId: league.id,
@@ -55,6 +61,13 @@ export default async function SchedulePage({ params }: PageProps) {
         severity: "BREAKING",
       },
       select: { id: true },
+    }),
+    // League-wide, not just this team's: the deadline and the All-Star break
+    // are league events, so "what day is it" has to be read off the whole
+    // schedule rather than one club's fixtures.
+    prisma.game.findMany({
+      where: { leagueId: league.id, season: league.currentSeason, type: "REGULAR_SEASON" },
+      select: { dayIndex: true, playedAt: true },
     }),
   ]);
 
@@ -106,6 +119,17 @@ export default async function SchedulePage({ params }: PageProps) {
       </p>
 
       <div className="mt-8">
+        <SeasonCalendarPanel
+          season={league.currentSeason}
+          currentDayIndex={currentRegularSeasonDayIndex(leagueGames)}
+          regularSeasonEndDayIndex={Math.max(
+            1,
+            ...leagueGames.map((g) => g.dayIndex ?? 0),
+          )}
+        />
+      </div>
+
+      <div className="mt-6">
         <ScheduleExperience
           leagueId={league.id}
           season={league.currentSeason}

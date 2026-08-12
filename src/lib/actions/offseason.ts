@@ -1509,6 +1509,7 @@ export async function advanceSeasonAction(leagueId: string) {
       division: t.team.division,
     })),
     `${leagueId}-${newSeason}`,
+    newSeason,
   );
   await prisma.game.createMany({
     data: schedule.map((game) => ({

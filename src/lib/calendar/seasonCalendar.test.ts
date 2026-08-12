@@ -1,8 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { dayIndexToDate, buildMonthGrid, getSeasonMonthRange, isSameDate } from "./seasonCalendar";
+import {
+  dayIndexToDate,
+  buildMonthGrid,
+  getSeasonMonthRange,
+  isSameDate,
+  seasonStartDate,
+  weekdayForDayIndex,
+  ALL_STAR_SUNDAY_DAY_INDEX,
+  ALL_STAR_BREAK_START_DAY_INDEX,
+  ALL_STAR_BREAK_END_DAY_INDEX,
+  isAllStarBreakDay,
+  TRADE_DEADLINE_DAY_INDEX,
+  isAfterTradeDeadline,
+  currentRegularSeasonDayIndex,
+  tradesAreClosed,
+  targetGamesForDayIndex,
+  GAMES_BY_WEEKDAY,
+} from "./seasonCalendar";
 
 describe("dayIndexToDate", () => {
-  it("maps day 1 to the October 24 anchor date for that season", () => {
+  // Opening night is now "the Tuesday on or after October 21" rather than a
+  // fixed October 24 - see seasonStartDate. For 2023 the two rules coincide
+  // (Oct 24 2023 was a Tuesday), which is why this case is unchanged; 2024
+  // and 2025 are covered by the opening-night tests below.
+  it("maps day 1 to that season's opening night", () => {
     const date = dayIndexToDate(2023, 1);
     expect(date.getFullYear()).toBe(2023);
     expect(date.getMonth()).toBe(9); // October
@@ -94,5 +115,115 @@ describe("isSameDate", () => {
 
   it("does not match a different day", () => {
     expect(isSameDate(new Date(2023, 9, 24), new Date(2023, 9, 25))).toBe(false);
+  });
+});
+
+const SUNDAY = 0;
+const TUESDAY = 2;
+const THURSDAY = 4;
+
+describe("seasonStartDate", () => {
+  // The rule has to reproduce real openers, because every other fixed point on
+  // the calendar is defined as an offset from opening night and only lands on
+  // the right weekday if this does.
+  it("reproduces three real NBA opening nights", () => {
+    expect(seasonStartDate(2023).toDateString()).toBe("Tue Oct 24 2023");
+    expect(seasonStartDate(2024).toDateString()).toBe("Tue Oct 22 2024");
+    expect(seasonStartDate(2025).toDateString()).toBe("Tue Oct 21 2025");
+  });
+
+  it("always opens on a Tuesday", () => {
+    for (let season = 2020; season <= 2050; season++) {
+      expect(seasonStartDate(season).getDay(), `season ${season}`).toBe(TUESDAY);
+    }
+  });
+});
+
+describe("fixed calendar points", () => {
+  it("puts All-Star Sunday on a Sunday, every season", () => {
+    for (let season = 2020; season <= 2050; season++) {
+      expect(weekdayForDayIndex(season, ALL_STAR_SUNDAY_DAY_INDEX), `season ${season}`).toBe(SUNDAY);
+    }
+  });
+
+  it("puts the trade deadline on a Thursday, every season", () => {
+    for (let season = 2020; season <= 2050; season++) {
+      expect(weekdayForDayIndex(season, TRADE_DEADLINE_DAY_INDEX), `season ${season}`).toBe(THURSDAY);
+    }
+  });
+
+  it("lands the deadline in early February, where the real one sits", () => {
+    // Real deadlines: Feb 9 2023, Feb 8 2024, Feb 6 2025.
+    expect(dayIndexToDate(2024, TRADE_DEADLINE_DAY_INDEX).toDateString()).toBe("Thu Feb 06 2025");
+  });
+
+  it("keeps the deadline strictly before the All-Star break", () => {
+    expect(TRADE_DEADLINE_DAY_INDEX).toBeLessThan(ALL_STAR_BREAK_START_DAY_INDEX);
+  });
+
+  it("marks exactly six days as the All-Star break", () => {
+    const breakDays = [];
+    for (let d = 1; d <= 200; d++) if (isAllStarBreakDay(d)) breakDays.push(d);
+    expect(breakDays).toHaveLength(6);
+    expect(breakDays[0]).toBe(ALL_STAR_BREAK_START_DAY_INDEX);
+    expect(breakDays[breakDays.length - 1]).toBe(ALL_STAR_BREAK_END_DAY_INDEX);
+  });
+
+  it("schedules no games during the break and a real slate either side", () => {
+    for (let d = ALL_STAR_BREAK_START_DAY_INDEX; d <= ALL_STAR_BREAK_END_DAY_INDEX; d++) {
+      expect(targetGamesForDayIndex(2025, d)).toBe(0);
+    }
+    expect(targetGamesForDayIndex(2025, ALL_STAR_BREAK_START_DAY_INDEX - 1)).toBeGreaterThan(0);
+    expect(targetGamesForDayIndex(2025, ALL_STAR_BREAK_END_DAY_INDEX + 1)).toBeGreaterThan(0);
+  });
+
+  it("gives Thursday the lightest slate and Friday the heaviest, as the real league does", () => {
+    const lightest = Math.min(...GAMES_BY_WEEKDAY);
+    const heaviest = Math.max(...GAMES_BY_WEEKDAY);
+    expect(GAMES_BY_WEEKDAY[THURSDAY]).toBe(lightest);
+    expect(GAMES_BY_WEEKDAY[5]).toBe(heaviest); // Friday
+  });
+});
+
+describe("trade window", () => {
+  const game = (dayIndex: number, played: boolean) => ({
+    dayIndex,
+    playedAt: played ? new Date() : null,
+  });
+
+  it("is open before the deadline and shut after it", () => {
+    expect(isAfterTradeDeadline(TRADE_DEADLINE_DAY_INDEX - 1)).toBe(false);
+    // The deadline day itself is still a trading day.
+    expect(isAfterTradeDeadline(TRADE_DEADLINE_DAY_INDEX)).toBe(false);
+    expect(isAfterTradeDeadline(TRADE_DEADLINE_DAY_INDEX + 1)).toBe(true);
+  });
+
+  it("reads the current day as the next unplayed game", () => {
+    const games = [game(1, true), game(2, true), game(9, false), game(4, false)];
+    expect(currentRegularSeasonDayIndex(games)).toBe(4);
+  });
+
+  it("reopens trading once the regular season is complete", () => {
+    // Every game played: past the deadline by day index, but the season is
+    // over, so the playoffs and offseason trade freely - as in reality.
+    const finished = [game(TRADE_DEADLINE_DAY_INDEX + 40, true)];
+    expect(currentRegularSeasonDayIndex(finished)).toBeNull();
+    expect(tradesAreClosed(finished)).toBe(false);
+  });
+
+  it("closes trading mid-season once the deadline has passed", () => {
+    const midSeason = [
+      game(TRADE_DEADLINE_DAY_INDEX, true),
+      game(TRADE_DEADLINE_DAY_INDEX + 1, false),
+    ];
+    expect(tradesAreClosed(midSeason)).toBe(true);
+  });
+
+  it("keeps trading open the day before the deadline", () => {
+    const before = [
+      game(TRADE_DEADLINE_DAY_INDEX - 1, false),
+      game(TRADE_DEADLINE_DAY_INDEX + 5, false),
+    ];
+    expect(tradesAreClosed(before)).toBe(false);
   });
 });

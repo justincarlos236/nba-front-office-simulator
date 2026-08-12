@@ -32,6 +32,17 @@ export interface TradeValidationInput {
   season: number;
   assets: TradeAssetInput[];
   teamCapStates: Record<string, TradeTeamCapState>;
+  /**
+   * True when the in-season trade deadline has passed.
+   *
+   * Passed in rather than computed here, deliberately. The deadline is a
+   * position on the season calendar (`seasonCalendar.ts`), and only the caller
+   * knows whether it is even in season - a draft-night pick swap and an
+   * offseason trade both run through this validator and neither is subject to
+   * a deadline. Leaving it undefined means "not an in-season trade", which is
+   * the correct default for every caller that has no day index to offer.
+   */
+  isAfterTradeDeadline?: boolean;
 }
 
 export interface TradeViolation {
@@ -40,6 +51,7 @@ export interface TradeViolation {
     | "NO_AGGREGATION_AT_SECOND_APRON"
     | "NO_TRADE_CLAUSE"
     | "STEPIEN_RULE"
+    | "TRADE_DEADLINE_PASSED"
     | "MISSING_TEAM_CAP_STATE"
     | "INVALID_STRUCTURE";
   teamId?: string;
@@ -94,6 +106,16 @@ export function validateTrade(input: TradeValidationInput): TradeValidationResul
     }
   }
   if (violations.length > 0) return { isValid: false, violations };
+
+  // Checked before anything financial: after the deadline nothing is legal, so
+  // there is no point telling a user their salaries do not match.
+  if (input.isAfterTradeDeadline) {
+    violations.push({
+      rule: "TRADE_DEADLINE_PASSED",
+      message: "The trade deadline has passed - no trades can be made until the season ends.",
+    });
+    return { isValid: false, violations };
+  }
 
   for (const asset of input.assets) {
     if (asset.type === "PLAYER" && asset.noTradeClause) {
