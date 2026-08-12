@@ -68,7 +68,11 @@ describe("suggestCounterOffer", () => {
   });
 
   it("suggests adding a real available asset that actually flips the decision to ACCEPT", () => {
-    const incoming = [asset("p1", "Below-Value Player", player({ overallRating: 68, age: 27 }))];
+    // 68 -> 70: the trade-value curve is no longer capped at 0.35 of the cap
+    // (docs/TRADE_AUDIT.md, T-P0-3), so the gap between a 68 and a 75 widened
+    // past what a single first-rounder can bridge - and a fixture where nothing
+    // on offer is sufficient tests the NONE path, not this one.
+    const incoming = [asset("p1", "Below-Value Player", player({ overallRating: 70, age: 27 }))];
     const outgoing = [asset("p2", "Their Player", player({ overallRating: 75, age: 27 }))];
 
     // Sanity check: this trade alone should not be accepted.
@@ -111,10 +115,15 @@ describe("suggestCounterOffer", () => {
     const incoming = [asset("p1", "Below-Value Player", player({ overallRating: 74, age: 27 }))];
     const outgoing = [asset("p2", "Their Player", player({ overallRating: 75, age: 27 }))];
 
+    // An *early* second rather than a late one: second-round picks fell from
+    // $7.4M to $1.5M under the steeper curve, and this test needs an asset that
+    // is both clearly cheaper than the star AND genuinely sufficient - a late
+    // second is no longer enough to flip anything, which would make the
+    // assertion vacuous.
     const smallPick = asset(
       "small",
-      "Late 2nd Round Pick",
-      pick({ round: 2, originalTeamCompetitivenessPercentile: 0.9 }),
+      "Early 2nd Round Pick",
+      pick({ round: 2, originalTeamCompetitivenessPercentile: 0 }),
     );
     const bigPlayer = asset("big", "Star Player", player({ overallRating: 90, age: 26 }));
 

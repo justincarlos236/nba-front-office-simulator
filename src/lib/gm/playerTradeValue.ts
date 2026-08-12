@@ -1,6 +1,6 @@
-import { getSeasonCapRules } from "../cap/constants";
-import { scoreToCapFraction } from "../valuation/playerValue";
+import { ageAdjustedMarketValueCents } from "../valuation/playerValue";
 import { ageValueMultiplier } from "../valuation/ageCurve";
+import { talentScore, tradeValueCents } from "../valuation/tradeValueCurve";
 
 /**
  * A single comparable trade-value figure for a player, expressed in cents
@@ -10,9 +10,9 @@ import { ageValueMultiplier } from "../valuation/ageCurve";
  * quality (bargain vs. overpay), and injury risk - the five player-level
  * factors from the design brief. Team-direction weighting (how much a
  * given team's identity/personality *cares* about upside vs. proven
- * production) happens one layer up in `evaluateTradeOffer` (Phase 11c),
- * not here - this is an objective baseline, same separation
- * `draftPickTradeValue.ts` uses for picks.
+ * production) happens one layer up in `evaluateTradeOffer`, not here -
+ * this is an objective baseline, same separation `draftPickTradeValue.ts`
+ * uses for picks.
  */
 export interface PlayerTradeValueInput {
   season: number;
@@ -51,33 +51,85 @@ const INJURY_STATUS_MULTIPLIER: Record<PlayerTradeValueInput["injuryStatus"], nu
 const CAREER_INJURY_DISCOUNT_PER_GAME = 0.002;
 const MAX_CAREER_INJURY_DISCOUNT = 0.3;
 
-export function computePlayerTradeValue(input: PlayerTradeValueInput): bigint {
-  const rules = getSeasonCapRules(input.season);
+/**
+ * Trade value split into the two things a GM actually reasons about
+ * separately: how good the player is, and what his contract does to that.
+ *
+ * They are exposed apart because `evaluateTradeOffer` needs to treat them
+ * differently by direction. A team's philosophy (loves youth, wants
+ * veterans, needs a centre) reweights *talent* symmetrically - it must
+ * value the same player the same whether he is arriving or leaving, or the
+ * model is arbitrageable. Aversion to bad money is genuinely one-sided:
+ * `badContractSensitivityMultiplier` is about what you are willing to take
+ * ON, and applies to incoming salary only.
+ */
+export interface PlayerTradeValueParts {
+  /** Age-, injury- and potential-adjusted value of the player himself, always >= 0. */
+  talentValueCents: bigint;
+  /** Positive when he is underpaid, negative when he is an overpay. */
+  contractSurplusCents: bigint;
+}
 
-  const ageAdjustedScore = Math.min(100, input.overallRating * ageValueMultiplier(input.age));
-  const upsideGap = Math.max(0, input.potentialRating - input.overallRating);
-  const grossScore = Math.min(100, ageAdjustedScore + upsideGap * UPSIDE_WEIGHT);
-  const grossValueCents = BigInt(
-    Math.round(Number(rules.salaryCapCents) * scoreToCapFraction(grossScore)),
-  );
+export function computePlayerTradeValueParts(
+  input: PlayerTradeValueInput,
+): PlayerTradeValueParts {
+  const score = talentScore(input.overallRating, input.potentialRating, UPSIDE_WEIGHT);
 
-  // Fair value for the player's *current* production only (no upside
-  // bonus) - what the market would actually pay them today, the baseline
-  // "is this contract a bargain" comparison needs.
-  const fairValueTodayCents = BigInt(
-    Math.round(Number(rules.salaryCapCents) * scoreToCapFraction(ageAdjustedScore)),
-  );
-  const surplusCents = fairValueTodayCents - input.currentSalaryCents;
-
-  const totalValueCents =
-    grossValueCents + BigInt(Math.round(Number(surplusCents) * CONTRACT_SURPLUS_WEIGHT));
+  // Age discounts the MONEY, never the score. Multiplying it into the score
+  // and then pushing that through a logistic compounds the two: a documented
+  // 35% discount for a 37-year-old became a 96% one, and Curry, Durant,
+  // LeBron, Kawhi, Harden, Butler, Lillard, George, Gobert and DeRozan were
+  // all worth exactly zero in trade. See docs/TRADE_AUDIT.md, T-P0-1, and the
+  // same correction already made for salaries in `playerValue.ts`.
+  const grossValueCents = tradeValueCents(score, input.season) * ageValueMultiplier(input.age);
 
   const careerInjuryDiscount = Math.min(
     MAX_CAREER_INJURY_DISCOUNT,
     input.careerGamesMissedToInjury * CAREER_INJURY_DISCOUNT_PER_GAME,
   );
-  const totalMultiplier = INJURY_STATUS_MULTIPLIER[input.injuryStatus] * (1 - careerInjuryDiscount);
+  // Injury risk discounts the *asset*, not the contract - applying it to the
+  // combined figure would make an injured albatross a smaller liability than
+  // a healthy one.
+  const riskMultiplier =
+    INJURY_STATUS_MULTIPLIER[input.injuryStatus] * (1 - careerInjuryDiscount);
 
-  const finalValueCents = BigInt(Math.round(Number(totalValueCents) * totalMultiplier));
-  return finalValueCents > 0n ? finalValueCents : 0n;
+  // What the market would actually pay him today: current production only, no
+  // upside credit. `ageAdjustedMarketValueCents` is the salary-scale model and
+  // the right comparison for a salary - the trade curve is a different scale
+  // entirely and would read every star as massively underpaid.
+  const fairSalaryCents = ageAdjustedMarketValueCents({
+    score: input.overallRating,
+    age: input.age,
+    season: input.season,
+  });
+
+  return {
+    talentValueCents: BigInt(Math.round(grossValueCents * riskMultiplier)),
+    contractSurplusCents: fairSalaryCents - input.currentSalaryCents,
+  };
 }
+
+/**
+ * The player's total objective trade value.
+ *
+ * **This can be negative, and that is the point.** It used to be clamped at
+ * zero, which meant a bad contract was never a liability: a $100M albatross
+ * and a $150M albatross priced identically, and every CPU team - including
+ * the Salary-Conscious one - would absorb a 70-rated 33-year-old on $50M for
+ * nothing. That voided the cap as a constraint on the user, since any
+ * difficult contract could be handed away for free in unlimited quantity.
+ *
+ * The downside is bounded without a magic number: talent value is never
+ * negative and surplus is never worse than the full salary, so the floor is
+ * -0.5x the player's salary. Shifting a genuine albatross costs real assets,
+ * which is what it should cost.
+ */
+export function computePlayerTradeValue(input: PlayerTradeValueInput): bigint {
+  const { talentValueCents, contractSurplusCents } = computePlayerTradeValueParts(input);
+  return (
+    talentValueCents +
+    BigInt(Math.round(Number(contractSurplusCents) * CONTRACT_SURPLUS_WEIGHT))
+  );
+}
+
+export { CONTRACT_SURPLUS_WEIGHT };

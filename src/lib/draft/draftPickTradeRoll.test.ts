@@ -46,18 +46,31 @@ describe("rollForDraftPickTrade", () => {
     expect(result).toBeNull();
   });
 
-  it("fires when two adjacent, near-equal-value picks clear both sides' acceptance bar", () => {
+  it("fires when a trade-down package clears both sides' acceptance bar", () => {
+    // #11 alone no longer covers #10. Under the old flat value curve adjacent
+    // first-rounders sat ~2% apart, so a bare one-for-one cleared; the curve is
+    // now fitted to real pick-value charts (docs/TRADE_AUDIT.md, T-P0-3), where
+    // #1 is worth 8x #30 and each slot costs ~6.5%. Moving down one pick for a
+    // second-round sweetener is what that market actually looks like.
     const result = rollForDraftPickTrade(
       SEASON,
       team("on-clock"),
       { pickId: "p10", overallPickNumber: 10, round: 1 },
-      [{ team: team("partner"), picks: [{ pickId: "p11", overallPickNumber: 11, round: 1 }] }],
+      [
+        {
+          team: team("partner"),
+          picks: [
+            { pickId: "p11", overallPickNumber: 11, round: 1 },
+            { pickId: "p40", overallPickNumber: 40, round: 2 },
+          ],
+        },
+      ],
       fixedRng(0),
     );
     expect(result).not.toBeNull();
     expect(result?.partner.leagueTeamId).toBe("partner");
     expect(result?.pickGivenUp.pickId).toBe("p10");
-    expect(result?.picksReceived.map((p) => p.pickId)).toEqual(["p11"]);
+    expect(result?.picksReceived.map((p) => p.pickId)).toEqual(["p11", "p40"]);
   });
 
   it("never proposes involving a team whose picks weren't passed in as a partner", () => {

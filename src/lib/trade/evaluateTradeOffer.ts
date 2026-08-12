@@ -1,5 +1,6 @@
-import { computePlayerTradeValue } from "../gm/playerTradeValue";
+import { computePlayerTradeValueParts, CONTRACT_SURPLUS_WEIGHT } from "../gm/playerTradeValue";
 import { computeDraftPickTradeValue } from "../gm/draftPickTradeValue";
+import { getSeasonCapRules } from "../cap/constants";
 import { GM_PERSONALITY_WEIGHTS, type GmPersonality } from "../gm/gmPersonality";
 import type { TeamIdentity } from "../gm/teamIdentity";
 import { type TeamNeed } from "../gm/teamNeeds";
@@ -67,8 +68,25 @@ export interface EvaluateTradeOfferResult {
 // "close to fair" is wide enough that no personality combination can turn
 // a robbery into an accept. See the "does not accept a lopsided trade for
 // any personality" test.
-const ACCEPT_THRESHOLD = 0.95;
+//
+// **Left at 0.95 deliberately, and it is not the volume knob.** Making the
+// model symmetric changed how often two CPU teams can agree, and the tempting
+// fix was to raise this until CPU trade volume came back to its target. That
+// would have meant a bar above 1.0 - the CPU rejecting a mathematically fair
+// offer from the user, as a side effect of a valuation fix. Acceptance sets how
+// a GM *behaves*; `TRADE_CHANCE_PER_GAME` in `leagueEvents.ts` sets how often
+// the league tries. Conflating the two is what made the original tuning
+// fragile. That frequency was recalibrated instead - see the note there.
+export const ACCEPT_THRESHOLD = 0.95;
 const COUNTER_THRESHOLD = 0.75;
+
+// `score` is reported for the UI ("% of fair value") and for fan sentiment,
+// which reads it as a ratio centred on 1. Value can now be negative, and a
+// ratio cannot express that - shedding a -$20M contract is a gain, not a 20x
+// loss - so the *decision* comes from a margin test and this stays a
+// presentation figure, bounded so a near-zero denominator can't report a
+// meaningless number.
+export const MAX_REPORTED_SCORE = 3;
 
 // Exported for reuse by src/lib/gm/reSigningDecision.ts, which applies the
 // exact same identity/age/need-fit weighting to a retention decision rather
@@ -131,8 +149,8 @@ export function playerFillsNeed(player: TradePlayerAsset, need: TeamNeed): boole
   }
 }
 
-function objectivePlayerValue(asset: TradePlayerAsset, currentSeason: number): bigint {
-  return computePlayerTradeValue({
+function toValueInput(asset: TradePlayerAsset, currentSeason: number) {
+  return {
     season: currentSeason,
     overallRating: asset.overallRating,
     potentialRating: asset.potentialRating,
@@ -140,7 +158,7 @@ function objectivePlayerValue(asset: TradePlayerAsset, currentSeason: number): b
     currentSalaryCents: asset.currentSalaryCents,
     injuryStatus: asset.injuryStatus,
     careerGamesMissedToInjury: asset.careerGamesMissedToInjury,
-  });
+  };
 }
 
 function objectivePickValue(asset: TradePickAsset, currentSeason: number): bigint {
@@ -169,43 +187,94 @@ export function evaluateTradeOffer(input: EvaluateTradeOfferInput): EvaluateTrad
 
   const reasons = new Set<TradeOfferReasonCode>();
 
-  // Incoming value: personality/identity/need-fit adjustments layered on
-  // top of each asset's objective value - computed once, reused both for
-  // the untouchable-overpay check below and the main score.
+  /**
+   * How much this team's philosophy reweights a player's *talent*.
+   *
+   * **Applied identically in both directions, and that is the whole point.**
+   * These bonuses used to be added to incoming assets only, so the same
+   * 24-year-old was worth up to 1.87x more arriving than leaving. That is not
+   * a philosophy, it is an arbitrage: sweeping 5,300 mirror trades found 160
+   * where both teams accepted the same swap in opposite directions, 60 of them
+   * caused purely by this. A GM who loves youth should ask more for his own
+   * young players too. See docs/TRADE_AUDIT.md, T-P0-4.
+   */
+  const talentMultiplier = (asset: TradePlayerAsset): number => {
+    let multiplier = 1;
+    if (asset.age <= YOUNG_AGE_THRESHOLD) {
+      multiplier *= weights.youthValueMultiplier;
+      if (isRebuildingIdentity) multiplier *= REBUILDING_YOUTH_PICK_BONUS;
+    }
+    if (asset.age >= VETERAN_AGE_THRESHOLD) {
+      multiplier *= weights.veteranValueMultiplier;
+      if (isWinNowIdentity) multiplier *= CONTENDER_VETERAN_BONUS;
+    }
+    if (needs.some((need) => playerFillsNeed(asset, need))) {
+      multiplier *= NEED_FIT_BONUS_MULTIPLIER;
+    }
+    return multiplier;
+  };
+
+  /** Talent only, with philosophy applied - the untouchable gate's yardstick. */
+  const adjustedTalentValue = (asset: TradePlayerAsset): bigint =>
+    scaleCents(
+      computePlayerTradeValueParts(toValueInput(asset, input.currentSeason)).talentValueCents,
+      talentMultiplier(asset),
+    );
+
+  const valueOf = (asset: TradeAssetForEvaluation, direction: "IN" | "OUT"): bigint => {
+    if (asset.type === "DRAFT_PICK") {
+      let value = scaleCents(
+        objectivePickValue(asset, input.currentSeason),
+        weights.pickValueMultiplier,
+      );
+      // A rebuilder both pays more for picks and asks more for its own.
+      if (isRebuildingIdentity) value = scaleCents(value, REBUILDING_YOUTH_PICK_BONUS);
+      return value;
+    }
+
+    const { contractSurplusCents } = computePlayerTradeValueParts(
+      toValueInput(asset, input.currentSeason),
+    );
+
+    // Aversion to bad money is the one genuinely one-sided preference, and
+    // `GmPersonalityWeights` documents it that way: it is about what you are
+    // willing to take ON. It had never been wired into trades at all - the
+    // field's only reader was `reSigningDecision.ts`, so Salary-Conscious
+    // differed from Balanced by a threshold nudge and nothing else.
+    const surplus =
+      direction === "IN" && contractSurplusCents < 0n
+        ? scaleCents(contractSurplusCents, weights.badContractSensitivityMultiplier)
+        : contractSurplusCents;
+
+    return (
+      adjustedTalentValue(asset) +
+      BigInt(Math.round(Number(surplus) * CONTRACT_SURPLUS_WEIGHT))
+    );
+  };
+
   let totalIncomingCents = 0n;
   for (const asset of input.incoming) {
-    if (asset.type === "PLAYER") {
-      let value = objectivePlayerValue(asset, input.currentSeason);
-      if (asset.age <= YOUNG_AGE_THRESHOLD) {
-        value = scaleCents(value, weights.youthValueMultiplier);
-        if (isRebuildingIdentity) value = scaleCents(value, REBUILDING_YOUTH_PICK_BONUS);
-      }
-      if (asset.age >= VETERAN_AGE_THRESHOLD) {
-        value = scaleCents(value, weights.veteranValueMultiplier);
-        if (isWinNowIdentity) value = scaleCents(value, CONTENDER_VETERAN_BONUS);
-      }
-      if (needs.some((need) => playerFillsNeed(asset, need))) {
-        value = scaleCents(value, NEED_FIT_BONUS_MULTIPLIER);
-        reasons.add("FILLS_A_NEED");
-      }
-      totalIncomingCents += value;
-    } else {
-      let value = objectivePickValue(asset, input.currentSeason);
-      value = scaleCents(value, weights.pickValueMultiplier);
-      if (isRebuildingIdentity) value = scaleCents(value, REBUILDING_YOUTH_PICK_BONUS);
-      totalIncomingCents += value;
+    if (asset.type === "PLAYER" && needs.some((need) => playerFillsNeed(asset, need))) {
+      reasons.add("FILLS_A_NEED");
     }
+    totalIncomingCents += valueOf(asset, "IN");
   }
 
   // Untouchable check - a hard gate, not a weighted factor. No personality
-  // or identity weighting overrides this; only a large enough objective
-  // overpay does.
+  // or identity weighting overrides this; only a large enough overpay does.
+  //
+  // Priced off TALENT, not total value. Total value nets out the contract,
+  // and a franchise player is usually the most expensive man on the roster -
+  // so pricing the gate on the net let a superstar's own max contract pay his
+  // ransom. In the shipped model that collapsed completely: age compounding
+  // (T-P0-1) made Curry worth exactly zero, the gate asked for 1.75x zero, and
+  // he was acquirable for junk on turn one.
   for (const asset of input.outgoing) {
     if (asset.type !== "PLAYER") continue;
     if (!isUntouchable(asset, rosterRatingsDesc, identity)) continue;
 
     const requiredOverpayCents = scaleCents(
-      objectivePlayerValue(asset, input.currentSeason),
+      adjustedTalentValue(asset),
       UNTOUCHABLE_OVERPAY_MULTIPLIER,
     );
     if (totalIncomingCents < requiredOverpayCents) {
@@ -215,37 +284,46 @@ export function evaluateTradeOffer(input: EvaluateTradeOfferInput): EvaluateTrad
 
   let totalOutgoingCents = 0n;
   for (const asset of input.outgoing) {
-    if (asset.type === "PLAYER") {
-      totalOutgoingCents += objectivePlayerValue(asset, input.currentSeason);
-    } else {
-      // Giving up a pick "costs" a Pick Hoarder more than its objective value.
-      totalOutgoingCents += scaleCents(
-        objectivePickValue(asset, input.currentSeason),
-        weights.pickValueMultiplier,
-      );
-    }
+    totalOutgoingCents += valueOf(asset, "OUT");
   }
-
-  const score =
-    totalOutgoingCents > 0n
-      ? Number(totalIncomingCents) / Number(totalOutgoingCents)
-      : totalIncomingCents > 0n
-        ? Number.POSITIVE_INFINITY
-        : 1;
 
   const effectiveAcceptThreshold = ACCEPT_THRESHOLD * weights.acceptanceThresholdMultiplier;
   const effectiveCounterThreshold = COUNTER_THRESHOLD * weights.acceptanceThresholdMultiplier;
 
+  // A margin test, not a ratio. Once a bad contract can be a genuine liability
+  // the totals can go negative, and `incoming / outgoing` is meaningless there:
+  // sending away a -$20M contract and receiving nothing is a clear win, but
+  // reads as a ratio of zero. Comparing against a scaled outgoing total is the
+  // same comparison whenever outgoing is positive, and stays correct when it
+  // is not.
+  const bar = (threshold: number) => scaleCents(totalOutgoingCents, threshold);
+
   let decision: TradeOfferDecision;
-  if (score >= effectiveAcceptThreshold) {
+  if (totalIncomingCents >= bar(effectiveAcceptThreshold)) {
     decision = "ACCEPT";
     reasons.add("FAIR_VALUE");
-  } else if (score >= effectiveCounterThreshold) {
+  } else if (totalIncomingCents >= bar(effectiveCounterThreshold)) {
     decision = "COUNTER";
   } else {
     decision = "REJECT";
     reasons.add("BELOW_FAIR_VALUE");
   }
+
+  // Reported as a ratio because the UI renders it as "% of fair value" and fan
+  // sentiment reads it as centred on 1. Identical to the old figure whenever
+  // outgoing value is positive; falls back to a season-stable reference scale
+  // when it is not, rather than dividing by ~zero.
+  const referenceCents =
+    totalOutgoingCents > 0n
+      ? Number(totalOutgoingCents)
+      : Number(getSeasonCapRules(input.currentSeason).salaryCapCents);
+  const score = Math.max(
+    0,
+    Math.min(
+      MAX_REPORTED_SCORE,
+      1 + Number(totalIncomingCents - totalOutgoingCents) / referenceCents,
+    ),
+  );
 
   return { decision, score, reasons: [...reasons] };
 }

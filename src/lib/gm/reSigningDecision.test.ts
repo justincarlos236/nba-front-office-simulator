@@ -64,11 +64,16 @@ describe("evaluateReSigningDecision", () => {
             personality,
             rosterSizeBeforeThisDecision: 10,
           },
+          // Was 68/35. The trade-value rescale (docs/TRADE_AUDIT.md) stopped
+          // pricing ageing players at ~zero - a 68-rated centre at his $4.2M
+          // re-signing price is now a bargain any club would take, which is the
+          // correct answer, not a regression. A player who is genuinely finished
+          // is what this test is about, and that is where the margin sits now.
           player: {
             position: "C",
-            overallRating: 68,
-            potentialRating: 68,
-            age: 35,
+            overallRating: 60,
+            potentialRating: 60,
+            age: 38,
             careerGamesMissedToInjury: 0,
           },
         }),
@@ -114,10 +119,19 @@ describe("evaluateReSigningDecision", () => {
    * personality alone - is unchanged, and so is the threshold it runs against.
    */
   it("splits on an aging, redundant veteran depending on team context - a WIN_NOW contender keeps them, most others don't", () => {
+    // Moved 72 -> 59 by the trade-value rescale, and the size of that move is
+    // itself worth recording. Trade value is no longer capped at 0.35 of the
+    // salary cap while the re-signing offer still is, so value/offer climbs
+    // steeply with rating and a fairly-priced veteran of any real quality now
+    // clears the bar for every identity. The window where team context alone
+    // decides has narrowed to near-minimum players. The assertion - that
+    // context, not personality, is what splits it - is unchanged and still
+    // holds; see docs/TRADE_AUDIT.md for why this margin is worth revisiting
+    // when the re-signing model itself is next audited.
     const player = {
       position: "PF" as const,
-      overallRating: 72,
-      potentialRating: 72,
+      overallRating: 59,
+      potentialRating: 59,
       age: 31,
       careerGamesMissedToInjury: 0,
     };
@@ -165,10 +179,13 @@ describe("evaluateReSigningDecision", () => {
   });
 
   it("raises the bar once a team is already at the soft roster ceiling, tipping stingier personalities to let a marginal bench player walk", () => {
+    // 64 -> 70 for the same reason the fixtures above moved: a 64-rated player
+    // is now below the bar even on an empty roster, so he could not show the
+    // ceiling *changing* anything. 70 is where the ceiling actually decides.
     const player = {
       position: "SG" as const,
-      overallRating: 64,
-      potentialRating: 64,
+      overallRating: 70,
+      potentialRating: 70,
       age: 29,
       careerGamesMissedToInjury: 0,
     };
@@ -276,12 +293,14 @@ describe("evaluateReSigningDecision", () => {
   it("Franchise Finances: a cash-strapped team (higher financial multiplier) lets a marginal retention walk, while a healthy one keeps him", () => {
     // Age 30 rather than 29 for the same reason the fixture above moved: with
     // the age discount reaching the ceiling, a 29-year-old 74 is comfortably
-    // worth keeping and no longer a marginal call.
+    // worth keeping and no longer a marginal call. Moved again to 68/35 by the
+    // trade-value rescale - a 74-rated 30-year-old is now clearly worth his
+    // re-signing price whatever the finances, so he stopped being marginal.
     const player = {
       position: "SF" as const,
-      overallRating: 74,
-      potentialRating: 74,
-      age: 30,
+      overallRating: 68,
+      potentialRating: 68,
+      age: 35,
       careerGamesMissedToInjury: 0,
     };
     const healthy = evaluateReSigningDecision(

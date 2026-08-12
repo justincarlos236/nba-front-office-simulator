@@ -69,11 +69,17 @@ import {
 import type { NewsImportance } from "@/generated/prisma/client";
 
 const INJURY_CHANCE_PER_TEAM_GAME = 0.02;
-// Tuned against the measured 42.6% roll-success rate to land near 15 completed
-// CPU trades a league-season. The real NBA runs closer to 40, but many of those
-// are minor salary filler; 15 meaningful ones reads as an active market without
-// burying the news feed.
-const TRADE_CHANCE_PER_GAME = 0.03;
+// Tuned to land near 15 completed CPU trades a league-season. The real NBA runs
+// closer to 40, but many of those are minor salary filler; 15 meaningful ones
+// reads as an active market without burying the news feed.
+//
+// Was 0.03 against a measured 42.6% roll-success rate. Making the trade model
+// symmetric (docs/TRADE_AUDIT.md, T-P0-4) raised that rate to 75.5%, because
+// two teams now agree when they genuinely want different things rather than
+// when a one-sided bonus made a swap look good to both - so the same 0.03 would
+// have produced ~28 trades a season. Rescaled by 42.6/75.5 to hold the target.
+// Re-measure with `scripts/cpu-trade-rate.ts` if either side of this changes.
+const TRADE_CHANCE_PER_GAME = 0.017;
 /** Deliberately below the CPU-CPU rate - see the note at the call site. */
 const OFFER_TO_USER_CHANCE_PER_GAME = 0.004;
 const SIGNING_CHANCE_PER_GAME = 0.01;

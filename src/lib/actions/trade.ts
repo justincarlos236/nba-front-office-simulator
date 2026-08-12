@@ -35,6 +35,12 @@ import {
 import { describeIconDeparture } from "@/lib/finances/financeNews";
 import { computeSponsorshipVoidPenaltyCents } from "@/lib/finances/sponsorship";
 import { formatCentsCompact } from "@/lib/money";
+import { DEFAULT_MAX_ROSTER_SIZE } from "@/lib/data-sources/rosterConstruction";
+
+// The real floor is 14 with a short grace period at 13; 13 is the number the
+// dataset validator already holds every seeded roster to, so a trade must not
+// be able to push a team below what the league could have started with.
+const MIN_ROSTER_SIZE_AFTER_TRADE = 13;
 
 export interface ExecuteTradeInput {
   leagueId: string;
@@ -265,6 +271,33 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
 
   if (!validation.isValid) {
     throw new Error(validation.violations.map((v) => v.message).join(" "));
+  }
+
+  // Roster limits. `DEFAULT_MAX_ROSTER_SIZE` was enforced in free agency
+  // (`cpuFreeAgentPass.ts`) and in CPU signings, but never on the trade path -
+  // so a five-for-one, repeated, could carry a team to thirty players and
+  // leave its partner with six. Nothing downstream (rotation, simulation, the
+  // cap sheet's empty-roster charge) expects either.
+  for (const [roster, sending, receiving, label] of [
+    [fromTeamRoster, myPlayers, theirPlayers, "Your team"],
+    [
+      toTeamRoster,
+      theirPlayers,
+      myPlayers,
+      `The ${toLeagueTeam.team.city} ${toLeagueTeam.team.name}`,
+    ],
+  ] as const) {
+    const after = roster.length - sending.length + receiving.length;
+    if (after > DEFAULT_MAX_ROSTER_SIZE) {
+      throw new Error(
+        `${label} would finish this trade with ${after} players, over the ${DEFAULT_MAX_ROSTER_SIZE}-man limit.`,
+      );
+    }
+    if (after < MIN_ROSTER_SIZE_AFTER_TRADE) {
+      throw new Error(
+        `${label} would finish this trade with only ${after} players, under the ${MIN_ROSTER_SIZE_AFTER_TRADE}-man minimum.`,
+      );
+    }
   }
 
   // Trade-AI evaluation (Phase 11c): does the CPU team actually want this

@@ -1,6 +1,5 @@
-import { getSeasonCapRules } from "../cap/constants";
-import { scoreToCapFraction } from "../valuation/playerValue";
 import { ageValueMultiplier } from "../valuation/ageCurve";
+import { talentScore, tradeValueCents } from "../valuation/tradeValueCurve";
 import {
   CLASS_SIZE,
   expectedRatingForPick,
@@ -74,8 +73,6 @@ function projectedPickNumber(round: 1 | 2, competitivenessPercentile: number): n
  * `evaluateTradeOffer` (Phase 11c) - this is an objective baseline value.
  */
 export function computeDraftPickTradeValue(input: DraftPickTradeValueInput): bigint {
-  const rules = getSeasonCapRules(input.pickSeason);
-
   const pickNumber =
     input.overallPickNumber ??
     projectedPickNumber(input.round, input.originalTeamCompetitivenessPercentile);
@@ -90,12 +87,15 @@ export function computeDraftPickTradeValue(input: DraftPickTradeValueInput): big
     POTENTIAL_AT_PICK_60,
   );
 
-  const ageAdjustedScore = Math.min(100, expectedOverall * ageValueMultiplier(ASSUMED_ROOKIE_AGE));
-  const upsideGap = Math.max(0, expectedPotential - expectedOverall);
-  const grossScore = Math.min(100, ageAdjustedScore + upsideGap * UPSIDE_WEIGHT);
-
+  // Same shape as a player: talent (current + discounted upside) prices the
+  // asset, and age applies to the resulting money rather than to the score.
+  // Feeding an age-scaled score into the curve compounds the two - see
+  // `tradeValueCurve.ts` and docs/TRADE_AUDIT.md, T-P0-1.
+  const score = talentScore(expectedOverall, expectedPotential, UPSIDE_WEIGHT);
   let valueCents = BigInt(
-    Math.round(Number(rules.salaryCapCents) * scoreToCapFraction(grossScore)),
+    Math.round(
+      tradeValueCents(score, input.pickSeason) * ageValueMultiplier(ASSUMED_ROOKIE_AGE),
+    ),
   );
 
   if (input.round === 2) {

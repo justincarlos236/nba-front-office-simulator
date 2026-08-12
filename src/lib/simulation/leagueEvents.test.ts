@@ -193,8 +193,13 @@ describe("rollForCpuTrade", () => {
         needs: ["POINT_GUARD"],
       },
     );
+    // The PG was a 78. With the trade-value curve fitted to a real market
+    // (docs/TRADE_AUDIT.md, T-P0-3) an eight-point rating gap is far too large
+    // for team B to agree to, so the swap never happened and this test could no
+    // longer observe *which* player was targeted. At equal ratings the
+    // need-fit bonus is exactly what tips it - which is the thing under test.
     const teamB = makeTeam("B", [
-      { rating: 78, position: "PG" },
+      { rating: 70, position: "PG" },
       { rating: 66, position: "SF" },
     ]);
     const result = rollForCpuTrade([teamA, teamB], 2024, () => 0, 5);
@@ -220,10 +225,15 @@ describe("rollForCpuTrade", () => {
     );
     const rebuildingSeeker = makeTeam(
       "A2",
+      // The 65-year-old-26 became a 66 aged 22: the age curve now applies to
+      // the money rather than being compressed through a logistic, so a 26- and
+      // a 22-year-old are further apart and B2 would not part with its
+      // 22-year-old for the older piece. The seeker still has to have something
+      // the pool's owner actually wants.
       [
         { rating: 70, age: 27 },
         { rating: 66, age: 28 },
-        { rating: 65, age: 26 },
+        { rating: 66, age: 22 },
         { rating: 55, age: 25 },
       ],
       { identity: "REBUILDING", personality: "PROSPECT_LOVER" },
