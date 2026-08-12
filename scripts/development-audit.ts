@@ -176,7 +176,7 @@ const rng2 = makeRng(99);
 console.log(`${"AGE".padStart(5)}${"MEAN RATING".padStart(13)}${"still 90+".padStart(11)}`);
 for (const startAge of [27]) {
   const N = 400;
-  let cohort = Array.from({ length: N }, () => ({ ovr: 95, pot: 95, age: startAge }));
+  const cohort = Array.from({ length: N }, () => ({ ovr: 95, pot: 95, age: startAge }));
   for (let step = 0; step <= 12; step++) {
     if (step > 0) {
       for (const p of cohort) {
