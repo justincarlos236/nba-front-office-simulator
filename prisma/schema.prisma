@@ -233,6 +233,7 @@ model League {
   lotteryResults              LotteryResult[]
   negotiations                Negotiation[]
   playerGameStats             PlayerGameStat[]
+  playerSeasonRollups         LeaguePlayerSeasonStat[]
   playoffSeries               PlayoffSeries[]
   scoutingAssignmentSpends    ScoutingAssignmentSpend[]
   seasonAwards                SeasonAward[]
@@ -436,6 +437,58 @@ model PlayerGameStat {
   @@map("player_game_stats")
 }
 
+/**
+ * One row per player per completed season, replacing that season's ~82
+ * `PlayerGameStat` rows once the season is over.
+ *
+ * Box scores are the dominant consumer of database size - a simulated season
+ * writes roughly 24,000 of them, about 20 MB, and nothing in the simulation
+ * ever reads a *past* season's. Every logic reader (All-Star selection,
+ * offseason awards, in-season events, league leaders, the award race) scopes
+ * its query to the season being played. The single cross-season read is career
+ * highs, which are per-category maxima, so `high*` below preserves them
+ * exactly rather than approximately.
+ *
+ * Sums rather than averages so a rollup stays exactly re-derivable: any average
+ * is sum/gamesPlayed, and summing across gameTypes stays correct. Team is
+ * deliberately absent - a midseason trade would otherwise split a player's
+ * season across rows, and nothing reads team from a past season.
+ *
+ * See `src/lib/stats/rollupSeasonStats.ts` for the rollup, which is idempotent.
+ */
+model LeaguePlayerSeasonStat {
+  id             String       @id @default(cuid())
+  leagueId       String
+  leaguePlayerId String
+  season         Int
+  gameType       GameType
+  gamesPlayed    Int
+  minutesPlayed  Int
+  points         Int
+  rebounds       Int
+  assists        Int
+  steals         Int
+  blocks         Int
+  turnovers      Int
+  fgMade         Int
+  fgAttempted    Int
+  fg3Made        Int
+  fg3Attempted   Int
+  ftMade         Int
+  ftAttempted    Int
+  highPoints     Int
+  highRebounds   Int
+  highAssists    Int
+  highSteals     Int
+  highBlocks     Int
+  league         League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leaguePlayer   LeaguePlayer @relation(fields: [leaguePlayerId], references: [id], onDelete: Cascade)
+
+  @@unique([leaguePlayerId, season, gameType])
+  @@index([leagueId, season])
+  @@map("league_player_season_stats")
+}
+
 model PlayoffSeries {
   id               String      @id @default(cuid())
   leagueId         String
@@ -491,6 +544,7 @@ model LeaguePlayer {
   player                     Player                    @relation(fields: [playerId], references: [id])
   reSigningTeam              LeagueTeam?               @relation("ReSigningRights", fields: [reSigningTeamId], references: [id])
   playerGameStats            PlayerGameStat[]
+  playerSeasonRollups        LeaguePlayerSeasonStat[]
   personalityProfile         PlayerPersonalityProfile?
   seasonAwards               SeasonAward[]
   sponsorshipDealConditions  SponsorshipDeal[]

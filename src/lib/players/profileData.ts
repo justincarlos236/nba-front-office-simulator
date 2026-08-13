@@ -307,6 +307,7 @@ export async function loadLeaguePlayerProfile(
   const [
     recentGameStats,
     allGameStats,
+    seasonHighs,
     seasonAgg,
     allStarSelections,
     allStarEventResults,
@@ -325,9 +326,25 @@ export async function loadLeaguePlayerProfile(
         },
       },
     }),
+    // Career highs, part one: seasons whose game log is still raw (the season
+    // in progress, plus anything a rollup has not swept yet).
     prisma.playerGameStat.findMany({
       where: { leaguePlayerId },
       select: { points: true, rebounds: true, assists: true, steals: true, blocks: true },
+    }),
+    // Part two: completed seasons, whose box scores have been rolled up. The
+    // stored per-season maxima stand in as one synthetic line each - correct
+    // because `computeCareerHighs` maxes every category independently, so the
+    // max of the per-season maxima is the true career max.
+    prisma.leaguePlayerSeasonStat.findMany({
+      where: { leaguePlayerId },
+      select: {
+        highPoints: true,
+        highRebounds: true,
+        highAssists: true,
+        highSteals: true,
+        highBlocks: true,
+      },
     }),
     prisma.playerGameStat.aggregate({
       where: { leaguePlayerId, season },
@@ -417,7 +434,16 @@ export async function loadLeaguePlayerProfile(
       isTripleDouble: isTripleDouble(g),
       scoringMilestone: scoringMilestone(g.points),
     })),
-    careerHighs: computeCareerHighs(allGameStats),
+    careerHighs: computeCareerHighs([
+      ...allGameStats,
+      ...seasonHighs.map((s) => ({
+        points: s.highPoints,
+        rebounds: s.highRebounds,
+        assists: s.highAssists,
+        steals: s.highSteals,
+        blocks: s.highBlocks,
+      })),
+    ]),
     currentSeasonAverage:
       gamesPlayed > 0
         ? {

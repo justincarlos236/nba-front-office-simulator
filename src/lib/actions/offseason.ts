@@ -129,6 +129,7 @@ import {
   MORALE_NEWS_THRESHOLD,
 } from "@/lib/morale/moraleEvents";
 import { applyMoraleChange } from "@/lib/morale/moraleLevel";
+import { rollupCompletedSeasons } from "@/lib/stats/rollupSeasonStats";
 
 // Local, server-side copy of the award-category label (small duplication
 // of the UI's own AWARD_LABELS constants, same established pattern as
@@ -2075,6 +2076,18 @@ export async function advanceSeasonAction(leagueId: string) {
       where: { id: userLeagueTeamId },
       data: { ownerArchetype, ownerArchetypeSince },
     });
+  }
+
+  // The season just completed no longer needs its game-by-game box scores -
+  // see src/lib/stats/rollupSeasonStats.ts for what that costs and preserves.
+  // Deliberately after the season-advance commit and deliberately swallowing
+  // its error: this is housekeeping, and a failure here must never leave a
+  // user stuck mid-offseason. The sweep is idempotent, so the next advance
+  // retries whatever was missed.
+  try {
+    await rollupCompletedSeasons(leagueId, newSeason);
+  } catch (error) {
+    console.error(`[rollup] league ${leagueId} season ${newSeason - 1} failed`, error);
   }
 
   if (ownershipMessages.length > 0) {
