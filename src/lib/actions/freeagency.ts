@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
+import { DEFAULT_MAX_ROSTER_SIZE } from "@/lib/data-sources/rosterConstruction";
 import { prisma } from "@/lib/prisma";
 import { validateSigning } from "@/lib/freeagency/validateSigning";
 import { computeReSigningMaxOfferCents } from "@/lib/freeagency/reSigningRights";
@@ -78,6 +79,19 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
       .filter((lp) => lp.contract?.years[0])
       .map((lp) => ({ playerId: lp.playerId, salaryCents: lp.contract!.years[0].salaryCents })),
   });
+
+  // Roster limit. `validateSigning` is a *cap* validator - it answers whether
+  // the money is legal, and deliberately knows nothing about headcount. Nothing
+  // else on this path checked either, so a user could sign free agents past the
+  // 15-man limit indefinitely. CPU signings have always been guarded (see the
+  // `withRoom` filter in `leagueEvents.ts`), and the trade path gained the same
+  // check with docs/TRADE_AUDIT.md; this closes the last way past it.
+  const activeRosterCount = myPlayers.filter((lp) => lp.isActive).length;
+  if (activeRosterCount >= DEFAULT_MAX_ROSTER_SIZE) {
+    throw new Error(
+      `Your roster is full at ${DEFAULT_MAX_ROSTER_SIZE} players - release or trade someone first.`,
+    );
+  }
 
   const validation = validateSigning({
     season: league.currentSeason,
