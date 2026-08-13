@@ -41,11 +41,28 @@ const BASE_INDEX_BY_TIER: Record<PayrollTier, number> = {
   EXTREME: 4,
 };
 
-// Ratings above/below these move the expectation a level in either
-// direction - mirrors playerValueTier.ts's STAR/ROTATION tier boundaries
-// on the 60-99 NBA-2K-style scale, same as the rest of the simplified layer.
-const ELITE_ROSTER_STRENGTH_THRESHOLD = 80;
-const WEAK_ROSTER_STRENGTH_THRESHOLD = 65;
+// Team strengths above/below these move the expectation a level in either
+// direction.
+//
+// **These are on the TEAM-STRENGTH scale, not the player-rating scale**, and
+// that distinction was the bug. They were set to 80/65 by analogy with
+// `playerValueTier.ts`'s STAR/ROTATION boundaries - but a team strength is a
+// weighted roster average, which is far more tightly clustered than any single
+// player's rating. Against the old weights the league ran 73.0-78.8, so
+// **neither threshold was reachable**: no roster was ever elite and none was
+// ever weak, and this function silently returned the payroll tier's base index
+// for all 30 teams in every save.
+//
+// Re-weighting `computeTeamStrength` (docs/TEAM_STRENGTH_AUDIT.md) moved the
+// range to 75.5-85.0 and turned a dead threshold into an over-firing one: 22 of
+// 30 teams cleared 80. Both are now set from the measured distribution - elite
+// is roughly the top five rosters, weak roughly the bottom five.
+//
+// They are scale-dependent by nature and must be re-derived whenever
+// `computeTeamStrength`'s weights change. `scripts/team-strength-audit.ts`
+// prints the distribution.
+const ELITE_ROSTER_STRENGTH_THRESHOLD = 82.6;
+const WEAK_ROSTER_STRENGTH_THRESHOLD = 78.7;
 
 /**
  * Sets a preseason expectation from payroll tier + roster quality - an

@@ -173,3 +173,81 @@ whether tanking becomes too rewarding once the bottom of the league is genuinely
 ```
 npx tsx scripts/team-strength-audit.ts
 ```
+
+---
+
+# RESOLUTION — 2026-08-13
+
+Re-weighted. `ROTATION_WEIGHTS` is now a geometric decay fitted in
+`scripts/team-strength-calibration.ts` against three league-level targets at
+once — talent SD, best record, worst record — rather than by hand against one.
+
+```
+before  [1.4, 1.3, 1.2, 1.1, 1.0, 0.9, 0.8, 0.7, 0.6]  bench 0.4
+after   [1.0, 0.77, 0.59, 0.45, 0.34, 0.26, 0.2, 0.15, 0.12]  bench 0.02
+```
+
+| | Before | After | Real NBA |
+| --- | ---: | ---: | ---: |
+| Best player's share of a team | 12.3% | **24.9%** | ~14% of minutes |
+| Top three | 34.2% | **58.8%** | ~40% of minutes |
+| Bottom six | 21.1% | **3.4%** | ~5% of minutes |
+| Margin spread, best to worst | 13.4 | **21.8** | ~22 |
+| Talent SD (wins) | 6.4 | **9.6** | ~11.1 |
+| **Talent share of variance** | **56%** | **75%** | ~86% |
+| Best team, true talent | 53 W | **60 W** | ~60-65 |
+| Worst team, true talent | 26 W | **17 W** | ~15-20 |
+
+And it closed the playoff finding without touching the bracket:
+
+| Matchup | Before | After | Real |
+| --- | ---: | ---: | ---: |
+| 1 vs 8 | 83.5% | **92.7%** | 93% |
+| 2 vs 7 | 75.7% | 82.2% | ~78% |
+| 3 vs 6 | 58.8% | 64.9% | ~62% |
+| 4 vs 5 | 55.0% | 56.1% | ~52% |
+| overall | 68.2% | **74.0%** | ~72% |
+
+Implied records for the top seeds now land almost exactly: seed 1 at 60-22
+against a real ~60-22, seed 2 at 55-27 against ~55-27.
+
+## Two things the fit had to be stopped from doing
+
+**Inverting the shape to hit the number.** Unconstrained, the sweep runs to the
+edge of the search space and returns a curve steep enough to zero out the 9th
+man — at which point the six bench players, being six, end up at 25.7% of a
+team, *more* than the flat weights being replaced. The fit is now bounded at
+both ends: the best player may not exceed a quarter of a team, and the bottom
+six must land between 3% and 8%. Left free at the other end the optimiser drives
+the bench to 0.7%, which says a team's last six men are worth nothing at all.
+
+**Claiming more than it fixed.** Talent SD lands at 9.6 against a real 11.1, and
+the top-share bound is what binds. The residual is not recoverable here without
+making one player an implausible share of his team; it belongs to the rating
+distribution, which `docs/RATING_AUDIT.md` has at ~115 players rated 80+ against
+a real 82.
+
+## The knock-on this exposed
+
+`computeExpectationLevel` compared team strength against **80 and 65** —
+thresholds set by analogy with `playerValueTier.ts`'s STAR/ROTATION boundaries,
+which are on the *player-rating* scale. A team strength is a weighted roster
+average and clusters far more tightly. Against the old weights the league ran
+73.0-78.8, so **neither threshold could ever fire**: no roster was ever elite,
+none was ever weak, and every team in every save quietly received its payroll
+tier's base expectation.
+
+Re-weighting turned a dead threshold into an over-firing one — 22 of 30 teams
+cleared 80. Both are now set from the measured distribution (82.6 / 78.7, about
+the top and bottom five rosters), documented as scale-dependent, and covered by
+a test that fails if the function stops distinguishing rosters at all.
+
+That bug predates this work by a long way. It only became visible because the
+scale moved.
+
+## Verification
+
+1,439 tests, clean production build, 0 lint errors. Team identity is unaffected —
+`computeTeamIdentity` keys off competitiveness *percentiles*, which are
+rank-based and therefore invariant to the scale change. No other module compares
+team strength against an absolute constant.
