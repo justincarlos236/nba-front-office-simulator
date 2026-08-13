@@ -591,7 +591,7 @@ async function maybeExecuteCpuTrade(
     where: { leagueId, season, type: "REGULAR_SEASON" },
     select: { dayIndex: true, playedAt: true },
   });
-  if (tradesAreClosed(seasonGames)) return;
+  if (tradesAreClosed(season, seasonGames)) return;
 
   const result = rollForCpuTrade(cpuTeams, season);
   if (!result) return;

@@ -288,7 +288,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
   const validation = validateTrade({
     season: league.currentSeason,
     assets,
-    isAfterTradeDeadline: tradesAreClosed(seasonGames),
+    isAfterTradeDeadline: tradesAreClosed(league.currentSeason, seasonGames),
     teamCapStates: {
       [input.fromTeamId]: {
         apronLevel: myCapState.capSheet.apronLevel,

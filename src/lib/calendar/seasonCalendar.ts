@@ -29,16 +29,17 @@
 /** Day indices are 1-based: day 1 is opening night. */
 export const OPENING_NIGHT_DAY_INDEX = 1;
 
-// Opening night is the Tuesday on or after October 21 of the season's start
-// year. Checked against three real openers: 2023-24 opened Oct 24 2023,
-// 2024-25 opened Oct 22 2024, 2025-26 opened Oct 21 2025 - this rule
-// reproduces all three, where a fixed date or "fourth Tuesday" does not.
+// Opening night is the Tuesday on or after October 20 of the season's start
+// year. Checked against four real openers: Oct 24 2023, Oct 22 2024,
+// Oct 21 2025 and Oct 20 2026 - this reproduces all four.
 //
-// The old anchor was a fixed October 24, documented as cosmetic. It no longer
-// is: the deadline and the All-Star break are defined as offsets from opening
-// night and land on the right weekdays only because day 1 is always a Tuesday.
+// **It was October 21, and 2026 is exactly the year that breaks.** Oct 21 2026
+// falls on a Wednesday, so "on or after the 21st" skipped a full week to Oct 27
+// - three days later than any real opening night has ever been, dragging the
+// whole season with it. Real openers sit in a tight Oct 20-24 window; an anchor
+// of 20 keeps every generated one inside it.
 const ANCHOR_MONTH = 9; // JS Date months are 0-indexed - 9 = October
-const ANCHOR_EARLIEST_DAY = 21;
+const ANCHOR_EARLIEST_DAY = 20;
 const TUESDAY = 2;
 
 export function seasonStartDate(season: number): Date {
@@ -53,18 +54,46 @@ export function dayIndexToDate(season: number, dayIndex: number): Date {
   return result;
 }
 
+/** Inverse of `dayIndexToDate`. May return values outside the season. */
+export function dayIndexForDate(season: number, date: Date): number {
+  const start = seasonStartDate(season);
+  const days = Math.round(
+    (new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() -
+      new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime()) /
+      86_400_000,
+  );
+  return days + OPENING_NIGHT_DAY_INDEX;
+}
+
 /** 0 = Sunday, matching `Date.getDay`. */
 export function weekdayForDayIndex(season: number, dayIndex: number): number {
   return dayIndexToDate(season, dayIndex).getDay();
 }
 
 /**
- * All-Star Sunday. Measured, not chosen: the 2024-25 season opened Oct 22 and
- * held All-Star Sunday on Feb 16, which is 117 days later - day index 118.
- * Because opening night is always a Tuesday this lands on a Sunday every
- * season by construction: (118 - 1) mod 7 = 5, and Tuesday + 5 = Sunday.
+ * All-Star Sunday: the third Sunday of February in the season's END year.
+ *
+ * **Derived from the calendar, not from an offset, and that distinction is the
+ * whole point.** This used to be a fixed `dayIndex` of 118, which quietly
+ * assumed the gap between opening night and February is constant. It is not:
+ * measured, the deadline lands on day 108 of the 2024-25 season and day 115 of
+ * 2026-27, because the All-Star break is anchored to a February week while
+ * opening night drifts across late October. A fixed index can only ever be
+ * right for the one season it was measured on.
+ *
+ * Checked against every real date available: Feb 18 2024, Feb 16 2025 and
+ * Feb 21 2027 - all three reproduced exactly.
  */
-export const ALL_STAR_SUNDAY_DAY_INDEX = 118;
+export function allStarSundayDate(season: number): Date {
+  const endYear = season + 1;
+  const feb = new Date(endYear, 1, 1);
+  const firstSunday = 1 + ((7 - feb.getDay()) % 7);
+  return new Date(endYear, 1, firstSunday + 14);
+}
+
+export function allStarSundayDayIndex(season: number): number {
+  return dayIndexForDate(season, allStarSundayDate(season));
+}
 
 /**
  * Teams are idle from the Friday before All-Star Sunday through the Wednesday
@@ -72,24 +101,28 @@ export const ALL_STAR_SUNDAY_DAY_INDEX = 118;
  * leaves. Previously the break was a pause in *simulation* only, so games
  * either side of it sat on consecutive days and the calendar had no gap.
  */
-export const ALL_STAR_BREAK_START_DAY_INDEX = ALL_STAR_SUNDAY_DAY_INDEX - 2;
-export const ALL_STAR_BREAK_END_DAY_INDEX = ALL_STAR_SUNDAY_DAY_INDEX + 3;
+export function allStarBreakDayRange(season: number): { start: number; end: number } {
+  const sunday = allStarSundayDayIndex(season);
+  return { start: sunday - 2, end: sunday + 3 };
+}
 
-export function isAllStarBreakDay(dayIndex: number): boolean {
-  return dayIndex >= ALL_STAR_BREAK_START_DAY_INDEX && dayIndex <= ALL_STAR_BREAK_END_DAY_INDEX;
+export function isAllStarBreakDay(season: number, dayIndex: number): boolean {
+  const { start, end } = allStarBreakDayRange(season);
+  return dayIndex >= start && dayIndex <= end;
 }
 
 /**
  * The trade deadline: ten days before All-Star Sunday, which puts it on a
- * Thursday. Measured rather than picked - the last three real deadlines were
- * Feb 9 2023, Feb 8 2024 and Feb 6 2025, every one a Thursday, every one ten
- * days before that season's All-Star Sunday.
+ * Thursday. Measured rather than picked - Feb 8 2024, Feb 6 2025 and Feb 11
+ * 2027 were each exactly ten days before that season's All-Star Sunday.
  */
-export const TRADE_DEADLINE_DAY_INDEX = ALL_STAR_SUNDAY_DAY_INDEX - 10;
+export function tradeDeadlineDayIndex(season: number): number {
+  return allStarSundayDayIndex(season) - 10;
+}
 
 /** True once the deadline has passed and trades are closed for the season. */
-export function isAfterTradeDeadline(dayIndex: number): boolean {
-  return dayIndex > TRADE_DEADLINE_DAY_INDEX;
+export function isAfterTradeDeadline(season: number, dayIndex: number): boolean {
+  return dayIndex > tradeDeadlineDayIndex(season);
 }
 
 /**
@@ -118,10 +151,11 @@ export function currentRegularSeasonDayIndex(
  * playoffs, draft night and the offseason all trade freely.
  */
 export function tradesAreClosed(
+  season: number,
   games: { dayIndex: number | null; playedAt: Date | null }[],
 ): boolean {
   const today = currentRegularSeasonDayIndex(games);
-  return today !== null && isAfterTradeDeadline(today);
+  return today !== null && isAfterTradeDeadline(season, today);
 }
 
 /**
@@ -155,7 +189,7 @@ export const GAMES_BY_WEEKDAY: readonly number[] = [
 ];
 
 export function targetGamesForDayIndex(season: number, dayIndex: number): number {
-  if (isAllStarBreakDay(dayIndex)) return 0;
+  if (isAllStarBreakDay(season, dayIndex)) return 0;
   return GAMES_BY_WEEKDAY[weekdayForDayIndex(season, dayIndex)];
 }
 
@@ -249,7 +283,9 @@ export function seasonCalendarEvents(
   regularSeasonEndDayIndex: number,
 ): CalendarEvent[] {
   const at = (dayIndex: number) => dayIndexToDate(season, dayIndex);
-  const breakEnds = at(ALL_STAR_BREAK_END_DAY_INDEX);
+  const deadline = tradeDeadlineDayIndex(season);
+  const brk = allStarBreakDayRange(season);
+  const breakEnds = at(brk.end);
   return [
     {
       kind: "OPENING_NIGHT",
@@ -262,16 +298,16 @@ export function seasonCalendarEvents(
     {
       kind: "TRADE_DEADLINE",
       label: "Trade Deadline",
-      dayIndex: TRADE_DEADLINE_DAY_INDEX,
-      date: at(TRADE_DEADLINE_DAY_INDEX),
+      dayIndex: deadline,
+      date: at(deadline),
       dateDriven: true,
       detail: "Last day to make a trade. Trading reopens after the regular season.",
     },
     {
       kind: "ALL_STAR_BREAK",
       label: "All-Star Break",
-      dayIndex: ALL_STAR_BREAK_START_DAY_INDEX,
-      date: at(ALL_STAR_BREAK_START_DAY_INDEX),
+      dayIndex: brk.start,
+      date: at(brk.start),
       dateDriven: true,
       detail: `No games until ${breakEnds.toLocaleDateString(undefined, { month: "short", day: "numeric" })}.`,
     },

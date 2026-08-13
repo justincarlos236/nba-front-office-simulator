@@ -240,7 +240,7 @@ function assignDays(
     // Six days of nothing, exactly where a real schedule leaves them. The
     // All-Star break used to be a pause in *simulation* only - games either
     // side of it sat on consecutive days, so the calendar had no gap at all.
-    if (isAllStarBreakDay(day)) continue;
+    if (isAllStarBreakDay(season, day)) continue;
     const targetGamesPerDay = Math.max(1, targetGamesForDayIndex(season, day));
     const usedToday = new Set<string>();
     let scheduledToday = 0;

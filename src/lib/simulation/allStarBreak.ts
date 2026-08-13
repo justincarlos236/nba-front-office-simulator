@@ -1,4 +1,4 @@
-import { ALL_STAR_BREAK_START_DAY_INDEX as CALENDAR_ALL_STAR_BREAK_START_DAY_INDEX } from "../calendar/seasonCalendar";
+import { allStarBreakDayRange } from "../calendar/seasonCalendar";
 
 /**
  * Whether the All-Star break should stop a run of regular-season simulation.
@@ -37,7 +37,9 @@ import { ALL_STAR_BREAK_START_DAY_INDEX as CALENDAR_ALL_STAR_BREAK_START_DAY_IND
  * game falls on or after the break" is true exactly when every pre-break game
  * has been played. Teams reach it having played ~57 of 82, against a real ~55.
  */
-export const ALL_STAR_BREAK_START_DAY_INDEX = CALENDAR_ALL_STAR_BREAK_START_DAY_INDEX;
+export function allStarBreakStartDayIndex(season: number): number {
+  return allStarBreakDayRange(season).start;
+}
 
 /** `null` means no weekend row exists for this season yet. */
 export type AllStarWeekendState = "PENDING" | "RESOLVED" | null;
@@ -51,13 +53,14 @@ export type AllStarBreakDecision =
   | "pause";
 
 export function decideAllStarBreak(args: {
+  season: number;
   /** Day of the league's next unplayed regular-season game; null once none remain. */
   nextGameDayIndex: number | null;
   weekendState: AllStarWeekendState;
 }): AllStarBreakDecision {
   // No games left - the season is over and the break cannot still be ahead.
   if (args.nextGameDayIndex === null) return "continue";
-  if (args.nextGameDayIndex < ALL_STAR_BREAK_START_DAY_INDEX) return "continue";
+  if (args.nextGameDayIndex < allStarBreakStartDayIndex(args.season)) return "continue";
   if (args.weekendState === null) return "generate-and-pause";
   if (args.weekendState === "PENDING") return "pause";
   // RESOLVED - the break is behind us and stops blocking the season.

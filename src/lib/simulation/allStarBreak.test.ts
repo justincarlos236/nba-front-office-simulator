@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
-  ALL_STAR_BREAK_START_DAY_INDEX,
+  allStarBreakStartDayIndex,
   decideAllStarBreak,
   type AllStarWeekendState,
 } from "./allStarBreak";
-import { ALL_STAR_BREAK_END_DAY_INDEX } from "../calendar/seasonCalendar";
+import { allStarBreakDayRange } from "../calendar/seasonCalendar";
+
+// The break is a real position on the calendar now, so it moves with the
+// season - see `seasonCalendar.ts`. Pinned to one season here so the fixtures
+// stay concrete.
+const SEASON = 2026;
 
 /**
  * The break is keyed off the schedule now, not the user's game count - see
@@ -12,12 +17,12 @@ import { ALL_STAR_BREAK_END_DAY_INDEX } from "../calendar/seasonCalendar";
  * unplayed regular-season game, and `null` means there are none left.
  */
 const decide = (nextGameDayIndex: number | null, weekendState: AllStarWeekendState) =>
-  decideAllStarBreak({ nextGameDayIndex, weekendState });
+  decideAllStarBreak({ season: SEASON, nextGameDayIndex, weekendState });
 
-const BEFORE = ALL_STAR_BREAK_START_DAY_INDEX - 1;
+const BEFORE = allStarBreakStartDayIndex(SEASON) - 1;
 // No games are scheduled inside the break window, so the first game the loop
 // can actually reach after the break is the day it ends plus one.
-const AFTER = ALL_STAR_BREAK_END_DAY_INDEX + 1;
+const AFTER = allStarBreakDayRange(SEASON).end + 1;
 
 describe("the All-Star break", () => {
   it("does not interrupt the first half of the season", () => {
@@ -47,7 +52,7 @@ describe("the All-Star break", () => {
   });
 
   it("treats every day in the back half the same way", () => {
-    for (let day = AFTER; day <= 180; day += 1) {
+    for (let day = AFTER; day <= 190; day += 1) {
       expect(decide(day, "RESOLVED"), `day ${day}`).toBe("continue");
     }
   });

@@ -598,6 +598,7 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
       }),
     ]);
     const breakDecision = decideAllStarBreak({
+      season: league.currentSeason,
       nextGameDayIndex: nextGame?.dayIndex ?? null,
       weekendState: weekend?.status ?? null,
     });

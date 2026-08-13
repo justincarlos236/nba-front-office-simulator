@@ -169,3 +169,50 @@ Deliberately out of scope for this pass, and unchanged:
 ```
 npx tsx scripts/schedule-realism-audit.ts
 ```
+
+---
+
+## Correction — 2026-08-13, from the real schedule
+
+The 2026-27 schedule was released while this was being built, and it caught two
+errors that the original three data points could not.
+
+**Opening night was wrong by a week.** The anchor was "the Tuesday on or after
+October 21", fitted to Oct 24 2023, Oct 22 2024 and Oct 21 2025. It reproduces
+all three - and 2026 is exactly the year it breaks, because Oct 21 2026 falls on
+a Wednesday and the rule skips a full week to **Oct 27**. The real opener is
+**Tue Oct 20 2026**. Anchoring at October 20 instead reproduces all four and
+keeps every generated opener inside the real Oct 20-24 window.
+
+**The fixed day offsets were an accident that happened to cancel out.** The
+deadline sat at a constant `dayIndex` of 108 and All-Star Sunday at 118, which
+assumes the gap between opening night and February never changes. It does: the
+real deadline is day 108 of the 2024-25 season and day **115** of 2026-27. The
+first version reported the right February dates only because the opening-night
+error shifted everything back by the same week.
+
+Both are now derived from the calendar rather than from an offset:
+
+| Fixed point | Rule | Verified against |
+| --- | --- | --- |
+| Opening night | Tuesday on or after Oct 20 | Oct 24 2023, Oct 22 2024, Oct 21 2025, **Oct 20 2026** |
+| All-Star Sunday | third Sunday of February | Feb 18 2024, Feb 16 2025, **Feb 21 2027** |
+| Trade deadline | ten days before All-Star Sunday | Feb 8 2024, Feb 6 2025, **Feb 11 2027** |
+
+The generated 2026-27 season now matches the real one on every published date:
+
+```
+opening night   Tue Oct 20 2026   (real: Tue Oct 20 2026)
+trade deadline  Thu Feb 11 2027   (real: Thu Feb 11 2027)
+All-Star Sunday Sun Feb 21 2027   (real: Sun Feb 21 2027)
+break           Fri Feb 19 - Wed Feb 24 2027
+season ends     Sat Apr 10 2027   (173 days)
+```
+
+The lesson worth keeping: a rule fitted to three points that all sit in a
+four-day window looks confirmed and is not. `isAllStarBreakDay`,
+`isAfterTradeDeadline` and `tradesAreClosed` all take a season now, precisely so
+this class of assumption cannot be baked into a constant again.
+
+Sources: [NBA.com schedule release](https://www.nba.com/news/2026-27-schedule-announced),
+[key dates](https://www.nba.com/news/key-dates).
