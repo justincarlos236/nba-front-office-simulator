@@ -96,12 +96,13 @@ async function seedTeams() {
  * Contracts and League/LeaguePlayer bootstrapping are per-save and happen when
  * a user starts a league, not here.
  */
-async function seedPlayers() {
+/** Returns the externalIds the current dataset carries, for the demotion pass. */
+async function seedPlayers(): Promise<Set<string>> {
   if (!existsSync(DATASET_PATH)) {
     console.log(
       "prisma/data/nbaDataset.json not found - run `npm run import:dataset` first. Skipping player seeding.",
     );
-    return;
+    return new Set();
   }
 
   const file: DatasetFile = JSON.parse(await readFile(DATASET_PATH, "utf-8"));
@@ -175,6 +176,7 @@ async function seedPlayers() {
     `Done. Seeded ${seededPlayers} players, ${seededContracts} real contracts ` +
       `(${skippedNoTeam} skipped - team abbreviation not found).`,
   );
+  return new Set(file.players.map((p) => p.externalId).filter((id): id is string => id !== null));
 }
 
 /**
@@ -185,7 +187,44 @@ async function seedPlayers() {
  * unhooked from `Player.currentTeamId` so global team views aren't a mix of the
  * old and new datasets stacked on top of each other.
  */
-async function retireLegacyPlayers() {
+/**
+ * Demotes rows the current dataset no longer contains.
+ *
+ * **This is the step that made the docstring above true.** Seeding is additive,
+ * and `createLeagueAction` selects every Player with a non-null
+ * `seedOverallRating` - so the comment's promise, that superseded rows are
+ * invisible to the league bootstrap, only holds if something actually clears
+ * the rating. Nothing did. Rows from every previous dataset stayed eligible,
+ * and each refresh that changed a player's `externalId` left a second copy
+ * behind: measured before this ran, 311 names appeared twice, which surfaced as
+ * two Joel Embiids in the trade builder and LaMelo Ball still on the team he
+ * had left.
+ *
+ * Deliberately a demotion, not a delete. Active saves reference these rows
+ * through `LeaguePlayer`, and their own ratings live there - clearing the
+ * global seed rating hides a player from *new* leagues without touching any
+ * existing one. `scripts/prune-stale-players.ts` deletes the ones nothing
+ * references at all.
+ */
+async function retireLegacyPlayers(currentExternalIds: Set<string>) {
+  const superseded = await prisma.player.findMany({
+    where: { seedOverallRating: { not: null } },
+    select: { id: true, externalId: true },
+  });
+  const staleIds = superseded
+    .filter((p) => p.externalId === null || !currentExternalIds.has(p.externalId))
+    .map((p) => p.id);
+
+  if (staleIds.length > 0) {
+    await prisma.player.updateMany({
+      where: { id: { in: staleIds } },
+      data: { seedOverallRating: null, seedPotentialRating: null },
+    });
+    console.log(
+      `Demoted ${staleIds.length} superseded players - kept for existing saves, hidden from new leagues.`,
+    );
+  }
+
   const { count } = await prisma.player.updateMany({
     where: { seedOverallRating: null, currentTeamId: { not: null } },
     data: { currentTeamId: null },
@@ -196,8 +235,8 @@ async function retireLegacyPlayers() {
 
 async function main() {
   await seedTeams();
-  await seedPlayers();
-  await retireLegacyPlayers();
+  const currentExternalIds = await seedPlayers();
+  await retireLegacyPlayers(currentExternalIds);
 }
 
 main()

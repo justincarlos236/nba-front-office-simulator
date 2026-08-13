@@ -31,12 +31,12 @@
     ],
     "ratingsModelVersion": "seedRating v1 (+15 consensus overrides)",
     "includedTransactions": "Rosters, trades, and signings reflected in balldontlie as of 2026-08-13. Ratings from the 2025-26 season.",
-    "generatedAt": "2026-08-13T06:56:56.701Z",
+    "generatedAt": "2026-08-13T09:18:50.173Z",
     "playerCount": 585
   },
   "players": [
     {
-      "externalId": "3",
+      "externalId": "2991235",
       "fullName": "Steven Adams",
       "position": "C",
       "heightInches": 83,
@@ -86,7 +86,7 @@
       }
     },
     {
-      "externalId": "4",
+      "externalId": "4066261",
       "fullName": "Bam Adebayo",
       "position": "C",
       "heightInches": 81,
@@ -140,7 +140,7 @@
       }
     },
     {
-      "externalId": "8",
+      "externalId": "3135045",
       "fullName": "Grayson Allen",
       "position": "PG",
       "heightInches": 75,
@@ -190,7 +190,7 @@
       }
     },
     {
-      "externalId": "9",
+      "externalId": "4066328",
       "fullName": "Jarrett Allen",
       "position": "C",
       "heightInches": 81,
@@ -244,7 +244,7 @@
       }
     },
     {
-      "externalId": "12",
+      "externalId": "2993874",
       "fullName": "Kyle Anderson",
       "position": "SF",
       "heightInches": 80,
@@ -290,7 +290,7 @@
       }
     },
     {
-      "externalId": "15",
+      "externalId": "3032977",
       "fullName": "Giannis Antetokounmpo",
       "position": "PF",
       "heightInches": 83,
@@ -340,7 +340,7 @@
       }
     },
     {
-      "externalId": "18",
+      "externalId": "3934719",
       "fullName": "OG Anunoby",
       "position": "SF",
       "heightInches": 79,
@@ -394,7 +394,7 @@
       }
     },
     {
-      "externalId": "22",
+      "externalId": "4278129",
       "fullName": "Deandre Ayton",
       "position": "C",
       "heightInches": 84,
@@ -440,7 +440,7 @@
       }
     },
     {
-      "externalId": "24",
+      "externalId": "4277848",
       "fullName": "Marvin Bagley III",
       "position": "PF",
       "heightInches": 82,
@@ -476,14 +476,7 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
       "externalId": "28",
@@ -532,7 +525,7 @@
       }
     },
     {
-      "externalId": "30",
+      "externalId": "6578",
       "fullName": "Harrison Barnes",
       "position": "SF",
       "heightInches": 79,
@@ -568,17 +561,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "33",
+      "externalId": "3416",
       "fullName": "Nicolas Batum",
       "position": "SF",
       "heightInches": 79,
@@ -624,7 +610,7 @@
       }
     },
     {
-      "externalId": "37",
+      "externalId": "6580",
       "fullName": "Bradley Beal",
       "position": "PG",
       "heightInches": 76,
@@ -670,7 +656,7 @@
       }
     },
     {
-      "externalId": "48",
+      "externalId": "6427",
       "fullName": "Bismack Biyombo",
       "position": "C",
       "heightInches": 80,
@@ -716,7 +702,7 @@
       }
     },
     {
-      "externalId": "53",
+      "externalId": "3037789",
       "fullName": "Bogdan Bogdanovic",
       "position": "SG",
       "heightInches": 77,
@@ -762,7 +748,7 @@
       }
     },
     {
-      "externalId": "57",
+      "externalId": "3136193",
       "fullName": "Devin Booker",
       "position": "SG",
       "heightInches": 77,
@@ -820,7 +806,7 @@
       }
     },
     {
-      "externalId": "60",
+      "externalId": "4065673",
       "fullName": "Tony Bradley",
       "position": "C",
       "heightInches": 82,
@@ -866,7 +852,7 @@
       }
     },
     {
-      "externalId": "61",
+      "externalId": "3147657",
       "fullName": "Mikal Bridges",
       "position": "SG",
       "heightInches": 78,
@@ -924,7 +910,7 @@
       }
     },
     {
-      "externalId": "62",
+      "externalId": "4066383",
       "fullName": "Miles Bridges",
       "position": "SF",
       "heightInches": 79,
@@ -970,7 +956,7 @@
       }
     },
     {
-      "externalId": "66",
+      "externalId": "3155526",
       "fullName": "Dillon Brooks",
       "position": "SF",
       "heightInches": 79,
@@ -1016,7 +1002,7 @@
       }
     },
     {
-      "externalId": "69",
+      "externalId": "4065670",
       "fullName": "Bruce Brown",
       "position": "PG",
       "heightInches": 76,
@@ -1052,17 +1038,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "70",
+      "externalId": "3917376",
       "fullName": "Jaylen Brown",
       "position": "SG",
       "heightInches": 78,
@@ -1116,7 +1095,7 @@
       }
     },
     {
-      "externalId": "73",
+      "externalId": "3934672",
       "fullName": "Jalen Brunson",
       "position": "PG",
       "heightInches": 74,
@@ -1170,7 +1149,7 @@
       }
     },
     {
-      "externalId": "74",
+      "externalId": "3934723",
       "fullName": "Thomas Bryant",
       "position": "C",
       "heightInches": 81,
@@ -1216,7 +1195,7 @@
       }
     },
     {
-      "externalId": "79",
+      "externalId": "6430",
       "fullName": "Jimmy Butler",
       "position": "SF",
       "heightInches": 78,
@@ -1262,7 +1241,7 @@
       }
     },
     {
-      "externalId": "81",
+      "externalId": "2581018",
       "fullName": "Kentavious Caldwell-Pope",
       "position": "SG",
       "heightInches": 77,
@@ -1308,7 +1287,7 @@
       }
     },
     {
-      "externalId": "83",
+      "externalId": "3102529",
       "fullName": "Clint Capela",
       "position": "C",
       "heightInches": 82,
@@ -1358,7 +1337,7 @@
       }
     },
     {
-      "externalId": "85",
+      "externalId": "4277847",
       "fullName": "Wendell Carter Jr.",
       "position": "C",
       "heightInches": 82,
@@ -1412,7 +1391,7 @@
       }
     },
     {
-      "externalId": "87",
+      "externalId": "3133635",
       "fullName": "Jevon Carter",
       "position": "PG",
       "heightInches": 72,
@@ -1458,7 +1437,7 @@
       }
     },
     {
-      "externalId": "89",
+      "externalId": "2991350",
       "fullName": "Alex Caruso",
       "position": "SG",
       "heightInches": 77,
@@ -1512,7 +1491,7 @@
       }
     },
     {
-      "externalId": "100",
+      "externalId": "2528426",
       "fullName": "Jordan Clarkson",
       "position": "SG",
       "heightInches": 77,
@@ -1558,7 +1537,7 @@
       }
     },
     {
-      "externalId": "101",
+      "externalId": "3908845",
       "fullName": "John Collins",
       "position": "PF",
       "heightInches": 81,
@@ -1594,17 +1573,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "102",
+      "externalId": "4066650",
       "fullName": "Zach Collins",
       "position": "PF",
       "heightInches": 81,
@@ -1640,17 +1612,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "104",
+      "externalId": "3195",
       "fullName": "Mike Conley",
       "position": "PG",
       "heightInches": 73,
@@ -1696,7 +1661,7 @@
       }
     },
     {
-      "externalId": "105",
+      "externalId": "2578239",
       "fullName": "Pat Connaughton",
       "position": "SG",
       "heightInches": 77,
@@ -1742,7 +1707,7 @@
       }
     },
     {
-      "externalId": "114",
+      "externalId": "2326307",
       "fullName": "Seth Curry",
       "position": "PG",
       "heightInches": 73,
@@ -1788,7 +1753,7 @@
       }
     },
     {
-      "externalId": "115",
+      "externalId": "3975",
       "fullName": "Stephen Curry",
       "position": "PG",
       "heightInches": 74,
@@ -1834,7 +1799,7 @@
       }
     },
     {
-      "externalId": "117",
+      "externalId": "6583",
       "fullName": "Anthony Davis",
       "position": "PF",
       "heightInches": 82,
@@ -1884,7 +1849,7 @@
       }
     },
     {
-      "externalId": "131",
+      "externalId": "3934673",
       "fullName": "Donte DiVincenzo",
       "position": "PG",
       "heightInches": 76,
@@ -1930,7 +1895,7 @@
       }
     },
     {
-      "externalId": "132",
+      "externalId": "3945274",
       "fullName": "Luka Doncic",
       "position": "SG",
       "heightInches": 80,
@@ -1984,7 +1949,7 @@
       }
     },
     {
-      "externalId": "137",
+      "externalId": "6585",
       "fullName": "Andre Drummond",
       "position": "C",
       "heightInches": 83,
@@ -2030,7 +1995,7 @@
       }
     },
     {
-      "externalId": "139",
+      "externalId": "2991139",
       "fullName": "Kris Dunn",
       "position": "PG",
       "heightInches": 75,
@@ -2076,7 +2041,7 @@
       }
     },
     {
-      "externalId": "140",
+      "externalId": "3202",
       "fullName": "Kevin Durant",
       "position": "PF",
       "heightInches": 83,
@@ -2126,7 +2091,7 @@
       }
     },
     {
-      "externalId": "145",
+      "externalId": "3059318",
       "fullName": "Joel Embiid",
       "position": "C",
       "heightInches": 84,
@@ -2180,7 +2145,7 @@
       }
     },
     {
-      "externalId": "147",
+      "externalId": "3914285",
       "fullName": "Drew Eubanks",
       "position": "PF",
       "heightInches": 82,
@@ -2226,7 +2191,7 @@
       }
     },
     {
-      "externalId": "158",
+      "externalId": "2578185",
       "fullName": "Dorian Finney-Smith",
       "position": "SF",
       "heightInches": 79,
@@ -2280,7 +2245,7 @@
       }
     },
     {
-      "externalId": "161",
+      "externalId": "4066259",
       "fullName": "De'Aaron Fox",
       "position": "PG",
       "heightInches": 75,
@@ -2338,7 +2303,7 @@
       }
     },
     {
-      "externalId": "172",
+      "externalId": "4251",
       "fullName": "Paul George",
       "position": "SF",
       "heightInches": 80,
@@ -2388,7 +2353,7 @@
       }
     },
     {
-      "externalId": "173",
+      "externalId": "3986",
       "fullName": "Taj Gibson",
       "position": "PF",
       "heightInches": 81,
@@ -2434,7 +2399,7 @@
       }
     },
     {
-      "externalId": "175",
+      "externalId": "4278073",
       "fullName": "Shai Gilgeous-Alexander",
       "position": "SG",
       "heightInches": 78,
@@ -2496,7 +2461,7 @@
       }
     },
     {
-      "externalId": "176",
+      "externalId": "3032976",
       "fullName": "Rudy Gobert",
       "position": "C",
       "heightInches": 85,
@@ -2546,7 +2511,7 @@
       }
     },
     {
-      "externalId": "177",
+      "externalId": "3064290",
       "fullName": "Aaron Gordon",
       "position": "SF",
       "heightInches": 80,
@@ -2600,7 +2565,7 @@
       }
     },
     {
-      "externalId": "182",
+      "externalId": "2991070",
       "fullName": "Jerami Grant",
       "position": "SF",
       "heightInches": 79,
@@ -2650,7 +2615,7 @@
       }
     },
     {
-      "externalId": "185",
+      "externalId": "6589",
       "fullName": "Draymond Green",
       "position": "SF",
       "heightInches": 78,
@@ -2696,7 +2661,7 @@
       }
     },
     {
-      "externalId": "188",
+      "externalId": "3209",
       "fullName": "Jeff Green",
       "position": "SF",
       "heightInches": 80,
@@ -2742,7 +2707,7 @@
       }
     },
     {
-      "externalId": "191",
+      "externalId": "2528210",
       "fullName": "Tim Hardaway Jr.",
       "position": "SG",
       "heightInches": 77,
@@ -2778,17 +2743,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "192",
+      "externalId": "3992",
       "fullName": "James Harden",
       "position": "SG",
       "heightInches": 77,
@@ -2834,7 +2792,7 @@
       }
     },
     {
-      "externalId": "196",
+      "externalId": "2999547",
       "fullName": "Gary Harris",
       "position": "PG",
       "heightInches": 76,
@@ -2880,7 +2838,7 @@
       }
     },
     {
-      "externalId": "200",
+      "externalId": "6440",
       "fullName": "Tobias Harris",
       "position": "SF",
       "heightInches": 80,
@@ -2916,17 +2874,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "201",
+      "externalId": "4222252",
       "fullName": "Isaiah Hartenstein",
       "position": "C",
       "heightInches": 84,
@@ -2972,7 +2923,7 @@
       }
     },
     {
-      "externalId": "202",
+      "externalId": "3062679",
       "fullName": "Josh Hart",
       "position": "SG",
       "heightInches": 77,
@@ -3068,7 +3019,7 @@
       }
     },
     {
-      "externalId": "210",
+      "externalId": "2990984",
       "fullName": "Buddy Hield",
       "position": "PG",
       "heightInches": 76,
@@ -3118,7 +3069,7 @@
       }
     },
     {
-      "externalId": "213",
+      "externalId": "3922230",
       "fullName": "Aaron Holiday",
       "position": "PG",
       "heightInches": 72,
@@ -3164,7 +3115,7 @@
       }
     },
     {
-      "externalId": "214",
+      "externalId": "3995",
       "fullName": "Jrue Holiday",
       "position": "PG",
       "heightInches": 76,
@@ -3214,7 +3165,7 @@
       }
     },
     {
-      "externalId": "219",
+      "externalId": "3213",
       "fullName": "Al Horford",
       "position": "C",
       "heightInches": 80,
@@ -3260,7 +3211,7 @@
       }
     },
     {
-      "externalId": "221",
+      "externalId": "4066372",
       "fullName": "Kevin Huerter",
       "position": "SG",
       "heightInches": 78,
@@ -3296,17 +3247,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "227",
+      "externalId": "3913176",
       "fullName": "Brandon Ingram",
       "position": "SF",
       "heightInches": 80,
@@ -3356,7 +3300,7 @@
       }
     },
     {
-      "externalId": "228",
+      "externalId": "6442",
       "fullName": "Kyrie Irving",
       "position": "PG",
       "heightInches": 74,
@@ -3406,7 +3350,7 @@
       }
     },
     {
-      "externalId": "229",
+      "externalId": "4065654",
       "fullName": "Jonathan Isaac",
       "position": "PF",
       "heightInches": 82,
@@ -3460,7 +3404,7 @@
       }
     },
     {
-      "externalId": "231",
+      "externalId": "4277961",
       "fullName": "Jaren Jackson Jr.",
       "position": "PF",
       "heightInches": 82,
@@ -3518,7 +3462,7 @@
       }
     },
     {
-      "externalId": "237",
+      "externalId": "1966",
       "fullName": "LeBron James",
       "position": "PF",
       "heightInches": 81,
@@ -3554,17 +3498,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "246",
+      "externalId": "3112335",
       "fullName": "Nikola Jokic",
       "position": "C",
       "heightInches": 83,
@@ -3614,7 +3551,7 @@
       }
     },
     {
-      "externalId": "247",
+      "externalId": "3936099",
       "fullName": "Derrick Jones Jr.",
       "position": "SF",
       "heightInches": 78,
@@ -3660,7 +3597,7 @@
       }
     },
     {
-      "externalId": "249",
+      "externalId": "3135046",
       "fullName": "Tyus Jones",
       "position": "PG",
       "heightInches": 72,
@@ -3706,7 +3643,7 @@
       }
     },
     {
-      "externalId": "250",
+      "externalId": "3442",
       "fullName": "DeAndre Jordan",
       "position": "C",
       "heightInches": 83,
@@ -3752,7 +3689,7 @@
       }
     },
     {
-      "externalId": "254",
+      "externalId": "3913174",
       "fullName": "Luke Kennard",
       "position": "SG",
       "heightInches": 77,
@@ -3788,17 +3725,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "261",
+      "externalId": "3064560",
       "fullName": "Luke Kornet",
       "position": "C",
       "heightInches": 85,
@@ -3852,7 +3782,7 @@
       }
     },
     {
-      "externalId": "265",
+      "externalId": "3134907",
       "fullName": "Kyle Kuzma",
       "position": "SF",
       "heightInches": 80,
@@ -3898,7 +3828,7 @@
       }
     },
     {
-      "externalId": "268",
+      "externalId": "3064440",
       "fullName": "Zach LaVine",
       "position": "SG",
       "heightInches": 77,
@@ -3944,7 +3874,7 @@
       }
     },
     {
-      "externalId": "274",
+      "externalId": "6450",
       "fullName": "Kawhi Leonard",
       "position": "SF",
       "heightInches": 78,
@@ -3990,7 +3920,7 @@
       }
     },
     {
-      "externalId": "277",
+      "externalId": "2991043",
       "fullName": "Caris LeVert",
       "position": "SG",
       "heightInches": 79,
@@ -4036,7 +3966,7 @@
       }
     },
     {
-      "externalId": "278",
+      "externalId": "6606",
       "fullName": "Damian Lillard",
       "position": "PG",
       "heightInches": 74,
@@ -4086,7 +4016,7 @@
       }
     },
     {
-      "externalId": "282",
+      "externalId": "3155535",
       "fullName": "Kevon Looney",
       "position": "PF",
       "heightInches": 81,
@@ -4132,7 +4062,7 @@
       }
     },
     {
-      "externalId": "283",
+      "externalId": "3448",
       "fullName": "Brook Lopez",
       "position": "C",
       "heightInches": 85,
@@ -4178,7 +4108,7 @@
       }
     },
     {
-      "externalId": "285",
+      "externalId": "3449",
       "fullName": "Kevin Love",
       "position": "PF",
       "heightInches": 82,
@@ -4224,7 +4154,7 @@
       }
     },
     {
-      "externalId": "286",
+      "externalId": "3012",
       "fullName": "Kyle Lowry",
       "position": "PG",
       "heightInches": 72,
@@ -4316,7 +4246,7 @@
       }
     },
     {
-      "externalId": "297",
+      "externalId": "4066336",
       "fullName": "Lauri Markkanen",
       "position": "PF",
       "heightInches": 85,
@@ -4370,7 +4300,7 @@
       }
     },
     {
-      "externalId": "303",
+      "externalId": "2490149",
       "fullName": "CJ McCollum",
       "position": "PG",
       "heightInches": 75,
@@ -4406,17 +4336,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "304",
+      "externalId": "2530530",
       "fullName": "T.J. McConnell",
       "position": "PG",
       "heightInches": 73,
@@ -4470,7 +4393,7 @@
       }
     },
     {
-      "externalId": "305",
+      "externalId": "2528588",
       "fullName": "Doug McDermott",
       "position": "SF",
       "heightInches": 79,
@@ -4516,7 +4439,7 @@
       }
     },
     {
-      "externalId": "313",
+      "externalId": "4066436",
       "fullName": "De'Anthony Melton",
       "position": "PG",
       "heightInches": 74,
@@ -4562,7 +4485,7 @@
       }
     },
     {
-      "externalId": "315",
+      "externalId": "6609",
       "fullName": "Khris Middleton",
       "position": "SF",
       "heightInches": 79,
@@ -4598,17 +4521,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "322",
+      "externalId": "3908809",
       "fullName": "Donovan Mitchell",
       "position": "PG",
       "heightInches": 74,
@@ -4658,7 +4574,7 @@
       }
     },
     {
-      "externalId": "324",
+      "externalId": "4066262",
       "fullName": "Malik Monk",
       "position": "PG",
       "heightInches": 75,
@@ -4708,7 +4624,7 @@
       }
     },
     {
-      "externalId": "334",
+      "externalId": "3907497",
       "fullName": "Dejounte Murray",
       "position": "PG",
       "heightInches": 76,
@@ -4758,7 +4674,7 @@
       }
     },
     {
-      "externalId": "335",
+      "externalId": "3936299",
       "fullName": "Jamal Murray",
       "position": "PG",
       "heightInches": 76,
@@ -4812,7 +4728,7 @@
       }
     },
     {
-      "externalId": "338",
+      "externalId": "3133602",
       "fullName": "Svi Mykhailiuk",
       "position": "SG",
       "heightInches": 79,
@@ -4862,7 +4778,7 @@
       }
     },
     {
-      "externalId": "340",
+      "externalId": "2580365",
       "fullName": "Larry Nance Jr.",
       "position": "SF",
       "heightInches": 78,
@@ -4908,7 +4824,7 @@
       }
     },
     {
-      "externalId": "349",
+      "externalId": "3102530",
       "fullName": "Jusuf Nurkic",
       "position": "C",
       "heightInches": 83,
@@ -4944,17 +4860,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "351",
+      "externalId": "2583632",
       "fullName": "Royce O'Neale",
       "position": "SF",
       "heightInches": 78,
@@ -5004,7 +4913,7 @@
       }
     },
     {
-      "externalId": "356",
+      "externalId": "4065663",
       "fullName": "Josh Okogie",
       "position": "PG",
       "heightInches": 76,
@@ -5050,7 +4959,7 @@
       }
     },
     {
-      "externalId": "358",
+      "externalId": "2489663",
       "fullName": "Kelly Olynyk",
       "position": "PF",
       "heightInches": 84,
@@ -5096,7 +5005,7 @@
       }
     },
     {
-      "externalId": "360",
+      "externalId": "3133603",
       "fullName": "Kelly Oubre Jr.",
       "position": "SG",
       "heightInches": 80,
@@ -5132,17 +5041,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "371",
+      "externalId": "2488653",
       "fullName": "Mason Plumlee",
       "position": "C",
       "heightInches": 84,
@@ -5188,7 +5090,7 @@
       }
     },
     {
-      "externalId": "373",
+      "externalId": "3134908",
       "fullName": "Jakob Poeltl",
       "position": "C",
       "heightInches": 84,
@@ -5246,7 +5148,7 @@
       }
     },
     {
-      "externalId": "375",
+      "externalId": "4278104",
       "fullName": "Michael Porter Jr.",
       "position": "PF",
       "heightInches": 82,
@@ -5292,7 +5194,7 @@
       }
     },
     {
-      "externalId": "377",
+      "externalId": "3064482",
       "fullName": "Bobby Portis",
       "position": "PF",
       "heightInches": 81,
@@ -5342,7 +5244,7 @@
       }
     },
     {
-      "externalId": "378",
+      "externalId": "3102531",
       "fullName": "Kristaps Porzingis",
       "position": "C",
       "heightInches": 86,
@@ -5378,17 +5280,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "379",
+      "externalId": "2531367",
       "fullName": "Dwight Powell",
       "position": "PF",
       "heightInches": 82,
@@ -5434,7 +5329,7 @@
       }
     },
     {
-      "externalId": "380",
+      "externalId": "2595516",
       "fullName": "Norman Powell",
       "position": "PG",
       "heightInches": 75,
@@ -5470,17 +5365,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "383",
+      "externalId": "2990962",
       "fullName": "Taurean Prince",
       "position": "SF",
       "heightInches": 78,
@@ -5526,7 +5414,7 @@
       }
     },
     {
-      "externalId": "387",
+      "externalId": "3064514",
       "fullName": "Julius Randle",
       "position": "PF",
       "heightInches": 81,
@@ -5576,7 +5464,7 @@
       }
     },
     {
-      "externalId": "397",
+      "externalId": "3157465",
       "fullName": "Duncan Robinson",
       "position": "SF",
       "heightInches": 79,
@@ -5626,7 +5514,7 @@
       }
     },
     {
-      "externalId": "399",
+      "externalId": "4351852",
       "fullName": "Mitchell Robinson",
       "position": "C",
       "heightInches": 84,
@@ -5662,17 +5550,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "405",
+      "externalId": "3136776",
       "fullName": "D'Angelo Russell",
       "position": "PG",
       "heightInches": 75,
@@ -5718,7 +5599,7 @@
       }
     },
     {
-      "externalId": "406",
+      "externalId": "3155942",
       "fullName": "Domantas Sabonis",
       "position": "PF",
       "heightInches": 82,
@@ -5768,7 +5649,7 @@
       }
     },
     {
-      "externalId": "409",
+      "externalId": "3032979",
       "fullName": "Dennis Schroder",
       "position": "PG",
       "heightInches": 73,
@@ -5818,7 +5699,7 @@
       }
     },
     {
-      "externalId": "413",
+      "externalId": "4277811",
       "fullName": "Collin Sexton",
       "position": "PG",
       "heightInches": 75,
@@ -5854,17 +5735,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "414",
+      "externalId": "3914044",
       "fullName": "Landry Shamet",
       "position": "SG",
       "heightInches": 77,
@@ -5900,17 +5774,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "416",
+      "externalId": "3149673",
       "fullName": "Pascal Siakam",
       "position": "SF",
       "heightInches": 80,
@@ -5960,7 +5827,7 @@
       }
     },
     {
-      "externalId": "419",
+      "externalId": "4351851",
       "fullName": "Anfernee Simons",
       "position": "PG",
       "heightInches": 75,
@@ -5996,17 +5863,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "420",
+      "externalId": "2990992",
       "fullName": "Marcus Smart",
       "position": "PG",
       "heightInches": 75,
@@ -6052,7 +5912,7 @@
       }
     },
     {
-      "externalId": "434",
+      "externalId": "4065648",
       "fullName": "Jayson Tatum",
       "position": "SF",
       "heightInches": 80,
@@ -6110,7 +5970,7 @@
       }
     },
     {
-      "externalId": "443",
+      "externalId": "6475",
       "fullName": "Klay Thompson",
       "position": "SG",
       "heightInches": 77,
@@ -6156,7 +6016,7 @@
       }
     },
     {
-      "externalId": "447",
+      "externalId": "3136195",
       "fullName": "Karl-Anthony Towns",
       "position": "C",
       "heightInches": 84,
@@ -6206,7 +6066,7 @@
       }
     },
     {
-      "externalId": "452",
+      "externalId": "3133628",
       "fullName": "Myles Turner",
       "position": "C",
       "heightInches": 83,
@@ -6260,7 +6120,7 @@
       }
     },
     {
-      "externalId": "457",
+      "externalId": "4278077",
       "fullName": "Jarred Vanderbilt",
       "position": "SF",
       "heightInches": 80,
@@ -6310,7 +6170,7 @@
       }
     },
     {
-      "externalId": "458",
+      "externalId": "2991230",
       "fullName": "Fred VanVleet",
       "position": "PG",
       "heightInches": 72,
@@ -6356,7 +6216,7 @@
       }
     },
     {
-      "externalId": "460",
+      "externalId": "6478",
       "fullName": "Nikola Vucevic",
       "position": "C",
       "heightInches": 81,
@@ -6392,17 +6252,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "462",
+      "externalId": "3150844",
       "fullName": "Moritz Wagner",
       "position": "PF",
       "heightInches": 83,
@@ -6448,7 +6301,7 @@
       }
     },
     {
-      "externalId": "472",
+      "externalId": "3468",
       "fullName": "Russell Westbrook",
       "position": "PG",
       "heightInches": 76,
@@ -6484,17 +6337,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "473",
+      "externalId": "3078576",
       "fullName": "Derrick White",
       "position": "PG",
       "heightInches": 76,
@@ -6548,7 +6394,7 @@
       }
     },
     {
-      "externalId": "475",
+      "externalId": "3059319",
       "fullName": "Andrew Wiggins",
       "position": "SF",
       "heightInches": 78,
@@ -6594,7 +6440,7 @@
       }
     },
     {
-      "externalId": "476",
+      "externalId": "4066211",
       "fullName": "Robert Williams III",
       "position": "C",
       "heightInches": 81,
@@ -6630,17 +6476,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "480",
+      "externalId": "3133626",
       "fullName": "Kenrich Williams",
       "position": "SG",
       "heightInches": 79,
@@ -6686,7 +6525,7 @@
       }
     },
     {
-      "externalId": "490",
+      "externalId": "4277905",
       "fullName": "Trae Young",
       "position": "PG",
       "heightInches": 74,
@@ -6732,7 +6571,7 @@
       }
     },
     {
-      "externalId": "493",
+      "externalId": "4017837",
       "fullName": "Ivica Zubac",
       "position": "C",
       "heightInches": 84,
@@ -6782,7 +6621,7 @@
       }
     },
     {
-      "externalId": "2148",
+      "externalId": "3102533",
       "fullName": "Thanasis Antetokounmpo",
       "position": "SF",
       "heightInches": 79,
@@ -6828,7 +6667,7 @@
       }
     },
     {
-      "externalId": "2189",
+      "externalId": "3134903",
       "fullName": "Gary Payton II",
       "position": "PG",
       "heightInches": 74,
@@ -6864,17 +6703,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "3089",
+      "externalId": "4277843",
       "fullName": "Gary Trent Jr.",
       "position": "SG",
       "heightInches": 77,
@@ -6920,7 +6752,7 @@
       }
     },
     {
-      "externalId": "3092",
+      "externalId": "4291678",
       "fullName": "Haywood Highsmith",
       "position": "SF",
       "heightInches": 77,
@@ -6966,7 +6798,7 @@
       }
     },
     {
-      "externalId": "666400",
+      "externalId": "4278039",
       "fullName": "Nickeil Alexander-Walker",
       "position": "SG",
       "heightInches": 77,
@@ -7020,7 +6852,7 @@
       }
     },
     {
-      "externalId": "666423",
+      "externalId": "4395625",
       "fullName": "RJ Barrett",
       "position": "SF",
       "heightInches": 78,
@@ -7066,7 +6898,7 @@
       }
     },
     {
-      "externalId": "666442",
+      "externalId": "4348700",
       "fullName": "Goga Bitadze",
       "position": "C",
       "heightInches": 83,
@@ -7112,7 +6944,7 @@
       }
     },
     {
-      "externalId": "666508",
+      "externalId": "4278067",
       "fullName": "Nicolas Claxton",
       "position": "C",
       "heightInches": 83,
@@ -7129,20 +6961,20 @@
       "seedPotentialRating": 78,
       "overrideApplied": false,
       "stats": {
-        "season": 2026,
-        "team": "CHI",
-        "gamesPlayed": 0,
-        "minutesPerGame": 0,
-        "pointsPerGame": 0,
-        "reboundsPerGame": 0,
-        "assistsPerGame": 0,
-        "stealsPerGame": 0,
-        "blocksPerGame": 0,
-        "turnoversPerGame": 0,
-        "fgPct": null,
-        "fg3Pct": null,
-        "ftPct": null,
-        "trueShootingPct": null,
+        "season": 2025,
+        "team": "BKN",
+        "gamesPlayed": 69,
+        "minutesPerGame": 27.83,
+        "pointsPerGame": 11.74,
+        "reboundsPerGame": 6.93,
+        "assistsPerGame": 3.67,
+        "stealsPerGame": 0.65,
+        "blocksPerGame": 1.12,
+        "turnoversPerGame": 1.39,
+        "fgPct": 0.571,
+        "fg3Pct": 0.158,
+        "ftPct": 0.616,
+        "trueShootingPct": 0.592,
         "usagePct": null,
         "winSharesPer48": null,
         "boxPlusMinus": null,
@@ -7162,7 +6994,7 @@
       }
     },
     {
-      "externalId": "666511",
+      "externalId": "4066387",
       "fullName": "Amir Coffey",
       "position": "SG",
       "heightInches": 79,
@@ -7208,7 +7040,7 @@
       }
     },
     {
-      "externalId": "666541",
+      "externalId": "4397020",
       "fullName": "Luguentz Dort",
       "position": "PG",
       "heightInches": 76,
@@ -7254,7 +7086,7 @@
       }
     },
     {
-      "externalId": "666577",
+      "externalId": "4278049",
       "fullName": "Daniel Gafford",
       "position": "PF",
       "heightInches": 82,
@@ -7308,7 +7140,7 @@
       }
     },
     {
-      "externalId": "666581",
+      "externalId": "4396907",
       "fullName": "Darius Garland",
       "position": "PG",
       "heightInches": 73,
@@ -7358,7 +7190,7 @@
       }
     },
     {
-      "externalId": "666604",
+      "externalId": "2596112",
       "fullName": "Javonte Green",
       "position": "SG",
       "heightInches": 77,
@@ -7404,7 +7236,7 @@
       }
     },
     {
-      "externalId": "666609",
+      "externalId": "4066648",
       "fullName": "Rui Hachimura",
       "position": "SF",
       "heightInches": 80,
@@ -7440,17 +7272,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "666626",
+      "externalId": "4397077",
       "fullName": "Jaxson Hayes",
       "position": "C",
       "heightInches": 84,
@@ -7486,17 +7311,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "666633",
+      "externalId": "4395725",
       "fullName": "Tyler Herro",
       "position": "SG",
       "heightInches": 77,
@@ -7542,7 +7360,7 @@
       }
     },
     {
-      "externalId": "666656",
+      "externalId": "4065732",
       "fullName": "De'Andre Hunter",
       "position": "SF",
       "heightInches": 79,
@@ -7588,7 +7406,7 @@
       }
     },
     {
-      "externalId": "666676",
+      "externalId": "4065733",
       "fullName": "Ty Jerome",
       "position": "SG",
       "heightInches": 77,
@@ -7638,7 +7456,7 @@
       }
     },
     {
-      "externalId": "666679",
+      "externalId": "3138196",
       "fullName": "Cameron Johnson",
       "position": "SF",
       "heightInches": 80,
@@ -7684,7 +7502,7 @@
       }
     },
     {
-      "externalId": "666682",
+      "externalId": "4395723",
       "fullName": "Keldon Johnson",
       "position": "SF",
       "heightInches": 78,
@@ -7730,7 +7548,7 @@
       }
     },
     {
-      "externalId": "666703",
+      "externalId": "3134932",
       "fullName": "John Konchar",
       "position": "SG",
       "heightInches": 77,
@@ -7776,7 +7594,7 @@
       }
     },
     {
-      "externalId": "666743",
+      "externalId": "3907823",
       "fullName": "Terance Mann",
       "position": "SG",
       "heightInches": 78,
@@ -7826,7 +7644,7 @@
       }
     },
     {
-      "externalId": "666747",
+      "externalId": "3138160",
       "fullName": "Caleb Martin",
       "position": "SF",
       "heightInches": 77,
@@ -7876,7 +7694,7 @@
       }
     },
     {
-      "externalId": "666767",
+      "externalId": "3134916",
       "fullName": "Jordan McLaughlin",
       "position": "PG",
       "heightInches": 71,
@@ -7922,7 +7740,7 @@
       }
     },
     {
-      "externalId": "666786",
+      "externalId": "4279888",
       "fullName": "Ja Morant",
       "position": "PG",
       "heightInches": 74,
@@ -7972,7 +7790,7 @@
       }
     },
     {
-      "externalId": "666848",
+      "externalId": "4277956",
       "fullName": "Jordan Poole",
       "position": "PG",
       "heightInches": 76,
@@ -8018,7 +7836,7 @@
       }
     },
     {
-      "externalId": "666849",
+      "externalId": "4397140",
       "fullName": "Kevin Porter Jr.",
       "position": "SG",
       "heightInches": 77,
@@ -8064,7 +7882,7 @@
       }
     },
     {
-      "externalId": "666908",
+      "externalId": "4065778",
       "fullName": "Max Strus",
       "position": "SG",
       "heightInches": 77,
@@ -8110,7 +7928,7 @@
       }
     },
     {
-      "externalId": "666923",
+      "externalId": "3907498",
       "fullName": "Matisse Thybulle",
       "position": "SG",
       "heightInches": 77,
@@ -8156,7 +7974,7 @@
       }
     },
     {
-      "externalId": "666940",
+      "externalId": "3912848",
       "fullName": "Dean Wade",
       "position": "PF",
       "heightInches": 81,
@@ -8192,17 +8010,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "666950",
+      "externalId": "4278078",
       "fullName": "P.J. Washington",
       "position": "SF",
       "heightInches": 79,
@@ -8260,7 +8071,7 @@
       }
     },
     {
-      "externalId": "666956",
+      "externalId": "4395651",
       "fullName": "Coby White",
       "position": "PG",
       "heightInches": 76,
@@ -8296,17 +8107,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "666965",
+      "externalId": "4066218",
       "fullName": "Grant Williams",
       "position": "SF",
       "heightInches": 79,
@@ -8352,7 +8156,7 @@
       }
     },
     {
-      "externalId": "666969",
+      "externalId": "4395628",
       "fullName": "Zion Williamson",
       "position": "SF",
       "heightInches": 78,
@@ -8402,7 +8206,7 @@
       }
     },
     {
-      "externalId": "667378",
+      "externalId": "4396971",
       "fullName": "Naz Reid",
       "position": "C",
       "heightInches": 81,
@@ -8460,7 +8264,7 @@
       }
     },
     {
-      "externalId": "1603383",
+      "externalId": "3137259",
       "fullName": "Gabe Vincent",
       "position": "PG",
       "heightInches": 74,
@@ -8506,7 +8310,7 @@
       }
     },
     {
-      "externalId": "3547238",
+      "externalId": "4594268",
       "fullName": "Anthony Edwards",
       "position": "PG",
       "heightInches": 76,
@@ -8560,7 +8364,7 @@
       }
     },
     {
-      "externalId": "3547239",
+      "externalId": "4432816",
       "fullName": "LaMelo Ball",
       "position": "SG",
       "heightInches": 79,
@@ -8614,7 +8418,7 @@
       }
     },
     {
-      "externalId": "3547241",
+      "externalId": "4683024",
       "fullName": "Killian Hayes",
       "position": "PG",
       "heightInches": 76,
@@ -8660,7 +8464,7 @@
       }
     },
     {
-      "externalId": "3547242",
+      "externalId": "4683021",
       "fullName": "Deni Avdija",
       "position": "SF",
       "heightInches": 80,
@@ -8710,7 +8514,7 @@
       }
     },
     {
-      "externalId": "3547243",
+      "externalId": "4278355",
       "fullName": "Obi Toppin",
       "position": "PF",
       "heightInches": 81,
@@ -8760,7 +8564,7 @@
       }
     },
     {
-      "externalId": "3547244",
+      "externalId": "4431680",
       "fullName": "Onyeka Okongwu",
       "position": "PF",
       "heightInches": 82,
@@ -8810,7 +8614,7 @@
       }
     },
     {
-      "externalId": "3547245",
+      "externalId": "4396993",
       "fullName": "Tyrese Haliburton",
       "position": "SG",
       "heightInches": 77,
@@ -8864,7 +8668,7 @@
       }
     },
     {
-      "externalId": "3547246",
+      "externalId": "4395630",
       "fullName": "Devin Vassell",
       "position": "SG",
       "heightInches": 77,
@@ -8918,7 +8722,7 @@
       }
     },
     {
-      "externalId": "3547247",
+      "externalId": "4432822",
       "fullName": "Isaac Okoro",
       "position": "SF",
       "heightInches": 76,
@@ -8964,7 +8768,7 @@
       }
     },
     {
-      "externalId": "3547248",
+      "externalId": "4431687",
       "fullName": "Patrick Williams",
       "position": "SF",
       "heightInches": 78,
@@ -9018,7 +8822,7 @@
       }
     },
     {
-      "externalId": "3547249",
+      "externalId": "4431679",
       "fullName": "Precious Achiuwa",
       "position": "SF",
       "heightInches": 80,
@@ -9054,17 +8858,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "3547250",
+      "externalId": "4396909",
       "fullName": "Aaron Nesmith",
       "position": "SG",
       "heightInches": 77,
@@ -9118,7 +8915,7 @@
       }
     },
     {
-      "externalId": "3547254",
+      "externalId": "4431678",
       "fullName": "Tyrese Maxey",
       "position": "PG",
       "heightInches": 74,
@@ -9172,7 +8969,7 @@
       }
     },
     {
-      "externalId": "3547256",
+      "externalId": "4397136",
       "fullName": "Saddiq Bey",
       "position": "SG",
       "heightInches": 80,
@@ -9218,7 +9015,7 @@
       }
     },
     {
-      "externalId": "3547258",
+      "externalId": "4432811",
       "fullName": "Josh Green",
       "position": "SG",
       "heightInches": 78,
@@ -9264,7 +9061,7 @@
       }
     },
     {
-      "externalId": "3547259",
+      "externalId": "4431671",
       "fullName": "Jaden McDaniels",
       "position": "PF",
       "heightInches": 81,
@@ -9318,7 +9115,7 @@
       }
     },
     {
-      "externalId": "3547264",
+      "externalId": "4397189",
       "fullName": "Jalen Smith",
       "position": "SF",
       "heightInches": 80,
@@ -9364,7 +9161,7 @@
       }
     },
     {
-      "externalId": "3547267",
+      "externalId": "4432810",
       "fullName": "Isaiah Stewart",
       "position": "SF",
       "heightInches": 80,
@@ -9414,7 +9211,7 @@
       }
     },
     {
-      "externalId": "3547268",
+      "externalId": "4431690",
       "fullName": "Zeke Nnaji",
       "position": "PF",
       "heightInches": 82,
@@ -9464,7 +9261,7 @@
       }
     },
     {
-      "externalId": "3547269",
+      "externalId": "4395724",
       "fullName": "Immanuel Quickley",
       "position": "PG",
       "heightInches": 74,
@@ -9518,7 +9315,7 @@
       }
     },
     {
-      "externalId": "3547270",
+      "externalId": "4278562",
       "fullName": "Paul Reed",
       "position": "PF",
       "heightInches": 81,
@@ -9564,7 +9361,7 @@
       }
     },
     {
-      "externalId": "3547272",
+      "externalId": "4395702",
       "fullName": "Isaiah Joe",
       "position": "PG",
       "heightInches": 76,
@@ -9614,7 +9411,7 @@
       }
     },
     {
-      "externalId": "3547274",
+      "externalId": "4395626",
       "fullName": "Tre Jones",
       "position": "PG",
       "heightInches": 73,
@@ -9664,7 +9461,7 @@
       }
     },
     {
-      "externalId": "3547276",
+      "externalId": "4066354",
       "fullName": "Payton Pritchard",
       "position": "PG",
       "heightInches": 73,
@@ -9714,7 +9511,7 @@
       }
     },
     {
-      "externalId": "3547285",
+      "externalId": "4277964",
       "fullName": "Xavier Tillman",
       "position": "SF",
       "heightInches": 80,
@@ -9760,7 +9557,7 @@
       }
     },
     {
-      "externalId": "3547287",
+      "externalId": "4066320",
       "fullName": "Desmond Bane",
       "position": "SG",
       "heightInches": 78,
@@ -9814,7 +9611,7 @@
       }
     },
     {
-      "externalId": "3547293",
+      "externalId": "4278594",
       "fullName": "Naji Marshall",
       "position": "SF",
       "heightInches": 78,
@@ -9860,7 +9657,7 @@
       }
     },
     {
-      "externalId": "3547299",
+      "externalId": "4066757",
       "fullName": "Sam Merrill",
       "position": "PG",
       "heightInches": 76,
@@ -9914,7 +9711,7 @@
       }
     },
     {
-      "externalId": "3547301",
+      "externalId": "3136777",
       "fullName": "Jae'Sean Tate",
       "position": "SF",
       "heightInches": 76,
@@ -9960,7 +9757,7 @@
       }
     },
     {
-      "externalId": "3547302",
+      "externalId": "2581184",
       "fullName": "Anthony Gill",
       "position": "SF",
       "heightInches": 79,
@@ -9996,17 +9793,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "4197387",
+      "externalId": "4578893",
       "fullName": "Vit Krejci",
       "position": "SG",
       "heightInches": 80,
@@ -10056,7 +9846,7 @@
       }
     },
     {
-      "externalId": "17553967",
+      "externalId": "4397424",
       "fullName": "Neemias Queta",
       "position": "C",
       "heightInches": 84,
@@ -10102,7 +9892,7 @@
       }
     },
     {
-      "externalId": "17553979",
+      "externalId": "4433247",
       "fullName": "Jonathan Kuminga",
       "position": "SF",
       "heightInches": 79,
@@ -10148,7 +9938,7 @@
       }
     },
     {
-      "externalId": "17553992",
+      "externalId": "4432171",
       "fullName": "Moses Moody",
       "position": "SG",
       "heightInches": 77,
@@ -10198,7 +9988,7 @@
       }
     },
     {
-      "externalId": "17553994",
+      "externalId": "4278053",
       "fullName": "Davion Mitchell",
       "position": "PG",
       "heightInches": 72,
@@ -10244,7 +10034,7 @@
       }
     },
     {
-      "externalId": "17553995",
+      "externalId": "4066457",
       "fullName": "Austin Reaves",
       "position": "SG",
       "heightInches": 77,
@@ -10290,7 +10080,7 @@
       }
     },
     {
-      "externalId": "17554004",
+      "externalId": "4067017",
       "fullName": "AJ Lawson",
       "position": "SG",
       "heightInches": 78,
@@ -10336,7 +10126,7 @@
       }
     },
     {
-      "externalId": "17895854",
+      "externalId": "4397886",
       "fullName": "Charles Bassey",
       "position": "C",
       "heightInches": 82,
@@ -10382,7 +10172,7 @@
       }
     },
     {
-      "externalId": "17895858",
+      "externalId": "4397014",
       "fullName": "Quentin Grimes",
       "position": "PG",
       "heightInches": 77,
@@ -10418,17 +10208,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "17895966",
+      "externalId": "4437244",
       "fullName": "Jalen Green",
       "position": "PG",
       "heightInches": 76,
@@ -10478,7 +10261,7 @@
       }
     },
     {
-      "externalId": "17895983",
+      "externalId": "4397002",
       "fullName": "Ayo Dosunmu",
       "position": "PG",
       "heightInches": 76,
@@ -10514,17 +10297,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "17896024",
+      "externalId": "4277813",
       "fullName": "Herbert Jones",
       "position": "SF",
       "heightInches": 79,
@@ -10582,7 +10358,7 @@
       }
     },
     {
-      "externalId": "17896026",
+      "externalId": "4566434",
       "fullName": "Franz Wagner",
       "position": "PF",
       "heightInches": 82,
@@ -10640,7 +10416,7 @@
       }
     },
     {
-      "externalId": "17896027",
+      "externalId": "4433137",
       "fullName": "Ziaire Williams",
       "position": "PF",
       "heightInches": 81,
@@ -10686,7 +10462,7 @@
       }
     },
     {
-      "externalId": "17896029",
+      "externalId": "4432173",
       "fullName": "Sharife Cooper",
       "position": "PG",
       "heightInches": 72,
@@ -10732,7 +10508,7 @@
       }
     },
     {
-      "externalId": "17896031",
+      "externalId": "4592492",
       "fullName": "Nah'Shon Hyland",
       "position": "PG",
       "heightInches": 74,
@@ -10749,20 +10525,20 @@
       "seedPotentialRating": 67,
       "overrideApplied": false,
       "stats": {
-        "season": 2026,
+        "season": 2025,
         "team": "MIN",
-        "gamesPlayed": 0,
-        "minutesPerGame": 0,
-        "pointsPerGame": 0,
-        "reboundsPerGame": 0,
-        "assistsPerGame": 0,
-        "stealsPerGame": 0,
-        "blocksPerGame": 0,
-        "turnoversPerGame": 0,
-        "fgPct": null,
-        "fg3Pct": null,
-        "ftPct": null,
-        "trueShootingPct": null,
+        "gamesPlayed": 70,
+        "minutesPerGame": 16.84,
+        "pointsPerGame": 8.63,
+        "reboundsPerGame": 1.81,
+        "assistsPerGame": 2.69,
+        "stealsPerGame": 0.63,
+        "blocksPerGame": 0.24,
+        "turnoversPerGame": 1,
+        "fgPct": 0.453,
+        "fg3Pct": 0.388,
+        "ftPct": 0.78,
+        "trueShootingPct": 0.599,
         "usagePct": null,
         "winSharesPer48": null,
         "boxPlusMinus": null,
@@ -10778,7 +10554,7 @@
       }
     },
     {
-      "externalId": "17896033",
+      "externalId": "4431823",
       "fullName": "Miles McBride",
       "position": "PG",
       "heightInches": 74,
@@ -10824,7 +10600,7 @@
       }
     },
     {
-      "externalId": "17896035",
+      "externalId": "4432170",
       "fullName": "Isaiah Jackson",
       "position": "SF",
       "heightInches": 80,
@@ -10874,7 +10650,7 @@
       }
     },
     {
-      "externalId": "17896036",
+      "externalId": "4432819",
       "fullName": "Tre Mann",
       "position": "PG",
       "heightInches": 76,
@@ -10924,7 +10700,7 @@
       }
     },
     {
-      "externalId": "17896038",
+      "externalId": "4432194",
       "fullName": "Day'Ron Sharpe",
       "position": "C",
       "heightInches": 82,
@@ -10970,7 +10746,7 @@
       }
     },
     {
-      "externalId": "17896039",
+      "externalId": "4432907",
       "fullName": "Justin Champagnie",
       "position": "SF",
       "heightInches": 78,
@@ -11020,7 +10796,7 @@
       }
     },
     {
-      "externalId": "17896040",
+      "externalId": "4701230",
       "fullName": "Jalen Johnson",
       "position": "SF",
       "heightInches": 80,
@@ -11078,7 +10854,7 @@
       }
     },
     {
-      "externalId": "17896045",
+      "externalId": "4280151",
       "fullName": "Corey Kispert",
       "position": "SF",
       "heightInches": 78,
@@ -11132,7 +10908,7 @@
       }
     },
     {
-      "externalId": "17896055",
+      "externalId": "4433134",
       "fullName": "Scottie Barnes",
       "position": "SF",
       "heightInches": 80,
@@ -11190,7 +10966,7 @@
       }
     },
     {
-      "externalId": "17896056",
+      "externalId": "4277951",
       "fullName": "Luka Garza",
       "position": "C",
       "heightInches": 82,
@@ -11236,7 +11012,7 @@
       }
     },
     {
-      "externalId": "17896058",
+      "externalId": "4431675",
       "fullName": "Trendon Watford",
       "position": "SF",
       "heightInches": 80,
@@ -11282,7 +11058,7 @@
       }
     },
     {
-      "externalId": "17896059",
+      "externalId": "4278580",
       "fullName": "Sandro Mamukelashvili",
       "position": "PF",
       "heightInches": 81,
@@ -11328,7 +11104,7 @@
       }
     },
     {
-      "externalId": "17896060",
+      "externalId": "4065804",
       "fullName": "Sam Hauser",
       "position": "SF",
       "heightInches": 79,
@@ -11382,7 +11158,7 @@
       }
     },
     {
-      "externalId": "17896062",
+      "externalId": "4871144",
       "fullName": "Alperen Sengun",
       "position": "C",
       "heightInches": 83,
@@ -11440,7 +11216,7 @@
       }
     },
     {
-      "externalId": "17896063",
+      "externalId": "4277922",
       "fullName": "Jericho Sims",
       "position": "C",
       "heightInches": 82,
@@ -11486,7 +11262,7 @@
       }
     },
     {
-      "externalId": "17896065",
+      "externalId": "4871145",
       "fullName": "Josh Giddey",
       "position": "SG",
       "heightInches": 79,
@@ -11540,7 +11316,7 @@
       }
     },
     {
-      "externalId": "17896067",
+      "externalId": "4593125",
       "fullName": "Santi Aldama",
       "position": "PF",
       "heightInches": 84,
@@ -11590,7 +11366,7 @@
       }
     },
     {
-      "externalId": "17896071",
+      "externalId": "4277957",
       "fullName": "Isaiah Livers",
       "position": "SF",
       "heightInches": 78,
@@ -11636,7 +11412,7 @@
       }
     },
     {
-      "externalId": "17896073",
+      "externalId": "4432165",
       "fullName": "Jalen Suggs",
       "position": "SG",
       "heightInches": 77,
@@ -11694,7 +11470,7 @@
       }
     },
     {
-      "externalId": "17896075",
+      "externalId": "4432166",
       "fullName": "Cade Cunningham",
       "position": "SG",
       "heightInches": 78,
@@ -11752,7 +11528,7 @@
       }
     },
     {
-      "externalId": "17896076",
+      "externalId": "4432158",
       "fullName": "Evan Mobley",
       "position": "C",
       "heightInches": 83,
@@ -11810,7 +11586,7 @@
       }
     },
     {
-      "externalId": "17896078",
+      "externalId": "4397183",
       "fullName": "Aaron Wiggins",
       "position": "SG",
       "heightInches": 77,
@@ -11864,7 +11640,7 @@
       }
     },
     {
-      "externalId": "17896097",
+      "externalId": "4277869",
       "fullName": "Jose Alvarado",
       "position": "PG",
       "heightInches": 72,
@@ -11910,7 +11686,7 @@
       }
     },
     {
-      "externalId": "17896103",
+      "externalId": "4065731",
       "fullName": "Jay Huff",
       "position": "C",
       "heightInches": 85,
@@ -11960,7 +11736,7 @@
       }
     },
     {
-      "externalId": "17896117",
+      "externalId": "4278516",
       "fullName": "Ethan Thompson",
       "position": "SG",
       "heightInches": 76,
@@ -12006,7 +11782,7 @@
       }
     },
     {
-      "externalId": "18677986",
+      "externalId": "4397688",
       "fullName": "Trey Murphy III",
       "position": "SF",
       "heightInches": 80,
@@ -12060,7 +11836,7 @@
       }
     },
     {
-      "externalId": "18678058",
+      "externalId": "4278402",
       "fullName": "Jordan Goodwin",
       "position": "PG",
       "heightInches": 75,
@@ -12096,17 +11872,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "19465326",
+      "externalId": "3146557",
       "fullName": "Jock Landale",
       "position": "C",
       "heightInches": 83,
@@ -12142,17 +11911,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "19465584",
+      "externalId": "4066399",
       "fullName": "Micah Potter",
       "position": "C",
       "heightInches": 81,
@@ -12198,7 +11960,7 @@
       }
     },
     {
-      "externalId": "19465585",
+      "externalId": "4066993",
       "fullName": "Dru Smith",
       "position": "PG",
       "heightInches": 74,
@@ -12248,7 +12010,7 @@
       }
     },
     {
-      "externalId": "24489167",
+      "externalId": "4397040",
       "fullName": "Brandon Williams",
       "position": "PG",
       "heightInches": 73,
@@ -12284,17 +12046,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "27924547",
+      "externalId": "4066317",
       "fullName": "Lindy Waters III",
       "position": "SF",
       "heightInches": 77,
@@ -12340,7 +12095,7 @@
       }
     },
     {
-      "externalId": "38017507",
+      "externalId": "4395712",
       "fullName": "Andrew Nembhard",
       "position": "PG",
       "heightInches": 76,
@@ -12390,7 +12145,7 @@
       }
     },
     {
-      "externalId": "38017649",
+      "externalId": "4592479",
       "fullName": "Julian Champagnie",
       "position": "SF",
       "heightInches": 79,
@@ -12436,7 +12191,7 @@
       }
     },
     {
-      "externalId": "38017656",
+      "externalId": "4431785",
       "fullName": "Scotty Pippen Jr.",
       "position": "PG",
       "heightInches": 74,
@@ -12486,7 +12241,7 @@
       }
     },
     {
-      "externalId": "38017676",
+      "externalId": "4432179",
       "fullName": "MarJon Beauchamp",
       "position": "SF",
       "heightInches": 79,
@@ -12532,7 +12287,7 @@
       }
     },
     {
-      "externalId": "38017677",
+      "externalId": "4869342",
       "fullName": "Dyson Daniels",
       "position": "SG",
       "heightInches": 79,
@@ -12590,7 +12345,7 @@
       }
     },
     {
-      "externalId": "38017679",
+      "externalId": "4868423",
       "fullName": "Jaden Hardy",
       "position": "PG",
       "heightInches": 75,
@@ -12640,7 +12395,7 @@
       }
     },
     {
-      "externalId": "38017683",
+      "externalId": "4432573",
       "fullName": "Paolo Banchero",
       "position": "PF",
       "heightInches": 82,
@@ -12702,7 +12457,7 @@
       }
     },
     {
-      "externalId": "38017684",
+      "externalId": "4432639",
       "fullName": "Jabari Smith Jr.",
       "position": "PF",
       "heightInches": 83,
@@ -12764,7 +12519,7 @@
       }
     },
     {
-      "externalId": "38017685",
+      "externalId": "4433255",
       "fullName": "Chet Holmgren",
       "position": "C",
       "heightInches": 85,
@@ -12826,7 +12581,7 @@
       }
     },
     {
-      "externalId": "38017686",
+      "externalId": "4683634",
       "fullName": "Bennedict Mathurin",
       "position": "SG",
       "heightInches": 77,
@@ -12862,17 +12617,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "38017688",
+      "externalId": "4594327",
       "fullName": "Keegan Murray",
       "position": "SF",
       "heightInches": 80,
@@ -12934,7 +12682,7 @@
       }
     },
     {
-      "externalId": "38017690",
+      "externalId": "4914336",
       "fullName": "Shaedon Sharpe",
       "position": "SG",
       "heightInches": 77,
@@ -12992,7 +12740,7 @@
       }
     },
     {
-      "externalId": "38017691",
+      "externalId": "4683749",
       "fullName": "TyTy Washington Jr.",
       "position": "PG",
       "heightInches": 75,
@@ -13038,7 +12786,7 @@
       }
     },
     {
-      "externalId": "38017693",
+      "externalId": "4683935",
       "fullName": "Blake Wesley",
       "position": "PG",
       "heightInches": 76,
@@ -13084,7 +12832,7 @@
       }
     },
     {
-      "externalId": "38017694",
+      "externalId": "4433621",
       "fullName": "Jalen Duren",
       "position": "C",
       "heightInches": 82,
@@ -13120,17 +12868,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "38017695",
+      "externalId": "4433192",
       "fullName": "Tari Eason",
       "position": "SF",
       "heightInches": 80,
@@ -13166,17 +12907,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "38017696",
+      "externalId": "4997528",
       "fullName": "Nikola Jovic",
       "position": "PF",
       "heightInches": 82,
@@ -13234,7 +12968,7 @@
       }
     },
     {
-      "externalId": "38017697",
+      "externalId": "4432582",
       "fullName": "Max Christie",
       "position": "SG",
       "heightInches": 77,
@@ -13284,7 +13018,7 @@
       }
     },
     {
-      "externalId": "38017698",
+      "externalId": "4701232",
       "fullName": "Mark Williams",
       "position": "C",
       "heightInches": 85,
@@ -13320,17 +13054,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "38017699",
+      "externalId": "4610139",
       "fullName": "Jeremy Sochan",
       "position": "SF",
       "heightInches": 80,
@@ -13376,7 +13103,7 @@
       }
     },
     {
-      "externalId": "38017700",
+      "externalId": "4592187",
       "fullName": "Wendell Moore Jr.",
       "position": "SF",
       "heightInches": 77,
@@ -13422,7 +13149,7 @@
       }
     },
     {
-      "externalId": "38017703",
+      "externalId": "4593803",
       "fullName": "Jalen Williams",
       "position": "SG",
       "heightInches": 77,
@@ -13484,7 +13211,7 @@
       }
     },
     {
-      "externalId": "38017704",
+      "externalId": "4433246",
       "fullName": "Patrick Baldwin Jr.",
       "position": "SG",
       "heightInches": 84,
@@ -13530,7 +13257,7 @@
       }
     },
     {
-      "externalId": "38017705",
+      "externalId": "4433136",
       "fullName": "Walker Kessler",
       "position": "C",
       "heightInches": 86,
@@ -13566,17 +13293,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "38017706",
+      "externalId": "4432823",
       "fullName": "Jaylin Williams",
       "position": "PF",
       "heightInches": 81,
@@ -13626,7 +13346,7 @@
       }
     },
     {
-      "externalId": "38017708",
+      "externalId": "4576086",
       "fullName": "Bryce McGowens",
       "position": "SG",
       "heightInches": 78,
@@ -13676,7 +13396,7 @@
       }
     },
     {
-      "externalId": "38017709",
+      "externalId": "4431767",
       "fullName": "Christian Braun",
       "position": "SG",
       "heightInches": 78,
@@ -13738,7 +13458,7 @@
       }
     },
     {
-      "externalId": "38017710",
+      "externalId": "4431778",
       "fullName": "Christian Koloko",
       "position": "C",
       "heightInches": 83,
@@ -13784,7 +13504,7 @@
       }
     },
     {
-      "externalId": "38017711",
+      "externalId": "4432446",
       "fullName": "Jabari Walker",
       "position": "SF",
       "heightInches": 79,
@@ -13830,7 +13550,7 @@
       }
     },
     {
-      "externalId": "38017712",
+      "externalId": "4591725",
       "fullName": "Ryan Rollins",
       "position": "PG",
       "heightInches": 75,
@@ -13880,7 +13600,7 @@
       }
     },
     {
-      "externalId": "38017714",
+      "externalId": "4702177",
       "fullName": "Keon Ellis",
       "position": "PG",
       "heightInches": 76,
@@ -13926,7 +13646,7 @@
       }
     },
     {
-      "externalId": "38017715",
+      "externalId": "4687718",
       "fullName": "Josh Minott",
       "position": "SF",
       "heightInches": 80,
@@ -13972,7 +13692,7 @@
       }
     },
     {
-      "externalId": "38017716",
+      "externalId": "4997526",
       "fullName": "Ousmane Dieng",
       "position": "PF",
       "heightInches": 81,
@@ -14018,7 +13738,7 @@
       }
     },
     {
-      "externalId": "38017717",
+      "externalId": "4397251",
       "fullName": "Ron Harper Jr.",
       "position": "SG",
       "heightInches": 77,
@@ -14064,7 +13784,7 @@
       }
     },
     {
-      "externalId": "38017720",
+      "externalId": "4432645",
       "fullName": "Trevor Keels",
       "position": "PG",
       "heightInches": 75,
@@ -14110,7 +13830,7 @@
       }
     },
     {
-      "externalId": "38017721",
+      "externalId": "4576087",
       "fullName": "Peyton Watson",
       "position": "SG",
       "heightInches": 80,
@@ -14146,17 +13866,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "38017722",
+      "externalId": "4397179",
       "fullName": "Tyrese Martin",
       "position": "SG",
       "heightInches": 78,
@@ -14202,7 +13915,7 @@
       }
     },
     {
-      "externalId": "38017724",
+      "externalId": "4433623",
       "fullName": "Caleb Houstan",
       "position": "SG",
       "heightInches": 80,
@@ -14248,7 +13961,7 @@
       }
     },
     {
-      "externalId": "38017725",
+      "externalId": "4433249",
       "fullName": "Moussa Diabate",
       "position": "PF",
       "heightInches": 82,
@@ -14294,7 +14007,7 @@
       }
     },
     {
-      "externalId": "38017727",
+      "externalId": "4278585",
       "fullName": "Collin Gillespie",
       "position": "PG",
       "heightInches": 73,
@@ -14330,17 +14043,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "38017728",
+      "externalId": "4592691",
       "fullName": "Jake LaRavia",
       "position": "SF",
       "heightInches": 79,
@@ -14386,7 +14092,7 @@
       }
     },
     {
-      "externalId": "38017729",
+      "externalId": "4593041",
       "fullName": "David Roddy",
       "position": "SF",
       "heightInches": 77,
@@ -14432,7 +14138,7 @@
       }
     },
     {
-      "externalId": "38017730",
+      "externalId": "4870562",
       "fullName": "Dominick Barlow",
       "position": "PF",
       "heightInches": 81,
@@ -14478,7 +14184,7 @@
       }
     },
     {
-      "externalId": "38017733",
+      "externalId": "4397475",
       "fullName": "A.J. Green",
       "position": "PG",
       "heightInches": 76,
@@ -14536,7 +14242,7 @@
       }
     },
     {
-      "externalId": "38017734",
+      "externalId": "4278572",
       "fullName": "Jamal Cain",
       "position": "SF",
       "heightInches": 79,
@@ -14582,7 +14288,7 @@
       }
     },
     {
-      "externalId": "38017739",
+      "externalId": "3899664",
       "fullName": "Simone Fontecchio",
       "position": "SF",
       "heightInches": 79,
@@ -14628,7 +14334,7 @@
       }
     },
     {
-      "externalId": "44477062",
+      "externalId": "4280245",
       "fullName": "Jamaree Bouyea",
       "position": "PG",
       "heightInches": 74,
@@ -14674,7 +14380,7 @@
       }
     },
     {
-      "externalId": "44477085",
+      "externalId": "4592829",
       "fullName": "Quenton Jackson",
       "position": "PG",
       "heightInches": 76,
@@ -14724,7 +14430,7 @@
       }
     },
     {
-      "externalId": "45088184",
+      "externalId": "4279118",
       "fullName": "Keaton Wallace",
       "position": "PG",
       "heightInches": 75,
@@ -14816,7 +14522,7 @@
       }
     },
     {
-      "externalId": "56677582",
+      "externalId": "4398390",
       "fullName": "Jalen Pickett",
       "position": "PG",
       "heightInches": 74,
@@ -14866,7 +14572,7 @@
       }
     },
     {
-      "externalId": "56677722",
+      "externalId": "4431714",
       "fullName": "Jalen Wilson",
       "position": "SF",
       "heightInches": 78,
@@ -14912,7 +14618,7 @@
       }
     },
     {
-      "externalId": "56677738",
+      "externalId": "4397204",
       "fullName": "Colin Castleton",
       "position": "C",
       "heightInches": 82,
@@ -14958,7 +14664,7 @@
       }
     },
     {
-      "externalId": "56677747",
+      "externalId": "4683678",
       "fullName": "Scoot Henderson",
       "position": "PG",
       "heightInches": 75,
@@ -15004,7 +14710,7 @@
       }
     },
     {
-      "externalId": "56677776",
+      "externalId": "4432181",
       "fullName": "Julian Strawther",
       "position": "SG",
       "heightInches": 78,
@@ -15050,7 +14756,7 @@
       }
     },
     {
-      "externalId": "56677778",
+      "externalId": "4432827",
       "fullName": "Oscar Tshiebwe",
       "position": "C",
       "heightInches": 80,
@@ -15086,17 +14792,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "56677782",
+      "externalId": "5044385",
       "fullName": "Leonard Miller",
       "position": "PF",
       "heightInches": 82,
@@ -15142,7 +14841,7 @@
       }
     },
     {
-      "externalId": "56677785",
+      "externalId": "4432848",
       "fullName": "Jaime Jaquez Jr.",
       "position": "SF",
       "heightInches": 78,
@@ -15188,7 +14887,7 @@
       }
     },
     {
-      "externalId": "56677791",
+      "externalId": "4594326",
       "fullName": "Kris Murray",
       "position": "SF",
       "heightInches": 80,
@@ -15234,7 +14933,7 @@
       }
     },
     {
-      "externalId": "56677792",
+      "externalId": "4432107",
       "fullName": "Marcus Sasser",
       "position": "PG",
       "heightInches": 73,
@@ -15280,7 +14979,7 @@
       }
     },
     {
-      "externalId": "56677799",
+      "externalId": "4431684",
       "fullName": "Trayce Jackson-Davis",
       "position": "PF",
       "heightInches": 81,
@@ -15326,7 +15025,7 @@
       }
     },
     {
-      "externalId": "56677806",
+      "externalId": "4712863",
       "fullName": "Mouhamed Gueye",
       "position": "PF",
       "heightInches": 83,
@@ -15372,7 +15071,7 @@
       }
     },
     {
-      "externalId": "56677817",
+      "externalId": "5081727",
       "fullName": "Sidy Cissoko",
       "position": "SG",
       "heightInches": 78,
@@ -15418,7 +15117,7 @@
       }
     },
     {
-      "externalId": "56677822",
+      "externalId": "5104157",
       "fullName": "Victor Wembanyama",
       "position": "PF",
       "heightInches": 88,
@@ -15464,7 +15163,7 @@
       }
     },
     {
-      "externalId": "56677823",
+      "externalId": "4433287",
       "fullName": "Brandon Miller",
       "position": "SF",
       "heightInches": 79,
@@ -15510,7 +15209,7 @@
       }
     },
     {
-      "externalId": "56677824",
+      "externalId": "4684806",
       "fullName": "Taylor Hendricks",
       "position": "PF",
       "heightInches": 81,
@@ -15556,7 +15255,7 @@
       }
     },
     {
-      "externalId": "56677825",
+      "externalId": "4684740",
       "fullName": "Amen Thompson",
       "position": "SG",
       "heightInches": 79,
@@ -15602,7 +15301,7 @@
       }
     },
     {
-      "externalId": "56677826",
+      "externalId": "4684742",
       "fullName": "Ausar Thompson",
       "position": "SG",
       "heightInches": 79,
@@ -15648,7 +15347,7 @@
       }
     },
     {
-      "externalId": "56677827",
+      "externalId": "4712849",
       "fullName": "Anthony Black",
       "position": "SG",
       "heightInches": 79,
@@ -15694,7 +15393,7 @@
       }
     },
     {
-      "externalId": "56677828",
+      "externalId": "5106258",
       "fullName": "Gradey Dick",
       "position": "SG",
       "heightInches": 79,
@@ -15740,7 +15439,7 @@
       }
     },
     {
-      "externalId": "56677829",
+      "externalId": "5099752",
       "fullName": "Rayan Rupert",
       "position": "SG",
       "heightInches": 79,
@@ -15786,7 +15485,7 @@
       }
     },
     {
-      "externalId": "56677830",
+      "externalId": "5105550",
       "fullName": "GG Jackson",
       "position": "PF",
       "heightInches": 81,
@@ -15832,7 +15531,7 @@
       }
     },
     {
-      "externalId": "56677831",
+      "externalId": "5105592",
       "fullName": "Cam Whitmore",
       "position": "SF",
       "heightInches": 78,
@@ -15878,7 +15577,7 @@
       }
     },
     {
-      "externalId": "56677832",
+      "externalId": "5106060",
       "fullName": "Jarace Walker",
       "position": "SF",
       "heightInches": 79,
@@ -15924,7 +15623,7 @@
       }
     },
     {
-      "externalId": "56677833",
+      "externalId": "4683692",
       "fullName": "Cason Wallace",
       "position": "PG",
       "heightInches": 75,
@@ -15970,7 +15669,7 @@
       }
     },
     {
-      "externalId": "56677834",
+      "externalId": "4433627",
       "fullName": "Keyonte George",
       "position": "PG",
       "heightInches": 76,
@@ -16016,7 +15715,7 @@
       }
     },
     {
-      "externalId": "56677837",
+      "externalId": "4683750",
       "fullName": "Jordan Hawkins",
       "position": "SG",
       "heightInches": 77,
@@ -16108,7 +15807,7 @@
       }
     },
     {
-      "externalId": "56677839",
+      "externalId": "5105806",
       "fullName": "Jett Howard",
       "position": "SG",
       "heightInches": 80,
@@ -16154,7 +15853,7 @@
       }
     },
     {
-      "externalId": "56677840",
+      "externalId": "4683688",
       "fullName": "Dereck Lively II",
       "position": "C",
       "heightInches": 85,
@@ -16200,7 +15899,7 @@
       }
     },
     {
-      "externalId": "56677842",
+      "externalId": "5105839",
       "fullName": "Brice Sensabaugh",
       "position": "SF",
       "heightInches": 78,
@@ -16246,7 +15945,7 @@
       }
     },
     {
-      "externalId": "56677843",
+      "externalId": "4712896",
       "fullName": "Noah Clowney",
       "position": "PF",
       "heightInches": 82,
@@ -16292,7 +15991,7 @@
       }
     },
     {
-      "externalId": "56677844",
+      "externalId": "5104155",
       "fullName": "Bilal Coulibaly",
       "position": "SG",
       "heightInches": 79,
@@ -16338,7 +16037,7 @@
       }
     },
     {
-      "externalId": "56677849",
+      "externalId": "4431752",
       "fullName": "Kobe Brown",
       "position": "SG",
       "heightInches": 79,
@@ -16384,7 +16083,7 @@
       }
     },
     {
-      "externalId": "56677850",
+      "externalId": "4431736",
       "fullName": "Toumani Camara",
       "position": "SF",
       "heightInches": 79,
@@ -16442,7 +16141,7 @@
       }
     },
     {
-      "externalId": "56677851",
+      "externalId": "4432247",
       "fullName": "Jaylen Clark",
       "position": "SG",
       "heightInches": 77,
@@ -16488,7 +16187,7 @@
       }
     },
     {
-      "externalId": "56677852",
+      "externalId": "4432190",
       "fullName": "Andre Jackson Jr.",
       "position": "SG",
       "heightInches": 78,
@@ -16534,7 +16233,7 @@
       }
     },
     {
-      "externalId": "56677856",
+      "externalId": "4396818",
       "fullName": "Jordan Miller",
       "position": "SG",
       "heightInches": 77,
@@ -16580,7 +16279,7 @@
       }
     },
     {
-      "externalId": "56677857",
+      "externalId": "5105553",
       "fullName": "Julian Phillips",
       "position": "SF",
       "heightInches": 78,
@@ -16626,7 +16325,7 @@
       }
     },
     {
-      "externalId": "56677858",
+      "externalId": "4709138",
       "fullName": "Brandin Podziemski",
       "position": "PG",
       "heightInches": 76,
@@ -16672,7 +16371,7 @@
       }
     },
     {
-      "externalId": "56677859",
+      "externalId": "4595400",
       "fullName": "Olivier-Maxence Prosper",
       "position": "SF",
       "heightInches": 79,
@@ -16718,7 +16417,7 @@
       }
     },
     {
-      "externalId": "56677861",
+      "externalId": "4433076",
       "fullName": "Ben Sheppard",
       "position": "SG",
       "heightInches": 78,
@@ -16764,7 +16463,7 @@
       }
     },
     {
-      "externalId": "56677862",
+      "externalId": "4398207",
       "fullName": "Jalen Slawson",
       "position": "SF",
       "heightInches": 79,
@@ -16800,17 +16499,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "56677864",
+      "externalId": "4683689",
       "fullName": "Jordan Walsh",
       "position": "SG",
       "heightInches": 78,
@@ -16856,7 +16548,7 @@
       }
     },
     {
-      "externalId": "56677872",
+      "externalId": "4701233",
       "fullName": "Craig Porter",
       "position": "PG",
       "heightInches": 73,
@@ -16902,7 +16594,7 @@
       }
     },
     {
-      "externalId": "57875092",
+      "externalId": "4997536",
       "fullName": "Gui Santos",
       "position": "SF",
       "heightInches": 79,
@@ -16956,7 +16648,7 @@
       }
     },
     {
-      "externalId": "64269023",
+      "externalId": "4395623",
       "fullName": "Trey Jemison",
       "position": "PF",
       "heightInches": 82,
@@ -17002,7 +16694,7 @@
       }
     },
     {
-      "externalId": "64270026",
+      "externalId": "4397233",
       "fullName": "Pete Nance",
       "position": "PF",
       "heightInches": 81,
@@ -17098,7 +16790,7 @@
       }
     },
     {
-      "externalId": "795959473",
+      "externalId": "4592714",
       "fullName": "Pat Spencer",
       "position": "PG",
       "heightInches": 74,
@@ -17144,7 +16836,7 @@
       }
     },
     {
-      "externalId": "1016384149",
+      "externalId": "4997537",
       "fullName": "Tristan Vukcevic",
       "position": "PF",
       "heightInches": 84,
@@ -17194,7 +16886,7 @@
       }
     },
     {
-      "externalId": "1028025177",
+      "externalId": "4711294",
       "fullName": "Matas Buzelis",
       "position": "SF",
       "heightInches": 80,
@@ -17244,7 +16936,7 @@
       }
     },
     {
-      "externalId": "1028025235",
+      "externalId": "4845374",
       "fullName": "Carlton Carrington",
       "position": "PG",
       "heightInches": 76,
@@ -17257,24 +16949,24 @@
       "college": "Pittsburgh",
       "photoUrl": "https://a.espncdn.com/i/headshots/nba/players/full/4845374.png",
       "teamAbbreviation": "WAS",
-      "seedOverallRating": 67,
-      "seedPotentialRating": 77,
+      "seedOverallRating": 72,
+      "seedPotentialRating": 82,
       "overrideApplied": false,
       "stats": {
-        "season": 2026,
+        "season": 2025,
         "team": "WAS",
-        "gamesPlayed": 0,
-        "minutesPerGame": 0,
-        "pointsPerGame": 0,
-        "reboundsPerGame": 0,
-        "assistsPerGame": 0,
-        "stealsPerGame": 0,
-        "blocksPerGame": 0,
-        "turnoversPerGame": 0,
-        "fgPct": null,
-        "fg3Pct": null,
-        "ftPct": null,
-        "trueShootingPct": null,
+        "gamesPlayed": 82,
+        "minutesPerGame": 27.71,
+        "pointsPerGame": 10.71,
+        "reboundsPerGame": 3.37,
+        "assistsPerGame": 4.65,
+        "stealsPerGame": 0.63,
+        "blocksPerGame": 0.21,
+        "turnoversPerGame": 2.33,
+        "fgPct": 0.424,
+        "fg3Pct": 0.408,
+        "ftPct": 0.73,
+        "trueShootingPct": 0.556,
         "usagePct": null,
         "winSharesPer48": null,
         "boxPlusMinus": null,
@@ -17294,7 +16986,7 @@
       }
     },
     {
-      "externalId": "1028025242",
+      "externalId": "4433188",
       "fullName": "Devin Carter",
       "position": "PG",
       "heightInches": 74,
@@ -17344,7 +17036,7 @@
       }
     },
     {
-      "externalId": "1028025261",
+      "externalId": "4845367",
       "fullName": "Stephon Castle",
       "position": "SG",
       "heightInches": 78,
@@ -17394,7 +17086,7 @@
       }
     },
     {
-      "externalId": "1028025344",
+      "externalId": "5105565",
       "fullName": "Donovan Clingan",
       "position": "C",
       "heightInches": 86,
@@ -17444,7 +17136,7 @@
       }
     },
     {
-      "externalId": "1028025362",
+      "externalId": "4683766",
       "fullName": "Isaiah Collier",
       "position": "PG",
       "heightInches": 76,
@@ -17494,7 +17186,7 @@
       }
     },
     {
-      "externalId": "1028025497",
+      "externalId": "4702382",
       "fullName": "Tristan Da Silva",
       "position": "SF",
       "heightInches": 80,
@@ -17544,7 +17236,7 @@
       }
     },
     {
-      "externalId": "1028025498",
+      "externalId": "5211983",
       "fullName": "Pacome Dadiet",
       "position": "PF",
       "heightInches": 81,
@@ -17594,7 +17286,7 @@
       }
     },
     {
-      "externalId": "1028025639",
+      "externalId": "4684275",
       "fullName": "Rob Dillingham",
       "position": "PG",
       "heightInches": 74,
@@ -17644,7 +17336,7 @@
       }
     },
     {
-      "externalId": "1028025723",
+      "externalId": "4888725",
       "fullName": "Ryan Dunn",
       "position": "SF",
       "heightInches": 79,
@@ -17694,7 +17386,7 @@
       }
     },
     {
-      "externalId": "1028025754",
+      "externalId": "4600663",
       "fullName": "Zach Edey",
       "position": "C",
       "heightInches": 87,
@@ -17744,7 +17436,7 @@
       }
     },
     {
-      "externalId": "1028026060",
+      "externalId": "5174563",
       "fullName": "KyShawn George",
       "position": "SF",
       "heightInches": 80,
@@ -17794,7 +17486,7 @@
       }
     },
     {
-      "externalId": "1028026508",
+      "externalId": "4683771",
       "fullName": "Ronald Holland II",
       "position": "SF",
       "heightInches": 80,
@@ -17844,7 +17536,7 @@
       }
     },
     {
-      "externalId": "1028026514",
+      "externalId": "4433607",
       "fullName": "DaRon Holmes II",
       "position": "PF",
       "heightInches": 81,
@@ -17894,7 +17586,7 @@
       }
     },
     {
-      "externalId": "1028026717",
+      "externalId": "5170947",
       "fullName": "AJ Johnson",
       "position": "SG",
       "heightInches": 77,
@@ -17944,7 +17636,7 @@
       }
     },
     {
-      "externalId": "1028026812",
+      "externalId": "4702159",
       "fullName": "Dillon Jones",
       "position": "SF",
       "heightInches": 77,
@@ -17990,7 +17682,7 @@
       }
     },
     {
-      "externalId": "1028026974",
+      "externalId": "4897943",
       "fullName": "Dalton Knecht",
       "position": "SF",
       "heightInches": 78,
@@ -18040,7 +17732,7 @@
       }
     },
     {
-      "externalId": "1028027372",
+      "externalId": "4683778",
       "fullName": "Jared McCain",
       "position": "PG",
       "heightInches": 75,
@@ -18090,7 +17782,7 @@
       }
     },
     {
-      "externalId": "1028027567",
+      "externalId": "5061589",
       "fullName": "Yves Missi",
       "position": "C",
       "heightInches": 83,
@@ -18140,7 +17832,7 @@
       }
     },
     {
-      "externalId": "1028028244",
+      "externalId": "5211175",
       "fullName": "Zaccharie Risacher",
       "position": "SF",
       "heightInches": 80,
@@ -18190,7 +17882,7 @@
       }
     },
     {
-      "externalId": "1028028379",
+      "externalId": "5211176",
       "fullName": "Tidjane Salaun",
       "position": "PF",
       "heightInches": 82,
@@ -18240,7 +17932,7 @@
       }
     },
     {
-      "externalId": "1028028405",
+      "externalId": "5160992",
       "fullName": "Alexandre Sarr",
       "position": "C",
       "heightInches": 84,
@@ -18253,24 +17945,24 @@
       "college": "Washington Wizards",
       "photoUrl": "https://a.espncdn.com/i/headshots/nba/players/full/5160992.png",
       "teamAbbreviation": "WAS",
-      "seedOverallRating": 67,
-      "seedPotentialRating": 77,
+      "seedOverallRating": 79,
+      "seedPotentialRating": 89,
       "overrideApplied": false,
       "stats": {
-        "season": 2026,
+        "season": 2025,
         "team": "WAS",
-        "gamesPlayed": 0,
-        "minutesPerGame": 0,
-        "pointsPerGame": 0,
-        "reboundsPerGame": 0,
-        "assistsPerGame": 0,
-        "stealsPerGame": 0,
-        "blocksPerGame": 0,
-        "turnoversPerGame": 0,
-        "fgPct": null,
-        "fg3Pct": null,
-        "ftPct": null,
-        "trueShootingPct": null,
+        "gamesPlayed": 48,
+        "minutesPerGame": 27.21,
+        "pointsPerGame": 16.31,
+        "reboundsPerGame": 7.4,
+        "assistsPerGame": 2.71,
+        "stealsPerGame": 0.81,
+        "blocksPerGame": 1.98,
+        "turnoversPerGame": 1.71,
+        "fgPct": 0.482,
+        "fg3Pct": 0.333,
+        "ftPct": 0.692,
+        "trueShootingPct": 0.544,
         "usagePct": null,
         "winSharesPer48": null,
         "boxPlusMinus": null,
@@ -18290,7 +17982,7 @@
       }
     },
     {
-      "externalId": "1028028434",
+      "externalId": "4593841",
       "fullName": "Baylor Scheierman",
       "position": "SG",
       "heightInches": 78,
@@ -18340,7 +18032,7 @@
       }
     },
     {
-      "externalId": "1028028501",
+      "externalId": "4432847",
       "fullName": "Terrence Shannon Jr.",
       "position": "SG",
       "heightInches": 78,
@@ -18390,7 +18082,7 @@
       }
     },
     {
-      "externalId": "1028028519",
+      "externalId": "4711272",
       "fullName": "Reed Sheppard",
       "position": "PG",
       "heightInches": 74,
@@ -18440,7 +18132,7 @@
       }
     },
     {
-      "externalId": "1028028932",
+      "externalId": "5159925",
       "fullName": "Nikola Topic",
       "position": "SG",
       "heightInches": 78,
@@ -18490,7 +18182,7 @@
       }
     },
     {
-      "externalId": "1028028993",
+      "externalId": "4683747",
       "fullName": "Jaylon Tyson",
       "position": "SG",
       "heightInches": 78,
@@ -18540,7 +18232,7 @@
       }
     },
     {
-      "externalId": "1028029111",
+      "externalId": "4684272",
       "fullName": "Ja'Kobe Walter",
       "position": "PG",
       "heightInches": 76,
@@ -18590,7 +18282,7 @@
       }
     },
     {
-      "externalId": "1028029127",
+      "externalId": "5105623",
       "fullName": "Kel'el Ware",
       "position": "C",
       "heightInches": 84,
@@ -18640,7 +18332,7 @@
       }
     },
     {
-      "externalId": "1028029291",
+      "externalId": "4895758",
       "fullName": "Cody Williams",
       "position": "SF",
       "heightInches": 80,
@@ -18690,7 +18382,7 @@
       }
     },
     {
-      "externalId": "1028034846",
+      "externalId": "5105637",
       "fullName": "Adem Bona",
       "position": "C",
       "heightInches": 82,
@@ -18740,7 +18432,7 @@
       }
     },
     {
-      "externalId": "1028035215",
+      "externalId": "4845363",
       "fullName": "Cam Christie",
       "position": "SG",
       "heightInches": 77,
@@ -18790,7 +18482,7 @@
       }
     },
     {
-      "externalId": "1028035794",
+      "externalId": "4684793",
       "fullName": "Kyle Filipowski",
       "position": "PF",
       "heightInches": 83,
@@ -18840,7 +18532,7 @@
       }
     },
     {
-      "externalId": "1028035897",
+      "externalId": "5157066",
       "fullName": "Johnny Furphy",
       "position": "SG",
       "heightInches": 80,
@@ -18894,7 +18586,7 @@
       }
     },
     {
-      "externalId": "1028036515",
+      "externalId": "4601023",
       "fullName": "Oso Ighodaro",
       "position": "PF",
       "heightInches": 83,
@@ -18944,7 +18636,7 @@
       }
     },
     {
-      "externalId": "1028036898",
+      "externalId": "4433225",
       "fullName": "Tyler Kolek",
       "position": "PG",
       "heightInches": 74,
@@ -18994,7 +18686,7 @@
       }
     },
     {
-      "externalId": "1028036986",
+      "externalId": "4601025",
       "fullName": "Pelle Larsson",
       "position": "SG",
       "heightInches": 77,
@@ -19040,7 +18732,7 @@
       }
     },
     {
-      "externalId": "1028037477",
+      "externalId": "4900671",
       "fullName": "Ajay Mitchell",
       "position": "PG",
       "heightInches": 76,
@@ -19090,7 +18782,7 @@
       }
     },
     {
-      "externalId": "1028037494",
+      "externalId": "5107897",
       "fullName": "Jonathan Mogbo",
       "position": "PF",
       "heightInches": 81,
@@ -19136,7 +18828,7 @@
       }
     },
     {
-      "externalId": "1028038100",
+      "externalId": "4592686",
       "fullName": "Antonio Reeves",
       "position": "SG",
       "heightInches": 77,
@@ -19182,7 +18874,7 @@
       }
     },
     {
-      "externalId": "1028038426",
+      "externalId": "4432241",
       "fullName": "Jamal Shead",
       "position": "PG",
       "heightInches": 73,
@@ -19228,7 +18920,7 @@
       }
     },
     {
-      "externalId": "1028038474",
+      "externalId": "4683834",
       "fullName": "K.J. Simpson",
       "position": "PG",
       "heightInches": 74,
@@ -19274,7 +18966,7 @@
       }
     },
     {
-      "externalId": "1028039105",
+      "externalId": "5112087",
       "fullName": "Jaylen Wells",
       "position": "SF",
       "heightInches": 79,
@@ -19324,7 +19016,7 @@
       }
     },
     {
-      "externalId": "1028045812",
+      "externalId": "4592699",
       "fullName": "Enrique Freeman",
       "position": "PF",
       "heightInches": 81,
@@ -19370,7 +19062,7 @@
       }
     },
     {
-      "externalId": "1028046422",
+      "externalId": "4871141",
       "fullName": "Ariel Hukporti",
       "position": "C",
       "heightInches": 84,
@@ -19416,7 +19108,7 @@
       }
     },
     {
-      "externalId": "1028046464",
+      "externalId": "4433618",
       "fullName": "Harrison Ingram",
       "position": "SF",
       "heightInches": 77,
@@ -19462,7 +19154,7 @@
       }
     },
     {
-      "externalId": "1028046517",
+      "externalId": "4683774",
       "fullName": "Bronny James",
       "position": "PG",
       "heightInches": 74,
@@ -19512,7 +19204,7 @@
       }
     },
     {
-      "externalId": "1028047255",
+      "externalId": "4411057",
       "fullName": "Kevin McCullar Jr.",
       "position": "SG",
       "heightInches": 78,
@@ -19558,7 +19250,7 @@
       }
     },
     {
-      "externalId": "1028047609",
+      "externalId": "4592965",
       "fullName": "Tristen Newton",
       "position": "SG",
       "heightInches": 77,
@@ -19604,7 +19296,7 @@
       }
     },
     {
-      "externalId": "1028047928",
+      "externalId": "4593016",
       "fullName": "Quinten Post",
       "position": "C",
       "heightInches": 84,
@@ -19650,7 +19342,7 @@
       }
     },
     {
-      "externalId": "1028048549",
+      "externalId": "4433083",
       "fullName": "Cam Spencer",
       "position": "PG",
       "heightInches": 75,
@@ -19704,7 +19396,7 @@
       }
     },
     {
-      "externalId": "1028112004",
+      "externalId": "4592979",
       "fullName": "Zyon Pullin",
       "position": "PG",
       "heightInches": 76,
@@ -19750,7 +19442,7 @@
       }
     },
     {
-      "externalId": "1028125584",
+      "externalId": "4431786",
       "fullName": "Keshad Johnson",
       "position": "SF",
       "heightInches": 78,
@@ -19796,7 +19488,7 @@
       }
     },
     {
-      "externalId": "1028203085",
+      "externalId": "4433268",
       "fullName": "Trey Alexander",
       "position": "SG",
       "heightInches": 77,
@@ -19842,7 +19534,7 @@
       }
     },
     {
-      "externalId": "1028203948",
+      "externalId": "4592857",
       "fullName": "Isaiah Crawford",
       "position": "SF",
       "heightInches": 78,
@@ -19888,7 +19580,7 @@
       }
     },
     {
-      "externalId": "1028205331",
+      "externalId": "5107818",
       "fullName": "Isaac Jones",
       "position": "C",
       "heightInches": 80,
@@ -19934,7 +19626,7 @@
       }
     },
     {
-      "externalId": "1028214238",
+      "externalId": "4711297",
       "fullName": "Justin Edwards",
       "position": "SF",
       "heightInches": 79,
@@ -19984,7 +19676,7 @@
       }
     },
     {
-      "externalId": "1028214958",
+      "externalId": "4396963",
       "fullName": "Blake Hinson",
       "position": "SF",
       "heightInches": 80,
@@ -20020,17 +19712,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "1028218679",
+      "externalId": "4592435",
       "fullName": "Branden Carlson",
       "position": "C",
       "heightInches": 84,
@@ -20076,7 +19761,7 @@
       }
     },
     {
-      "externalId": "1028240128",
+      "externalId": "5107199",
       "fullName": "Daniss Jenkins",
       "position": "PG",
       "heightInches": 76,
@@ -20122,7 +19807,7 @@
       }
     },
     {
-      "externalId": "1028243201",
+      "externalId": "4431893",
       "fullName": "Jamison Battle",
       "position": "SF",
       "heightInches": 79,
@@ -20168,7 +19853,7 @@
       }
     },
     {
-      "externalId": "1028244219",
+      "externalId": "4431734",
       "fullName": "Tristan Enaruna",
       "position": "SF",
       "heightInches": 79,
@@ -20214,7 +19899,7 @@
       }
     },
     {
-      "externalId": "1028244692",
+      "externalId": "4701225",
       "fullName": "PJ Hall",
       "position": "C",
       "heightInches": 80,
@@ -20306,7 +19991,7 @@
       }
     },
     {
-      "externalId": "1028245777",
+      "externalId": "4997538",
       "fullName": "Karlo Matkovic",
       "position": "PF",
       "heightInches": 82,
@@ -20352,7 +20037,7 @@
       }
     },
     {
-      "externalId": "1028245994",
+      "externalId": "5177362",
       "fullName": "Riley Minix",
       "position": "SF",
       "heightInches": 79,
@@ -20398,7 +20083,7 @@
       }
     },
     {
-      "externalId": "1028246478",
+      "externalId": "4279318",
       "fullName": "Daeqwon Plowden",
       "position": "SG",
       "heightInches": 76,
@@ -20434,17 +20119,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "1028255289",
+      "externalId": "4592427",
       "fullName": "Spencer Jones",
       "position": "SF",
       "heightInches": 79,
@@ -20480,14 +20158,7 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
       "externalId": "1028256970",
@@ -20536,7 +20207,7 @@
       }
     },
     {
-      "externalId": "1028257937",
+      "externalId": "4433133",
       "fullName": "Jahmir Young",
       "position": "PG",
       "heightInches": 72,
@@ -20582,7 +20253,7 @@
       }
     },
     {
-      "externalId": "1028264794",
+      "externalId": "4397449",
       "fullName": "Elijah Harkless",
       "position": "PG",
       "heightInches": 75,
@@ -20628,7 +20299,7 @@
       }
     },
     {
-      "externalId": "1028265620",
+      "externalId": "4897449",
       "fullName": "Malevy Leons",
       "position": "PF",
       "heightInches": 81,
@@ -20674,7 +20345,7 @@
       }
     },
     {
-      "externalId": "1028266882",
+      "externalId": "4397114",
       "fullName": "Cormac Ryan",
       "position": "SG",
       "heightInches": 77,
@@ -20710,17 +20381,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "1028267166",
+      "externalId": "4397882",
       "fullName": "Tolu Smith",
       "position": "PF",
       "heightInches": 83,
@@ -20766,7 +20430,7 @@
       }
     },
     {
-      "externalId": "1028271147",
+      "externalId": "4593034",
       "fullName": "Alex Morales",
       "position": "SG",
       "heightInches": 78,
@@ -20812,7 +20476,7 @@
       }
     },
     {
-      "externalId": "1028274126",
+      "externalId": "4431941",
       "fullName": "RayJ Dennis",
       "position": "PG",
       "heightInches": 73,
@@ -20858,7 +20522,7 @@
       }
     },
     {
-      "externalId": "1042560902",
+      "externalId": "5106268",
       "fullName": "Nae'Qwan Tomlin",
       "position": "SF",
       "heightInches": 80,
@@ -20904,7 +20568,7 @@
       }
     },
     {
-      "externalId": "1057260888",
+      "externalId": "4873138",
       "fullName": "Airious Bailey",
       "position": "SG",
       "heightInches": 81,
@@ -20917,24 +20581,24 @@
       "college": "Rutgers",
       "photoUrl": "https://a.espncdn.com/i/headshots/nba/players/full/4873138.png",
       "teamAbbreviation": "UTA",
-      "seedOverallRating": 67,
-      "seedPotentialRating": 77,
+      "seedOverallRating": 73,
+      "seedPotentialRating": 83,
       "overrideApplied": false,
       "stats": {
-        "season": 2026,
+        "season": 2025,
         "team": "UTA",
-        "gamesPlayed": 0,
-        "minutesPerGame": 0,
-        "pointsPerGame": 0,
-        "reboundsPerGame": 0,
-        "assistsPerGame": 0,
-        "stealsPerGame": 0,
-        "blocksPerGame": 0,
-        "turnoversPerGame": 0,
-        "fgPct": null,
-        "fg3Pct": null,
-        "ftPct": null,
-        "trueShootingPct": null,
+        "gamesPlayed": 72,
+        "minutesPerGame": 27.56,
+        "pointsPerGame": 13.79,
+        "reboundsPerGame": 4.19,
+        "assistsPerGame": 1.82,
+        "stealsPerGame": 0.83,
+        "blocksPerGame": 0.68,
+        "turnoversPerGame": 1.49,
+        "fgPct": 0.443,
+        "fg3Pct": 0.344,
+        "ftPct": 0.75,
+        "trueShootingPct": 0.533,
         "usagePct": null,
         "winSharesPer48": null,
         "boxPlusMinus": null,
@@ -20958,7 +20622,7 @@
       }
     },
     {
-      "externalId": "1057261935",
+      "externalId": "5124612",
       "fullName": "VJ Edgecombe",
       "position": "PG",
       "heightInches": 76,
@@ -21012,7 +20676,7 @@
       }
     },
     {
-      "externalId": "1057262088",
+      "externalId": "5041939",
       "fullName": "Cooper Flagg",
       "position": "PF",
       "heightInches": 81,
@@ -21066,7 +20730,7 @@
       }
     },
     {
-      "externalId": "1057262518",
+      "externalId": "5037871",
       "fullName": "Dylan Harper",
       "position": "SG",
       "heightInches": 77,
@@ -21120,7 +20784,7 @@
       }
     },
     {
-      "externalId": "1057262985",
+      "externalId": "5238230",
       "fullName": "Tre Johnson",
       "position": "SG",
       "heightInches": 77,
@@ -21174,7 +20838,7 @@
       }
     },
     {
-      "externalId": "1057263194",
+      "externalId": "5061575",
       "fullName": "Kon Knueppel",
       "position": "SG",
       "heightInches": 78,
@@ -21228,7 +20892,7 @@
       }
     },
     {
-      "externalId": "1057266649",
+      "externalId": "4903027",
       "fullName": "Cedric Coward",
       "position": "SF",
       "heightInches": 77,
@@ -21282,7 +20946,7 @@
       }
     },
     {
-      "externalId": "1057266813",
+      "externalId": "5175643",
       "fullName": "Egor Demin",
       "position": "SG",
       "heightInches": 80,
@@ -21336,7 +21000,7 @@
       }
     },
     {
-      "externalId": "1057267077",
+      "externalId": "5144091",
       "fullName": "Jeremiah Fears",
       "position": "PG",
       "heightInches": 75,
@@ -21390,7 +21054,7 @@
       }
     },
     {
-      "externalId": "1057268513",
+      "externalId": "5203685",
       "fullName": "Khaman Maluach",
       "position": "C",
       "heightInches": 85,
@@ -21444,7 +21108,7 @@
       }
     },
     {
-      "externalId": "1057268940",
+      "externalId": "5093267",
       "fullName": "Collin Murray-Boyles",
       "position": "SF",
       "heightInches": 79,
@@ -21498,7 +21162,7 @@
       }
     },
     {
-      "externalId": "1057271099",
+      "externalId": "5279133",
       "fullName": "Joan Beringer",
       "position": "PF",
       "heightInches": 83,
@@ -21552,7 +21216,7 @@
       }
     },
     {
-      "externalId": "1057271360",
+      "externalId": "5061568",
       "fullName": "Carter Bryant",
       "position": "SF",
       "heightInches": 78,
@@ -21606,7 +21270,7 @@
       }
     },
     {
-      "externalId": "1057271583",
+      "externalId": "4896372",
       "fullName": "Walter Clayton Jr.",
       "position": "PG",
       "heightInches": 76,
@@ -21660,7 +21324,7 @@
       }
     },
     {
-      "externalId": "1057272081",
+      "externalId": "5242496",
       "fullName": "Noa Essengue",
       "position": "SF",
       "heightInches": 80,
@@ -21714,7 +21378,7 @@
       }
     },
     {
-      "externalId": "1057272939",
+      "externalId": "5214640",
       "fullName": "Kasparas Jakučionis",
       "position": "SG",
       "heightInches": 77,
@@ -21768,7 +21432,7 @@
       }
     },
     {
-      "externalId": "1057274415",
+      "externalId": "4869780",
       "fullName": "Derik Queen",
       "position": "C",
       "heightInches": 81,
@@ -21822,7 +21486,7 @@
       }
     },
     {
-      "externalId": "1057274983",
+      "externalId": "5061603",
       "fullName": "Thomas Sorber",
       "position": "C",
       "heightInches": 81,
@@ -21876,7 +21540,7 @@
       }
     },
     {
-      "externalId": "1057275262",
+      "externalId": "5279130",
       "fullName": "Nolan Traoré",
       "position": "PG",
       "heightInches": 75,
@@ -21976,7 +21640,7 @@
       }
     },
     {
-      "externalId": "1057276634",
+      "externalId": "4702384",
       "fullName": "Nique Clifford",
       "position": "SG",
       "heightInches": 77,
@@ -22030,7 +21694,7 @@
       }
     },
     {
-      "externalId": "1057277425",
+      "externalId": "5175647",
       "fullName": "Hugo González",
       "position": "SG",
       "heightInches": 78,
@@ -22084,7 +21748,7 @@
       }
     },
     {
-      "externalId": "1057278805",
+      "externalId": "5239590",
       "fullName": "Liam McNeeley",
       "position": "SG",
       "heightInches": 79,
@@ -22138,7 +21802,7 @@
       }
     },
     {
-      "externalId": "1057279093",
+      "externalId": "4873201",
       "fullName": "Asa Newell",
       "position": "PF",
       "heightInches": 82,
@@ -22192,7 +21856,7 @@
       }
     },
     {
-      "externalId": "1057279105",
+      "externalId": "5108024",
       "fullName": "Yanic Konan Niederhauser",
       "position": "C",
       "heightInches": 83,
@@ -22246,7 +21910,7 @@
       }
     },
     {
-      "externalId": "1057279425",
+      "externalId": "5037873",
       "fullName": "Drake Powell",
       "position": "SG",
       "heightInches": 77,
@@ -22300,7 +21964,7 @@
       }
     },
     {
-      "externalId": "1057279571",
+      "externalId": "5239561",
       "fullName": "Jase Richardson",
       "position": "PG",
       "heightInches": 73,
@@ -22354,7 +22018,7 @@
       }
     },
     {
-      "externalId": "1057279594",
+      "externalId": "5144126",
       "fullName": "Will Riley",
       "position": "SG",
       "heightInches": 81,
@@ -22408,7 +22072,7 @@
       }
     },
     {
-      "externalId": "1057279760",
+      "externalId": "5242502",
       "fullName": "Ben Saraf",
       "position": "SG",
       "heightInches": 78,
@@ -22462,7 +22126,7 @@
       }
     },
     {
-      "externalId": "1057280779",
+      "externalId": "5107173",
       "fullName": "Danny Wolf",
       "position": "PF",
       "heightInches": 83,
@@ -22516,7 +22180,7 @@
       }
     },
     {
-      "externalId": "1057382509",
+      "externalId": "4433569",
       "fullName": "Johni Broome",
       "position": "PF",
       "heightInches": 81,
@@ -22570,7 +22234,7 @@
       }
     },
     {
-      "externalId": "1057383369",
+      "externalId": "5105977",
       "fullName": "Rasheer Fleming",
       "position": "PF",
       "heightInches": 81,
@@ -22624,7 +22288,7 @@
       }
     },
     {
-      "externalId": "1057384156",
+      "externalId": "4602025",
       "fullName": "Sion James",
       "position": "SG",
       "heightInches": 77,
@@ -22678,7 +22342,7 @@
       }
     },
     {
-      "externalId": "1057384362",
+      "externalId": "4576060",
       "fullName": "Ryan Kalkbrenner",
       "position": "C",
       "heightInches": 85,
@@ -22732,7 +22396,7 @@
       }
     },
     {
-      "externalId": "1057385481",
+      "externalId": "5214637",
       "fullName": "Noah Penda",
       "position": "SF",
       "heightInches": 79,
@@ -22786,7 +22450,7 @@
       }
     },
     {
-      "externalId": "1057386376",
+      "externalId": "5060631",
       "fullName": "Adou Thiero",
       "position": "SF",
       "heightInches": 79,
@@ -22836,7 +22500,7 @@
       }
     },
     {
-      "externalId": "1057387526",
+      "externalId": "4591259",
       "fullName": "Koby Brea",
       "position": "SG",
       "heightInches": 77,
@@ -22882,7 +22546,7 @@
       }
     },
     {
-      "externalId": "1057389374",
+      "externalId": "4697268",
       "fullName": "Kam Jones",
       "position": "PG",
       "heightInches": 76,
@@ -22936,7 +22600,7 @@
       }
     },
     {
-      "externalId": "1057389625",
+      "externalId": "4700852",
       "fullName": "Chaz Lanier",
       "position": "PG",
       "heightInches": 75,
@@ -22990,7 +22654,7 @@
       }
     },
     {
-      "externalId": "1057389862",
+      "externalId": "4702656",
       "fullName": "Alijah Martin",
       "position": "PG",
       "heightInches": 74,
@@ -23036,7 +22700,7 @@
       }
     },
     {
-      "externalId": "1057390538",
+      "externalId": "4432185",
       "fullName": "Micah Peavy",
       "position": "SG",
       "heightInches": 79,
@@ -23090,7 +22754,7 @@
       }
     },
     {
-      "externalId": "1057390745",
+      "externalId": "4898371",
       "fullName": "Maxime Raynaud",
       "position": "C",
       "heightInches": 85,
@@ -23140,7 +22804,7 @@
       }
     },
     {
-      "externalId": "1057391756",
+      "externalId": "4606840",
       "fullName": "Jamir Watkins",
       "position": "SG",
       "heightInches": 78,
@@ -23186,7 +22850,7 @@
       }
     },
     {
-      "externalId": "1057392335",
+      "externalId": "4684208",
       "fullName": "Brooks Barnhizer",
       "position": "SF",
       "heightInches": 77,
@@ -23232,7 +22896,7 @@
       }
     },
     {
-      "externalId": "1057393207",
+      "externalId": "5289900",
       "fullName": "Mohamed Diawara",
       "position": "PF",
       "heightInches": 81,
@@ -23324,7 +22988,7 @@
       }
     },
     {
-      "externalId": "1057394959",
+      "externalId": "4683934",
       "fullName": "Jahmai Mashack",
       "position": "PG",
       "heightInches": 76,
@@ -23370,7 +23034,7 @@
       }
     },
     {
-      "externalId": "1057395638",
+      "externalId": "4703421",
       "fullName": "Taelon Peter",
       "position": "PG",
       "heightInches": 75,
@@ -23416,7 +23080,7 @@
       }
     },
     {
-      "externalId": "1057395754",
+      "externalId": "5023693",
       "fullName": "Tyrese Proctor",
       "position": "PG",
       "heightInches": 76,
@@ -23470,7 +23134,7 @@
       }
     },
     {
-      "externalId": "1057395872",
+      "externalId": "4897262",
       "fullName": "Will Richard",
       "position": "PG",
       "heightInches": 75,
@@ -23524,7 +23188,7 @@
       }
     },
     {
-      "externalId": "1057396055",
+      "externalId": "4702352",
       "fullName": "Kobe Sanders",
       "position": "SG",
       "heightInches": 80,
@@ -23570,7 +23234,7 @@
       }
     },
     {
-      "externalId": "1057396191",
+      "externalId": "4701992",
       "fullName": "Max Shulga",
       "position": "PG",
       "heightInches": 76,
@@ -23616,7 +23280,7 @@
       }
     },
     {
-      "externalId": "1057396260",
+      "externalId": "4781746",
       "fullName": "Javon Small",
       "position": "PG",
       "heightInches": 73,
@@ -23652,17 +23316,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "1057396603",
+      "externalId": "4593043",
       "fullName": "John Tonje",
       "position": "PG",
       "heightInches": 76,
@@ -23708,7 +23365,7 @@
       }
     },
     {
-      "externalId": "1057396966",
+      "externalId": "4702745",
       "fullName": "Amari Williams",
       "position": "PF",
       "heightInches": 83,
@@ -23754,7 +23411,7 @@
       }
     },
     {
-      "externalId": "1057397172",
+      "externalId": "5157587",
       "fullName": "Rocco Zikarsky",
       "position": "C",
       "heightInches": 87,
@@ -23846,7 +23503,7 @@
       }
     },
     {
-      "externalId": "1057845274",
+      "externalId": "4433174",
       "fullName": "Dylan Cardwell",
       "position": "C",
       "heightInches": 82,
@@ -23900,7 +23557,7 @@
       }
     },
     {
-      "externalId": "1057845382",
+      "externalId": "4701208",
       "fullName": "Moussa Cisse",
       "position": "C",
       "heightInches": 83,
@@ -23946,7 +23603,7 @@
       }
     },
     {
-      "externalId": "1057845705",
+      "externalId": "4432180",
       "fullName": "Hunter Dickinson",
       "position": "C",
       "heightInches": 85,
@@ -23992,7 +23649,7 @@
       }
     },
     {
-      "externalId": "1057846109",
+      "externalId": "4431772",
       "fullName": "Myron Gardner",
       "position": "SF",
       "heightInches": 77,
@@ -24042,7 +23699,7 @@
       }
     },
     {
-      "externalId": "1057846172",
+      "externalId": "4585618",
       "fullName": "Keshon Gilbert",
       "position": "PG",
       "heightInches": 76,
@@ -24088,7 +23745,7 @@
       }
     },
     {
-      "externalId": "1057846206",
+      "externalId": "4700818",
       "fullName": "Vladislav Goldin",
       "position": "C",
       "heightInches": 84,
@@ -24134,7 +23791,7 @@
       }
     },
     {
-      "externalId": "1057846535",
+      "externalId": "4590360",
       "fullName": "Chucky Hepburn",
       "position": "PG",
       "heightInches": 72,
@@ -24180,7 +23837,7 @@
       }
     },
     {
-      "externalId": "1057846700",
+      "externalId": "4702602",
       "fullName": "CJ Huntley",
       "position": "PF",
       "heightInches": 83,
@@ -24226,7 +23883,7 @@
       }
     },
     {
-      "externalId": "1057846840",
+      "externalId": "5174655",
       "fullName": "Chaney Johnson",
       "position": "SF",
       "heightInches": 79,
@@ -24262,17 +23919,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "1057846921",
+      "externalId": "4898369",
       "fullName": "Curtis Jones",
       "position": "PG",
       "heightInches": 75,
@@ -24318,7 +23968,7 @@
       }
     },
     {
-      "externalId": "1057847330",
+      "externalId": "4433144",
       "fullName": "Caleb Love",
       "position": "PG",
       "heightInches": 75,
@@ -24364,7 +24014,7 @@
       }
     },
     {
-      "externalId": "1057847504",
+      "externalId": "4702972",
       "fullName": "Chris Mañon",
       "position": "PG",
       "heightInches": 76,
@@ -24410,7 +24060,7 @@
       }
     },
     {
-      "externalId": "1057847894",
+      "externalId": "4433629",
       "fullName": "Ryan Nembhard",
       "position": "PG",
       "heightInches": 71,
@@ -24456,7 +24106,7 @@
       }
     },
     {
-      "externalId": "1057848025",
+      "externalId": "4702134",
       "fullName": "Norchad Omier",
       "position": "SF",
       "heightInches": 79,
@@ -24502,7 +24152,7 @@
       }
     },
     {
-      "externalId": "1057848244",
+      "externalId": "4898238",
       "fullName": "John Poulakidas",
       "position": "SG",
       "heightInches": 78,
@@ -24548,7 +24198,7 @@
       }
     },
     {
-      "externalId": "1057849685",
+      "externalId": "4706557",
       "fullName": "Chris Youngblood",
       "position": "PG",
       "heightInches": 76,
@@ -24594,7 +24244,7 @@
       }
     },
     {
-      "externalId": "1057968644",
+      "externalId": "4433149",
       "fullName": "LJ Cryer",
       "position": "PG",
       "heightInches": 72,
@@ -24640,7 +24290,7 @@
       }
     },
     {
-      "externalId": "1059992972",
+      "externalId": "4898237",
       "fullName": "Bez Mbeng",
       "position": "PG",
       "heightInches": 76,
@@ -24686,7 +24336,7 @@
       }
     },
     {
-      "externalId": "1060010671",
+      "externalId": "4432452",
       "fullName": "Alex Antetokounmpo",
       "position": "SF",
       "heightInches": 80,
@@ -24732,7 +24382,7 @@
       }
     },
     {
-      "externalId": "1060111739",
+      "externalId": "4683742",
       "fullName": "Julian Reese",
       "position": "PF",
       "heightInches": 81,
@@ -24768,17 +24418,10 @@
         "boxPlusMinus": null,
         "valueOverReplacement": null
       },
-      "contract": {
-        "years": [
-          {
-            "season": 2026,
-            "salaryCents": 137760000
-          }
-        ]
-      }
+      "contract": null
     },
     {
-      "externalId": "1076658911",
+      "externalId": "4703889",
       "fullName": "Jayson Kent",
       "position": "SG",
       "heightInches": 80,
@@ -24824,7 +24467,7 @@
       }
     },
     {
-      "externalId": "1081266162",
+      "externalId": "5176420",
       "fullName": "Hayden Gray",
       "position": "PG",
       "heightInches": 76,

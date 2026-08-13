@@ -348,17 +348,36 @@ async function main() {
   // This is a snapshot-timing artifact and it resolves itself: re-run closer to
   // opening night, when balldontlie has published the rest, and far fewer
   // players take this path.
+  // Only where the absence is actually informative. Coverage tracks quality
+  // sharply - 96% of players rated 85+ have a published deal, against 30% of
+  // those under 68 - so a missing contract means "minimum signing" at the
+  // fringe and "not published yet" at the top. Filling indiscriminately put
+  // LeBron James on $1.4M, which is not a rounding error: a 92-rated player at
+  // the minimum carries enormous contract surplus and would have been the most
+  // valuable trade asset in the league by a distance.
+  //
+  // 68 is where the measured coverage cliff sits (74% just above it, 30% just
+  // below). Anyone at or above it keeps `contract: null` and is priced by the
+  // generator off his rating, which is the better estimate for a player who
+  // clearly has a real deal that simply is not public yet.
+  const MINIMUM_FILL_RATING_CEILING = 68;
   const minimumCents = Number(getSeasonCapRules(SEASON).emptyRosterChargeCents);
   let minimumFilled = 0;
+  let leftToGenerator = 0;
   for (const player of file.players) {
     if (player.contract || !player.teamAbbreviation) continue;
+    if ((player.seedOverallRating ?? 0) >= MINIMUM_FILL_RATING_CEILING) {
+      leftToGenerator++;
+      continue;
+    }
     player.contract = { years: [{ season: SEASON, salaryCents: minimumCents }] };
     minimumFilled++;
   }
 
   console.log(
     `unrecorded contracts filled at the league minimum: ${minimumFilled} ` +
-      `(absence of a published deal mid-offseason is evidence of a small one)`,
+      `(rated under ${MINIMUM_FILL_RATING_CEILING}); left to the generator: ${leftToGenerator} ` +
+      `(rated ${MINIMUM_FILL_RATING_CEILING}+, so a missing deal means unpublished, not small)`,
   );
 
   await writeFile(DATASET, JSON.stringify(file, null, 2) + "\n", "utf8");

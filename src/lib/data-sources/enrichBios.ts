@@ -63,8 +63,16 @@ function enrichOne(roster: CanonicalPlayerBio, detail: CanonicalPlayerBio): Cano
     draftYear: roster.draftYear ?? detail.draftYear,
     draftRound: roster.draftRound ?? detail.draftRound,
     draftPick: roster.draftPick ?? detail.draftPick,
-    // Both provenances, so the audit can see the join happened.
-    refs: [...roster.refs, ...detail.refs],
+    // Both provenances, so the audit can see the join happened - but the DETAIL
+    // ref goes first, and that order is load-bearing.
+    //
+    // `refs[0]` becomes the dataset's `externalId`, which `prisma/seed.ts`
+    // upserts on. It is the player's stable identity across re-imports. Putting
+    // the roster source first swapped every returning player's 7-digit ESPN id
+    // for a balldontlie one, so the seed matched nothing and created a second
+    // row for all 585 - two Joel Embiids, two Tyrese Maxeys, and leagues built
+    // from a mix of the old rows and the new.
+    refs: [...detail.refs, ...roster.refs],
   };
 }
 
