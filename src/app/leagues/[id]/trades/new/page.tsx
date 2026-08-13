@@ -5,6 +5,11 @@ import { computeCapSheet } from "@/lib/cap/capSheet";
 import { ApronLevel } from "@/lib/cap/apron";
 import { prisma } from "@/lib/prisma";
 import { TradeBuilder } from "@/components/trades/TradeBuilder";
+import {
+  tradesAreClosed,
+  tradeDeadlineDayIndex,
+  dayIndexToDate,
+} from "@/lib/calendar/seasonCalendar";
 import { HowDoesThisWork } from "@/components/guide/HowDoesThisWork";
 import { computeCompetitivenessPercentiles } from "@/lib/actions/competitiveness";
 import { computeTeamIdentity } from "@/lib/gm/teamIdentity";
@@ -317,6 +322,7 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
     mineOwnedFirstRoundSeasons,
     theirOwnedFirstRoundSeasons,
     competitivenessPercentiles,
+    seasonGames,
   ] = await Promise.all([
     loadRoster(myLeagueTeam.id, league.currentSeason),
     loadRoster(otherLeagueTeam.id, league.currentSeason),
@@ -325,7 +331,17 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
     loadOwnedFutureFirstRoundSeasons(myLeagueTeam.id, league.currentSeason),
     loadOwnedFutureFirstRoundSeasons(otherLeagueTeam.id, league.currentSeason),
     computeCompetitivenessPercentiles(league.teams),
+    prisma.game.findMany({
+      where: { leagueId: league.id, season: league.currentSeason, type: "REGULAR_SEASON" },
+      select: { dayIndex: true, playedAt: true },
+    }),
   ]);
+
+  const deadlinePassed = tradesAreClosed(league.currentSeason, seasonGames);
+  const deadlineDate = dayIndexToDate(
+    league.currentSeason,
+    tradeDeadlineDayIndex(league.currentSeason),
+  ).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 
   const myIdentity = computeTeamIdentity(
     competitivenessPercentiles.get(myLeagueTeam.id) ?? 0.5,
@@ -367,6 +383,19 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
         see why a trade is legal or not, never a raw rulebook.{" "}
         <HowDoesThisWork topic="trades" className="underline hover:text-ink" />
       </p>
+
+      {deadlinePassed && (
+        // Said before a deal is built, not after. The server refuses either
+        // way, but discovering a hard date only at the confirm step means
+        // assembling a whole trade for nothing.
+        <div className="mt-8 rounded-[2px] border border-caution/40 bg-caution/5 p-4">
+          <p className="text-sm font-semibold text-ink">The trade deadline has passed.</p>
+          <p className="mt-1 text-sm text-ink-muted">
+            It was {deadlineDate}. Nothing can be traded until the regular season ends - simulate
+            to the playoffs and the market reopens.
+          </p>
+        </div>
+      )}
 
       <div className="mt-10">
         <TradeBuilder

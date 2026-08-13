@@ -71,10 +71,29 @@ const PATTERNS: { test: RegExp; error: UserFacingError }[] = [
     },
   },
   {
-    test: /roster[ _-]?(is[ _-]?)?full|max(imum)?[ _-]?roster/i,
+    // The deadline is a hard date, not something a different package fixes -
+    // so the remedy says when it reopens rather than suggesting a rebuild.
+    test: /trade deadline/i,
     error: {
-      summary: "Your roster is full.",
-      remedy: "Trade or release a player before adding another.",
+      summary: "The trade deadline has passed.",
+      remedy: "No trades can be made until the regular season ends. Sim to the playoffs to reopen.",
+      ruling: true,
+    },
+  },
+  {
+    // Ordered before the "full" pattern: a trade that empties a roster and one
+    // that overfills it are opposite problems, and both mention a man-count.
+    test: /man minimum|under the \d+-man/i,
+    error: {
+      summary: "That would leave the roster too thin.",
+      remedy: "A team has to finish a trade with at least 13 players. Send fewer, or take more back.",
+    },
+  },
+  {
+    test: /roster[ _-]?(is[ _-]?)?full|max(imum)?[ _-]?roster|man limit|over the \d+-man/i,
+    error: {
+      summary: "That would put a roster over the limit.",
+      remedy: "A team can carry 15 players. Take fewer back, or send more out.",
     },
   },
   {
