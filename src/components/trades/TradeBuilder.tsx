@@ -111,11 +111,14 @@ export function TradeBuilder({
   leagueId,
   myTeam,
   theirTeam,
+  deadlinePassed = false,
 }: {
   season: number;
   leagueId: string;
   myTeam: TeamSideDTO;
   theirTeam: TeamSideDTO;
+  /** Whether the in-season trade deadline has passed - see `seasonCalendar.ts`. */
+  deadlinePassed?: boolean;
 }) {
   const [mySelected, setMySelected] = useState<Set<string>>(new Set());
   const [theirSelected, setTheirSelected] = useState<Set<string>>(new Set());
@@ -179,6 +182,11 @@ export function TradeBuilder({
     return validateTrade({
       season,
       assets,
+      // The live preview has to know about the deadline too. Without it the
+      // client-side check reported "Valid - likely to accept" on a trade the
+      // server would then refuse, which is worse than saying nothing: it
+      // actively tells the user the deal is fine.
+      isAfterTradeDeadline: deadlinePassed,
       teamCapStates: {
         [myTeam.leagueTeamId]: {
           // ApronLevel is a string enum, so the plain string that crossed
@@ -194,7 +202,16 @@ export function TradeBuilder({
         },
       },
     });
-  }, [mySelected, theirSelected, mySelectedPicks, theirSelectedPicks, myTeam, theirTeam, season]);
+  }, [
+    mySelected,
+    theirSelected,
+    mySelectedPicks,
+    theirSelectedPicks,
+    myTeam,
+    theirTeam,
+    season,
+    deadlinePassed,
+  ]);
 
   const feasibility = useMemo(() => {
     if (result === null) return null;

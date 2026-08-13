@@ -399,6 +399,7 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
 
       <div className="mt-10">
         <TradeBuilder
+          deadlinePassed={deadlinePassed}
           season={league.currentSeason}
           leagueId={league.id}
           myTeam={{
