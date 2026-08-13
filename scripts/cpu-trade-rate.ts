@@ -24,7 +24,10 @@ import { computeTeamNeeds } from "../src/lib/gm/teamNeeds";
 import { ALL_GM_PERSONALITIES } from "../src/lib/gm/gmPersonality";
 import { resolvePlayerAge } from "../src/lib/players/age";
 
-const SEASON = 2025;
+// Tracks the dataset's own manifest.seasonYear - the harnesses read
+// prisma/data/nbaDataset.json, so a stale constant here would silently
+// price every player against the wrong cap.
+const SEASON = 2026;
 const TARGET_TRADES_PER_SEASON = 15;
 const TOLERANCE = 3;
 const TRADE_CHANCE_PER_GAME = 0.013;

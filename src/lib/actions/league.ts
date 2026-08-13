@@ -33,8 +33,13 @@ import {
 } from "@/lib/gm/jobMarket";
 
 // The season a new league starts in - the season the imported NBA dataset
-// describes (2025 => the 2025-26 season). See src/lib/data-sources/.
-const SEASON = 2025;
+// describes (2026 => the 2026-27 season). See src/lib/data-sources/.
+//
+// Must track the dataset's own `manifest.seasonYear`. During an offseason that
+// is a season AHEAD of the stats the ratings came from, which is intended:
+// `import-dataset.ts` builds 2026-27 rosters from 2025-26 production because
+// the upcoming season has not been played.
+const SEASON = 2026;
 
 /**
  * Bootstraps a brand-new League from the current imported NBA dataset: clones

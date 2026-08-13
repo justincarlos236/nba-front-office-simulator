@@ -36,7 +36,10 @@ import { computeTeamNeeds } from "../src/lib/gm/teamNeeds";
 import { resolvePlayerAge } from "../src/lib/players/age";
 import { computeReSigningMaxOfferCents } from "../src/lib/freeagency/reSigningRights";
 
-const SEASON = 2025;
+// Tracks the dataset's own manifest.seasonYear - the harnesses read
+// prisma/data/nbaDataset.json, so a stale constant here would silently
+// price every player against the wrong cap.
+const SEASON = 2026;
 const TARGET_RETENTION = 0.841;
 
 interface Row {

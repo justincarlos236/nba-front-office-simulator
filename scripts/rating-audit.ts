@@ -25,7 +25,10 @@ import { resolvePlayerAge } from "../src/lib/players/age";
 import { getSeasonCapRules } from "../src/lib/cap/constants";
 import type { CanonicalSeasonStat } from "../src/lib/data-sources/canonical";
 
-const SEASON = 2025;
+// Tracks the dataset's own manifest.seasonYear - the harnesses read
+// prisma/data/nbaDataset.json, so a stale constant here would silently
+// price every player against the wrong cap.
+const SEASON = 2026;
 const CAP = Number(getSeasonCapRules(SEASON).salaryCapCents);
 const M = (c: number) => "$" + (c / 100 / 1e6).toFixed(1) + "M";
 

@@ -28,6 +28,7 @@ import {
   type BallDontLieContract,
 } from "../src/lib/data-sources/balldontlieContracts";
 import { normalizePlayerName } from "../src/lib/data-sources/normalizeName";
+import { nameAliases } from "../src/lib/data-sources/playerNameAliases";
 import {
   computeSeedOverallRating,
   computeSeedPotentialRating,
@@ -38,7 +39,7 @@ import { resolvePlayerAge } from "../src/lib/players/age";
 import { getSeasonCapRules } from "../src/lib/cap/constants";
 import type { CanonicalSeasonStat } from "../src/lib/data-sources/canonical";
 
-const SEASON = 2025; // start-year convention => the 2025-26 season
+const SEASON = 2026; // start-year convention => the 2026-27 season
 const FUTURE_SEASONS = 4; // how far forward to follow a multi-year deal
 const TEAM_IDS = Array.from({ length: 30 }, (_, i) => i + 1); // balldontlie NBA team ids
 
@@ -162,18 +163,6 @@ async function main() {
   const surname = (n: string) => n.split(" ").at(-1)!;
   const firstName = (n: string) => n.split(" ")[0];
 
-  /**
-   * Nicknames no rule can derive - a player known by something unrelated to his
-   * legal first name. Verified by hand against the roster, one line each, and
-   * deliberately tiny: anything that grows here is a sign the surname fallback
-   * below needs work rather than that it needs more exceptions.
-   */
-  const NICKNAMES: Record<string, string> = {
-    "ace bailey": "airious bailey",
-    "bub carrington": "carlton carrington",
-    "bones hyland": "nahshon hyland",
-  };
-
   const bySurnameTeam = new Map<string, Candidate[]>();
   for (const list of byName.values()) {
     for (const c of list) {
@@ -214,8 +203,10 @@ async function main() {
     const exact = pick(byName.get(key) ?? []);
     if (exact) return exact;
 
-    const alias = NICKNAMES[key];
-    if (alias) {
+    // Shared with the roster merge in `enrichBios.ts`, which needs the same
+    // table in the opposite direction - see `playerNameAliases.ts`.
+    for (const alias of nameAliases(key)) {
+      if (alias === key) continue;
       const aliased = pick(byName.get(alias) ?? []);
       if (aliased) return aliased;
     }
@@ -334,6 +325,42 @@ async function main() {
   });
   file.manifest.dataSources = sources;
 
+  // --- unrecorded contracts are minimum contracts ---------------------------
+  //
+  // **Absence is evidence, not ignorance.** A rostered player with no published
+  // deal in an offseason snapshot is overwhelmingly a minimum or two-way
+  // signing: big deals are reported within hours, minimums are not. Measured on
+  // the 2026-27 run, coverage tracked quality almost perfectly - 96% of players
+  // rated 85+ had a contract, against 30% of those under 68.
+  //
+  // Leaving them null hands them to the generator, which prices by *rating* and
+  // has no idea the market never paid them that. That added $38.5M per team
+  // against $7.9M at the minimum, and pushed 18 of 30 teams into the luxury tax
+  // where the real league has 6-10. Pricing them at the minimum instead lands
+  // that at 7. It costs accuracy the other way - 19 teams over the cap against
+  // a real 25-28 - but the tax line is the one with mechanical consequences
+  // (tax bills, apron restrictions), so that is the better error to carry.
+  //
+  // Deliberately runs AFTER the re-rating pass above. Ratings take a salary
+  // prior from what the market actually paid, and a minimum invented here is
+  // not evidence of anything - reading it back would be circular.
+  //
+  // This is a snapshot-timing artifact and it resolves itself: re-run closer to
+  // opening night, when balldontlie has published the rest, and far fewer
+  // players take this path.
+  const minimumCents = Number(getSeasonCapRules(SEASON).emptyRosterChargeCents);
+  let minimumFilled = 0;
+  for (const player of file.players) {
+    if (player.contract || !player.teamAbbreviation) continue;
+    player.contract = { years: [{ season: SEASON, salaryCents: minimumCents }] };
+    minimumFilled++;
+  }
+
+  console.log(
+    `unrecorded contracts filled at the league minimum: ${minimumFilled} ` +
+      `(absence of a published deal mid-offseason is evidence of a small one)`,
+  );
+
   await writeFile(DATASET, JSON.stringify(file, null, 2) + "\n", "utf8");
 
   const rostered = file.players.filter((p) => p.teamAbbreviation).length;
@@ -357,6 +384,7 @@ async function main() {
   }
 
   const coverage = ((rostered - unmatched.length) / rostered) * 100;
+
   console.log(`\nRostered coverage: ${coverage.toFixed(1)}%`);
   console.log("\nNext: npx prisma db seed");
 }

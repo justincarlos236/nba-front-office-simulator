@@ -27,7 +27,10 @@ import {
 } from "../src/lib/data-sources/rosterConstruction";
 import { getSeasonCapRules } from "../src/lib/cap/constants";
 
-const SEASON = 2025;
+// Tracks the dataset's own manifest.seasonYear - the harnesses read
+// prisma/data/nbaDataset.json, so a stale constant here would silently
+// price every player against the wrong cap.
+const SEASON = 2026;
 const rules = getSeasonCapRules(SEASON);
 const CAP = Number(rules.salaryCapCents);
 const M = (c: number) => "$" + (c / 100 / 1_000_000).toFixed(1) + "M";
@@ -314,7 +317,7 @@ console.log("=".repeat(78));
 const maxSal = Math.max(...R.map((e) => e.sal));
 console.log(`highest generated salary        ${M(maxSal)}  (${pc(maxSal)} of cap)`);
 console.log(
-  `real 2025-26 max (35% cap, 10+yr) ${M(CAP * 0.35)} | 30% ${M(CAP * 0.3)} | 25% ${M(CAP * 0.25)}`,
+  `real 2026-27 max (35% cap, 10+yr) ${M(CAP * 0.35)} | 30% ${M(CAP * 0.3)} | 25% ${M(CAP * 0.25)}`,
 );
 console.log(`floor used by generator          ${M(Number(rules.emptyRosterChargeCents))}`);
 console.log(`real veteran minimum ~            $2.1M-$3.6M`);
