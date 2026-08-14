@@ -204,3 +204,142 @@ Then **replace the median-based invariant with tail-based ones**: assert the cou
 ```
 npx tsx scripts/development-audit.ts
 ```
+
+---
+
+# RE-AUDIT — 2026-08-15
+
+The file above records **D-P0-1 as open after three attempts** and D-P0-2 as
+fixed with a large residual (80+ at 141 against a real 82). Both statements
+predate the `RELIABILITY_AT_LOW_POTENTIAL` / `RELIABILITY_AT_HIGH_POTENTIAL`
+change — which is exactly the lever the text above asks a future attempt to
+find, "making scouting *more* reliable for genuine top prospects than for
+mid-round ones."
+
+That lever shipped. Nothing had measured it. `scripts/development-audit.ts`
+runs the full multi-season league — develop, age, retire, draft, repeat — which
+is the measurement this system has always needed and never had.
+
+## What is actually true now
+
+| Season | Players | 90+ | 85+ | 80+ | Median |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 | 450 | 14 | 46 | 90 | 71.0 |
+| 1 | 450 | 10 | 40 | 77 | 71.0 |
+| 5 | 450 | 8 | 27 | 77 | 72.0 |
+| 10 | 450 | 12 | 37 | 95 | 73.0 |
+| 15 | 450 | 16 | 51 | 110 | 74.0 |
+| 20 | 450 | **11** | **48** | **124** | 75.0 |
+| **real** | — | **14** | **44** | **82** | — |
+
+Against the numbers recorded above, this is a large improvement:
+
+| Band | Original | After D-P0-2 fix | **Now** | Real |
+| --- | ---: | ---: | ---: | ---: |
+| 90+ at season 20 | 34.1 | 12.8 | **11** | 14 |
+| 85+ at season 20 | 103.9 | 53.2 | **48** | 44 |
+| 80+ at season 20 | 232.1 | 141.4 | **124** | 82 |
+
+**The star population is correct and stable** — 90+ holds between 8 and 16
+across two decades where it used to reach 34. **85+ is essentially right** at 48
+against 44, where the previous pass left it at 53. The residual is 80+, still
++42 over real, and the median drifts 71 → 75.
+
+## D-P0-1 is half fixed, and the half that remains is precisely locatable
+
+The claim above is a 0% bust rate at *every* slot. That is no longer true:
+
+| Pick | Mean peak | Reached 80+ | Busted (<70) | Hit ceiling |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 89.5 | **97.0%** | **0.0%** | 31.6% |
+| 5 | 84.1 | 81.0% | **0.0%** | 51.8% |
+| 10 | 80.4 | 56.6% | 0.5% | 60.3% |
+| 20 | 76.5 | 26.4% | 5.6% | 60.0% |
+| 30 | 73.1 | 7.0% | 21.0% | 62.0% |
+| 45 | 69.8 | 0.1% | 50.3% | 59.7% |
+| 60 | 67.0 | 0.0% | 77.4% | 63.9% |
+
+The middle and late draft now bust convincingly — a pick-30 prospect fails one
+time in five, a pick-45 half the time. That is new, and it is what fixed the
+85+ band.
+
+**But the top of the draft cannot fail.** A number-one pick reaches 80+ **97%
+of the time** and busts **never**. Real number-one picks bust regularly; the
+league has Anthony Bennett and Markelle Fultz in living memory.
+
+## Why — and why it is structural rather than incidental
+
+`RELIABILITY_AT_HIGH_POTENTIAL = 0.85` sets the *floor* on how much of his
+scouted potential an elite prospect realises. For a 97-potential prospect:
+
+```
+ceiling = 60 + (97 - 60) x realization,  realization ∈ [0.85, 1.0]
+        = 91.5 .. 97
+```
+
+His floor is a 91 ceiling. He is guaranteed stardom by construction — not
+because growth cannot fail, but because the ceiling is bounded so high there is
+nothing left to fail *at*. **The reliability lever fixed the middle of the draft
+by making the top deterministic.**
+
+That is the honest reading of the trade the previous pass made, now visible
+because the two ends can finally be measured separately.
+
+## The remaining defect, stated precisely
+
+Each class yields **13.6 future 80+ players against a real 5-8** — roughly
+double. Combined with `docs/DRAFT_AUDIT.md` D-P2-1 (42.8% of prospects carry
+80+ ceilings against a league at 28.2%), the picture is consistent: too many
+prospects arrive with high scouted potential, and the ones who do are too
+certain to reach it.
+
+That is a two-system problem, which is why neither audit could close it alone.
+
+## Findings
+
+| ID | Sev | Type | Finding |
+| --- | --- | --- | --- |
+| **D-P1-2** | P1 | MODEL | Top-of-draft prospects cannot bust. Pick 1 reaches 80+ 97% of the time with a 0% bust rate, because `RELIABILITY_AT_HIGH_POTENTIAL = 0.85` floors an elite prospect's ceiling at 91. The middle of the draft now busts correctly, so this is localised rather than systemic. |
+| **D-P2-2** | P2 | LONG-SAVE DRIFT | 80+ settles at 124 against a real 82 and the median drifts 71 → 75 over twenty seasons. Stable rather than compounding, and both far better than the 232 / 141 previously recorded. |
+
+**D-P0-1 is downgraded to D-P1-2 and D-P0-2 to D-P2-2.** Neither is a P0 any
+longer: the league no longer inflates without bound, and prospects do fail.
+
+## Scorecard
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Star population stability | **9** | 90+ holds 8-16 across twenty seasons against a real 14, where it once reached 34. |
+| Decline modelling | **9** | D-P1-1's elite damping holds; a 37-year-old star is possible, as the seeded league requires. |
+| Bust realism, picks 10-60 | **8** | 0.5% → 77% bust rate across the range, monotone and plausibly shaped. |
+| **Bust realism, picks 1-9** | **3** | 0% bust, 97% reach 80+. Guaranteed by the ceiling floor rather than earned. |
+| Long-save distribution | **6** | 80+ at 124 against 82; stable, not compounding, but wrong. |
+
+**Weighted overall: 7.0**, against the 4-5 the original audit implies. The
+system was substantially repaired by a change nobody had measured.
+
+## Recommendation
+
+**Do not tune `RELIABILITY_AT_HIGH_POTENTIAL` blindly.** The file above records
+three failed attempts, and its own warning stands: every previous lever moved
+all bands together, and shipping a number that cannot be justified into the
+model governing every season of every save is worse than shipping nothing.
+
+What is different now is that the defect is *localised*. The middle of the
+draft is correct and must not move; only the top needs to become uncertain. A
+lever that reaches only elite prospects — a small probability of a genuine miss
+applied to high-report players, rather than a lower floor for all of them —
+would leave the working bands untouched. That is a targeted change with a
+measurable target (pick 1 busting somewhere near 10-15%, class yield falling
+from 13.6 toward 8) and a harness that can now see both.
+
+**The 80+ residual should be attacked from the draft side, not here.** If 42.8%
+of prospects carry 80+ ceilings against a league at 28.2%, no realisation rate
+fixes that without breaking the top. That is `docs/DRAFT_AUDIT.md` D-P2-1, and
+it now has a measurement path it did not have when it was filed.
+
+## Reproducing
+
+```
+npx tsx scripts/development-audit.ts
+```

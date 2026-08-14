@@ -1,252 +1,267 @@
 /**
- * Player development audit harness.
+ * Development audit. Reads only; touches no database.
  *
- * `developPlayerRating` governs every rating after season one, so it decides
- * more of a long save than any model this project has audited. The existing
- * 20-season invariant test (`longSave.invariant.test.ts`) guards headcount,
- * retirement volume, median age and *median* rating drift - but a median can
- * hold perfectly while every star disappears, which would leave a league of 450
- * interchangeable role players and a median that never moved.
+ * The system three other audits point at. `docs/DEVELOPMENT_AUDIT.md` has
+ * D-P0-1 (young players cannot bust) recorded as open after three attempts;
+ * `docs/TEAM_STRENGTH_AUDIT.md` named the rating distribution as the residual
+ * blocking talent SD from reaching the real 11.1; `docs/DRAFT_AUDIT.md` could
+ * not settle whether class ceilings inflate the league because realisation
+ * rates live here.
  *
- * This measures the top of the distribution instead, starting from the real
- * seeded league rather than a synthetic pyramid.
+ * Unlike every other audit this session, this one cannot measure a function
+ * against a target. Development only misbehaves over time, so this runs a full
+ * multi-season league: develop, age, retire, draft, repeat.
  *
- * Reads only. Run: npx tsx scripts/development-audit.ts
+ * Run: npx tsx scripts/development-audit.ts
  */
 import fs from "node:fs";
 import path from "node:path";
 import {
   developPlayerRating,
   developmentTraitFromId,
+  effectiveCeiling,
 } from "../src/lib/development/developPlayerRating";
 import { shouldRetire } from "../src/lib/development/retirement";
+import { generateDraftClass } from "../src/lib/draft/generateDraftClass";
 import {
-  OVERALL_AT_PICK_1,
-  OVERALL_AT_PICK_60,
-  POTENTIAL_AT_PICK_1,
-  POTENTIAL_AT_PICK_60,
-  expectedRatingForPick,
-  expectedPotentialForPick,
-} from "../src/lib/draft/generateDraftClass";
-import { resolvePlayerAge } from "../src/lib/players/age";
+  selectTopPerTeam,
+  DEFAULT_MAX_ROSTER_SIZE,
+} from "../src/lib/data-sources/rosterConstruction";
 
-const SEASON = 2025;
 const SEASONS = 20;
-const CLASS_SIZE = 60;
-const LEAGUE_SIZE = 450; // 30 x 15
+const LEAGUE_SIZE_TARGET = 450;
+
+/** Real NBA reference points, from docs/RATING_AUDIT.md and the seeded league. */
+const REAL_90_PLUS = 14;
+const REAL_85_PLUS = 44;
+const REAL_80_PLUS = 82;
+
+const line = (n = 78) => console.log("=".repeat(n));
+const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
+
+function makeRng(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+interface Sim {
+  id: string;
+  overall: number;
+  potential: number;
+  age: number;
+  /** Pick slot if drafted in-sim, for bust accounting. */
+  draftPick: number | null;
+}
 
 interface Row {
   fullName: string;
-  birthDate: string | null;
-  draftYear: number | null;
   teamAbbreviation: string | null;
   seedOverallRating: number | null;
   seedPotentialRating: number | null;
-  stats: Record<string, number | null> | null;
+  birthDate?: string | null;
+  draftYear?: number | null;
 }
+
 const ds = JSON.parse(
   fs.readFileSync(path.join(__dirname, "..", "prisma", "data", "nbaDataset.json"), "utf8"),
 ) as { players: Row[] };
+const { rostered } = selectTopPerTeam<Row>(
+  ds.players,
+  (p) => p.teamAbbreviation,
+  (p) => p.seedOverallRating ?? 0,
+  DEFAULT_MAX_ROSTER_SIZE,
+);
 
-interface P {
-  name: string;
-  ovr: number;
-  pot: number;
-  age: number;
-}
+const BASE_SEASON = 2026;
+const startingLeague: Sim[] = ds.players
+  .filter((p) => rostered.has(p) && p.seedOverallRating != null)
+  .map((p) => ({
+    id: p.fullName,
+    overall: p.seedOverallRating!,
+    potential: p.seedPotentialRating ?? p.seedOverallRating!,
+    age: p.birthDate
+      ? BASE_SEASON + 1 - new Date(p.birthDate).getFullYear()
+      : p.draftYear
+        ? Math.min(38, 19 + (BASE_SEASON - p.draftYear))
+        : 27,
+    draftPick: null,
+  }));
 
-function makeRng(seed: number) {
-  let s = seed >>> 0 || 1;
-  return () => {
-    s = (s * 1664525 + 1013904223) >>> 0;
-    return s / 0x100000000;
-  };
-}
+const countAtLeast = (players: Sim[], threshold: number) =>
+  players.filter((p) => p.overall >= threshold).length;
+const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0;
 
-function seededLeague(): P[] {
-  return ds.players
-    .filter((p) => p.teamAbbreviation && p.seedOverallRating)
-    .map((p) => ({
-      name: p.fullName,
-      ovr: p.seedOverallRating!,
-      pot: p.seedPotentialRating ?? p.seedOverallRating!,
-      age: resolvePlayerAge(
-        { birthDate: p.birthDate ? new Date(p.birthDate) : null, draftYear: p.draftYear },
-        SEASON,
-      ),
-    }))
-    .sort((a, b) => b.ovr - a.ovr)
-    .slice(0, LEAGUE_SIZE);
-}
+line();
+console.log("DEVELOPMENT AUDIT");
+line();
+console.log(`  ${startingLeague.length} players at season 0, simulated ${SEASONS} seasons`);
+console.log(`  real reference: ${REAL_90_PLUS} at 90+, ${REAL_85_PLUS} at 85+, ${REAL_80_PLUS} at 80+\n`);
 
-function draftClass(rng: () => number, year: number): P[] {
-  const out: P[] = [];
-  for (let pick = 1; pick <= CLASS_SIZE; pick++) {
-    const o = Math.round(expectedRatingForPick(pick, OVERALL_AT_PICK_1, OVERALL_AT_PICK_60));
-    const pt = Math.round(
-      expectedPotentialForPick(pick, POTENTIAL_AT_PICK_1, POTENTIAL_AT_PICK_60),
-    );
-    const ov = Math.max(60, Math.min(99, o + Math.floor(rng() * 13) - 6));
-    const pv = Math.max(ov, Math.min(99, pt + Math.floor(rng() * 13) - 6));
-    out.push({ name: `R${year}-${pick}`, ovr: ov, pot: pv, age: 19 + Math.floor(rng() * 4) });
-  }
-  return out;
-}
+// ---------------------------------------------------------------------------
+// DEV-1. Does the league hold its talent distribution over twenty seasons?
+// ---------------------------------------------------------------------------
+line();
+console.log("DEV-1  LEAGUE TALENT OVER TIME");
+line();
 
-interface Snapshot {
-  season: number;
-  n: number;
-  p90: number;
-  p85: number;
-  p80: number;
-  max: number;
-  top10: number;
-  median: number;
-  medianAge: number;
-  retired: number;
-}
+const rng = makeRng(20260815);
+let league: Sim[] = startingLeague.map((p) => ({ ...p }));
+let classCounter = 0;
 
-function run(seed: number): Snapshot[] {
-  const rng = makeRng(seed);
-  let league = seededLeague();
-  const snaps: Snapshot[] = [];
+console.log(
+  `${"SEASON".padStart(7)}${"PLAYERS".padStart(9)}${"90+".padStart(7)}${"85+".padStart(7)}${"80+".padStart(7)}${"MEDIAN".padStart(9)}${"RETIRED".padStart(9)}`,
+);
+const snapshots: { season: number; at90: number; at85: number; at80: number }[] = [];
 
-  const snap = (season: number, retired: number): Snapshot => {
-    const r = [...league].sort((a, b) => b.ovr - a.ovr);
-    const ages = [...league].map((p) => p.age).sort((a, b) => a - b);
-    return {
-      season,
-      n: league.length,
-      p90: r.filter((p) => p.ovr >= 90).length,
-      p85: r.filter((p) => p.ovr >= 85).length,
-      p80: r.filter((p) => p.ovr >= 80).length,
-      max: r[0]?.ovr ?? 0,
-      top10: r.slice(0, 10).reduce((s, p) => s + p.ovr, 0) / 10,
-      median: r[Math.floor(r.length / 2)]?.ovr ?? 0,
-      medianAge: ages[Math.floor(ages.length / 2)] ?? 0,
-      retired,
-    };
-  };
-
-  snaps.push(snap(0, 0));
-
-  for (let year = 1; year <= SEASONS; year++) {
+for (let season = 0; season <= SEASONS; season++) {
+  if (season > 0) {
     // Develop, then age.
     for (const p of league) {
-      p.ovr = developPlayerRating({
-        overallRating: p.ovr,
-        potentialRating: p.pot,
+      p.overall = developPlayerRating({
+        overallRating: p.overall,
+        potentialRating: p.potential,
         age: p.age,
         rng,
-        developmentTrait: developmentTraitFromId(p.name),
+        developmentTrait: developmentTraitFromId(p.id),
       });
       p.age += 1;
     }
+    // Retire.
     const before = league.length;
-    league = league.filter((p) => !shouldRetire(p.age, p.ovr, rng));
+    league = league.filter((p) => !shouldRetire(p.age, p.overall, rng));
     const retired = before - league.length;
 
-    league.push(...draftClass(rng, year));
-    // Only the best survive to a roster spot, which is what a 15-man limit does.
-    league = league.sort((a, b) => b.ovr - a.ovr).slice(0, LEAGUE_SIZE);
+    // Intake: one draft class, then trim to the league's roster capacity by
+    // dropping the weakest - the same pressure a 15-man limit applies.
+    classCounter += 1;
+    const draftClass = generateDraftClass(rng);
+    draftClass.prospects.forEach((prospect, i) => {
+      league.push({
+        id: `c${classCounter}p${i}`,
+        overall: prospect.overallRating,
+        potential: prospect.potentialRating,
+        age: prospect.age,
+        draftPick: i + 1,
+      });
+    });
+    league.sort((a, b) => b.overall - a.overall);
+    if (league.length > LEAGUE_SIZE_TARGET) league = league.slice(0, LEAGUE_SIZE_TARGET);
 
-    snaps.push(snap(year, retired));
-  }
-  return snaps;
-}
-
-// Average across seeds so a single unlucky run is not mistaken for a trend.
-const RUNS = Number(process.env.RUNS ?? 12);
-const all = Array.from({ length: RUNS }, (_, i) => run(i + 1));
-const avg = (year: number, key: keyof Snapshot) =>
-  all.reduce((s, run) => s + (run[year][key] as number), 0) / RUNS;
-
-console.log("=".repeat(78));
-console.log(`LEAGUE TALENT OVER ${SEASONS} SEASONS (mean of ${RUNS} runs, real seeded start)`);
-console.log("=".repeat(78));
-console.log(
-  `${"SEASON".padStart(7)}${"90+".padStart(7)}${"85+".padStart(7)}${"80+".padStart(7)}${"MAX".padStart(7)}${"TOP10".padStart(8)}${"MEDIAN".padStart(8)}${"MED AGE".padStart(9)}${"RETIRED".padStart(9)}`,
-);
-for (const y of [0, 1, 2, 3, 5, 8, 10, 15, 20]) {
-  console.log(
-    `${String(y).padStart(7)}${avg(y, "p90").toFixed(1).padStart(7)}${avg(y, "p85").toFixed(1).padStart(7)}${avg(y, "p80").toFixed(1).padStart(7)}${avg(y, "max").toFixed(1).padStart(7)}${avg(y, "top10").toFixed(1).padStart(8)}${avg(y, "median").toFixed(1).padStart(8)}${avg(y, "medianAge").toFixed(1).padStart(9)}${avg(y, "retired").toFixed(1).padStart(9)}`,
-  );
-}
-console.log(`
-  Real NBA, for reference: about 14 players at 90+, 44 at 85+, 82 at 80+,
-  and a best player around 98-99.`);
-
-console.log("\n" + "=".repeat(78));
-console.log("STAR LONGEVITY - how long does a 95 stay elite?");
-console.log("=".repeat(78));
-const rng2 = makeRng(99);
-console.log(`${"AGE".padStart(5)}${"MEAN RATING".padStart(13)}${"still 90+".padStart(11)}`);
-for (const startAge of [27]) {
-  const N = 400;
-  const cohort = Array.from({ length: N }, () => ({ ovr: 95, pot: 95, age: startAge }));
-  for (let step = 0; step <= 12; step++) {
-    if (step > 0) {
-      for (const p of cohort) {
-        p.ovr = developPlayerRating({
-          overallRating: p.ovr,
-          potentialRating: p.pot,
-          age: p.age,
-          rng: rng2,
-        });
-        p.age += 1;
-      }
+    if (season === 1 || season % 5 === 0 || season === SEASONS) {
+      console.log(
+        `${String(season).padStart(7)}${String(league.length).padStart(9)}` +
+          `${String(countAtLeast(league, 90)).padStart(7)}${String(countAtLeast(league, 85)).padStart(7)}` +
+          `${String(countAtLeast(league, 80)).padStart(7)}` +
+          `${median(league.map((p) => p.overall)).toFixed(1).padStart(9)}${String(retired).padStart(9)}`,
+      );
     }
-    const mean = cohort.reduce((s, p) => s + p.ovr, 0) / cohort.length;
-    const elite = cohort.filter((p) => p.ovr >= 90).length;
+  } else {
     console.log(
-      `${String(startAge + step).padStart(5)}${mean.toFixed(1).padStart(13)}${((elite / cohort.length) * 100).toFixed(0).padStart(10)}%`,
+      `${String(season).padStart(7)}${String(league.length).padStart(9)}` +
+        `${String(countAtLeast(league, 90)).padStart(7)}${String(countAtLeast(league, 85)).padStart(7)}` +
+        `${String(countAtLeast(league, 80)).padStart(7)}` +
+        `${median(league.map((p) => p.overall)).toFixed(1).padStart(9)}${"-".padStart(9)}`,
     );
   }
+  snapshots.push({
+    season,
+    at90: countAtLeast(league, 90),
+    at85: countAtLeast(league, 85),
+    at80: countAtLeast(league, 80),
+  });
 }
-console.log(`
-  Decline is absolute, not proportional: a 99 and a 70 both lose the same
-  1-3 points at age 30. Real elite players decline far more slowly than
-  replacement-level ones do.`);
 
-console.log("\n" + "=".repeat(78));
-console.log("DO PROSPECTS EVER BUST?");
-console.log("=".repeat(78));
-const rng3 = makeRng(4242);
+const final = snapshots[snapshots.length - 1];
+console.log(`\n  real:  ${REAL_90_PLUS} / ${REAL_85_PLUS} / ${REAL_80_PLUS}`);
+console.log(`  final: ${final.at90} / ${final.at85} / ${final.at80}`);
 console.log(
-  `${"DRAFTED AT".padEnd(22)}${"p10".padStart(6)}${"MEDIAN".padStart(8)}${"p90".padStart(6)}${"MEAN".padStart(7)}${"NEVER 75+".padStart(11)}`,
+  `  drift vs real: 90+ ${(final.at90 - REAL_90_PLUS >= 0 ? "+" : "") + (final.at90 - REAL_90_PLUS)}, ` +
+    `85+ ${(final.at85 - REAL_85_PLUS >= 0 ? "+" : "") + (final.at85 - REAL_85_PLUS)}, ` +
+    `80+ ${(final.at80 - REAL_80_PLUS >= 0 ? "+" : "") + (final.at80 - REAL_80_PLUS)}`,
 );
-for (const [label, ovr, pot] of [
-  ["pick 1  (72 / 97)", 72, 97],
-  ["pick 15 (69 / 90)", 69, 90],
-  ["pick 30 (67 / 83)", 67, 83],
-  ["pick 60 (62 / 70)", 62, 70],
-] as [string, number, number][]) {
-  const N = 500;
-  const finals: number[] = [];
-  for (let i = 0; i < N; i++) {
-    let r = ovr;
-    const trait = developmentTraitFromId(`${label}#${i}`);
-    for (let age = 20; age <= 26; age++) {
-      r = developPlayerRating({
-        overallRating: r,
-        potentialRating: pot,
+
+// ---------------------------------------------------------------------------
+// DEV-2. Can a prospect bust?
+// ---------------------------------------------------------------------------
+line();
+console.log("DEV-2  BUST RATES BY DRAFT SLOT");
+line();
+console.log("  D-P0-1: a growth floor of +1/season once meant a 0% bust rate at every");
+console.log("  slot. Each prospect is developed from his draft age to 26.\n");
+
+const TRIALS_PER_SLOT = 2000;
+console.log(
+  `${"PICK".padStart(6)}${"MEAN PEAK".padStart(11)}${"REACHED 80+".padStart(13)}${"BUSTED (<70)".padStart(14)}${"HIT CEILING".padStart(13)}`,
+);
+
+const bustRng = makeRng(555);
+let futureStarsPerClass = 0;
+for (const slot of [1, 5, 10, 20, 30, 45, 60]) {
+  let peakSum = 0;
+  let reached80 = 0;
+  let busted = 0;
+  let hitCeiling = 0;
+
+  for (let t = 0; t < TRIALS_PER_SLOT; t++) {
+    // A prospect exactly as generateDraftClass would produce him at this slot.
+    const cls = generateDraftClass(bustRng);
+    const prospect = cls.prospects[slot - 1];
+    const id = `bust:${slot}:${t}`;
+    const trait = developmentTraitFromId(id);
+    const ceiling = effectiveCeiling(prospect.overallRating, prospect.potentialRating, trait);
+
+    let overall = prospect.overallRating;
+    for (let age = prospect.age; age <= 26; age++) {
+      overall = developPlayerRating({
+        overallRating: overall,
+        potentialRating: prospect.potentialRating,
         age,
-        rng: rng3,
+        rng: bustRng,
         developmentTrait: trait,
       });
     }
-    finals.push(r);
+    peakSum += overall;
+    if (overall >= 80) reached80 += 1;
+    if (overall < 70) busted += 1;
+    if (overall >= ceiling) hitCeiling += 1;
   }
-  // "Bust" as a spread, not a threshold: what the unlucky end of this draft
-  // slot actually turns into. Never reaching 75 is never becoming a starter.
-  const sorted = [...finals].sort((a, b) => a - b);
-  const q = (f: number) => sorted[Math.min(sorted.length - 1, Math.floor(f * sorted.length))];
-  const neverStarter = finals.filter((f) => f < 75).length;
+
   console.log(
-    `${label.padEnd(22)}${String(q(0.1)).padStart(6)}${String(q(0.5)).padStart(8)}${String(q(0.9)).padStart(6)}${(finals.reduce((a, b) => a + b, 0) / N).toFixed(1).padStart(7)}${((neverStarter / N) * 100).toFixed(0).padStart(10)}%`,
+    `${String(slot).padStart(6)}${(peakSum / TRIALS_PER_SLOT).toFixed(1).padStart(11)}` +
+      `${pct(reached80 / TRIALS_PER_SLOT).padStart(13)}${pct(busted / TRIALS_PER_SLOT).padStart(14)}` +
+      `${pct(hitCeiling / TRIALS_PER_SLOT).padStart(13)}`,
   );
 }
-console.log(`
-  Scouting reliability scales with the report itself - a consensus star is
-  identified by everyone, a late flier is a coin-flip - so the spread widens
-  as draft position falls. See RELIABILITY_AT_HIGH_POTENTIAL.`);
+
+// How many future 80+ players does a whole class actually yield?
+const classRng = makeRng(4242);
+const CLASS_TRIALS = 300;
+let starTotal = 0;
+for (let t = 0; t < CLASS_TRIALS; t++) {
+  const cls = generateDraftClass(classRng);
+  for (let i = 0; i < cls.prospects.length; i++) {
+    const prospect = cls.prospects[i];
+    const id = `cls:${t}:${i}`;
+    const trait = developmentTraitFromId(id);
+    let overall = prospect.overallRating;
+    for (let age = prospect.age; age <= 26; age++) {
+      overall = developPlayerRating({
+        overallRating: overall,
+        potentialRating: prospect.potentialRating,
+        age,
+        rng: classRng,
+        developmentTrait: trait,
+      });
+    }
+    if (overall >= 80) starTotal += 1;
+  }
+}
+futureStarsPerClass = starTotal / CLASS_TRIALS;
+console.log(`\n  future 80+ players per class: ${futureStarsPerClass.toFixed(1)}  (real: 5-8)`);
+
+line();
+console.log("Reproduce: npx tsx scripts/development-audit.ts");
+line();
