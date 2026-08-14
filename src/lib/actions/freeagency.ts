@@ -18,6 +18,116 @@ import {
 } from "@/lib/fans/sentimentEvents";
 import { recordFanSentimentManyTx } from "@/lib/fans/recordSentiment";
 import { describeSigningSentiment } from "@/lib/fans/describeSentiment";
+import { evaluateFreeAgentOffer } from "@/lib/freeagency/evaluateFreeAgentOffer";
+import { computeRivalInterest, type RivalTeam } from "@/lib/freeagency/rivalInterest";
+import { demandAdjustedPriceCents } from "@/lib/freeagency/cpuFreeAgentPass";
+import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
+import { contractQualityScore, priceContractCents } from "@/lib/contracts/priceContract";
+import { getSeasonCapRules } from "@/lib/cap/constants";
+import { formatCentsCompact } from "@/lib/money";
+
+/**
+ * Prices a free agent and counts who else is bidding, then asks whether he
+ * would accept.
+ *
+ * The asking price uses `priceContractCents` - the same function the free-agent
+ * detail page quotes and the same one a rival club pays - so the figure the
+ * user was shown is the figure he is held to.
+ *
+ * Rivals are assembled exactly as `free-agents/page.tsx` builds them, from live
+ * cap sheets and roster needs, and the user's own club is excluded: the
+ * question is who else wants him.
+ */
+async function evaluateOfferAcceptance(input: {
+  leagueId: string;
+  season: number;
+  userLeagueTeamId: string;
+  freeAgent: {
+    overallRating: number;
+    player: { position: string; birthDate: Date | null; draftYear: number | null };
+  };
+  offerSalaryCents: bigint;
+}) {
+  const { leagueId, season, userLeagueTeamId, freeAgent, offerSalaryCents } = input;
+
+  const rosterRows = await prisma.leaguePlayer.findMany({
+    where: { leagueId, leagueTeamId: { not: null }, isActive: true },
+    select: {
+      leagueTeamId: true,
+      playerId: true,
+      overallRating: true,
+      player: { select: { position: true } },
+      contract: { select: { years: { where: { season }, select: { salaryCents: true } } } },
+    },
+  });
+
+  const rosterByTeam = new Map<string, typeof rosterRows>();
+  for (const row of rosterRows) {
+    if (!row.leagueTeamId || row.leagueTeamId === userLeagueTeamId) continue;
+    const list = rosterByTeam.get(row.leagueTeamId) ?? [];
+    list.push(row);
+    rosterByTeam.set(row.leagueTeamId, list);
+  }
+
+  const age = resolvePlayerAge(freeAgent.player, season);
+  const askingPriceCents = BigInt(
+    priceContractCents({
+      season,
+      quality: contractQualityScore({
+        overallRating: freeAgent.overallRating,
+        performanceScore: null,
+        gamesPlayed: 0,
+      }),
+      age,
+      yearsOfExperience: resolvePlayerExperience(freeAgent.player, season),
+      position: freeAgent.player.position,
+    }),
+  );
+
+  const rivals: RivalTeam[] = [...rosterByTeam.entries()].map(([teamId, roster]) => ({
+    leagueTeamId: teamId,
+    // Never rendered from here; the board computes its own labels.
+    abbreviation: teamId,
+    capSpaceCents: computeCapSheet({
+      season,
+      contracts: roster
+        .filter((lp) => lp.contract?.years[0])
+        .map((lp) => ({ playerId: lp.playerId, salaryCents: lp.contract!.years[0].salaryCents })),
+    }).capSpaceCents,
+    needs: computeTeamNeeds(
+      roster.map((lp) => ({ position: lp.player.position, overallRating: lp.overallRating })),
+    ),
+    rosterCount: roster.length,
+  }));
+
+  const interest = computeRivalInterest(
+    {
+      position: freeAgent.player.position,
+      overallRating: freeAgent.overallRating,
+      estimatedValueCents: askingPriceCents,
+    },
+    rivals,
+  );
+  const rivalSuitors = interest.rivals.length;
+
+  // Competition moves the ask by the same rule it moves it for a rival club.
+  const demandAdjustedAsk = demandAdjustedPriceCents(
+    askingPriceCents,
+    rivalSuitors,
+    age,
+    season,
+  );
+
+  const result = evaluateFreeAgentOffer({
+    askingPriceCents: demandAdjustedAsk,
+    offerSalaryCents,
+    rivalSuitors,
+    valueTier: getPlayerValueTier(freeAgent.overallRating),
+    minimumSalaryCents: getSeasonCapRules(season).emptyRosterChargeCents,
+  });
+
+  return { ...result, rivalSuitors };
+}
 
 export interface SignFreeAgentInput {
   leagueId: string;
@@ -114,6 +224,28 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
   });
   if (!validation.isValid) {
     throw new Error(validation.violation ?? "This offer isn't legal under current cap rules.");
+  }
+
+  // Would he actually take it? docs/FREE_AGENCY_AUDIT.md FA-P0-1: nothing on
+  // this path asked, and a minimum offer is always cap-legal, so every free
+  // agent in the game signed for $1.4M. `validateSigning` above is right - it
+  // answers whether the money is legal - but that is a different question from
+  // whether the player says yes, and this is where the second one belongs.
+  const decision = await evaluateOfferAcceptance({
+    leagueId: league.id,
+    season: league.currentSeason,
+    userLeagueTeamId: myLeagueTeamId,
+    freeAgent,
+    offerSalaryCents,
+  });
+  if (!decision.accepted) {
+    throw new Error(
+      `${freeAgent.player.fullName} turned this down. He wants at least ` +
+        `${formatCentsCompact(decision.requiredSalaryCents)} per year` +
+        (decision.rivalSuitors > 0
+          ? ` - ${decision.rivalSuitors} other ${decision.rivalSuitors === 1 ? "club is" : "clubs are"} interested.`
+          : "."),
+    );
   }
 
   const signedContractId = await prisma.$transaction(async (tx) => {

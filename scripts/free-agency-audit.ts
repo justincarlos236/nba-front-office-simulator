@@ -11,6 +11,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { getSeasonCapRules } from "../src/lib/cap/constants";
+import { ApronLevel } from "../src/lib/cap/apron";
 import {
   contractQualityScore,
   priceContractCents,
@@ -18,6 +19,8 @@ import {
 } from "../src/lib/contracts/priceContract";
 import { createSeededRandom } from "../src/lib/contracts/seededRandom";
 import { validateSigning } from "../src/lib/freeagency/validateSigning";
+import { evaluateFreeAgentOffer } from "../src/lib/freeagency/evaluateFreeAgentOffer";
+import { getPlayerValueTier } from "../src/lib/valuation/playerValueTier";
 import {
   runCpuFreeAgentPass,
   demandAdjustedPriceCents,
@@ -115,7 +118,7 @@ for (const i of samples) {
   const result = validateSigning({
     season: SEASON,
     offerSalaryCents: rules.emptyRosterChargeCents,
-    team: { apronLevel: "SECOND_APRON", capSpaceCents: 0n, signingExceptionUsedCents: 0n },
+    team: { apronLevel: ApronLevel.SECOND_APRON, capSpaceCents: 0n, signingExceptionUsedCents: 0n },
   });
   const discount = market / min;
   worstDiscount = Math.max(worstDiscount, discount);
@@ -188,7 +191,7 @@ for (const abbr of teamAbbrs) {
   });
   pursuers.push({
     leagueTeamId: abbr,
-    identity: "BALANCED",
+    identity: "PLAYOFF_TEAM",
     needs,
     personality: "BALANCED",
     rosterSize: roster.length,
@@ -312,6 +315,43 @@ for (let i = 0; i < 4; i++) {
 console.log(`\n  Real CBA raises are 5% (Bird) or 8% (max) of the FIRST-year salary, so the`);
 console.log(`  linear shape is right. It is applied to minimum deals too, where real`);
 console.log(`  minimum contracts are flat by scale, but the amounts are trivial.`);
+
+// ---------------------------------------------------------------------------
+// FA-5. Verification: is the minimum-salary exploit closed?
+// ---------------------------------------------------------------------------
+line();
+console.log("FA-5  VERIFICATION - MINIMUM OFFER AFTER THE FIX");
+line();
+console.log("  Same players, same minimum offer, now through evaluateFreeAgentOffer.\n");
+console.log(
+  `${"RATING".padStart(7)}${"PLAYER".padStart(24)}${"SUITORS".padStart(9)}${"HE WANTS".padStart(12)}${"MIN OFFER".padStart(12)}${"RESULT".padStart(10)}`,
+);
+let stillExploitable = 0;
+for (const i of samples) {
+  const p = byRating[i];
+  const base = BigInt(Math.round(marketPrice(p)));
+  // Worst case for the fix: nobody else is bidding, the most favourable
+  // possible market for a user trying to underpay.
+  const suitors = 0;
+  const ask = demandAdjustedPriceCents(base, suitors, ageOf(p), SEASON);
+  const d = evaluateFreeAgentOffer({
+    askingPriceCents: ask,
+    offerSalaryCents: rules.emptyRosterChargeCents,
+    rivalSuitors: suitors,
+    valueTier: getPlayerValueTier(p.seedOverallRating!),
+    minimumSalaryCents: rules.emptyRosterChargeCents,
+  });
+  if (d.accepted && marketPrice(p) > Number(rules.emptyRosterChargeCents) * 3) stillExploitable++;
+  console.log(
+    `${String(p.seedOverallRating).padStart(7)}${p.fullName.slice(0, 22).padStart(24)}` +
+      `${String(suitors).padStart(9)}${usd(d.requiredSalaryCents).padStart(12)}` +
+      `${usd(rules.emptyRosterChargeCents).padStart(12)}` +
+      `${(d.accepted ? "SIGNS" : "refuses").padStart(10)}`,
+  );
+}
+console.log(`
+  players still signable at the minimum for >3x their value: ${stillExploitable}`);
+console.log(`  (a fringe player with no suitors SHOULD accept the minimum - that is roster filling)`);
 
 line();
 console.log("Reproduce: npx tsx scripts/free-agency-audit.ts");

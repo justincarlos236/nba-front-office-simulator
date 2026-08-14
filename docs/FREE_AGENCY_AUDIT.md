@@ -78,7 +78,7 @@ roster 12):
 | 80-84 | 9 | 8 | 89% |
 | 75-79 | 17 | 13 | 76% |
 | 70-74 | 16 | 14 | 88% |
-| under 70 | 38 | 26 | 68% |
+| under 70 | 38 | 25 | 66% |
 
 Best player the CPU left on the table: **Anthony Edwards (93)** — market
 $40.6M, available to the user for $1.4M, a 29.5x discount.
@@ -206,3 +206,78 @@ both are failure modes a scripting harness invites:
 Neither survived a corrected harness. `tsx` does not typecheck, so a
 wrongly-shaped `TeamNeed` also passed silently — the same failure that produced
 an invalid identity string in the trade audit.
+
+---
+
+# RESOLUTION — 2026-08-14
+
+**FA-P0-1 and FA-P1-1 are closed.** `signFreeAgentAction` now asks whether the
+player would accept, via a new pure `evaluateFreeAgentOffer`.
+
+Verified on the same players, offering the minimum in the most favourable
+possible market for a user trying to underpay — **nobody else bidding at all**:
+
+| Rating | Player | He wants | Min offer | Result |
+| ---: | --- | ---: | ---: | --- |
+| 98 | Shai Gilgeous-Alexander | $29.2M | $1.4M | refuses |
+| 95 | Victor Wembanyama | $20.0M | $1.4M | refuses |
+| 89 | James Harden | $17.3M | $1.4M | refuses |
+| 84 | Desmond Bane | $23.3M | $1.4M | refuses |
+| 79 | Neemias Queta | $15.9M | $1.4M | refuses |
+| 72 | Brandon Williams | $7.9M | $1.4M | refuses |
+| 67 | Adem Bona | $1.4M | $1.4M | **signs** |
+
+Players still signable at the minimum for more than 3x their value: **0**,
+down from every free agent in the game.
+
+The last row is the fix working, not leaking. A fringe player with no other
+offers *should* take the minimum — that is how a real back-of-roster is filled,
+and a 13-man floor would be unmeetable otherwise.
+
+## The model
+
+A player's required salary scales with demand rather than being a flat
+percentage:
+
+- **No rival bidding:** he settles for 60% of his ask. A market with no buyers
+  genuinely does move a price, and a system where everyone holds out for full
+  value regardless of demand is as unrealistic as one where everyone signs for
+  the minimum.
+- **Three or more rivals:** he wants the full asking price. Three is where
+  `computeRivalInterest` already starts calling interest strong, so the two
+  agree about what a crowded market looks like.
+- **Below STARTER tier with no suitors:** the minimum is acceptable.
+
+The ask is `priceContractCents` run through `demandAdjustedPriceCents` — the
+same two functions that price a rival club's offer, so the user and the CPU are
+quoted the same market, and the figure the free-agent page displays is the
+figure he is held to.
+
+Refusal says what he wanted and how many clubs are circling, rather than
+failing with a cap error that would explain nothing.
+
+## What was deliberately not done
+
+**`validateSigning` is untouched.** It answers whether the money is legal and
+answers it correctly; the minimum-salary branch is right, because the minimum
+really is the one exception no apron restricts. The missing check was a
+different question and now sits beside the roster-size limit in the action,
+which was added there for exactly the same reason.
+
+**FA-P2-1 and FA-P2-2 remain open.** The max-salary clamp absorbing the demand
+premium is defensible — a real max contract is a max contract — and the uniform
+5% escalation is cosmetic.
+
+## A note on the harness, continued
+
+The build caught a **third** invalid literal in the audit script:
+`identity: "BALANCED"` is not a `TeamIdentity`. That is three in one script —
+a `TeamNeed` shaped as an object, an `ApronLevel` as a bare string, and this.
+`tsx` accepted all three silently. Anything measured by a script that `tsc`
+never sees should be assumed wrong until the compiler has seen it; correcting
+this one moved FA-2's signed count from 23 to 24.
+
+## Verification
+
+1,468 tests (13 new, including a named regression guard that fails if a star
+can be signed for the minimum again), 0 lint errors, clean production build.
