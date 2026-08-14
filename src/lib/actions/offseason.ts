@@ -130,6 +130,7 @@ import {
 } from "@/lib/morale/moraleEvents";
 import { applyMoraleChange } from "@/lib/morale/moraleLevel";
 import { rollupCompletedSeasons } from "@/lib/stats/rollupSeasonStats";
+import { loadInSimPerformance } from "@/lib/valuation/inSimPerformance";
 
 // Local, server-side copy of the award-category label (small duplication
 // of the UI's own AWARD_LABELS constants, same established pattern as
@@ -798,6 +799,11 @@ export async function advanceSeasonAction(leagueId: string) {
   // Runs *after* the re-signing pass so a club fills its own holes with its own
   // expiring players first, and only then shops - and so players who just
   // walked are themselves on the market.
+  // The season that just finished, read from its still-raw box scores - the
+  // rollup for it runs at the end of this function, after the market has
+  // already priced everyone off it.
+  const inSimPerformance = await loadInSimPerformance(leagueId, season);
+
   const cpuFreeAgentSignings = await runCpuFreeAgentMarket({
     leagueId,
     newSeason,
@@ -805,6 +811,7 @@ export async function advanceSeasonAction(leagueId: string) {
     leaguePlayers,
     playerUpdates,
     teamById,
+    inSimPerformance,
   });
   // Mutate the player's existing update rather than pushing a second one:
   // every active player already has an entry from the development pass, and a

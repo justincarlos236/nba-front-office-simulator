@@ -690,12 +690,37 @@ score costs ~7% of accuracy instead of producing nothing.
 
 Four pricing paths become three, which is progress against C-P1-3.
 
-## Still open
+## C-P1-2 FULLY RESOLVED — in-sim performance now prices contracts
 
-**Simulated performance never feeds pricing.** The remaining half of C-P1-2:
-a player who averages 30 points for five in-sim seasons is priced identically
-to a benchwarmer of the same rating. The data now exists — `PlayerGameStat`
-during a season, and the `LeaguePlayerSeasonStat` rollup after it — so wiring
-in-sim performance into `contractQualityScore` is a tractable follow-up. At a
-measured 6.9% effect it is a refinement rather than a defect, which is why it
-did not ship with this.
+The remaining half shipped separately: pricing reads what a player has actually
+done **in this save**, not a frozen real-world line.
+
+`loadInSimPerformance` reads two sources, because a season's box scores are
+collapsed once it ends — the `LeaguePlayerSeasonStat` rollup for completed
+seasons, raw `PlayerGameStat` for one in progress. Regular season only; playoff
+samples are small, selective, and not what a player is paid for. Below ten
+games it returns nothing and the caller falls back, mirroring the sample-size
+weighting `contractQualityScore` already applies.
+
+Wired into all three pricing surfaces, which had all been reading the frozen
+seed line:
+
+| Surface | Was | Now |
+| --- | --- | --- |
+| Free-agent board | seed stats (empty from season 2) | in-sim, seed fallback |
+| Free-agent detail page | seed stats (empty from season 2) | in-sim, seed fallback |
+| **CPU free-agent market** | seed stats (empty from season 2) | in-sim, seed fallback |
+
+The third is the one that mattered most: rival clubs price every offer through
+it, so from a save's second season the entire CPU market had been valuing free
+agents on rating alone.
+
+**This also closes C-P2-5.** An in-sim drafted rookie had no `seasonStats` at
+all and was skipped by the market entirely. He now has a real record the moment
+he has played ten games.
+
+What the change buys, measured: production and rating are no longer the same
+signal. A 30-point scorer and a benchwarmer of equal rating priced identically
+before; they no longer do. Rating still dominates — a 65-rated producer cannot
+out-earn an 85-rated one — which is the C-P0-4 anchor doing its job, and there
+is a test pinning it.

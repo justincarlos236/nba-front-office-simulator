@@ -64,6 +64,14 @@ interface MarketInput {
     string,
     { id: string; wins: number; losses: number; gmPersonality: string; cashReserveCents: bigint }
   >;
+  /**
+   * What each player actually did in this save, by `leaguePlayerId` - see
+   * `loadInSimPerformance`. Preferred over `seasonStats`, which is seeded
+   * real-world data that never advances and is empty for everyone from a
+   * save's second season onward (docs/CONTRACT_AUDIT.md C-P1-2). Omitted
+   * behaves exactly as before this parameter existed.
+   */
+  inSimPerformance?: Map<string, PlayerValuationStats & { gamesPlayed: number }>;
 }
 
 const VALID_POSITIONS = ["PG", "SG", "SF", "PF", "C"] as const;
@@ -76,6 +84,7 @@ function asPosition(position: string): ValidPosition | null {
 
 export async function runCpuFreeAgentMarket(input: MarketInput): Promise<CpuSigning[]> {
   const { newSeason, userTeamId, leaguePlayers, playerUpdates, teamById } = input;
+  const inSimPerformance = input.inSimPerformance ?? new Map();
 
   // Post-re-signing state: who is on which roster once retirements and the
   // re-signing pass have been decided. Reading `playerUpdates` rather than the
@@ -184,7 +193,10 @@ export async function runCpuFreeAgentMarket(input: MarketInput): Promise<CpuSign
     // than skipped: an in-sim drafted rookie has no `seasonStats` at all, and
     // dropping him meant every homegrown player was invisible to the market
     // for as long as he stayed unproven (C-P2-5).
-    const stats = lp.player.seasonStats?.[0];
+    // In-sim performance first: what a player has done in THIS save is what a
+    // rival club would price him on. The seeded line is only a fallback for
+    // someone who has not played enough games here yet.
+    const stats = inSimPerformance.get(id) ?? lp.player.seasonStats?.[0];
     const age = resolvePlayerAge(lp.player, newSeason);
     const yearsOfExperience = resolvePlayerExperience(lp.player, newSeason);
     const estimatedValueCents = BigInt(

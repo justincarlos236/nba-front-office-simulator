@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
 import { prisma } from "@/lib/prisma";
+import { loadInSimPerformance } from "@/lib/valuation/inSimPerformance";
 import { computePerformanceScore, scoreToCapFraction } from "@/lib/valuation/playerValue";
 import { getSeasonCapRules } from "@/lib/cap/constants";
 import { computeReSigningMaxOfferCents } from "@/lib/freeagency/reSigningRights";
@@ -76,7 +77,11 @@ export default async function SignFreeAgentPage({ params }: PageProps) {
   // pricing function, same inputs. It used to be a raw performance score run
   // through the cap curve with no age term and no rating anchor, so the board
   // could suggest a figure no other club in the league would have offered.
-  const stat = freeAgent.player.seasonStats[0];
+  // In-sim performance first, seeded real-world stats only as a fallback.
+  // seasonStats never advances, so from a save's second season it is empty for
+  // everyone - see docs/CONTRACT_AUDIT.md C-P1-2.
+  const inSim = await loadInSimPerformance(league.id, league.currentSeason);
+  const stat = inSim.get(freeAgent.id) ?? freeAgent.player.seasonStats[0];
   const rules = getSeasonCapRules(league.currentSeason);
   const suggestedSalaryCents = BigInt(
     priceContractCents({

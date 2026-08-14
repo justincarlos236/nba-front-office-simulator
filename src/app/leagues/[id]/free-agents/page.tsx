@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { formatCentsCompact } from "@/lib/money";
 import { computePerformanceScore } from "@/lib/valuation/playerValue";
+import { loadInSimPerformance } from "@/lib/valuation/inSimPerformance";
 import { contractQualityScore, priceContractCents } from "@/lib/contracts/priceContract";
 import { resolvePlayerAge, resolvePlayerExperience } from "@/lib/players/age";
 import { getPlayerValueTier, PLAYER_VALUE_TIER_LABEL } from "@/lib/valuation/playerValueTier";
@@ -142,8 +143,13 @@ export default async function FreeAgentsPage({ params }: PageProps) {
     rosterCount: roster.length,
   }));
 
+  // What this player has actually done in THIS save, which is what a real
+  // market prices. Falls back to the seeded real-world line for anyone who has
+  // not played enough in-sim games yet - see inSimPerformance.ts.
+  const inSim = await loadInSimPerformance(league.id, season);
+
   const rows: FreeAgentRow[] = freeAgents.map((fa) => {
-    const stat = fa.player.seasonStats[0];
+    const stat = inSim.get(fa.id) ?? fa.player.seasonStats[0];
     // Priced through `priceContractCents`, the same function the free-agent
     // detail page quotes, a rival club pays, and `signFreeAgentAction` holds
     // the user to.
