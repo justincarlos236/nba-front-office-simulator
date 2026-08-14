@@ -72,9 +72,14 @@ export function expectedRatingForPick(pick: number, atPick1: number, atPick60: n
 /**
  * The same curve for potential, but convex - see `POTENTIAL_FALLOFF_EXPONENT`.
  */
-export function expectedPotentialForPick(pick: number, atPick1: number, atPick60: number): number {
+export function expectedPotentialForPick(
+  pick: number,
+  atPick1: number,
+  atPick60: number,
+  falloffExponent: number = POTENTIAL_FALLOFF_EXPONENT,
+): number {
   const t = (pick - 1) / (CLASS_SIZE - 1);
-  return atPick1 + (atPick60 - atPick1) * Math.pow(t, POTENTIAL_FALLOFF_EXPONENT);
+  return atPick1 + (atPick60 - atPick1) * Math.pow(t, falloffExponent);
 }
 
 export interface GeneratedDraftClass {
@@ -99,7 +104,15 @@ export interface GeneratedDraftClass {
  * is a property of the whole class, decided once, not a per-prospect
  * coin flip.
  */
-export function generateDraftClass(rng: () => number = Math.random): GeneratedDraftClass {
+export function generateDraftClass(
+  rng: () => number = Math.random,
+  /**
+   * Calibration seam only - see scripts/draft-class-calibration.ts. Production
+   * callers omit it and get POTENTIAL_FALLOFF_EXPONENT. Exists so a sweep
+   * exercises this exact generator rather than a copy of it.
+   */
+  falloffExponent: number = POTENTIAL_FALLOFF_EXPONENT,
+): GeneratedDraftClass {
   const character = pickClassCharacter(rng);
   const mods = classCharacterModifiers(character);
   const prospects: GeneratedProspect[] = [];
@@ -115,6 +128,7 @@ export function generateDraftClass(rng: () => number = Math.random): GeneratedDr
       pick,
       POTENTIAL_AT_PICK_1 + mods.potentialAtPick1Delta,
       POTENTIAL_AT_PICK_60,
+      falloffExponent,
     );
 
     const overallVariance = randomIntInclusive(rng, -RATING_VARIANCE, RATING_VARIANCE);

@@ -404,3 +404,61 @@ classes carry 80+ ceilings at 42.8% against a league at 28.2%. Fewer
 high-potential prospects, with the survivors hitting harder, is the only shape
 that can deliver busts and stars simultaneously. That is a draft-generation
 change, and it now has a measurement path across both systems.
+
+---
+
+## Attempt 5 at D-P1-2 — a steeper draft-class potential curve. Also failed.
+
+Attempt 4 concluded the fix belonged in draft generation rather than
+development. It does not. Recording that here, with the measurement, because it
+is the attempt the previous entry explicitly recommends.
+
+**The idea.** `docs/DRAFT_AUDIT.md` D-P2-1: classes carry 80+ ceilings at 42.8%
+against a league at 28.2%. A steeper `POTENTIAL_FALLOFF_EXPONENT` leaves genuine
+star ceilings at the very top of a class and a long tail behind them, which is
+what a real draft looks like. `scripts/draft-class-calibration.ts` sweeps it
+through the real `generateDraftClass`, against the same five constraints and
+the same five-seed averaging.
+
+**The result.** Again a genuine interior optimum, at 0.35. Again it fixes the
+band it aims at and drains the two above it:
+
+| Exponent | Class yield | 90+ | 85+ | 80+ |
+| ---: | ---: | ---: | ---: | ---: |
+| 0.25 | 5.5 | 4.6 | 14.6 | 46.4 |
+| **0.35** | **8.9** | **7.4** | **28.0** | **73.4** |
+| 0.45 | 12.4 | 11.6 | 40.6 | 98.0 |
+| **0.50 (shipped)** | 13.9 | **13.0** | **47.0** | 110.0 |
+| 0.60 | 16.7 | 18.0 | 60.4 | 133.8 |
+| **target** | **5-8** | **14** | **44** | **82** |
+
+Every row moves together. There is no exponent at which 80+ approaches 82 while
+90+ stays near 14.
+
+**The sharpened diagnosis, which is what these two attempts actually bought.**
+The problem was never *which system* holds the lever. It is that the simulated
+league's shape is wrong, not its scale:
+
+| | 80+ : 90+ ratio |
+| --- | ---: |
+| shipped (exponent 0.50) | 8.5 : 1 |
+| attempt 5 best (0.35) | 9.9 : 1 |
+| **real NBA** | **5.9 : 1** |
+
+Every lever tried across five attempts — growth rate, bust split, ceiling
+realisation, scouting reliability, a miss band, and now the intake curve — is a
+**scale** parameter. Scaling a distribution cannot change its ratio, and the
+ratio is what is wrong. Steepening the intake curve actually makes it *worse*,
+because it thins the 85-95 potential band that feeds the star tier faster than
+it thins the 80-85 band below it.
+
+**What attempt 6 needs.** Not another single constant. A lever that moves the
+top and the tail of the potential curve **independently** — plausibly fitting
+`POTENTIAL_AT_PICK_1` and `POTENTIAL_AT_PICK_60` together with the exponent, a
+three-parameter fit against the ratio rather than the counts. Nothing in five
+attempts has tried a multi-parameter fit, and the evidence now says a
+single-parameter one cannot work in either system.
+
+**Shipped unchanged.** `POTENTIAL_FALLOFF_EXPONENT` stays at 0.50. Only the
+calibration seam was added, so no behaviour changed; `docs/DRAFT_AUDIT.md`'s
+8.03x pick-value anchor is unaffected and was re-verified.
