@@ -634,3 +634,68 @@ The positional bias (C-P1-1) and the frozen-stats drift (C-P1-2) are the two rem
 npx tsx scripts/contract-audit.ts        # distribution, anomalies, sweeps, seed ranges
 npx tsx scripts/contract-audit-paths.ts  # path divergence, drift, exploits, positional bias
 ```
+
+
+---
+
+# C-P1-2 RE-MEASURED AND PARTLY RESOLVED — 2026-08-15
+
+**The headline number above is stale.** C-P1-2 reports "Year-10 Jokic:
+re-signs at $3.9M, signs as a free agent at $52.1M." That was measured before
+`contractQualityScore` was anchored to `overallRating` (C-P0-4). Re-measured on
+current code across 355 players, dropping the performance term entirely moves a
+price by **6.9% on average** — not by an order of magnitude. The rating anchor
+fixed most of C-P1-2 as a side effect, and nothing had gone back to check.
+
+## What is genuinely wrong, and it is worse than "year ten"
+
+`seasonStats` is seeded real data that never advances. The free-agency paths
+query it with `where: { season: league.currentSeason }`, and leagues start at
+2026 while the dataset carries mostly 2025:
+
+| Save season | Players with stats at `currentSeason` |
+| --- | ---: |
+| 2026 (season 1) | 95 / 450 (21%) |
+| 2027 (season 2) | **0 / 450 (0%)** |
+| 2028+ | **0 / 450 (0%)** |
+
+So this is not a long-save drift that creeps in by year ten. **From the second
+season of every save, no free agent has stats at all.**
+
+## The user-visible consequence
+
+`free-agents/page.tsx` priced the board with `scoreToCapFraction(performanceScore)`
+— one of the four unreconciled pricing paths C-P1-3 catalogues, and *not* the
+one the detail page uses — and returned `null` when stats were missing. A null
+price meant no value shown, and because rival interest needs a price to compare
+cap space against, `computeRivalInterest` was skipped entirely.
+
+**From season two onward the free-agent board showed no price and no interest
+for anybody.** That also silently undercut the acceptance check added the same
+day in `docs/FREE_AGENCY_AUDIT.md`: a player would refuse an offer and name a
+price the board had never displayed.
+
+## Fixed
+
+The board now prices through `priceContractCents` — the same function the
+detail page quotes, a rival club pays, and `signFreeAgentAction` holds the user
+to. Because `contractQualityScore` is rating-anchored, a missing performance
+score costs ~7% of accuracy instead of producing nothing.
+
+| | Before | After |
+| --- | --- | --- |
+| Free agents priced on the board, season 2+ | **0%** | **100%** |
+| Rival interest computed, season 2+ | **never** | **always** |
+| Pricing paths used by the FA surfaces | 2 (board vs detail) | **1** |
+
+Four pricing paths become three, which is progress against C-P1-3.
+
+## Still open
+
+**Simulated performance never feeds pricing.** The remaining half of C-P1-2:
+a player who averages 30 points for five in-sim seasons is priced identically
+to a benchwarmer of the same rating. The data now exists — `PlayerGameStat`
+during a season, and the `LeaguePlayerSeasonStat` rollup after it — so wiring
+in-sim performance into `contractQualityScore` is a tractable follow-up. At a
+measured 6.9% effect it is a refinement rather than a defect, which is why it
+did not ship with this.

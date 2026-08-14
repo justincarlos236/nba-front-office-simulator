@@ -2,9 +2,10 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { formatCentsCompact } from "@/lib/money";
-import { scoreToCapFraction, computePerformanceScore } from "@/lib/valuation/playerValue";
+import { computePerformanceScore } from "@/lib/valuation/playerValue";
+import { contractQualityScore, priceContractCents } from "@/lib/contracts/priceContract";
+import { resolvePlayerAge, resolvePlayerExperience } from "@/lib/players/age";
 import { getPlayerValueTier, PLAYER_VALUE_TIER_LABEL } from "@/lib/valuation/playerValueTier";
-import { getSeasonCapRules } from "@/lib/cap/constants";
 import { computeCapSheet } from "@/lib/cap/capSheet";
 import { CAP_STATUS_LABEL, simplifyCapStatus } from "@/lib/cap/capStatusLabel";
 import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
@@ -79,7 +80,6 @@ export default async function FreeAgentsPage({ params }: PageProps) {
     }),
   ]);
 
-  const rules = getSeasonCapRules(season);
 
   const capSheet = computeCapSheet({
     season,
@@ -144,19 +144,35 @@ export default async function FreeAgentsPage({ params }: PageProps) {
 
   const rows: FreeAgentRow[] = freeAgents.map((fa) => {
     const stat = fa.player.seasonStats[0];
-    const estimatedValueCents = stat
-      ? BigInt(
-          Math.round(
-            Number(rules.salaryCapCents) *
-              scoreToCapFraction(
-                computePerformanceScore({
-                  ...stat,
-                  trueShootingPct: stat.trueShootingPct ?? 0.56,
-                }),
-              ),
-          ),
-        )
-      : null;
+    // Priced through `priceContractCents`, the same function the free-agent
+    // detail page quotes, a rival club pays, and `signFreeAgentAction` holds
+    // the user to.
+    //
+    // This used to run a raw performance score through `scoreToCapFraction`
+    // and fall back to null when a player had no stats for the current season
+    // - and `seasonStats` is seeded real data that never advances, so from a
+    // save's SECOND season onward that was every free agent in the league. The
+    // board showed no price and, because rival interest needs a price to
+    // compare cap space against, no interest either. See
+    // docs/CONTRACT_AUDIT.md C-P1-2 and C-P1-3.
+    //
+    // `contractQualityScore` is anchored to `overallRating`, so a missing
+    // performance score costs accuracy rather than producing nothing.
+    const estimatedValueCents = BigInt(
+      priceContractCents({
+        season,
+        quality: contractQualityScore({
+          overallRating: fa.overallRating,
+          performanceScore: stat
+            ? computePerformanceScore({ ...stat, trueShootingPct: stat.trueShootingPct ?? 0.56 })
+            : null,
+          gamesPlayed: stat?.gamesPlayed ?? 0,
+        }),
+        age: resolvePlayerAge(fa.player, season),
+        yearsOfExperience: resolvePlayerExperience(fa.player, season),
+        position: fa.player.position,
+      }),
+    );
     return {
       id: fa.id,
       fullName: fa.player.fullName,
@@ -165,16 +181,14 @@ export default async function FreeAgentsPage({ params }: PageProps) {
       overallRating: fa.overallRating,
       valueTier: PLAYER_VALUE_TIER_LABEL[getPlayerValueTier(fa.overallRating)],
       pointsPerGame: stat?.pointsPerGame ?? null,
-      estimatedValue: estimatedValueCents ? formatCentsCompact(estimatedValueCents) : null,
-      estimatedValueCents: estimatedValueCents ? estimatedValueCents.toString() : null,
+      estimatedValue: formatCentsCompact(estimatedValueCents),
+      estimatedValueCents: estimatedValueCents.toString(),
       hasReSigningRights: fa.reSigningTeamId === league.userControlledTeamId,
-      // Who else is circling. Without a price there is nothing to compare a
-      // rival's cap space against, so interest is simply unknown rather than
-      // guessed at.
+      // Who else is circling. Every free agent now has a price to compare a
+      // rival's cap space against, so this is always computed - it used to be
+      // skipped for anyone without current-season stats, which was the whole
+      // league from a save's second season on.
       ...(() => {
-        if (!estimatedValueCents) {
-          return { interestLevel: "none" as const, interestedTeams: [] };
-        }
         const interest = computeRivalInterest(
           {
             position: fa.player.position,
