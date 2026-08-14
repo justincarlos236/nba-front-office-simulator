@@ -201,9 +201,19 @@ for (const [slot, count] of landedAt) {
   expectedSlot += slot * p;
   expectedValue += Number(valueAt(slot)) * p;
 }
-const projectedValue = Number(valueAt(1));
+// The real path: no known slot, worst team. Measures what the code actually
+// does rather than re-implementing the projection here.
+const projectedValue = Number(
+  computeDraftPickTradeValue({
+    currentSeason: SEASON,
+    pickSeason: SEASON,
+    round: 1,
+    overallPickNumber: null,
+    originalTeamCompetitivenessPercentile: 0,
+  }),
+);
 console.log(`  worst team (percentile 0):`);
-console.log(`    projected slot            1`);
+console.log(`    projected value comes from computeDraftPickTradeValue itself`);
 console.log(`    actual expected slot      ${expectedSlot.toFixed(2)}`);
 console.log(`    P(actually gets pick 1)   ${pct((landedAt.get(1) ?? 0) / TRIALS)}`);
 console.log(`    value at projected slot   ${usd(projectedValue)}`);

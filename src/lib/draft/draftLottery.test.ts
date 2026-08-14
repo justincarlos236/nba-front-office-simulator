@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LOTTERY_ODDS, runLottery, type LotteryTeam } from "./draftLottery";
+import { LOTTERY_ODDS, runLottery, type LotteryTeam, expectedLotterySlotForSeed } from "./draftLottery";
 
 function teams(): LotteryTeam[] {
   return Array.from({ length: 14 }, (_, i) => ({
@@ -58,5 +58,65 @@ describe("runLottery", () => {
     const order = runLottery(fewTeams, Math.random);
     expect(order).toHaveLength(5);
     expect(new Set(order).size).toBe(5);
+  });
+});
+
+describe("expectedLotterySlotForSeed", () => {
+  /**
+   * The regression this exists for. docs/DRAFT_AUDIT.md D-P1-1: the pick
+   * projection assumed the worst team receives pick 1, a certainty the
+   * post-2019 lottery explicitly removed, overvaluing a bottom team's future
+   * first by 47%.
+   */
+  it("does not hand the worst team pick 1", () => {
+    expect(expectedLotterySlotForSeed(1)).toBeGreaterThan(3);
+  });
+
+  it("agrees with a simulation of the same lottery", () => {
+    const teams: LotteryTeam[] = Array.from({ length: 14 }, (_, i) => ({
+      leagueTeamId: `S${i + 1}`,
+      seed: i + 1,
+    }));
+    let s = 12345;
+    const rng = () => {
+      s = (s * 1664525 + 1013904223) >>> 0;
+      return s / 4294967296;
+    };
+    const totals = new Array(14).fill(0);
+    const TRIALS = 40_000;
+    for (let t = 0; t < TRIALS; t++) {
+      const order = runLottery(teams, rng);
+      order.forEach((id, slot) => {
+        totals[Number(id.slice(1)) - 1] += slot + 1;
+      });
+    }
+    for (let seed = 1; seed <= 14; seed++) {
+      expect(totals[seed - 1] / TRIALS).toBeCloseTo(expectedLotterySlotForSeed(seed), 0);
+    }
+  });
+
+  /**
+   * The three worst records share a flat 14% of winning, but NOT the same
+   * expected slot: if none of them wins a top-four pick they fall to picks 5,
+   * 6 and 7 in record order. So the reward for being worse is real but small -
+   * a fraction of a pick - which is precisely the anti-tanking design. An
+   * earlier version of this test asserted the three were identical, which was
+   * wrong about the lottery rather than about the code.
+   */
+  it("separates the three flat-odds seeds by well under one pick", () => {
+    const gap = expectedLotterySlotForSeed(3) - expectedLotterySlotForSeed(1);
+    expect(gap).toBeGreaterThan(0);
+    expect(gap).toBeLessThan(1);
+  });
+
+  it("never improves a team's expectation by having a better record", () => {
+    for (let seed = 2; seed <= 14; seed++) {
+      expect(expectedLotterySlotForSeed(seed)).toBeGreaterThan(expectedLotterySlotForSeed(seed - 1));
+    }
+  });
+
+  it("clamps out-of-range seeds rather than returning undefined", () => {
+    expect(expectedLotterySlotForSeed(0)).toBe(expectedLotterySlotForSeed(1));
+    expect(expectedLotterySlotForSeed(99)).toBe(expectedLotterySlotForSeed(14));
   });
 });

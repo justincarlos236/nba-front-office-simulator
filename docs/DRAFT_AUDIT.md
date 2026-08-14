@@ -177,3 +177,75 @@ than the finding currently justifies.
 ```
 npx tsx scripts/draft-audit.ts
 ```
+
+---
+
+# RESOLUTION — 2026-08-15
+
+**D-P1-1 is closed.** Future first-rounders belonging to lottery teams are now
+priced through the lottery.
+
+| | Before | After | Truth |
+| --- | ---: | ---: | ---: |
+| Worst team's future first | **$52.4M** | **$35.6M** | $35.6M |
+| Error | **+46.9%** | **−0.1%** | — |
+
+The residual 0.1% is the audit's Monte Carlo sampling error against exact
+enumeration, not a modelling gap.
+
+## Two steps, because the first was not enough
+
+**Step one: use the expected slot.** `expectedLotterySlotForSeed` computes it
+exactly — the draw is four teams without replacement, so the outcome space is
+just the 14x13x12x11 = 24,024 ordered top-four sequences, enumerable in full
+against the same odds table `runLottery` draws from. No Monte Carlo, no
+hand-copied table to go stale. That took the error from +46.9% to **−5.3%**.
+
+**Step two: average the value, not the slot.** The residual was Jensen's
+inequality, not rounding. Pick value is strongly convex in slot — pick 1 is
+worth 8x pick 30 — so the value of the average slot is not the average value of
+the slot, and using the mean systematically underprices a lottery pick.
+`computeDraftPickTradeValue` now averages value across the full slot
+distribution. Error: **−0.1%**.
+
+## What did not change
+
+Known slots, playoff teams' picks and every second-rounder still take the
+straight deterministic path. There is no distribution to average over once a
+draft has run, and the lottery does not touch round two.
+
+## The shape of the correction, which is not uniform
+
+| Lottery seed | Old slot | New expected slot |
+| ---: | ---: | ---: |
+| 1 | 1 | **3.66** |
+| 4 | 4 | 4.44 |
+| 8 | 8 | **7.04** |
+| 12 | 12 | 11.40 |
+| 14 | 14 | 13.73 |
+
+The bottom three seeds lose heavily and mid-lottery seeds gain slightly —
+winning the draw moves a team up further than other teams winning pushes it
+down. That is the anti-tanking design showing up in valuation for the first
+time: being worst no longer buys a guaranteed asset, and the reward for being
+worse than 2nd or 3rd is a fraction of a pick rather than two.
+
+## Two corrections made along the way
+
+**A test asserted the wrong thing about the lottery.** I wrote a test claiming
+seeds 1-3 have identical expected slots, since they share flat 14% odds. They
+do not: if none wins a top-four pick they fall to picks 5, 6 and 7 in record
+order. The test was wrong about the rules, not about the code, and now asserts
+the gap is positive but under one pick.
+
+**A fixture encoded the old valuation.** `draftPickTradeRoll.test.ts` had a
+"near-even swap" between a future first and pick 10, chosen when that pick was
+worth $20.1M. Re-pricing moved it to $24.3M, and the partner correctly refused
+to overpay. The fixture moved to pick 8 rather than the acceptance threshold
+moving — the test's intent was a near-even swap, and that intent had to be
+re-anchored to the new numbers rather than the numbers bent back to it.
+
+## Verification
+
+1,477 tests (9 new, including a named regression guard), 0 lint errors,
+typecheck clean.

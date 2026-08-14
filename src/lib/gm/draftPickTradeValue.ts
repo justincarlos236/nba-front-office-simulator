@@ -9,6 +9,10 @@ import {
   POTENTIAL_AT_PICK_1,
   POTENTIAL_AT_PICK_60,
 } from "../draft/generateDraftClass";
+import {
+  lotterySlotDistributionForSeed,
+  LOTTERY_SEED_COUNT,
+} from "../draft/draftLottery";
 import { UPSIDE_WEIGHT } from "./playerTradeValue";
 
 export interface DraftPickTradeValueInput {
@@ -51,18 +55,35 @@ const YEARS_AWAY_DISCOUNT_PER_YEAR = 0.85;
 
 /**
  * Projects which slot a not-yet-drafted pick will likely land in, from its
- * original team's current competitiveness (0 = league's worst, which
- * projects to pick 1 - the earliest, most valuable slot; 1 = league's
- * best, which projects to the last pick in the round). A simplification
- * of the real lottery (no weighted randomness modeled here, just a linear
- * projection) - reasonable for a relative value estimate, not a claim
- * about the actual future draft order.
+ * original team's current competitiveness (0 = league's worst, 1 = league's
+ * best).
+ *
+ * **First-round picks belonging to lottery teams go through the lottery.**
+ * This used to map competitiveness straight onto a slot, so the worst team
+ * projected to pick 1 - a certainty the real rules explicitly removed. Post
+ * 2019 reform the three worst records share a flat 14%, and the worst team
+ * actually lands at pick 1 about one year in seven; its expected slot is 3.66,
+ * not 1. Pricing off the best possible outcome overvalued a bottom team's
+ * future first by 47%, which a user could sell at that price with tanking as
+ * the way to acquire one. See docs/DRAFT_AUDIT.md, D-P1-1.
+ *
+ * `expectedLotterySlotForSeed` computes that expectation exactly from the same
+ * odds table `runLottery` draws against, so the valuation and the draw cannot
+ * disagree.
+ *
+ * Picks outside the lottery keep the straight reverse-standings map, because
+ * that is exactly how those slots are assigned - there is no randomness to
+ * model. Second-round picks likewise: the lottery does not touch round two.
  */
+function standingsRankFor(competitivenessPercentile: number): number {
+  const roundSize = CLASS_SIZE / 2;
+  return Math.round(1 + competitivenessPercentile * (roundSize - 1));
+}
+
 function projectedPickNumber(round: 1 | 2, competitivenessPercentile: number): number {
   const roundSize = CLASS_SIZE / 2;
-  return round === 1
-    ? Math.round(1 + competitivenessPercentile * (roundSize - 1))
-    : Math.round(roundSize + 1 + competitivenessPercentile * (roundSize - 1));
+  const standingsRank = standingsRankFor(competitivenessPercentile);
+  return round === 2 ? roundSize + standingsRank : standingsRank;
 }
 
 /**
@@ -73,10 +94,35 @@ function projectedPickNumber(round: 1 | 2, competitivenessPercentile: number): n
  * `evaluateTradeOffer` (Phase 11c) - this is an objective baseline value.
  */
 export function computeDraftPickTradeValue(input: DraftPickTradeValueInput): bigint {
-  const pickNumber =
-    input.overallPickNumber ??
-    projectedPickNumber(input.round, input.originalTeamCompetitivenessPercentile);
+  // A first-rounder belonging to a lottery team has no single slot to price -
+  // it has a distribution. Pick value is strongly convex in slot (pick 1 is
+  // worth about eight times pick 30), so averaging the VALUE across that
+  // distribution is not the same as valuing the average SLOT: the latter
+  // underprices a lottery pick by about 5%. Everything else - a known slot, a
+  // playoff team's pick, any second-rounder - has a single deterministic slot
+  // and takes the straight path.
+  if (input.overallPickNumber === null && input.round === 1) {
+    const standingsRank = standingsRankFor(input.originalTeamCompetitivenessPercentile);
+    if (standingsRank <= LOTTERY_SEED_COUNT) {
+      const distribution = lotterySlotDistributionForSeed(standingsRank);
+      let expectedCents = 0;
+      distribution.forEach((probability, i) => {
+        if (probability <= 0) return;
+        expectedCents += probability * Number(valueForSlot(i + 1, input));
+      });
+      return BigInt(Math.max(0, Math.round(expectedCents)));
+    }
+  }
 
+  return valueForSlot(
+    input.overallPickNumber ??
+      projectedPickNumber(input.round, input.originalTeamCompetitivenessPercentile),
+    input,
+  );
+}
+
+/** The value of this pick if it lands at exactly `pickNumber`. */
+function valueForSlot(pickNumber: number, input: DraftPickTradeValueInput): bigint {
   const expectedOverall = expectedRatingForPick(pickNumber, OVERALL_AT_PICK_1, OVERALL_AT_PICK_60);
   // Potential falls convexly across a class - see POTENTIAL_FALLOFF_EXPONENT.
   // Projecting it linearly here would value late picks well above what the
