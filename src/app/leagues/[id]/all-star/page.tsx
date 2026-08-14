@@ -4,6 +4,21 @@ import { prisma } from "@/lib/prisma";
 import { PlayerChip } from "@/components/players/PlayerChip";
 import { ResolveWeekendButton } from "@/components/allstar/ResolveWeekendButton";
 
+/**
+ * Resolving All-Star weekend runs several events and writes their results.
+ *
+ * Without this the route runs on the platform default, which is short enough
+ * that a cold start on a contended database can end the request mid-write.
+ * These actions are not transactional end to end, so a timeout does not roll
+ * back - it leaves partial state.
+ *
+ * 60s is the ceiling on Vercel Hobby. If a plan change raises it, raising
+ * this is safe; lowering it is not, and the literal must stay statically
+ * analyzable (Next.js reads it at build time, so no imported constant).
+ */
+export const maxDuration = 60;
+
+
 export const dynamic = "force-dynamic";
 
 interface PageProps {

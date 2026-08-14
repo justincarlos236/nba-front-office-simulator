@@ -5,6 +5,21 @@ import { PlayoffControls } from "@/components/playoffs/PlayoffControls";
 import { PlayoffBracket, type BracketSeries } from "@/components/playoffs/PlayoffBracket";
 import { ChampionBanner } from "@/components/playoffs/ChampionBanner";
 
+/**
+ * Playoff rounds simulate whole series at a time.
+ *
+ * Without this the route runs on the platform default, which is short enough
+ * that a cold start on a contended database can end the request mid-write.
+ * These actions are not transactional end to end, so a timeout does not roll
+ * back - it leaves partial state.
+ *
+ * 60s is the ceiling on Vercel Hobby. If a plan change raises it, raising
+ * this is safe; lowering it is not, and the literal must stay statically
+ * analyzable (Next.js reads it at build time, so no imported constant).
+ */
+export const maxDuration = 60;
+
+
 export const dynamic = "force-dynamic";
 
 interface PageProps {

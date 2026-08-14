@@ -11,6 +11,24 @@ import { HowDoesThisWork } from "@/components/guide/HowDoesThisWork";
 import { PlayerChip } from "@/components/players/PlayerChip";
 import { PlayerAvatar } from "@/components/players/PlayerAvatar";
 
+/**
+ * Season advance: re-signings, progression, awards, finances, draft-order
+ * setup and the box-score rollup, across all 30 teams. The heaviest path in
+ * the app by a wide margin, and the worst one to lose halfway - a timeout
+ * here leaves a season part-advanced.
+ *
+ * Without this the route runs on the platform default, which is short enough
+ * that a cold start on a contended database can end the request mid-write.
+ * These actions are not transactional end to end, so a timeout does not roll
+ * back - it leaves partial state.
+ *
+ * 60s is the ceiling on Vercel Hobby. If a plan change raises it, raising
+ * this is safe; lowering it is not, and the literal must stay statically
+ * analyzable (Next.js reads it at build time, so no imported constant).
+ */
+export const maxDuration = 60;
+
+
 export const dynamic = "force-dynamic";
 
 interface PageProps {
