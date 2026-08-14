@@ -438,6 +438,31 @@ model PlayerGameStat {
 }
 
 /**
+ * One row per rate-limited action, holding only what a sliding window needs.
+ *
+ * Postgres rather than Redis so the stack stays at two services. The cost is
+ * one small indexed query per limited action; that is acceptable only because
+ * the limited endpoints (signup, sign-in, league creation) are rare and
+ * already make several database calls each. Do not extend this to hot paths
+ * like simulation - see src/lib/rateLimit/policy.ts for why those are
+ * deliberately unlimited.
+ *
+ * `key` is "<policy>:<identifier>", where the identifier is an IP for
+ * unauthenticated actions and a user id for authenticated ones. Rows are
+ * swept opportunistically once past their window (src/lib/rateLimit/rateLimit.ts),
+ * so this table stays small rather than becoming the growth problem it exists
+ * to prevent.
+ */
+model RateLimitHit {
+  id        String   @id @default(cuid())
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+  @@map("rate_limit_hits")
+}
+
+/**
  * One row per player per completed season, replacing that season's ~82
  * `PlayerGameStat` rows once the season is over.
  *

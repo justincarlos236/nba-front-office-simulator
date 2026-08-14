@@ -5,6 +5,8 @@ import { AuthError } from "next-auth";
 import { z } from "zod";
 import { signIn } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimitByIp } from "@/lib/rateLimit/rateLimit";
+import { SIGN_UP_POLICY, SIGN_IN_POLICY } from "@/lib/rateLimit/policy";
 
 export interface AuthActionState {
   error?: string;
@@ -28,6 +30,11 @@ export async function signUpAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
+
+  // After validation so malformed submissions don't spend a real attempt, and
+  // before the bcrypt hash below, which is the expensive part worth protecting.
+  const limit = await consumeRateLimitByIp(SIGN_UP_POLICY);
+  if (!limit.allowed) return { error: SIGN_UP_POLICY.message };
 
   const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });
   if (existing) {
@@ -71,6 +78,9 @@ export async function signInAction(
   if (!parsed.success) {
     return { error: "Enter a valid email and password." };
   }
+
+  const limit = await consumeRateLimitByIp(SIGN_IN_POLICY);
+  if (!limit.allowed) return { error: SIGN_IN_POLICY.message };
 
   try {
     await signIn("credentials", {

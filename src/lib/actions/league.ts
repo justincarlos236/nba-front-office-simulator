@@ -25,6 +25,8 @@ import {
 import { computeFranchisePopularity } from "@/lib/fans/fanHappiness";
 import { rollOwnerArchetype } from "@/lib/gm/ownerArchetype";
 import { selectTopPerTeam, DEFAULT_MAX_ROSTER_SIZE } from "@/lib/data-sources/rosterConstruction";
+import { consumeRateLimit } from "@/lib/rateLimit/rateLimit";
+import { LEAGUE_CREATION_POLICY } from "@/lib/rateLimit/policy";
 import {
   computeStrengthByTeam,
   computeStrengthPercentiles,
@@ -67,6 +69,14 @@ export async function createLeagueAction(formData: FormData) {
   });
   if (existingCount >= MAX_LEAGUES_PER_USER) {
     throw new Error(`You've reached the ${MAX_LEAGUES_PER_USER}-franchise limit.`);
+  }
+
+  // The cap above bounds how many leagues one account HOLDS; this bounds how
+  // fast it can create them, which is what a create-delete-create loop would
+  // otherwise use to churn storage without ever exceeding the cap.
+  const limit = await consumeRateLimit(LEAGUE_CREATION_POLICY, session.user.id);
+  if (!limit.allowed) {
+    throw new Error(LEAGUE_CREATION_POLICY.message);
   }
 
   const [teams, players, chosenTeam, user] = await Promise.all([
