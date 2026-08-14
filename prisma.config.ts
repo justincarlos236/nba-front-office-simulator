@@ -9,6 +9,20 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    /**
+     * Migrations must NOT go through Neon's connection pooler.
+     *
+     * The app runs on the pooled endpoint (`...-pooler...`) because each
+     * Vercel serverless instance opens its own connections and the direct
+     * endpoint runs out of them under concurrency. But the pooler runs
+     * PgBouncer in transaction mode, which has no stable session to hold the
+     * advisory lock Prisma takes for the duration of a migration - so
+     * migrating through it hangs or fails in ways that are hard to read.
+     *
+     * DIRECT_URL is therefore the unpooled endpoint, used only here. It falls
+     * back to DATABASE_URL so a local setup with a single plain Postgres URL
+     * still works without extra configuration.
+     */
+    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"],
   },
 });
