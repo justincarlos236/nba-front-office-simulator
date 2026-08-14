@@ -68,6 +68,71 @@ const HIGH_POTENTIAL_ANCHOR = 97;
 const MAX_CEILING_REALIZATION = 1.0;
 
 /**
+ * The share of prospects whose scouting report is simply wrong, and what a
+ * wrong report turns out to be worth.
+ *
+ * **Reliability scaling fixed the middle of the draft by making the top
+ * deterministic.** Measured over twenty simulated seasons, the middle and late
+ * draft busted convincingly - one in five at pick 30, half at pick 45 - while a
+ * number-one pick reached 80+ 97% of the time and busted *never*. Not because
+ * growth could not fail, but because `RELIABILITY_AT_HIGH_POTENTIAL` floors a
+ * 97-potential prospect's ceiling at 91: there was nothing left to fail at. See
+ * docs/DEVELOPMENT_AUDIT.md, D-P1-2.
+ *
+ * Real number-one picks bust. The league has Anthony Bennett and Markelle Fultz
+ * in living memory, and a model in which consensus is never wrong is not
+ * modelling scouting at all.
+ *
+ * So a slice of players fall *below* their report's floor entirely. This is
+ * deliberately a separate mechanism from the reliability ramp rather than a
+ * lower floor for everyone: the previous three attempts all failed by moving
+ * every band together, and the middle of the draft is now correct and must not
+ * move. A miss band only bites where the floor is high, which is exactly the
+ * top of the draft - a low-report prospect is already near
+ * `MISSED_REPORT_REALIZATION` and barely notices.
+ *
+ * The ramp inside the band keeps the distribution continuous, so there is no
+ * cliff between "missed" and "did not miss" - the bimodal outcome that sank the
+ * second attempt.
+ *
+ * **SET TO ZERO: this is attempt four, and it failed like the other three.**
+ * Swept against five constraints at once with results averaged over five
+ * twenty-season runs (scripts/development-calibration.ts), it has a genuine
+ * interior optimum at 0.40 rather than a boundary artefact - and at that
+ * optimum it hits every prospect-level target and destroys the league:
+ *
+ *   pick-1 bust  0.1% -> 12.9%   (real 10-15%)   GOOD
+ *   class yield  13.9 -> 8.4     (real 5-8)      GOOD
+ *   90+ players  13.0 -> 8.4     (real 14)       BROKEN
+ *   85+ players  47.0 -> 32.2    (real 44)       BROKEN
+ *
+ * The reason is structural, and it is the finding rather than the failure: in
+ * this model the league's stars come almost entirely from the draft, so "top
+ * picks can fail" and "the league has stars" are the same knob. No miss rate
+ * separates them, because the prospects a miss band removes are the identical
+ * population that becomes the 90+ tier six years later.
+ *
+ * That points the next attempt away from development entirely, at
+ * docs/DRAFT_AUDIT.md D-P2-1: classes carry 80+ ceilings at 42.8% against a
+ * league at 28.2%. Fewer high-potential prospects, with the survivors hitting
+ * harder, is the only shape that can deliver busts and stars at once.
+ *
+ * Left in place at zero rather than deleted so the harness still measures the
+ * shipped function, and so attempt five does not rediscover this the hard way.
+ * At zero the arithmetic is exactly the original reliability ramp.
+ */
+const SCOUTING_MISS_RATE = 0;
+const MISSED_REPORT_REALIZATION = 0.35;
+/**
+ * The top of the miss band. Ramping all the way back up to the report's own
+ * floor made most of the band not actually miss - at a 40% band, a player
+ * halfway through it still realised 0.60 of a 97 report, which is an 82 and no
+ * kind of bust. Capping the band well below the floor is what makes a miss a
+ * miss, at the cost of a small discontinuity at the band edge.
+ */
+const MISSED_REPORT_CEILING = 0.55;
+
+/**
  * The real ceiling a player converges to, from his scouted potential and a
  * trait that is stable across his career.
  *
@@ -79,6 +144,7 @@ export function effectiveCeiling(
   overallRating: number,
   potentialRating: number,
   trait: number,
+  missRate: number = SCOUTING_MISS_RATE,
 ): number {
   // A better report is a more reliable one - see RELIABILITY_AT_HIGH_POTENTIAL.
   const reportQuality = clamp01(
@@ -87,7 +153,18 @@ export function effectiveCeiling(
   const floor =
     RELIABILITY_AT_LOW_POTENTIAL +
     reportQuality * (RELIABILITY_AT_HIGH_POTENTIAL - RELIABILITY_AT_LOW_POTENTIAL);
-  const realization = floor + clamp01(trait) * (MAX_CEILING_REALIZATION - floor);
+
+  const t = clamp01(trait);
+  // The lowest slice of the trait distribution are the missed reports: they land
+  // below their report's floor, ramping up to it so the two regimes meet
+  // continuously. Above the band, the original reliability ramp is unchanged,
+  // rescaled so it still spans floor -> full realisation.
+  const realization =
+    missRate > 0 && t < missRate
+      ? MISSED_REPORT_REALIZATION +
+        (t / missRate) * (Math.min(MISSED_REPORT_CEILING, floor) - MISSED_REPORT_REALIZATION)
+      : floor +
+        ((t - missRate) / Math.max(1e-9, 1 - missRate)) * (MAX_CEILING_REALIZATION - floor);
 
   // Anchored to the rating floor, not to what the player is rated today.
   // Measuring the shortfall from his *current* rating makes the ceiling chase
@@ -200,6 +277,13 @@ export interface DevelopPlayerRatingInput {
    * league-average scouting outcome.
    */
   developmentTrait?: number;
+  /**
+   * Calibration seam only - see scripts/development-calibration.ts. Production
+   * callers omit it and get SCOUTING_MISS_RATE. Exists so a sweep exercises
+   * this exact function rather than a reimplementation of it, which is how a
+   * harness ends up measuring something the game does not do.
+   */
+  scoutingMissRate?: number;
 }
 
 export function developPlayerRating({
@@ -212,12 +296,14 @@ export function developPlayerRating({
   morale,
   playerDevelopmentDelta,
   developmentTrait,
+  scoutingMissRate,
 }: DevelopPlayerRatingInput): number {
   // The scouting report is an estimate; this is what it was actually worth.
   const realCeiling = effectiveCeiling(
     overallRating,
     potentialRating,
     developmentTrait ?? NEUTRAL_DEVELOPMENT_TRAIT,
+    scoutingMissRate ?? SCOUTING_MISS_RATE,
   );
   const room = realCeiling - overallRating;
   const coachBonus =

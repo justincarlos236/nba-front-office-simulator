@@ -343,3 +343,64 @@ it now has a measurement path it did not have when it was filed.
 ```
 npx tsx scripts/development-audit.ts
 ```
+
+---
+
+## Attempt 4 at D-P1-2 — a scouting miss band. Failed, and usefully.
+
+Recorded in the same spirit as attempts 1-3 above, so attempt 5 does not
+repeat it.
+
+**The idea.** Reliability scaling fixed the middle of the draft by making the
+top deterministic, so add a separate mechanism reaching only elite prospects: a
+slice of players whose report is simply *wrong*, landing below its floor
+entirely. A miss band only bites where the floor is high — the top of the draft
+— because a low-report prospect already sits near the missed-report value.
+Implemented as `SCOUTING_MISS_RATE` / `MISSED_REPORT_REALIZATION` /
+`MISSED_REPORT_CEILING` in `developPlayerRating.ts`.
+
+**The method, which is the part worth keeping.**
+`scripts/development-calibration.ts` sweeps against five constraints at once —
+pick-1 bust rate, class yield, and the 90+/85+/80+ populations as guardrails —
+with every candidate averaged over **five** twenty-season runs. A single run
+swings 85+ by about five, which is larger than the gap between adjacent
+candidates; the first two sweeps ran on one seed each and were fitting noise,
+producing 85+ readings of 33, 39, 33 across three consecutive steps.
+
+It also calls the shipped `developPlayerRating` through a `scoutingMissRate`
+seam rather than reimplementing it, so the sweep cannot measure something the
+game does not do.
+
+**The result.** A genuine interior optimum at 0.40 — not a boundary artefact,
+which the first two sweeps did produce:
+
+| Miss rate | Pick-1 bust | Class yield | 90+ | 85+ | 80+ |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 0.00 | 0.1% | 13.9 | 13.0 | 47.0 | 110.0 |
+| 0.12 | 3.5% | 12.3 | 12.8 | 39.2 | 99.0 |
+| 0.24 | 7.9% | 10.6 | 10.4 | 37.6 | 86.4 |
+| **0.40** | **12.9%** | **8.4** | **8.4** | **32.2** | **74.2** |
+| 0.60 | 20.0% | 5.8 | 7.0 | 20.6 | 49.4 |
+| **target** | **10-15%** | **5-8** | **14** | **44** | **82** |
+
+Every prospect-level target lands at 0.40. Both guardrails break: the star
+population falls from 13.0 to 8.4 and 85+ from 47 to 32.
+
+**Why, and this is the finding rather than the failure.** In this model the
+league's stars come almost entirely from the draft, so *"top picks can fail"*
+and *"the league has stars"* are the same knob. No miss rate separates them,
+because the prospects a miss band removes are the identical population that
+becomes the 90+ tier six years later. Attempts 1-3 each concluded "every lever
+moves all bands together"; this one shows why, rather than just observing it
+again.
+
+**Shipped at zero.** `SCOUTING_MISS_RATE = 0`, which reproduces the previous
+league exactly (11 / 48 / 124, verified). The mechanism is left in place rather
+than deleted so the harness keeps measuring the shipped function and attempt 5
+inherits a working sweep. No behaviour changed.
+
+**Where attempt 5 should look: not here.** `docs/DRAFT_AUDIT.md` D-P2-1 —
+classes carry 80+ ceilings at 42.8% against a league at 28.2%. Fewer
+high-potential prospects, with the survivors hitting harder, is the only shape
+that can deliver busts and stars simultaneously. That is a draft-generation
+change, and it now has a measurement path across both systems.
