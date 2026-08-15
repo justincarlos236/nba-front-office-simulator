@@ -442,3 +442,53 @@ abandoning it.
 - One save showed 870 completed games with no player box scores. Likely predates
   box-score generation, but not confirmed.
 - Play-in and playoff seeding were read but not stress-tested empirically.
+
+
+---
+
+# P1-8 RE-MEASURED — parity no longer increases — 2026-08-16
+
+P1-8 observed team-strength spread collapsing from 11.6 to 4.5 across six
+seasons, with best/worst converging on 51/30 wins. It is the sole reason
+**long-term stability** sat at 6/10, and the audit's own verdict called it "the
+one substantive gap left".
+
+It predates `docs/TEAM_STRENGTH_AUDIT.md`, which re-weighted
+`computeTeamStrength` — a change that fixed the spread a league *starts* with
+and said nothing about whether it holds. Nothing had checked.
+
+`scripts/parity-drift-audit.ts` keeps teams intact across seasons — rosters
+develop, age, retire and draft as units — averaged over five runs:
+
+| Season | Strength SD | Win SD | Best | Worst |
+| ---: | ---: | ---: | ---: | ---: |
+| 0 | 2.03 | 9.6 | 60 | 17 |
+| 4 | 2.32 | 11.0 | 60 | 18 |
+| 8 | 1.89 | 9.0 | 60 | 23 |
+| **12** | **2.48** | **11.6** | 66 | 21 |
+
+**Strength SD rises 22% over twelve seasons rather than collapsing.** Win SD
+holds between 9.0 and 11.6 against a real ~12, and the best/worst gap does not
+close. The league that used to flatten into a 51-30 band now sustains a 66-21
+one.
+
+The re-weighting is the likely cause: when the best player was 12.3% of a team,
+roster churn averaged talent out quickly; at 24.9% a star holds a club up on his
+own, and losing one drops it.
+
+> **Scope, stated plainly.** This models the two forces acting on every save
+> automatically — ageing/development, and the draft, which is deliberately
+> equalizing because the worst team picks first. It does **not** model free
+> agency or trades, which redistribute talent by decision rather than by rule.
+> The original observation came from a real save that had both. So this retires
+> the concern for the automatic forces and narrows any remaining drift to the
+> transactional ones; it does not prove a played save holds its spread.
+
+## Rescored
+
+| Dimension | Was | Now | Why |
+| --- | ---: | ---: | --- |
+| **Long-term stability** | **6/10** | **8/10** | Roster bloat fixed; talent concentration no longer degrades — spread widens over twelve seasons. Held below 9 only because free agency and trades are unmeasured here. |
+
+The audit's remaining verdict — "the one substantive gap left is that talent
+never concentrates" — no longer holds.
