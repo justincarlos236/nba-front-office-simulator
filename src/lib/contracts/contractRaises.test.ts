@@ -5,6 +5,8 @@ import {
   BIRD_RIGHTS_MAX_RAISE,
   STANDARD_MAX_RAISE,
 } from "./contractRaises";
+import type { SigningMechanism } from "@/lib/freeagency/validateSigning";
+import type { ExceptionUsed } from "@/generated/prisma/client";
 
 const FIRST_YEAR = 20_000_000_00n;
 const usd = (cents: bigint) => Number(cents) / 100 / 1_000_000;
@@ -79,5 +81,55 @@ describe("contractYearSalaries", () => {
     // A contract with no years is invisible to every cap sheet in the product.
     expect(contractYearSalaries(FIRST_YEAR, 0, "NONE")).toHaveLength(1);
     expect(contractYearSalaries(FIRST_YEAR, -2, "NONE")).toHaveLength(1);
+  });
+});
+
+/**
+ * `signFreeAgentAction` maps `validateSigning`'s `SigningMechanism` onto the
+ * `ExceptionUsed` enum stored on the contract, and `contractYearSalaries` then
+ * reads that stored value to pick a raise rate. The raise function was tested
+ * in isolation; this covers the hop between them, which is where a mechanism
+ * could quietly land on the wrong rate.
+ *
+ * Kept as a table rather than a copy of the ternary chain in the action, so a
+ * new mechanism has to be added here deliberately rather than defaulting into
+ * whichever branch the chain ends on.
+ */
+describe("signing mechanism maps to the right raise", () => {
+  const MECHANISM_TO_STORED: Record<SigningMechanism, ExceptionUsed> = {
+    VETERAN_MINIMUM: "VETERAN_MINIMUM",
+    RE_SIGNING_RIGHTS: "BIRD_RIGHTS",
+    CAP_SPACE: "NONE",
+    NON_TAXPAYER_MLE: "MID_LEVEL_NON_TAXPAYER",
+    TAXPAYER_MLE: "MID_LEVEL_TAXPAYER",
+  };
+
+  it("gives only a re-signing the 8% rate", () => {
+    for (const [mechanism, stored] of Object.entries(MECHANISM_TO_STORED) as [
+      SigningMechanism,
+      ExceptionUsed,
+    ][]) {
+      const expected =
+        mechanism === "RE_SIGNING_RIGHTS" ? BIRD_RIGHTS_MAX_RAISE : STANDARD_MAX_RAISE;
+      expect(maxRaiseFor(stored)).toBe(expected);
+    }
+  });
+
+  it("covers every mechanism validateSigning can return", () => {
+    // If a mechanism is added and not mapped, its raise silently becomes 5%.
+    const mechanisms: SigningMechanism[] = [
+      "CAP_SPACE",
+      "NON_TAXPAYER_MLE",
+      "TAXPAYER_MLE",
+      "VETERAN_MINIMUM",
+      "RE_SIGNING_RIGHTS",
+    ];
+    expect(Object.keys(MECHANISM_TO_STORED).sort()).toEqual([...mechanisms].sort());
+  });
+
+  it("escalates a Bird re-signing faster than the same money via cap space", () => {
+    const bird = contractYearSalaries(FIRST_YEAR, 4, MECHANISM_TO_STORED.RE_SIGNING_RIGHTS);
+    const room = contractYearSalaries(FIRST_YEAR, 4, MECHANISM_TO_STORED.CAP_SPACE);
+    expect(bird[3]).toBeGreaterThan(room[3]);
   });
 });
