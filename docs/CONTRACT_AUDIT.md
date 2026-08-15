@@ -842,3 +842,54 @@ maximum is at least the rule, and it is what an agent asks for.
 **Bootstrap deals take 5%, not 8%.** The mechanism behind a seeded contract is
 not knowable, and assuming Bird rights league-wide would inflate every opening
 payroll.
+
+
+---
+
+# C-P2-4 RESOLVED — the age curve is smooth now
+
+`ageValueMultiplier`'s past-peak discount was a hinge:
+
+```ts
+const discount = yearsPastPeak * 0.02 + Math.max(0, yearsPastPeak - 5) * 0.03;
+```
+
+The annual drop tripled from 2% to 5% the moment a player turned 32, and was
+flat on either side. Turning 31 cost 2% of value; turning 33 cost 5.6%. A cliff
+at one specific birthday, in a curve that `computePlayerTradeValue`,
+`priceContractCents`, `computeDraftPickTradeValue` and the re-signing model all
+multiply through.
+
+## Fixed
+
+Replaced with a quadratic, `0.008462·y + 0.002308·y²`, solved to pass through
+the old curve's two defensible anchors — **0.90 at 32** and **0.50 at 40** — so
+the endpoints are unchanged and only the path between them moved.
+
+| Age | Old | New | Old annual drop | New annual drop |
+| ---: | ---: | ---: | ---: | ---: |
+| 28 | 0.980 | 0.989 | 0.020 | 0.011 |
+| 31 | 0.920 | 0.929 | 0.020 | 0.025 |
+| **32** | **0.900** | **0.900** | 0.020 | 0.029 |
+| **33** | **0.850** | **0.866** | **0.050** | 0.034 |
+| 36 | 0.700 | 0.737 | 0.050 | 0.048 |
+| **40** | **0.500** | **0.500** | 0.050 | 0.066 |
+
+The drop grows continuously from about 1.1% a year at 28 to 6.6% at 40. Largest
+departure from the old curve is +5.3% at ages 36-37 — the middle of the band the
+hinge over-punished.
+
+Downstream, an 85-rated player's year-over-year change is now monotone with no
+step anywhere:
+
+| Age | Contract | YoY | Trade value | YoY |
+| ---: | ---: | ---: | ---: | ---: |
+| 31 | $46.2M | −2.6% | $70.4M | −3.1% |
+| 32 | $44.7M | −3.1% | $67.7M | −3.8% |
+| 33 | $43.0M | −3.8% | $64.6M | −4.6% |
+| 35 | $39.0M | −5.2% | $57.1M | −6.5% |
+| 38 | $31.2M | −8.3% | $42.7M | −10.9% |
+
+Six regression tests pin the smoothness, including one asserting no year falls
+more than 1.6x harder than the year before it — which the old hinge failed at
+2.5x.
