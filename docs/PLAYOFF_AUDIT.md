@@ -165,3 +165,43 @@ playoffs — is what needs the next audit.
 ```
 npx tsx scripts/playoff-audit.ts
 ```
+
+
+---
+
+# PO-P2-1 RESOLVED — the postseason has its own home court
+
+`simulateSeries` called `simulateGame` directly, so a playoff game differed
+from a February one by nothing at all: same advantage, same variance, same
+everything. Home teams won **58.2%** — the top of the engine's own
+regular-season band rather than above it.
+
+## Fixed
+
+`PLAYOFF_HOME_COURT_ADVANTAGE = 1.3`, against the regular season's 1.1, passed
+by `simulateNextSeriesGame`. Everything else about a playoff game is unchanged.
+
+| | Before | After | Real |
+| --- | ---: | ---: | ---: |
+| Regular-season home win | ~56% | ~56% *(unchanged)* | ~54% |
+| **Postseason home win** | **58.2%** | **59.8%** | **~60%** |
+| Postseason advantage | none | **+0.2 strength** | — |
+
+## The measurement had to include seeding
+
+The number could not be fitted on a neutral matchup. The higher seed hosts four
+of seven games **and** is the better team, so an observed playoff home win rate
+mixes home advantage with seeding — fitting against a 50/50 pair would have
+produced an advantage far too large once real matchups were played.
+
+`scripts/playoff-home-court-calibration.ts` therefore sweeps over full
+seven-game slates across all four first-round matchups, using the sixteen
+strongest rosters in the seeded league. The sweep has a clean interior optimum
+at 1.3 (59.8%), with 1.2 at 59.2% and 1.4 at 60.3% either side.
+
+## Scope
+
+Modest by design — about two percentage points, which is what the real split
+is. This was listed P2 for that reason. What it fixes is not the magnitude but
+the fact that the postseason was the one place in the simulation that differed
+from the regular season by nothing at all.

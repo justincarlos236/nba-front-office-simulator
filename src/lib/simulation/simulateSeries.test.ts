@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  simulateGame,
+  computeHomeWinProbability,
+  PLAYOFF_HOME_COURT_ADVANTAGE,
+} from "./simulateGame";
+import {
   isHigherSeedHomeGame,
   simulateNextSeriesGame,
   simulateSeriesToCompletion,
@@ -84,3 +89,66 @@ describe("simulateSeriesToCompletion", () => {
     );
   });
 });
+
+/**
+ * docs/PLAYOFF_AUDIT.md PO-P2-1. The postseason used to call `simulateGame`
+ * with the regular season's home advantage, so a playoff game differed from a
+ * February one by nothing at all - home teams won 58.2%, the top of the
+ * engine's own regular-season band rather than above it.
+ */
+describe("postseason home court is larger than the regular season's", () => {
+  it("uses a bigger advantage in the playoffs", () => {
+    expect(PLAYOFF_HOME_COURT_ADVANTAGE).toBeGreaterThan(1.1);
+  });
+
+  it("gives the home side a better chance in a playoff game than a league one", () => {
+    const evenly = 78;
+    const regular = computeHomeWinProbability(evenly, evenly);
+    const playoff = standardPlayoffHomeWinProbability(evenly, evenly);
+    expect(playoff).toBeGreaterThan(regular);
+  });
+
+  it("lands the postseason home win rate near the real 60%", () => {
+    // Measured over a full seven-game slate between a 1 and an 8 seed, which
+    // is how the calibration was taken - the higher seed hosts four games and
+    // is also the better team, so the two effects mix.
+    let s = 99;
+    const rng = () => {
+      s = (s * 1664525 + 1013904223) >>> 0;
+      return s / 4294967296;
+    };
+    let homeWins = 0;
+    let games = 0;
+    for (let trial = 0; trial < 4000; trial++) {
+      for (let gameNumber = 1; gameNumber <= 7; gameNumber++) {
+        const higherHome = isHigherSeedHomeGame(gameNumber);
+        const result = simulateGame(
+          higherHome ? 82 : 76,
+          higherHome ? 76 : 82,
+          rng,
+          0,
+          0,
+          PLAYOFF_HOME_COURT_ADVANTAGE,
+        );
+        if (result.homeWon) homeWins += 1;
+        games += 1;
+      }
+    }
+    expect(homeWins / games).toBeGreaterThan(0.56);
+    expect(homeWins / games).toBeLessThan(0.65);
+  });
+});
+
+function standardPlayoffHomeWinProbability(home: number, away: number): number {
+  let s = 1;
+  const rng = () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+  let wins = 0;
+  const N = 20_000;
+  for (let i = 0; i < N; i++) {
+    if (simulateGame(home, away, rng, 0, 0, PLAYOFF_HOME_COURT_ADVANTAGE).homeWon) wins += 1;
+  }
+  return wins / N;
+}

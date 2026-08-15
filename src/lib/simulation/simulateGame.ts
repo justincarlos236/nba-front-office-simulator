@@ -35,6 +35,25 @@
 const HOME_COURT_ADVANTAGE = 1.1;
 
 /**
+ * Home-court advantage in the postseason, which is genuinely larger than in the
+ * regular season.
+ *
+ * **The playoffs used to differ from a regular-season game by nothing at all.**
+ * `simulateSeries` called `simulateGame` directly: same advantage, same
+ * variance, same everything. Measured across 20,000 playoff games, home teams
+ * won 58.2% - the top of the engine's own regular-season band rather than above
+ * it. Real home teams win about 54% of regular-season games and 60% of playoff
+ * games. See docs/PLAYOFF_AUDIT.md, PO-P2-1.
+ *
+ * Louder crowds, tighter rotations and referees under more pressure are the
+ * usual explanations; the effect is well documented whatever the mechanism.
+ *
+ * Calibrated in `scripts/playoff-home-court-calibration.ts` against a measured
+ * 60% postseason home win rate, holding the regular-season value fixed.
+ */
+export const PLAYOFF_HOME_COURT_ADVANTAGE = 1.3;
+
+/**
  * Points of expected margin per point of strength differential.
  *
  * Calibrated empirically against real saves rather than assumed. The strength
@@ -86,8 +105,10 @@ export function computeStrengthDiff(
   awayStrength: number,
   homeCoachBonus: number = 0,
   awayCoachBonus: number = 0,
+  /** Defaults to the regular-season value; the postseason passes its own. */
+  homeCourtAdvantage: number = HOME_COURT_ADVANTAGE,
 ): number {
-  return homeStrength + HOME_COURT_ADVANTAGE + homeCoachBonus - awayStrength - awayCoachBonus;
+  return homeStrength + homeCourtAdvantage + homeCoachBonus - awayStrength - awayCoachBonus;
 }
 
 /**
@@ -152,8 +173,15 @@ export function simulateGame(
   rng: () => number = Math.random,
   homeCoachBonus: number = 0,
   awayCoachBonus: number = 0,
+  homeCourtAdvantage: number = HOME_COURT_ADVANTAGE,
 ): SimulatedGameResult {
-  const diff = computeStrengthDiff(homeStrength, awayStrength, homeCoachBonus, awayCoachBonus);
+  const diff = computeStrengthDiff(
+    homeStrength,
+    awayStrength,
+    homeCoachBonus,
+    awayCoachBonus,
+    homeCourtAdvantage,
+  );
   const homeWinProbability = standardNormalCdf((diff * MARGIN_PER_STRENGTH_POINT) / MARGIN_SD);
 
   // The margin, from the home team's perspective. Positive means the home team

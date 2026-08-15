@@ -1,4 +1,4 @@
-import { simulateGame } from "./simulateGame";
+import { simulateGame, PLAYOFF_HOME_COURT_ADVANTAGE } from "./simulateGame";
 
 export interface SeriesState {
   higherSeedWins: number;
@@ -34,7 +34,17 @@ export function simulateNextSeriesGame(
   const isHigherSeedHome = isHigherSeedHomeGame(gameNumber);
   const homeStrength = isHigherSeedHome ? higherStrength : lowerStrength;
   const awayStrength = isHigherSeedHome ? lowerStrength : higherStrength;
-  const result = simulateGame(homeStrength, awayStrength, rng);
+  // Postseason home court is larger than the regular season's - see
+  // PLAYOFF_HOME_COURT_ADVANTAGE. This call used to take the regular-season
+  // default, which made a playoff game differ from a February one by nothing.
+  const result = simulateGame(
+    homeStrength,
+    awayStrength,
+    rng,
+    0,
+    0,
+    PLAYOFF_HOME_COURT_ADVANTAGE,
+  );
   const higherSeedWonGame = isHigherSeedHome ? result.homeWon : !result.homeWon;
 
   const newState: SeriesState = {
