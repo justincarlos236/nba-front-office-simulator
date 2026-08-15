@@ -60,3 +60,22 @@ export function contractYearSalaries(
     BigInt(Math.round(first * (1 + raise * i))),
   );
 }
+
+/**
+ * A deal's average annual value.
+ *
+ * What a club is actually committing to, and therefore what its GM should be
+ * judging. `evaluateReSigningDecision` scores value per dollar and has no
+ * notion of term, so handing it a first-year figure understates an escalating
+ * deal by 4% over two years and 16% over five - the club would be agreeing to
+ * one number and paying another.
+ */
+export function averageAnnualValueCents(
+  firstYearSalaryCents: bigint,
+  years: number,
+  signedUsing: ExceptionUsed | null | undefined,
+): bigint {
+  const schedule = contractYearSalaries(firstYearSalaryCents, years, signedUsing);
+  const total = schedule.reduce((sum, salary) => sum + salary, 0n);
+  return total / BigInt(schedule.length);
+}

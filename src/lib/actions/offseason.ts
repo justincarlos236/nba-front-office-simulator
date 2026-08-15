@@ -131,7 +131,7 @@ import {
 import { applyMoraleChange } from "@/lib/morale/moraleLevel";
 import { rollupCompletedSeasons } from "@/lib/stats/rollupSeasonStats";
 import { loadInSimPerformance } from "@/lib/valuation/inSimPerformance";
-import { contractYearSalaries } from "@/lib/contracts/contractRaises";
+import { contractYearSalaries, averageAnnualValueCents } from "@/lib/contracts/contractRaises";
 
 // Local, server-side copy of the award-category label (small duplication
 // of the UI's own AWARD_LABELS constants, same established pattern as
@@ -721,6 +721,24 @@ export async function advanceSeasonAction(leagueId: string) {
           resolvePlayerExperience(lp.player, newSeason),
           lp.player.position,
         );
+        // Term first, so the decision can be made against what the deal
+        // actually costs. `pickContractLength` is seeded on the player and
+        // season, so hoisting it above the decision does not change which term
+        // is chosen - the same call happens below when the deal is recorded.
+        const offerYears = pickContractLength(
+          p.finalRating,
+          p.newAge,
+          createSeededRandom(`${p.leaguePlayerId}:${newSeason}`),
+        );
+        // Average annual value, not year one. Bird raises escalate a deal by
+        // up to 16% over five years, and `evaluateReSigningDecision` scores
+        // value per dollar with no notion of term - so judging on year one
+        // would commit a club to more than its GM agreed to.
+        const offerAverageAnnualCents = averageAnnualValueCents(
+          offerSalaryCents,
+          offerYears,
+          "BIRD_RIGHTS",
+        );
         const result = evaluateReSigningDecision({
           team: { identity, needs, personality, rosterSizeBeforeThisDecision: rosterSize },
           currentSeason: newSeason,
@@ -732,7 +750,7 @@ export async function advanceSeasonAction(leagueId: string) {
             careerGamesMissedToInjury: lp.careerGamesMissedToInjury,
             hasStandingTradeRequest: lp.tradeRequestActive,
           },
-          offerSalaryCents,
+          offerSalaryCents: offerAverageAnnualCents,
           // Franchise Finances (Phase C) - a CPU team bleeding cash gets
           // pickier about adding salary. Keyed off cash reserve through the
           // prior season (the finances pass for the completing season runs
@@ -768,11 +786,7 @@ export async function advanceSeasonAction(leagueId: string) {
             // back. Every CPU deal used to be a flat two years, so a single
             // offseason erased the variety the bootstrap created - see
             // docs/CONTRACT_AUDIT.md, C-P1-5.
-            years: pickContractLength(
-              p.finalRating,
-              p.newAge,
-              createSeededRandom(`${p.leaguePlayerId}:${newSeason}`),
-            ),
+            years: offerYears,
           });
         } else {
           playerUpdates.push({

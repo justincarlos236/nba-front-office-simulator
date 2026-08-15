@@ -3,6 +3,7 @@ import type { GmPersonality } from "@/lib/gm/gmPersonality";
 import type { TeamIdentity } from "@/lib/gm/teamIdentity";
 import type { TeamNeed } from "@/lib/gm/teamNeeds";
 import { clampToMaxSalary } from "@/lib/cap/maxSalary";
+import { averageAnnualValueCents } from "@/lib/contracts/contractRaises";
 
 /**
  * The CPU free-agent market: rival teams actually signing the players they
@@ -143,6 +144,12 @@ export function runCpuFreeAgentPass(
   for (const fa of ordered) {
     // A club is a serious suitor only if it can fit him *and* its GM says yes
     // at the asking price. Interest alone is not a bid.
+    // The club commits to the whole deal, not to year one. A cap-space signing
+    // escalates 5% a year, so judging on the first year alone would have a GM
+    // agree to one number and pay another - see averageAnnualValueCents.
+    const annualCostOf = (priceCents: bigint) =>
+      averageAnnualValueCents(priceCents, fa.years, "NONE");
+
     const wouldSignAt = (team: PursuingTeam, priceCents: bigint): boolean => {
       if (team.rosterSize >= ROSTER_LIMIT) return false;
       // Re-checked against *live* cap space, which falls as this same pass
@@ -167,7 +174,7 @@ export function runCpuFreeAgentPass(
             age: fa.age,
             careerGamesMissedToInjury: fa.careerGamesMissedToInjury,
           },
-          offerSalaryCents: priceCents,
+          offerSalaryCents: annualCostOf(priceCents),
           financialThresholdMultiplier: team.financialThresholdMultiplier,
         }).decision === "RESIGN"
       );

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   contractYearSalaries,
+  averageAnnualValueCents,
   maxRaiseFor,
   BIRD_RIGHTS_MAX_RAISE,
   STANDARD_MAX_RAISE,
@@ -131,5 +132,38 @@ describe("signing mechanism maps to the right raise", () => {
     const bird = contractYearSalaries(FIRST_YEAR, 4, MECHANISM_TO_STORED.RE_SIGNING_RIGHTS);
     const room = contractYearSalaries(FIRST_YEAR, 4, MECHANISM_TO_STORED.CAP_SPACE);
     expect(bird[3]).toBeGreaterThan(room[3]);
+  });
+});
+
+describe("averageAnnualValueCents", () => {
+  it("equals the first year on a one-year deal", () => {
+    expect(averageAnnualValueCents(FIRST_YEAR, 1, "NONE")).toBe(FIRST_YEAR);
+  });
+
+  it("exceeds the first year on any multi-year deal", () => {
+    // The gap this exists to close: a GM judging on year one commits to more.
+    for (const years of [2, 3, 4, 5]) {
+      expect(averageAnnualValueCents(FIRST_YEAR, years, "NONE")).toBeGreaterThan(FIRST_YEAR);
+    }
+  });
+
+  it("understates by more the longer and richer the escalator", () => {
+    const short = averageAnnualValueCents(FIRST_YEAR, 2, "NONE");
+    const long = averageAnnualValueCents(FIRST_YEAR, 5, "NONE");
+    const longBird = averageAnnualValueCents(FIRST_YEAR, 5, "BIRD_RIGHTS");
+    expect(long).toBeGreaterThan(short);
+    expect(longBird).toBeGreaterThan(long);
+  });
+
+  it("matches the schedule it averages", () => {
+    const schedule = contractYearSalaries(FIRST_YEAR, 4, "BIRD_RIGHTS");
+    const total = schedule.reduce((sum, s) => sum + s, 0n);
+    expect(averageAnnualValueCents(FIRST_YEAR, 4, "BIRD_RIGHTS")).toBe(total / 4n);
+  });
+
+  it("is about 12% above year one on a four-year Bird deal", () => {
+    const ratio =
+      Number(averageAnnualValueCents(FIRST_YEAR, 4, "BIRD_RIGHTS")) / Number(FIRST_YEAR);
+    expect(ratio).toBeCloseTo(1.12, 2);
   });
 });

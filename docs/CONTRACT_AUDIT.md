@@ -997,3 +997,37 @@ over. That is `scoreToCapFraction`'s overall level rather than any single
 finding above, it is the same curve C-P2-2 points at, and the finance audit
 deliberately froze it — recorded here as the first measurement of the effect in
 aggregate rather than at the top of the market alone.
+
+
+## CPU signing decisions now judge the whole deal, not year one
+
+A gap opened by the raise work above, found by tracing it rather than by a
+failing test.
+
+`evaluateReSigningDecision` scores value per dollar and **has no notion of
+term** — a one-year deal and a five-year deal at the same salary score
+identically. That was harmless while CPU contracts were flat, because year one
+was every year. With raises, it is not:
+
+| Term | Bird deal AAV ÷ year 1 | Cap-space deal AAV ÷ year 1 |
+| ---: | ---: | ---: |
+| 2 | 1.040x | 1.025x |
+| 4 | **1.120x** | 1.075x |
+| 5 | **1.160x** | 1.100x |
+
+So a GM was agreeing to one number and the club was paying another — up to 16%
+more across a five-year Bird re-signing.
+
+Both CPU paths now decide on **average annual value**:
+
+- CPU re-signings: the term is chosen before the decision instead of inside the
+  accept branch. `pickContractLength` is seeded on player and season, so the
+  same term is picked either way — only the ordering moved.
+- CPU free-agent signings: `wouldSignAt` costs a bid at its AAV.
+
+Measured across 165 rating/age/term combinations, **5 decisions flip (3%)**.
+Small, and in the right direction: clubs are now slightly pickier about long
+deals, which is what paying for them should cost.
+
+The first-year figure is unchanged — it is still what the contract starts at
+and what the interface quotes. Only the judgement moved.
