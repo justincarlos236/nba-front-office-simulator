@@ -1,5 +1,6 @@
 import { eligibleMidLevelException, type ApronLevel } from "../cap/apron";
 import { getSeasonCapRules } from "../cap/constants";
+import { veteranMinimumCents } from "../cap/veteranMinimum";
 import { isUnderCapSpace } from "../trade/salaryMatching";
 
 export interface SigningTeamCapState {
@@ -25,6 +26,13 @@ export interface ReSigningRights {
 export interface ValidateSigningInput {
   season: number;
   offerSalaryCents: bigint;
+  /**
+   * The player's years of service, which set his minimum - the scale runs
+   * about 3x from a rookie to a ten-year veteran. Omitted falls back to the
+   * rookie minimum, the lowest rung, so an unknown player is never blocked by
+   * a floor that is too high.
+   */
+  yearsOfExperience?: number;
   team: SigningTeamCapState;
   reSigningRights?: ReSigningRights;
 }
@@ -54,11 +62,16 @@ export function validateSigning(input: ValidateSigningInput): SigningValidationR
   const rules = getSeasonCapRules(input.season);
   const { team, offerSalaryCents } = input;
 
-  if (offerSalaryCents <= rules.emptyRosterChargeCents) {
+  // A minimum-salary deal is always legal regardless of apron - the one
+  // exception the CBA never restricts. The figure is this player's own
+  // service-year minimum, not the empty-roster cap hold that used to stand in
+  // for it (docs/CONTRACT_AUDIT.md C-P2-1).
+  const minimumCents = veteranMinimumCents(input.season, input.yearsOfExperience ?? 0);
+  if (offerSalaryCents <= minimumCents) {
     return {
       isValid: true,
       mechanism: "VETERAN_MINIMUM",
-      maxAllowedCents: rules.emptyRosterChargeCents,
+      maxAllowedCents: minimumCents,
       violation: null,
     };
   }

@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { computeCapSheet } from "@/lib/cap/capSheet";
 import { getSeasonCapRules } from "@/lib/cap/constants";
+import { veteranMinimumCents } from "@/lib/cap/veteranMinimum";
+import { resolvePlayerExperience } from "@/lib/players/age";
 import { DEFAULT_MAX_ROSTER_SIZE } from "@/lib/data-sources/rosterConstruction";
 import {
   rollEventCount,
@@ -847,7 +849,12 @@ async function maybeExecuteCpuSigning(
   // Always a minimum-salary, 1-year deal - the only signing mechanism that's
   // legal regardless of a CPU team's cap situation (see validateSigning),
   // and realistically the bulk of in-season free-agent activity anyway.
-  const offerSalaryCents = getSeasonCapRules(season).emptyRosterChargeCents;
+  // This player's own service-year minimum, not the empty-roster cap hold that
+  // used to stand in for it (docs/CONTRACT_AUDIT.md C-P2-1).
+  const offerSalaryCents = veteranMinimumCents(
+    season,
+    resolvePlayerExperience(freeAgent.player, season),
+  );
 
   await prisma.$transaction(async (tx) => {
     await tx.leaguePlayer.update({

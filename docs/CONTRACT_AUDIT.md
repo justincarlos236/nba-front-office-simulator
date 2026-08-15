@@ -724,3 +724,60 @@ signal. A 30-point scorer and a benchwarmer of equal rating priced identically
 before; they no longer do. Rating still dominates — a 65-rated producer cannot
 out-earn an 85-rated one — which is the C-P0-4 anchor doing its job, and there
 is a test pinning it.
+
+
+---
+
+# C-P2-1 RESOLVED — the minimum salary was the wrong rule entirely
+
+`emptyRosterChargeCents` is the **cap hold** charged against a team's books for
+each roster spot below twelve — a real CBA rule, correctly used by
+`computeCapSheet`. It was *also* standing in as the minimum **salary** in four
+places: `validateSigning`'s always-legal branch, the acceptance floor in
+`signFreeAgentAction`, in-season CPU signings, and the price floor in
+`priceContractCents`. Two unrelated rules sharing one number, and the number
+belonged to the other one.
+
+C-P2-1 recorded the symptom — a $1.3M minimum against a real $2.1M-$3.6M, with
+39 players pinned to it. The cause was the conflation.
+
+## Fixed
+
+`src/lib/cap/veteranMinimum.ts` holds the real service-year scale, expressed as
+fractions of the salary cap because the CBA ties them to it — so it stays
+correct for any season without a second table to keep in sync.
+
+| | Before | After |
+| --- | ---: | ---: |
+| Rookie minimum | $1.31M | $1.27M |
+| 5-year veteran | $1.31M | $2.67M |
+| 10-year veteran | **$1.31M** | **$3.64M** |
+| Scales with service | no | **yes** |
+| `emptyRosterChargeCents` used as a salary | 4 call sites | **0** |
+
+A ten-year veteran now costs nearly 3x what he did, which is what the real
+scale says and what makes a veteran-minimum contract a genuine roster-building
+decision rather than a rounding error.
+
+## What it exposed: the re-signing model's identity term is nearly inert
+
+Raising the floor broke a `reSigningDecision` test, and the interesting part is
+why. The fixture asserted that team **identity** separates a re-signing
+decision from team **personality** — a REBUILDING club with a WIN_NOW GM should
+let an aging veteran walk where a CONTENDER keeps him.
+
+Sweeping the offer directly, that separation exists only in a band roughly
+$1.3M to $2.0M wide. Below it every club re-signs; above it every club walks.
+No (age, rating) pair produces a realistic offer inside that band. The old
+fixture sat in it by accident, at the ~$1.4M floor this change replaced.
+
+**So the test was passing for the wrong reason** — it pinned a knife edge, not
+a behaviour. Its own comment already suspected as much ("this margin is worth
+revisiting when the re-signing model itself is next audited").
+
+The assertion is now scoped to what actually holds, and this is recorded as an
+open finding rather than papered over:
+
+| ID | Sev | Type | Finding |
+| --- | --- | --- | --- |
+| **C-P3-1** | P3 | MODEL | In `evaluateReSigningDecision`, team identity is swamped by GM personality: a WIN_NOW GM makes the same call at a REBUILDING club as at a CONTENDER for every realistic offer. Identity only separates the two inside a ~$0.7M band no real contract lands in. Belongs to a re-signing audit. |

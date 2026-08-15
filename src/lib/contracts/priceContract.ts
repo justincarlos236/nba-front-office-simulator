@@ -1,5 +1,6 @@
 import { getSeasonCapRules } from "../cap/constants";
 import { clampToMaxSalary } from "../cap/maxSalary";
+import { veteranMinimumCents } from "../cap/veteranMinimum";
 import { ageValueMultiplier } from "../valuation/ageCurve";
 import { scoreToCapFraction } from "../valuation/playerValue";
 
@@ -196,7 +197,14 @@ export function priceContractCents(input: PriceContractInput): number {
     positionalMarketFactor(input.position) *
     (input.noise ?? 1);
 
-  const floored = Math.max(value, Number(rules.emptyRosterChargeCents));
+  // Floored at this player's OWN minimum, which scales with service. It used
+  // to floor at `emptyRosterChargeCents` - the cap hold for an empty roster
+  // spot, a different rule entirely, and about a third of a ten-year veteran's
+  // real minimum. See docs/CONTRACT_AUDIT.md C-P2-1.
+  const floored = Math.max(
+    value,
+    Number(veteranMinimumCents(input.season, input.yearsOfExperience)),
+  );
   return Math.round(clampToMaxSalary(floored, input.age, input.season));
 }
 

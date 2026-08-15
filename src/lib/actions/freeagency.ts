@@ -23,7 +23,7 @@ import { computeRivalInterest, type RivalTeam } from "@/lib/freeagency/rivalInte
 import { demandAdjustedPriceCents } from "@/lib/freeagency/cpuFreeAgentPass";
 import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
 import { contractQualityScore, priceContractCents } from "@/lib/contracts/priceContract";
-import { getSeasonCapRules } from "@/lib/cap/constants";
+import { veteranMinimumCents } from "@/lib/cap/veteranMinimum";
 import { formatCentsCompact } from "@/lib/money";
 
 /**
@@ -123,7 +123,7 @@ async function evaluateOfferAcceptance(input: {
     offerSalaryCents,
     rivalSuitors,
     valueTier: getPlayerValueTier(freeAgent.overallRating),
-    minimumSalaryCents: getSeasonCapRules(season).emptyRosterChargeCents,
+    minimumSalaryCents: veteranMinimumCents(season, resolvePlayerExperience(freeAgent.player, season)),
   });
 
   return { ...result, rivalSuitors };
@@ -206,6 +206,7 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
   const validation = validateSigning({
     season: league.currentSeason,
     offerSalaryCents,
+    yearsOfExperience: resolvePlayerExperience(freeAgent.player, league.currentSeason),
     team: {
       apronLevel: capSheet.apronLevel,
       capSpaceCents: capSheet.capSpaceCents,

@@ -128,10 +128,16 @@ describe("evaluateReSigningDecision", () => {
     // context, not personality, is what splits it - is unchanged and still
     // holds; see docs/TRADE_AUDIT.md for why this margin is worth revisiting
     // when the re-signing model itself is next audited.
+    // Re-anchored from 59 when the salary floor became a real service-year
+    // minimum (docs/CONTRACT_AUDIT.md C-P2-1). A 31-year-old now costs about
+    // $3.8M rather than a $1.3M cap hold, so a 59-rated veteran is no longer
+    // worth keeping to ANYONE - which is correct, and erases the split this
+    // test is about. The split itself is intact, it sits at 65 now: WIN_NOW
+    // contender re-signs, play-in and rebuilding teams do not.
     const player = {
       position: "PF" as const,
-      overallRating: 59,
-      potentialRating: 59,
+      overallRating: 65,
+      potentialRating: 65,
       age: 31,
       careerGamesMissedToInjury: 0,
     };
@@ -162,8 +168,20 @@ describe("evaluateReSigningDecision", () => {
     );
     expect(balancedPlayIn.decision).toBe("LET_WALK");
 
-    // Same WIN_NOW personality, but the team itself isn't win-now-postured -
-    // context (identity), not just personality, should matter.
+    // Same WIN_NOW personality, but the team isn't win-now-postured. This USED
+    // to assert LET_WALK - that identity, not just personality, separates the
+    // decision. Measured properly, it does not: sweeping the offer directly,
+    // a REBUILDING/WIN_NOW club matches a CONTENDER/WIN_NOW one at every price
+    // except a band roughly $1.3M-$2.0M wide, and no (age, rating) pair puts a
+    // realistic offer inside it. The old fixture sat in that band by accident,
+    // at a ~$1.4M floor that C-P2-1 replaced with a real veteran minimum.
+    //
+    // So the assertion is scoped to what actually holds. A WIN_NOW GM re-signs
+    // this player wherever he works, which is defensible on its own terms -
+    // that is what the personality means. Whether identity SHOULD carry more
+    // weight against personality belongs to a re-signing audit; it is recorded
+    // in docs/CONTRACT_AUDIT.md rather than pinned by a knife-edge test that
+    // passes for the wrong reason.
     const winNowRebuilding = evaluateReSigningDecision(
       baseInput({
         team: {
@@ -175,7 +193,7 @@ describe("evaluateReSigningDecision", () => {
         player,
       }),
     );
-    expect(winNowRebuilding.decision).toBe("LET_WALK");
+    expect(winNowRebuilding.decision).toBe("RESIGN");
   });
 
   it("raises the bar once a team is already at the soft roster ceiling, tipping stingier personalities to let a marginal bench player walk", () => {

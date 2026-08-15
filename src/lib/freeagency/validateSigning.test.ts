@@ -2,14 +2,46 @@ import { describe, expect, it } from "vitest";
 import { ApronLevel } from "../cap/apron";
 import { getSeasonCapRules } from "../cap/constants";
 import { validateSigning } from "./validateSigning";
+import { veteranMinimumCents } from "../cap/veteranMinimum";
 
 const rules = getSeasonCapRules(2025);
 
 describe("validateSigning", () => {
   it("always allows a minimum-salary offer, regardless of apron level", () => {
+    // The real minimum, not `emptyRosterChargeCents`. This fixture used the
+    // cap hold because the two were the same number before C-P2-1 - they are
+    // different rules, and the rookie minimum is genuinely a little below the
+    // hold on the real scale.
     const result = validateSigning({
       season: 2025,
-      offerSalaryCents: rules.emptyRosterChargeCents,
+      offerSalaryCents: veteranMinimumCents(2025, 0),
+      team: { apronLevel: ApronLevel.SECOND_APRON, capSpaceCents: 0n },
+    });
+    expect(result.isValid).toBe(true);
+    expect(result.mechanism).toBe("VETERAN_MINIMUM");
+  });
+
+  it("holds a veteran to his own higher minimum, not a rookie's", () => {
+    // The regression C-P2-1 exists for: one flat figure meant a ten-year
+    // veteran could be signed at a rookie's minimum.
+    const rookieMinimum = veteranMinimumCents(2025, 0);
+    const asVeteran = validateSigning({
+      season: 2025,
+      offerSalaryCents: rookieMinimum,
+      yearsOfExperience: 10,
+      team: { apronLevel: ApronLevel.SECOND_APRON, capSpaceCents: 0n },
+    });
+    // Still legal - it is below his minimum, so it is a minimum deal - but the
+    // ceiling reported back is HIS minimum, which is what a caller prices off.
+    expect(asVeteran.mechanism).toBe("VETERAN_MINIMUM");
+    expect(asVeteran.maxAllowedCents).toBeGreaterThan(rookieMinimum);
+  });
+
+  it("lets a second-apron team pay a veteran his full minimum", () => {
+    const result = validateSigning({
+      season: 2025,
+      offerSalaryCents: veteranMinimumCents(2025, 10),
+      yearsOfExperience: 10,
       team: { apronLevel: ApronLevel.SECOND_APRON, capSpaceCents: 0n },
     });
     expect(result.isValid).toBe(true);
