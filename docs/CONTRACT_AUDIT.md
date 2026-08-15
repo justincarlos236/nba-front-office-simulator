@@ -781,3 +781,64 @@ open finding rather than papered over:
 | ID | Sev | Type | Finding |
 | --- | --- | --- | --- |
 | **C-P3-1** | P3 | MODEL | In `evaluateReSigningDecision`, team identity is swamped by GM personality: a WIN_NOW GM makes the same call at a REBUILDING club as at a CONTENDER for every realistic offer. Identity only separates the two inside a ~$0.7M band no real contract lands in. Belongs to a re-signing audit. |
+
+
+---
+
+# C-P2-3 RESOLVED — contract raises
+
+> **A correction to the finding as filed.** C-P2-3 records "Real deals use 5%
+> (Bird) / 8% (non-Bird)". That is backwards: **8% is the Bird-rights rate** —
+> the reward for re-signing with your own team — and **5% is the ceiling for
+> everyone else** (cap space, mid-level, minimum). Implemented as the real rule,
+> not as written.
+
+## What was wrong
+
+Four paths write contract years, and they disagreed:
+
+| Path | Raise |
+| --- | --- |
+| `generateContract` (bootstrap) | flat 5%, any mechanism |
+| `signFreeAgentAction` (user) | flat 5%, any mechanism |
+| **CPU re-signings** | **none — every year identical** |
+| **CPU free-agent signings** | **none — every year identical** |
+
+The flat CPU deals are the real defect, and it is not cosmetic. A club's
+payroll in year three is what decides whether it is over an apron, which
+decides which exceptions it may use and whether it can absorb salary in a
+trade. Flat contracts made every CPU team's future cap position quietly too
+healthy — permanently, since nothing ever escalated.
+
+## Fixed
+
+`contractRaises.ts` owns the rule: a raise is a percentage of the **first**
+year, not compounding, capped at 8% on Bird rights and 5% otherwise. That
+linear shape was already right in the two 5% paths; only the rate and its reach
+were wrong.
+
+A $25M four-year deal:
+
+| Year | Before (CPU) | After, cap space | After, Bird |
+| ---: | ---: | ---: | ---: |
+| 1 | $25.0M | $25.0M | $25.0M |
+| 2 | $25.0M | $26.3M | $27.0M |
+| 3 | $25.0M | $27.5M | $29.0M |
+| 4 | $25.0M | $28.8M | $31.0M |
+| **total** | **$100.0M** | **$107.5M** | **$112.0M** |
+
+Across a twelve-man book of $12M deals, a CPU club's year-four payroll moves
+from $144.0M to **$165.6M** — about $21.6M, which is the difference between
+comfortably under the tax and into the apron. That is the mechanism that had
+been missing.
+
+## Deliberately not done
+
+**No distribution over raise rates.** Real deals vary and declines are legal,
+but the raise a team agrees to is a negotiating outcome this model does not
+simulate, and sampling one would be a number invented to look varied. The
+maximum is at least the rule, and it is what an agent asks for.
+
+**Bootstrap deals take 5%, not 8%.** The mechanism behind a seeded contract is
+not knowable, and assuming Bird rights league-wide would inflate every opening
+payroll.

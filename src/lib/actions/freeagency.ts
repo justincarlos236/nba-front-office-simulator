@@ -24,6 +24,7 @@ import { demandAdjustedPriceCents } from "@/lib/freeagency/cpuFreeAgentPass";
 import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
 import { contractQualityScore, priceContractCents } from "@/lib/contracts/priceContract";
 import { veteranMinimumCents } from "@/lib/cap/veteranMinimum";
+import { contractYearSalaries } from "@/lib/contracts/contractRaises";
 import { formatCentsCompact } from "@/lib/money";
 
 /**
@@ -286,9 +287,9 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
       },
     });
 
-    const yearSalaries = Array.from({ length: years }, (_, i) =>
-      BigInt(Math.round(Number(offerSalaryCents) * (1 + 0.05 * i))),
-    );
+    // Raises follow the mechanism the deal was signed with - 8% on Bird
+    // rights, 5% otherwise. This was a flat 5% for everything.
+    const yearSalaries = contractYearSalaries(offerSalaryCents, years, contract.signedUsing);
     await tx.contractYear.createMany({
       data: yearSalaries.map((salaryCents, i) => ({
         contractId: contract.id,

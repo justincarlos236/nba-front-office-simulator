@@ -131,6 +131,7 @@ import {
 import { applyMoraleChange } from "@/lib/morale/moraleLevel";
 import { rollupCompletedSeasons } from "@/lib/stats/rollupSeasonStats";
 import { loadInSimPerformance } from "@/lib/valuation/inSimPerformance";
+import { contractYearSalaries } from "@/lib/contracts/contractRaises";
 
 // Local, server-side copy of the award-category label (small duplication
 // of the UI's own AWARD_LABELS constants, same established pattern as
@@ -1193,13 +1194,19 @@ export async function advanceSeasonAction(leagueId: string) {
             signedUsing: "BIRD_RIGHTS",
           },
         });
+        // 8% raises: this is a Bird-rights re-signing, which is exactly the
+        // deal the higher ceiling exists for. These were flat, so a CPU club's
+        // payroll never grew across a contract and its future apron position
+        // was quietly too healthy. See docs/CONTRACT_AUDIT.md C-P2-3.
         await prisma.contractYear.createMany({
-          data: Array.from({ length: r.years }, (_, i) => ({
-            contractId: contract.id,
-            season: newSeason + i,
-            salaryCents: r.offerSalaryCents,
-            guaranteedCents: r.offerSalaryCents,
-          })),
+          data: contractYearSalaries(r.offerSalaryCents, r.years, "BIRD_RIGHTS").map(
+            (salaryCents, i) => ({
+              contractId: contract.id,
+              season: newSeason + i,
+              salaryCents,
+              guaranteedCents: salaryCents,
+            }),
+          ),
         });
       }),
     );
@@ -1228,12 +1235,14 @@ export async function advanceSeasonAction(leagueId: string) {
             signedUsing: "NONE",
           },
         });
+        // 5%: signed into cap space, not with Bird rights, so the standard
+        // ceiling applies - matching the `signedUsing: NONE` above.
         await prisma.contractYear.createMany({
-          data: Array.from({ length: s.years }, (_, i) => ({
+          data: contractYearSalaries(s.salaryCents, s.years, "NONE").map((salaryCents, i) => ({
             contractId: contract.id,
             season: newSeason + i,
-            salaryCents: s.salaryCents,
-            guaranteedCents: s.salaryCents,
+            salaryCents,
+            guaranteedCents: salaryCents,
           })),
         });
       }),

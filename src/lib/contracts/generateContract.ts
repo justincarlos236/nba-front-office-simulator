@@ -5,6 +5,7 @@ import {
   type ContractQualityInput,
 } from "./priceContract";
 import { createSeededRandom, randomInRange } from "./seededRandom";
+import { contractYearSalaries } from "./contractRaises";
 
 export interface GenerateContractInput extends ContractQualityInput {
   /** Season the contract is signed/starts in. */
@@ -57,16 +58,20 @@ export function generateContract(input: GenerateContractInput): GeneratedContrac
   const lengthYears = pickContractLength(quality, input.age, rng);
   const endSeason = input.season + lengthYears - 1;
 
-  const years: GeneratedContractYear[] = [];
-  for (let i = 0; i < lengthYears; i++) {
-    // Modest year-over-year raise, matching how most real contracts are structured.
-    const salaryCents = BigInt(Math.round(firstYearSalaryCents * (1 + 0.05 * i)));
-    years.push({
-      season: input.season + i,
-      salaryCents,
-      guaranteedCents: salaryCents,
-    });
-  }
+  // Raises are a percentage of the first year, capped by the signing mechanism
+  // - see contractRaises.ts. Bootstrap deals take the standard 5% ceiling
+  // because the mechanism behind a seeded contract is not knowable; only a
+  // team's own Bird re-signing earns 8%, and assuming that league-wide would
+  // inflate every payroll.
+  const years: GeneratedContractYear[] = contractYearSalaries(
+    BigInt(Math.round(firstYearSalaryCents)),
+    lengthYears,
+    null,
+  ).map((salaryCents, i) => ({
+    season: input.season + i,
+    salaryCents,
+    guaranteedCents: salaryCents,
+  }));
 
   return { startSeason: input.season, endSeason, years };
 }
