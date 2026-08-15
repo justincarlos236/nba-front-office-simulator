@@ -893,3 +893,71 @@ step anywhere:
 Six regression tests pin the smoothness, including one asserting no year falls
 more than 1.6x harder than the year before it — which the old hinge failed at
 2.5x.
+
+
+---
+
+# Max-salary tiers now key off service, not age — 2026-08-16
+
+Investigating C-P2-2 turned up a stale premise and a real bug beneath it.
+
+## The premise expired
+
+`maxSalary.ts` keyed its tiers off **age**, documented at length as deliberate:
+"not one of the 537 players in the seeded dataset carries a `draftYear`". That
+was true when written. **The 2026-27 re-seed populates `draftYear` for 83% of
+players.**
+
+Worse, `resolvePlayerExperience` was *ignoring* it. The function had copied its
+precedence from `resolvePlayerAge` — a comment even said "mirroring" — but the
+two invert:
+
+| | Exact source | Proxy |
+| --- | --- | --- |
+| Age | `birthDate` | draft year, assuming a draft at 22 |
+| **Experience** | **`draftYear`** | **age, assuming a draft at 22** |
+
+It preferred the proxy whenever a birth date existed, which is nearly always.
+Measured across the 397 players carrying both fields, the age proxy understated
+service for **56%** of them, by 0.3 years on average and by 2 for Giannis
+Antetokounmpo. Experience sets the veteran minimum, the rookie-scale discount
+and the re-signing ceiling, so it was wrong everywhere at once.
+
+## The bug it caused
+
+Age tiers assume a draft at 20. Real players are drafted at 19-21 and stars
+earlier, so anyone off-pattern was mis-tiered:
+
+| Player | Rating | Age | Service | Old tier (age) | New tier (service) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Lauri Markkanen | 89 | 30 | 9 | **35%** | 30% |
+| Shai Gilgeous-Alexander | 98 | 28 | 8 | 30% | 30% |
+| Giannis Antetokounmpo | 96 | 31 | 13 | 35% | 35% |
+
+A 89-rated player was permitted a **larger maximum than a 98-rated one**,
+purely because of his birthday.
+
+## Fixed
+
+`maxSalaryFractionFor({ age, yearsOfExperience })` applies the real CBA service
+tiers — 25% at 0-6 years, 30% at 7-9, 35% at 10+ — and falls back to the age
+proxy for the 17% of rows with no draft year. `resolvePlayerExperience` now
+prefers `draftYear`.
+
+| | Before | After | Real |
+| --- | ---: | ---: | ---: |
+| At or over 25% of cap | 23 | **38** | ~30 |
+| At or over 30% of cap | 2 | **6** | ~14 |
+| Better player out-tiered by an older one | yes | **no** | — |
+
+## C-P2-2 itself stays open, with a sharper cause
+
+The top is still compressed, and it is **not** the tiers. Nikola Jokić — rated
+98, 12 years of service, entitled to 35% — prices at **28.0%**. Nobody in the
+league reaches the 35% tier, because `scoreToCapFraction` approaches its 0.35
+asymptote too slowly for any realistic quality score to get near it.
+
+So the ceiling is not what compresses the top of the market; the curve is. The
+finance audit deliberately left that curve unchanged (see above), so this is
+recorded rather than acted on — and C-P2-2's cause is now located precisely
+instead of being attributed to the seed-rating model.

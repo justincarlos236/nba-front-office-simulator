@@ -117,6 +117,7 @@ async function evaluateOfferAcceptance(input: {
     rivalSuitors,
     age,
     season,
+    resolvePlayerExperience(freeAgent.player, season),
   );
 
   const result = evaluateFreeAgentOffer({

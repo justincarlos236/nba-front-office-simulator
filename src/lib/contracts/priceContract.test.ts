@@ -8,7 +8,7 @@ import {
   rookieScaleDiscount,
 } from "./priceContract";
 import { getSeasonCapRules } from "../cap/constants";
-import { maxSalaryFractionForAge } from "../cap/maxSalary";
+import { maxSalaryFractionForAge, maxSalaryFractionFor } from "../cap/maxSalary";
 
 const SEASON = 2025;
 const CAP = Number(getSeasonCapRules(SEASON).salaryCapCents);
@@ -87,10 +87,18 @@ describe("contractQualityScore - sample size (C-P0-2)", () => {
 
 describe("priceContractCents - bounds (C-P0-3)", () => {
   it("never exceeds the individual maximum, at any quality", () => {
-    for (const age of [21, 27, 30, 36]) {
-      const max = CAP * maxSalaryFractionForAge(age);
+    // Age and service are paired plausibly - a 21-year-old with 12 years of
+    // service is not a player. The tiers are set by SERVICE (the real CBA
+    // rule); age is only the fallback when a draft year is unknown.
+    for (const [age, experience] of [
+      [21, 1],
+      [27, 6],
+      [30, 9],
+      [36, 14],
+    ] as const) {
+      const max = CAP * maxSalaryFractionFor({ age, yearsOfExperience: experience });
       for (const quality of [80, 90, 99, 150]) {
-        expect(price(quality, age, 12)).toBeLessThanOrEqual(Math.round(max));
+        expect(price(quality, age, experience)).toBeLessThanOrEqual(Math.round(max));
       }
     }
   });
@@ -101,7 +109,7 @@ describe("priceContractCents - bounds (C-P0-3)", () => {
   });
 
   it("holds the clamp even against negotiation noise at its maximum", () => {
-    const max = CAP * maxSalaryFractionForAge(27);
+    const max = CAP * maxSalaryFractionFor({ age: 27, yearsOfExperience: 8 });
     const withNoise = priceContractCents({
       season: SEASON,
       quality: 99,
@@ -112,15 +120,36 @@ describe("priceContractCents - bounds (C-P0-3)", () => {
     expect(withNoise).toBeLessThanOrEqual(Math.round(max));
   });
 
-  it("gives an older player a higher ceiling, as the real tiers do", () => {
-    expect(maxSalaryFractionForAge(31)).toBeGreaterThan(maxSalaryFractionForAge(24));
+  it("gives a longer-serving player a higher ceiling, as the real tiers do", () => {
+    expect(maxSalaryFractionFor({ age: 31, yearsOfExperience: 11 })).toBeGreaterThan(
+      maxSalaryFractionFor({ age: 24, yearsOfExperience: 3 }),
+    );
+  });
+
+  it("tiers on service rather than age when both are known", () => {
+    // The bug this replaced: Lauri Markkanen (9 years, rated 89) drew the 35%
+    // tier on age while Shai Gilgeous-Alexander (8 years, rated 98) was held
+    // to 30% - a worse player permitted a bigger maximum for being older.
+    expect(maxSalaryFractionFor({ age: 30, yearsOfExperience: 9 })).toBe(
+      maxSalaryFractionFor({ age: 28, yearsOfExperience: 8 }),
+    );
+  });
+
+  it("falls back to the age proxy when service is unknown", () => {
+    expect(maxSalaryFractionFor({ age: 31 })).toBe(maxSalaryFractionForAge(31));
+    expect(maxSalaryFractionFor({ age: 24, yearsOfExperience: null })).toBe(
+      maxSalaryFractionForAge(24),
+    );
   });
 });
 
 describe("priceContractCents - a better player earns more", () => {
   it("orders pay by quality across the whole range", () => {
+    // A tenured player, so the maximum-salary clamp does not flatten the top
+    // of the range - the point here is the ordering, not the ceiling, which
+    // the bounds tests above cover.
     const qualities = [62, 68, 74, 80, 86, 92];
-    const salaries = qualities.map((q) => price(q));
+    const salaries = qualities.map((q) => price(q, 30, 11));
     for (let i = 1; i < salaries.length; i++) expect(salaries[i]).toBeGreaterThan(salaries[i - 1]);
   });
 

@@ -13,28 +13,60 @@ import { getSeasonCapRules } from "./constants";
  * curve would have run straight past the ceiling unchecked. See
  * docs/CONTRACT_AUDIT.md, C-P0-3.
  *
- * **Keyed off age, not experience, and that is deliberate.** The real CBA sets
- * the tiers by years of service: 25% of the cap for 0-6 years, 30% for 7-9,
- * 35% for 10+. This codebase cannot see years of service - not one of the 537
- * players in the seeded dataset carries a `draftYear`, so
- * `resolvePlayerExperience` falls through to `age - 22` for every real player
- * in every save. Expressing the tiers in experience would therefore mean
- * expressing them in age anyway, one indirection later and with a worse
- * constant: `age - 22` assumes a draft at 22, while real NBA players are drafted
- * at 19-21 and stars earlier still. Measured on the seeded roster, the
- * experience form put Shai Gilgeous-Alexander (27) and Luka Dončić (26) in the
- * 25% tier when both are really on supermax deals, and left only two players in
- * the league above 30% of the cap against a real fourteen.
+ * **Keyed off years of service, which is the real rule, falling back to age.**
+ * The CBA sets the tiers by service: 25% of the cap for 0-6 years, 30% for 7-9,
+ * 35% for 10+.
  *
- * The boundaries below assume a typical draft age of 20, which maps the real
- * service tiers onto ages: 0-6 years is roughly age 26 and under, 7-9 is 27-29,
- * 10+ is 30 and over.
+ * This was age-based for a good reason that has since expired. The older
+ * dataset carried no `draftYear` for any player, so `resolvePlayerExperience`
+ * fell through to `age - 22` universally and expressing the tiers in experience
+ * meant expressing them in age anyway, one indirection later and with a worse
+ * constant. The 2026-27 re-seed populates `draftYear` for 83% of players, and
+ * `resolvePlayerExperience` now prefers it, so service is real data.
+ *
+ * The age proxy was not harmless. It assumes a draft at 20; real players are
+ * drafted at 19-21 and stars earlier still, so it mis-tiered anyone whose
+ * career started off-pattern. Lauri Markkanen (9 years of service, rated 89)
+ * drew the 35% tier on age while Shai Gilgeous-Alexander (8 years, rated 98)
+ * was held to 30% - a worse player permitted a bigger maximum purely because
+ * of his birthday.
+ *
+ * The age boundaries are kept as the fallback for the 17% of rows with no
+ * draft year, mapping the service tiers onto ages at a typical draft age of 20.
  */
 const MAX_SALARY_TIERS = [
   { minAge: 30, fractionOfCap: 0.35 },
   { minAge: 27, fractionOfCap: 0.3 },
   { minAge: 0, fractionOfCap: 0.25 },
 ] as const;
+
+/** The real CBA tiers, by years of service. */
+const MAX_SALARY_SERVICE_TIERS = [
+  { minYears: 10, fractionOfCap: 0.35 },
+  { minYears: 7, fractionOfCap: 0.3 },
+  { minYears: 0, fractionOfCap: 0.25 },
+] as const;
+
+/**
+ * The fraction of the cap this player may be paid at most.
+ *
+ * Prefers service years; falls back to the age proxy when they are unknown. A
+ * non-finite or negative input falls to the most restrictive tier - a bad
+ * value must never unlock a supermax.
+ */
+export function maxSalaryFractionFor(input: {
+  age: number;
+  yearsOfExperience?: number | null;
+}): number {
+  const years = input.yearsOfExperience;
+  if (years !== null && years !== undefined && Number.isFinite(years)) {
+    const base = MAX_SALARY_SERVICE_TIERS[MAX_SALARY_SERVICE_TIERS.length - 1];
+    return (
+      MAX_SALARY_SERVICE_TIERS.find((tier) => years >= tier.minYears) ?? base
+    ).fractionOfCap;
+  }
+  return maxSalaryFractionForAge(input.age);
+}
 
 /**
  * The fraction of the cap this player may be paid at most, by age tier.
@@ -49,9 +81,15 @@ export function maxSalaryFractionForAge(age: number): number {
 }
 
 /** The individual maximum salary in cents for a player of this age. */
-export function maxIndividualSalaryCents(age: number, season: number): number {
+export function maxIndividualSalaryCents(
+  age: number,
+  season: number,
+  yearsOfExperience?: number | null,
+): number {
   const rules = getSeasonCapRules(season);
-  return Math.round(Number(rules.salaryCapCents) * maxSalaryFractionForAge(age));
+  return Math.round(
+    Number(rules.salaryCapCents) * maxSalaryFractionFor({ age, yearsOfExperience }),
+  );
 }
 
 /**
@@ -59,6 +97,11 @@ export function maxIndividualSalaryCents(age: number, season: number): number {
  * pricing path so no valuation error, present or future, can produce a salary
  * the league would not permit.
  */
-export function clampToMaxSalary(salaryCents: number, age: number, season: number): number {
-  return Math.min(salaryCents, maxIndividualSalaryCents(age, season));
+export function clampToMaxSalary(
+  salaryCents: number,
+  age: number,
+  season: number,
+  yearsOfExperience?: number | null,
+): number {
+  return Math.min(salaryCents, maxIndividualSalaryCents(age, season, yearsOfExperience));
 }

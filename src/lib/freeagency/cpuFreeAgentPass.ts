@@ -46,6 +46,8 @@ export interface PursuableFreeAgent {
   overallRating: number;
   potentialRating: number;
   age: number;
+  /** Service years, which set his maximum-salary tier. */
+  yearsOfExperience?: number;
   careerGamesMissedToInjury: number;
   /** What this player commands - the offer every pursuing club must meet. */
   estimatedValueCents: bigint;
@@ -106,12 +108,14 @@ export function demandAdjustedPriceCents(
   seriousSuitors: number,
   age: number,
   season: number,
+  /** Service years, which set the max tier. Omitted falls back to the age proxy. */
+  yearsOfExperience?: number | null,
 ): bigint {
   const premium = Math.min(MAX_DEMAND_PREMIUM, PREMIUM_PER_RIVAL * Math.max(0, seriousSuitors - 1));
   const bid = Math.round(Number(baseCents) * (1 + premium));
   // A bidding war cannot break a league rule. The individual maximum binds here
   // exactly as it binds every other pricing path - see cap/maxSalary.ts.
-  return BigInt(Math.round(clampToMaxSalary(bid, age, season)));
+  return BigInt(Math.round(clampToMaxSalary(bid, age, season, yearsOfExperience)));
 }
 
 /**
@@ -184,6 +188,7 @@ export function runCpuFreeAgentPass(
       suitors.length,
       fa.age,
       currentSeason,
+      fa.yearsOfExperience,
     );
     const stillIn = suitors.filter((t) => wouldSignAt(t, asking));
 

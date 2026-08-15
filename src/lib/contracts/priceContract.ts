@@ -205,7 +205,9 @@ export function priceContractCents(input: PriceContractInput): number {
     value,
     Number(veteranMinimumCents(input.season, input.yearsOfExperience)),
   );
-  return Math.round(clampToMaxSalary(floored, input.age, input.season));
+  return Math.round(
+    clampToMaxSalary(floored, input.age, input.season, input.yearsOfExperience),
+  );
 }
 
 /**

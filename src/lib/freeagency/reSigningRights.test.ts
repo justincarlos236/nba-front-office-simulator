@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { computeReSigningMaxOfferCents } from "./reSigningRights";
 import { getSeasonCapRules } from "../cap/constants";
-import { maxSalaryFractionForAge } from "../cap/maxSalary";
+import { maxSalaryFractionFor } from "../cap/maxSalary";
 
 /** A peak-age veteran, so neither the age curve nor the rookie scale applies. */
 const PEAK = { age: 27, experience: 6 };
@@ -36,11 +36,23 @@ describe("computeReSigningMaxOfferCents", () => {
   });
 
   /** C-P0-3: nothing may exceed the individual maximum. */
-  it("never exceeds the individual maximum for the player's age", () => {
+  it("never exceeds the individual maximum for the player's service", () => {
+    // Age and service paired plausibly - the tiers are set by SERVICE, which
+    // is the real CBA rule; a 22-year-old with 12 years of it is not a player.
     const rules = getSeasonCapRules(2025);
-    for (const age of [22, 27, 30, 35]) {
-      const ceiling = computeReSigningMaxOfferCents(99, 2025, age, 12);
-      const max = BigInt(Math.round(Number(rules.salaryCapCents) * maxSalaryFractionForAge(age)));
+    for (const [age, experience] of [
+      [22, 2],
+      [27, 6],
+      [30, 9],
+      [35, 14],
+    ] as const) {
+      const ceiling = computeReSigningMaxOfferCents(99, 2025, age, experience);
+      const max = BigInt(
+        Math.round(
+          Number(rules.salaryCapCents) *
+            maxSalaryFractionFor({ age, yearsOfExperience: experience }),
+        ),
+      );
       expect(ceiling).toBeLessThanOrEqual(max);
     }
   });

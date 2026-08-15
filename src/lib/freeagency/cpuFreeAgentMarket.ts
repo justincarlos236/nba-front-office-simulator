@@ -228,6 +228,7 @@ export async function runCpuFreeAgentMarket(input: MarketInput): Promise<CpuSign
       overallRating: rating,
       potentialRating: lp.potentialRating,
       age,
+      yearsOfExperience,
       careerGamesMissedToInjury: lp.careerGamesMissedToInjury,
       estimatedValueCents,
       years: pickContractLength(rating, age, createSeededRandom(`${id}:${newSeason}`)),

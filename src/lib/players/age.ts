@@ -73,10 +73,28 @@ export function resolvePlayerAge(player: AgeSource, season: number): number {
   return ageFromBirthDate(player.birthDate, season) ?? estimateAge(player.draftYear, season);
 }
 
-/** Experience from the best source available, mirroring `resolvePlayerAge`. */
+/**
+ * A player's NBA experience, from the best source available.
+ *
+ * **The precedence is the opposite of `resolvePlayerAge`'s, and that is the
+ * point.** For age, `birthDate` is exact and `draftYear` is a guess. For
+ * experience it is the other way round: `season - draftYear` IS the service
+ * figure, while age only estimates it by assuming everyone was drafted at 22.
+ *
+ * This function used to mirror the age ordering - a comment even said so - and
+ * therefore ignored `draftYear` for any player who had a birth date, which is
+ * nearly all of them. Real players are drafted at 19-21 and stars earlier
+ * still, so the proxy understated service for 56% of the seeded roster,
+ * averaging 0.3 years and reaching 2 for Giannis Antetokounmpo. That matters
+ * because experience sets the veteran minimum, the rookie-scale discount and
+ * the re-signing ceiling.
+ *
+ * It was defensible when written: the older dataset carried no `draftYear` at
+ * all. The 2026-27 re-seed populates it for 83% of players, so the fallback is
+ * now the exception rather than the rule.
+ */
 export function resolvePlayerExperience(player: AgeSource, season: number): number {
+  if (player.draftYear) return estimateExperience(player.draftYear, season);
   const age = ageFromBirthDate(player.birthDate, season);
-  return age !== null
-    ? estimateExperienceFromAge(age)
-    : estimateExperience(player.draftYear, season);
+  return age !== null ? estimateExperienceFromAge(age) : estimateExperience(null, season);
 }
