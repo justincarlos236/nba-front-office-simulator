@@ -961,3 +961,39 @@ So the ceiling is not what compresses the top of the market; the curve is. The
 finance audit deliberately left that curve unchanged (see above), so this is
 recorded rather than acted on — and C-P2-2's cause is now located precisely
 instead of being attributed to the seed-rating model.
+
+
+## What the experience fix did to the rookie scale
+
+`rookieScaleDiscount` takes `yearsOfExperience`, so the broken resolution was
+mis-applying it too — and far more severely than the max-salary tiers, because
+the discount is steep at the bottom (0.35 at 0 years, 0.55 at 3, 1.00 from 4).
+
+**43% of players with a real draft year were on the wrong rung.** The age proxy
+assumes a draft at 22, so anyone drafted at 19-20 looked three years younger in
+service than they were, and kept a rookie discount they had long outgrown:
+
+| Player | Rating | Age | Proxy service | Real service | Discount | Price before | Price after |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Anthony Edwards | 93 | 25 | 3y | **6y** | 0.55 → 1.00 | $27.3M | **$40.6M** |
+| Tyrese Maxey | 89 | 25 | 3y | 6y | 0.55 → 1.00 | $25.5M | $40.6M |
+| Jalen Johnson | 89 | 24 | 2y | 5y | 0.45 → 1.00 | $26.5M | $40.6M |
+| Josh Giddey | 85 | 23 | 1y | **5y** | 0.40 → 1.00 | **$17.9M** | $40.6M |
+
+A 93-rated Anthony Edwards was priced 33% below market because the model
+believed he was a third-year player. This came free with the
+`resolvePlayerExperience` fix; no separate change was needed.
+
+## Two things measured while verifying it
+
+**The clamp is not over-binding.** 20 of 450 players (4%) price exactly at their
+maximum — 15 in the 25% tier, 5 in the 30% tier — against a real NBA figure
+nearer 7%. The maximum is doing its job without flattening the top.
+
+**But market prices do not sum to a legal payroll.** Pricing all 450 rostered
+players at market gives **$222.8M per 15-man roster against a $162.4M cap**, so
+a league of market-value contracts would sit ~37% over. Real teams run 10-20%
+over. That is `scoreToCapFraction`'s overall level rather than any single
+finding above, it is the same curve C-P2-2 points at, and the finance audit
+deliberately froze it — recorded here as the first measurement of the effect in
+aggregate rather than at the top of the market alone.
