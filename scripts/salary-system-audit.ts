@@ -6,8 +6,7 @@
  * the top and bottom of the market, and an automatic outlier detector meant to
  * be re-run after fixes.
  *
- * The multi-season half is scripts/salary-longsave-audit.ts and the market half
- * is scripts/salary-market-audit.ts.
+ * The market and multi-season half is scripts/salary-market-audit.ts.
  *
  * Run: npx tsx scripts/salary-system-audit.ts
  */
@@ -32,10 +31,16 @@ const pctCap = (c: number) => `${((c / cap) * 100).toFixed(1)}%`;
 const line = (n = 96) => console.log("=".repeat(n));
 const h = (t: string) => { line(); console.log(t); line(); };
 
+interface StatLine {
+  gamesPlayed: number; minutesPerGame: number; pointsPerGame: number;
+  reboundsPerGame: number; assistsPerGame: number; stealsPerGame: number;
+  blocksPerGame: number; turnoversPerGame: number; trueShootingPct: number | null;
+}
 interface Row {
   fullName: string; teamAbbreviation: string | null; position: string;
   seedOverallRating: number | null; seedPotentialRating: number | null;
-  birthDate?: string | null; draftYear?: number | null; stats?: unknown;
+  birthDate?: string | null; draftYear?: number | null;
+  stats?: StatLine | StatLine[] | null;
 }
 const ds = JSON.parse(
   fs.readFileSync(path.join(__dirname, "..", "prisma", "data", "nbaDataset.json"), "utf8"),
@@ -55,18 +60,19 @@ for (const p of ds.players) {
   const src = { birthDate: p.birthDate ? new Date(p.birthDate) : null, draftYear: p.draftYear ?? null };
   const age = resolvePlayerAge(src, SEASON);
   const exp = resolvePlayerExperience(src, SEASON);
-  const st = p.stats ? (Array.isArray(p.stats) ? (p.stats as Record<string, number>[])[0] : (p.stats as Record<string, number>)) : null;
-  const perf = st && st.gamesPlayed
-    ? computePerformanceScore({ ...(st as never), trueShootingPct: (st.trueShootingPct as number) ?? 0.56 })
-    : null;
+  const st: StatLine | null = p.stats ? (Array.isArray(p.stats) ? p.stats[0] : p.stats) : null;
+  const perf =
+    st && st.gamesPlayed
+      ? computePerformanceScore({ ...st, trueShootingPct: st.trueShootingPct ?? 0.56 })
+      : null;
   const quality = contractQualityScore({
-    overallRating: p.seedOverallRating, performanceScore: perf, gamesPlayed: (st?.gamesPlayed as number) ?? 0,
+    overallRating: p.seedOverallRating, performanceScore: perf, gamesPlayed: st?.gamesPlayed ?? 0,
   });
   const salary = priceContractCents({ season: SEASON, quality, age, yearsOfExperience: exp, position: p.position });
   league.push({
     name: p.fullName, team: p.teamAbbreviation ?? "?", pos: p.position,
     ovr: p.seedOverallRating, pot: p.seedPotentialRating ?? p.seedOverallRating,
-    age, exp, salary, gp: (st?.gamesPlayed as number) ?? 0,
+    age, exp, salary, gp: st?.gamesPlayed ?? 0,
     years: pickContractLength(quality, age, createSeededRandom(p.fullName)),
     tier: getPlayerValueTier(p.seedOverallRating),
   });
