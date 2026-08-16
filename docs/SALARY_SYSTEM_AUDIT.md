@@ -1,0 +1,429 @@
+# Salary & Contract System — Adversarial Audit
+
+**Opened** 2026-08-16. Commissioned specifically because implausible contracts
+had been observed in play and a surface review was not wanted.
+
+**Method.** Two read-only harnesses, no database:
+`scripts/salary-system-audit.ts` (distribution, tiers, sensitivity, large-sample,
+outlier detector) and `scripts/salary-market-audit.ts` (demand, cap space,
+CPU bidding, payroll, multi-season drift). Every number below reproduces.
+
+**Relationship to `docs/CONTRACT_AUDIT.md`.** That file is the running history
+and is largely closed — C-P0-1 through C-P0-4, C-P1-2/3/5, C-P2-1/3/4 are all
+resolved, several within the last two days. This audit is a fresh adversarial
+pass that assumes none of it and measures the system as it stands today.
+
+---
+
+## HEADLINE
+
+The contract system's *mechanics* are in good shape. Cap rules, signing
+mechanisms, escalators, minimums, maximum tiers, the demand premium and the
+acceptance model are all present, correct and consistent with each other.
+
+**Two calibration failures dominate everything else, and they are the same
+failure seen from two ends:**
+
+1. **The market prices a 15-man roster at $220.0M against a $162.4M cap.**
+   Only **1 of 30 teams** would be under the cap; **20 of 30 would be over the
+   second apron.**
+2. **Every player above roughly 86 OVR is priced identically** — an 87-rated
+   All-Star, a 93-rated All-NBA player and a 99-rated MVP all cost exactly
+   $48.7M.
+
+The first makes cap space nearly nonexistent, which starves free agency of the
+mechanism it needs to work at all. The second erases the distinction between
+good and generational at the top of the league.
+
+Neither is a bug. Both are the same curve being too generous in the middle and
+saturating at the top.
+
+---
+
+## 1. CONTRACT LIFECYCLE MAP
+
+Every path by which a contract comes into existence:
+
+| # | Path | Entry point | Pricing |
+| --- | --- | --- | --- |
+| 1 | Seeded / league bootstrap | `actions/league.ts` | `generateContract` → `priceContractCents` + noise 0.85-1.15 |
+| 2 | Rookie (drafted) | `actions/draft.ts` | `generateContract` with `yearsOfExperience: 0` → 0.35 discount |
+| 3 | User free-agent signing | `actions/freeagency.ts` | user-chosen, gated by `validateSigning` + `evaluateFreeAgentOffer` |
+| 4 | CPU re-signing | `actions/offseason.ts` | `computeReSigningMaxOfferCents` → `priceContractCents` |
+| 5 | CPU free-agent signing | `freeagency/cpuFreeAgentMarket.ts` | `priceContractCents` → `demandAdjustedPriceCents` |
+| 6 | In-season CPU signing | `actions/leagueEvents.ts` | `veteranMinimumCents` — always a minimum deal |
+| 7 | Trade (contract moves) | `actions/trade.ts` | `contract.update` — salary unchanged, team reassigned |
+| 8 | Expiry | `actions/offseason.ts` | contract rows deleted; player becomes a free agent |
+
+**There is no extension mechanism** (C-P2-6, marked intentional). Every good
+player therefore reaches free agency eventually, which concentrates the whole
+economy through paths 3–5.
+
+**There is no waive/release path.** A player cannot be cut, so no dead money
+exists and bad contracts can only be escaped by trade or expiry.
+
+### The single pricing formula
+
+Every path except 6 and 7 funnels into one function:
+
+```
+price = cap
+      × scoreToCapFraction(quality)          logistic: max 0.35, midpoint 80, steepness 0.17
+      × ageValueMultiplier(age)              1.15 max, quadratic decline past 27, floor 0.40
+      × rookieScaleDiscount(experience)      0.35 / 0.40 / 0.45 / 0.55 / 1.00
+      × positionalMarketFactor(position)     fitted to real pay by position
+      × noise                                0.85-1.15, generateContract only
+  floored at veteranMinimumCents(season, experience)
+  clamped at maxIndividualSalaryCents(age, season, experience)   25% / 30% / 35% by service
+```
+
+where `quality = overallRating + 10, tilted toward performanceScore by
+min(1, gamesPlayed/58) × 0.5`.
+
+**Potential is not an argument to any of it.** Confirmed by inspection and by
+test: 78/78, 78/85, 78/92 and 78/99 all price at $33.5M.
+
+---
+
+## FINDINGS
+
+### P0-1 — League payroll is 135% of the cap
+**Type: CONTRACT FORMULA · Severity: P0**
+
+**Observed.** Pricing all 450 rostered players at market and summing by team:
+
+| | Measured | Real NBA |
+| --- | ---: | ---: |
+| Average payroll per team | **$220.0M** | ~$170-190M |
+| As % of cap | **135%** | ~110-120% |
+| Lowest team payroll | $154.4M | — |
+| Median team payroll | $229.7M | — |
+| Highest team payroll | $261.7M | — |
+| Teams under the cap | **1 of 30** | ~8-12 |
+| Teams over the tax line | **24 of 30** | ~6-8 |
+| **Teams over the second apron** | **20 of 30** | ~2-3 |
+
+**Root cause.** `scoreToCapFraction` has `MIDPOINT = 80`, meaning a player rated
+80 earns *half of the maximum* — 17.5% of the cap. On this rating scale 80 is an
+ordinary starter, not a near-max player. The curve is calibrated so the middle
+of the league is paid like the top of it.
+
+**Downstream consequences**, and this is why it is P0 rather than P1:
+
+- **Free agency cannot function.** `computeRivalInterest` requires
+  `capSpace >= askingPrice`. With one team under the cap, almost no club is ever
+  a suitor, so the CPU market signs almost nobody and the demand premium never
+  fires.
+- **The apron rules become universal rather than exceptional.** Two thirds of
+  the league is hard-capped out of every mid-level exception.
+- **The user's own club is permanently taxed**, so payroll-reduction directives
+  and financial mandates fire constantly.
+- It cascades into `financialSpendingResistance`, luxury-tax bills, owner
+  confidence and job security.
+
+**Reproduction.** `npx tsx scripts/salary-market-audit.ts`, section 24.
+
+**Recommended fix.** Move `MIDPOINT` upward (85-87) so a mid-tier starter costs
+mid-tier money, and re-measure aggregate payroll as the acceptance criterion.
+The target is a per-team average near 110-115% of cap with 8-12 clubs under it.
+**Do not simply scale the curve down** — that lowers the top too, and the top is
+already compressed (P0-2).
+
+**Regression test.** Aggregate: pricing the seeded league must produce a mean
+team payroll between 105% and 125% of the cap, and at least six clubs under it.
+
+---
+
+### P0-2 — Everything above ~86 OVR costs exactly the same
+**Type: PLAYER VALUATION · Severity: P0**
+
+**Observed.** Sensitivity sweep, age 27, 7 years' service, SF:
+
+| OVR | Salary | Change |
+| ---: | ---: | ---: |
+| 78 | $32.1M | — |
+| 82 | $42.8M | +6.4% |
+| **86** | **$48.7M** | +13.7% |
+| **90** | **$48.7M** | **0.0%** |
+| **94** | **$48.7M** | **0.0%** |
+| **98** | **$48.7M** | **0.0%** |
+
+In the seeded league this puts **Zion Williamson (85), Lauri Markkanen (89),
+Jayson Tatum (93), Luka Dončić (95) and Shai Gilgeous-Alexander (98) on the
+identical $48.7M salary.**
+
+**Root cause.** Two ceilings stack. `scoreToCapFraction` asymptotes at 0.35 of
+cap, and the individual maximum for a 7-9 year player is 0.30. Because the curve
+is already generous in the middle (P0-1), it crosses 0.30 at roughly 86 OVR —
+so the max clamp, not the valuation, decides every salary above that.
+
+The max tier is doing its job correctly. The problem is that the curve arrives
+at the ceiling twelve rating points too early.
+
+**Downstream consequences.**
+- The trade system cannot express that a 98 is worth more than an 86 *in
+  salary* — it only shows up in trade value, so a swap of the two looks like a
+  clean salary match.
+- `docs/FREE_AGENCY_AUDIT.md` FA-P2-1 is a direct symptom: the demand premium
+  is absorbed entirely for any player at the max, so competition for the best
+  players moves nothing.
+- Star acquisition is under-costed relative to its on-court effect, which is
+  amplified by the team-strength re-weighting that made stars 24.9% of a team.
+
+**Reproduction.** `npx tsx scripts/salary-system-audit.ts`, sections 9 and 30.
+
+**Recommended fix.** Same lever as P0-1 — moving `MIDPOINT` right delays the
+crossing and restores separation across 86-99 without touching the max tiers.
+Verify with the sensitivity table: each +4 OVR above 86 should still move salary.
+
+**Regression test.** `price(98) > price(93) > price(88)` strictly, at fixed age
+and service.
+
+---
+
+### P1-1 — The middle of the league is paid like the top of it
+**Type: CONTRACT FORMULA · Severity: P1**
+
+Same root cause as P0-1, recorded separately because it is what a player
+actually *sees*.
+
+| Archetype | OVR | Simulator | Real NBA equivalent |
+| --- | ---: | ---: | ---: |
+| Average starter | 76 | **$26.3M** (16.2% cap) | ~$8-14M |
+| High-end starter | 81 | **$39.8M** (24.5% cap) | ~$25-30M |
+| Rotation player | 70 | **$12.8M** (7.9% cap) | ~$5-8M |
+| League median | — | **$9.4M** (5.8% cap) | ~$5M (3.2%) |
+
+A 78-rated 24-year-old commands **$33.5M**. That is the shape of the observed
+"implausible contracts": not a broken formula, a curve that pays an ordinary
+starter like a second option.
+
+---
+
+### P1-2 — Rookie contracts are half price and ignore draft slot
+**Type: INTENTIONAL SIMPLIFICATION · Severity: P1**
+
+**Observed.**
+
+| Pick | Expected OVR | Year-1 salary | % of cap | Real #1 pick |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 72 | **$6.5M** | 4.0% | ~$12.5M (8%) |
+| 14 | 70 | $5.0M | 3.1% | ~$4.5M |
+| 60 | 62 | $1.5M | 0.9% | ~$1.2M |
+
+`rookieScaleDiscount` keys off years of service alone, so **every rookie gets
+the identical 39% discount** and slot only matters through the small rating
+difference the draft curve produces. The real rookie scale is steeply
+pick-dependent — the first pick earns roughly five times the thirtieth.
+
+**Consequence.** The top of the draft is *too cheap* and the bottom is about
+right, which makes a high pick an even better asset than it should be — on top
+of `docs/DRAFT_AUDIT.md`'s pick valuation. Late firsts are correspondingly
+under-rewarded.
+
+Marked INTENTIONAL SIMPLIFICATION because the docstring says so, but the
+simplification is now doing measurable harm at the top of round one.
+
+---
+
+### P1-3 — Positional premium is 29% at identical rating
+**Type: PLAYER VALUATION · Severity: P1**
+
+| Position | Salary at 82 OVR | vs cheapest |
+| --- | ---: | ---: |
+| C | $33.2M | — |
+| PG | $34.2M | +3.0% |
+| SG | $36.5M | +9.9% |
+| PF | $39.7M | +19.8% |
+| **SF** | **$42.8M** | **+29.1%** |
+
+`positionalMarketFactor` was fitted against real pay-by-position and is
+defensible in *direction* — the league does pay centres less. A 29% spread
+between two players of identical rating is large enough to be the dominant term
+for mid-tier players, and it compounds with P0-1: an 82-rated small forward is
+pushed to the max clamp while an 82-rated centre is not.
+
+---
+
+## P2 FINDINGS
+
+| ID | Type | Finding |
+| --- | --- | --- |
+| S-P2-1 | MARKET LOGIC | The demand premium is inert above 86 OVR — 1 suitor and 10 suitors both pay $48.7M. Duplicate of FA-P2-1; the cause is P0-2, not the premium. |
+| S-P2-2 | MARKET LOGIC | A star with **zero** rival suitors accepts 60% of his ask (`NO_DEMAND_FLOOR`). Correct in direction, but 60% of a max is a $19M discount available to any club with room. |
+| S-P2-3 | CONTRACT FORMULA | Contract length has only 4 quality bands and ignores position, injury history and team context. Archetypes still come out sensible (superstar 4-5y, fringe 1-2y, 36-year-old 1y). |
+| S-P2-4 | INTEGRATION GAP | No waive/release path, so no dead money exists and a bad contract can never be eaten. |
+| S-P2-5 | DATA ISSUE | The largest single-OVR salary jump is +17.4% at 61→62, where the veteran minimum floor stops binding. Harmless but a visible discontinuity. |
+
+---
+
+## WHAT IS WORKING — DO NOT CHANGE
+
+Measured and sound. Several of these are the exact things an audit of this kind
+usually finds broken.
+
+- **Cap space does not feed into price.** Team room is not an argument to any
+  pricing function. Verified: a player's ask is $48.7M whether the club has $5M
+  or $60M of room. **The classic cap-space overpay exploit does not exist here.**
+- **CPU teams cannot bid against themselves.** `computeRivalInterest` gates on
+  `capSpace >= ask`, so a club that cannot afford a player is never counted as a
+  suitor and cannot inflate his price.
+- **The demand premium is bounded.** 8% per extra suitor, capped at 32%. No
+  runaway auction is possible.
+- **Everything is cap-relative.** Max, minimum, and every price are fractions of
+  the cap, so all scale together automatically. Measured across ten seasons, an
+  82-rated player costs 26.4% of the cap in 2026 and 26.4% in 2035.
+- **Long-save salary structure is stable.** Median salary holds at 7.0% → 7.6%
+  of cap across ten simulated seasons. No inflation spiral, no compression.
+- **The minimum-salary exploit is closed.** A 90-rated player refuses the
+  veteran minimum; a 68-rated fringe player accepts it. Both correct.
+- **Potential does not buy salary.** Exactly the separation asked for — a
+  developmental player cannot draw star money on ceiling alone.
+- **Contract length is sensibly archetyped.** 36-year-olds get one year;
+  superstars get four to five; fringe players one to two.
+
+---
+
+## SENSITIVITY SUMMARY — which variables distort most
+
+| Variable | Effect size | Verdict |
+| --- | --- | --- |
+| **OVR, 70→86** | $13.0M → $48.7M (**+275%**) | dominant, and too steep in the middle |
+| **OVR, 86→98** | $48.7M → $48.7M (**0%**) | dominant defect (P0-2) |
+| Position | ±29% | too large for a secondary term (P1-3) |
+| Age, 26→38 | $40.6M → $26.9M (−34%) | smooth, no cliffs — sound |
+| Service (rookie scale) | ×0.35 → ×1.00 | correct shape, wrong slot-independence |
+| Demand (1→5 suitors) | +32% max | bounded, sound |
+| **Potential** | **0%** | by design |
+| Cap growth | proportional | sound |
+
+---
+
+## MULTI-SEASON RESULTS
+
+| Season | Cap | >$10M | >$20M | >$30M | >$40M | Median | Median/cap |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 2026 | $162.4M | 240 | 146 | 101 | 55 | $11.3M | 7.0% |
+| 2028 | $179.0M | 241 | 150 | 93 | 63 | $11.0M | 6.1% |
+| 2030 | $197.4M | 291 | 140 | 89 | 59 | $12.4M | 6.3% |
+| 2035 | $251.9M | 361 | 200 | 122 | 78 | $17.6M | 7.0% |
+| 2036 | $264.5M | 367 | 225 | 142 | 95 | $20.2M | 7.6% |
+
+Median-to-cap moves 7.0% → 7.6% over ten seasons. **There is no inflation
+spiral.** The rise in absolute counts tracks cap growth and the 80+ population,
+not a runaway formula.
+
+---
+
+## USER EXPLOIT PROBES
+
+| Probe | Legal? | Accepted? | Verdict |
+| --- | --- | --- | --- |
+| 90 OVR for the veteran minimum, no rivals | legal | **refuses** | closed |
+| 82 OVR for the veteran minimum, no rivals | legal | **refuses** | closed |
+| 68 OVR fringe for the minimum | legal | accepts | correct |
+| 90 OVR at 60% of ask, no rivals | **illegal** (cap) | accepts | S-P2-2 — needs room |
+| 90 OVR at 60% of ask, 5 rivals | illegal | **refuses** | closed |
+
+**No practical exploit was found in the pricing or acceptance layer.** The one
+live discount — 60% of ask when nobody else is bidding — requires cap space,
+which P0-1 has made almost nonexistent. Fixing P0-1 will make S-P2-2 reachable,
+so it should be re-probed after.
+
+---
+
+## SCORECARD
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Contract Realism | **4** | Mechanically complete; an average starter earns 16% of the cap and every star earns the same. |
+| Salary Calibration | **3** | 135% of cap per team. The single worst number in the system. |
+| Free Agency Market Logic | **6** | Demand premium, suitor gating and acceptance are all correct — and mostly inert because nobody has room. |
+| Contract Length Logic | **7** | Believable by archetype; ignores position, injury and context. |
+| Cap Integration | **5** | Every rule modelled correctly, and the league cannot fit inside them. |
+| CPU Contract Decision-Making | **6** | Judges AAV, respects roster limits and cash, reuses one engine — starved of cap space to act on. |
+| Long-Save Stability | **8** | Cap-relative throughout; median/cap flat across ten seasons. |
+| Exploit Resistance | **7** | No cap-space feedback, no self-bidding, minimum exploit closed. One discount pending re-probe. |
+
+---
+
+## DIRECT ANSWERS
+
+**Is the current contract system trustworthy enough to support a multi-season
+simulator?**
+For *stability*, yes — it will not spiral or corrupt itself over ten seasons.
+For *believability*, not yet. A league where 20 of 30 teams are over the second
+apron and every star earns the same is not a credible NBA.
+
+**Are absurd contracts isolated bugs or a systemic valuation problem?**
+**Systemic, and singular.** They are one mis-calibrated parameter —
+`scoreToCapFraction`'s midpoint — seen from different angles. There is no
+scattering of independent bugs.
+
+**Which variables are responsible for the biggest distortions?**
+`scoreToCapFraction`'s `MIDPOINT` first and by a distance; then
+`positionalMarketFactor`'s spread; then `rookieScaleDiscount`'s
+slot-independence.
+
+**Does the system preserve believable separation between tiers?**
+Below 86 OVR, yes — superstar/star/starter/rotation/minimum bands are ordered
+and mostly distinct. Above 86, **no**: the separation collapses entirely.
+
+**Does it remain stable after 5-10 seasons?**
+Yes. This is the system's strongest property and it is worth protecting through
+any fix.
+
+**Smallest set of fixes before trusting contracts again?**
+Two, and the first may be sufficient for both:
+1. **Re-fit `scoreToCapFraction`'s midpoint** against aggregate league payroll,
+   with top-end separation as a hard constraint. Fixes P0-1, P0-2 and P1-1.
+2. **Make the rookie scale slot-dependent.** Fixes P1-2, independent of the above.
+
+`positionalMarketFactor` (P1-3) should be re-measured *after* the refit — some
+of its apparent size is the curve's steepness in the band where it was measured.
+
+---
+
+## RECOMMENDED STAGED FIX ORDER
+
+1. **Re-fit the pricing curve** against two simultaneous targets: mean team
+   payroll 105-125% of cap, and strict salary ordering across 86-99 OVR. Nothing
+   else moves until this is measured.
+2. **Re-run both harnesses unchanged** and compare every table in this document.
+3. **Re-probe the exploits**, because cap space will exist again and S-P2-2
+   becomes reachable.
+4. **Re-measure `positionalMarketFactor`** on the new curve.
+5. **Rookie scale by slot**, independently.
+6. **Regression tests** as listed below.
+
+---
+
+## RECOMMENDED REGRESSION TESTS
+
+Deterministic:
+- superstar (95) earns strictly more than star (88) earns strictly more than starter (79)
+- salary is strictly increasing across 86 → 90 → 94 → 98 OVR
+- a rotation player (70) can never reach 25% of the cap at any age or position
+- potential alone moves salary by exactly zero
+- a 38-year-old gets a shorter term than a 27-year-old of equal rating
+- cap space is not an argument to any pricing function *(guards the exploit that does not exist)*
+- generated salary never exceeds the service-tier maximum, at any quality
+- generated salary never falls below the service-year minimum
+
+Statistical:
+- mean team payroll is 105-125% of cap on the seeded league
+- at least six of thirty clubs are under the cap
+- salary/rating rank correlation above 0.8
+- fewer than five outlier flags from `salary-system-audit.ts`
+- median salary as a share of cap moves less than 2pp across ten simulated seasons
+
+---
+
+## REPRODUCING
+
+```
+npx tsx scripts/salary-system-audit.ts
+npx tsx scripts/salary-market-audit.ts
+```
+
+Both are read-only and take no database.
