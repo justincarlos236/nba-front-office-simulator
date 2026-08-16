@@ -516,3 +516,93 @@ rather than the re-signing model.
 | P1-3 | P1 | Positional premium is 29% between SF and C at identical rating — **re-measure on the new curve before acting** |
 | S-P2-2 | P2 | A star with no rival suitors accepts 60% of ask — now reachable, since cap space exists again |
 | S-P2-6 | P2 | No supermax tier |
+
+
+---
+
+# STAGES 3 & 4 — re-probe and re-measure — 2026-08-16
+
+Both were specified in the fix order as checks to run *after* the curve moved,
+because both could change what the remaining findings need.
+
+## Stage 3 — exploits re-probed now that cap space exists
+
+The pricing and acceptance layers hold. What changed is that the no-demand
+discount is now reachable, exactly as predicted.
+
+Measured against an offseason-shaped league — 12 players under contract per club
+after expiries, 10 of 30 with room, largest room $63.9M:
+
+| OVR | Ask | Suitors with room | He requires | Discount |
+| ---: | ---: | ---: | ---: | ---: |
+| 70 | $6.9M | 6 | $9.1M | **−32%** (a premium) |
+| 75 | $16.4M | 4 | $20.3M | −24% (a premium) |
+| 80 | $32.0M | 2 | $29.9M | 6% |
+| 85 | $47.8M | 1 | $35.1M | **27%** |
+| 95 | $48.7M | 1 | $35.7M | **27%** |
+
+The mid-market works well — competition raises price where several clubs can
+afford a player. **The top is discounted 27%, and the mechanism is an
+inconsistency rather than a design choice:**
+
+`computeRivalInterest` counts a club as a suitor only if `capSpace >= the FULL
+ask`. But `evaluateFreeAgentOffer` will let that same player sign for as little
+as 60% of it. So a club that could comfortably afford 27% below asking is not
+counted as competition, the suitor count comes back at 1, and the player
+concludes nobody wants him.
+
+**The two halves of the market use different prices for the same question.**
+
+| ID | Sev | Type | Finding |
+| --- | --- | --- | --- |
+| **S-P1-4** | P1 | MARKET LOGIC | Suitor counting gates on the full ask while acceptance permits 60-100% of it, so expensive players systematically under-count their own market and take a 27% discount. A club with room gets stars cheap. |
+
+**Recommended fix.** Gate `computeRivalInterest` on what the player would
+actually accept — the same floor `evaluateFreeAgentOffer` applies — rather than
+on the headline ask. That is a one-line change to the comparison, not a new
+mechanism, and it should raise star suitor counts and close the discount.
+
+> **A correction.** A first probe of this reported the discount as 40% at every
+> rating with zero suitors league-wide. That was a harness artefact: it built
+> rival clubs from the seeded roster, where `selectTopPerTeam` gives every team
+> exactly 15 players, and `computeRivalInterest` also gates on `rosterCount < 15`
+> — so no club could ever be a suitor regardless of money. The numbers above use
+> a 12-man offseason shape and are the real ones.
+
+## Stage 4 — positional premium re-measured. **P1-3 is withdrawn.**
+
+The spread is unchanged by the refit, because the factor is multiplicative:
+
+| Position | Factor | OVR 72 | OVR 82 | OVR 90 |
+| --- | ---: | ---: | ---: | ---: |
+| SF | 1.149 | $9.9M | $38.7M | $48.7M |
+| PF | 1.066 | $9.2M | $35.9M | $48.7M |
+| SG | 0.978 | $8.4M | $33.0M | $48.7M |
+| PG | 0.917 | $7.9M | $30.9M | $46.2M |
+| C | 0.890 | $7.7M | $30.0M | $44.9M |
+
+High-to-low spread: **29.1%** at OVR 72 and 82, 8.6% at 90 where the maximum
+compresses it.
+
+P1-3 called 29% "large enough to be the dominant term for mid-tier players".
+Checking the derivation rather than the size: **these factors are measured**,
+not chosen. `POSITIONAL_MARKET_FACTOR` is actual pay over rating-predicted pay
+across 213 veterans on real contracts, normalised so league payroll is
+unchanged — it moves money between positions without creating any. The follow-up
+to `docs/RATING_AUDIT.md` R-P1-1 established that the rating model measures
+quality correctly and the league simply pays centres less.
+
+A 29% gap between a small forward and a centre of equal rating is what the real
+market does. **P1-3 is withdrawn — it was a finding about the size of a number
+without checking where the number came from.**
+
+## Revised open list after stages 1, 3 and 4
+
+| ID | Sev | Finding |
+| --- | --- | --- |
+| **S-P1-4** | **P1** | **Suitor gate and acceptance floor use different prices — 27% star discount** |
+| P1-2 | P1 | Rookie contracts ignore draft slot |
+| S-P2-6 | P2 | No supermax tier, so the $50M+ population caps at ~1 against a real 14 |
+| ~~P0-2~~ | — | withdrawn in stage 1 — max players earn the same by design |
+| ~~P1-3~~ | — | withdrawn here — positional factors are empirically measured |
+| ~~S-P2-2~~ | — | superseded by S-P1-4, which is the real mechanism |
