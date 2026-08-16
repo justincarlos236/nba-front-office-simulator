@@ -462,3 +462,69 @@ single-parameter one cannot work in either system.
 **Shipped unchanged.** `POTENTIAL_FALLOFF_EXPONENT` stays at 0.50. Only the
 calibration seam was added, so no behaviour changed; `docs/DRAFT_AUDIT.md`'s
 8.03x pick-value anchor is unaffected and was re-verified.
+
+
+---
+
+## Attempt 6 — bending the reliability ramp. **The first partial success.**
+
+Attempts 1-5 all moved the ramp's **endpoints**, or bolted a miss band onto it,
+or steepened the intake curve. Every one moved the 80+, 85+ and 90+ populations
+together, and attempt 5's diagnosis was that the league's *shape* is wrong
+rather than its scale — 80+:90+ at 8.5:1 against a real 5.9:1 — so no scale
+parameter can help.
+
+**Attempt 6 bends the ramp instead of moving it.** `RELIABILITY_CURVE_EXPONENT`
+raises `reportQuality` to a power before interpolating reliability, making the
+curve convex: a mid-first-round report stays nearly as unreliable as a late one,
+while a genuine consensus top prospect keeps his confidence.
+
+### Why this one could work when five could not
+
+The structural ratio was already right, which nobody had checked. Of 60 picks,
+**25 can reach 80+ and 5 can reach 90+ — a 5.0:1 ratio against the real 5.9:1.**
+The draft curve was never the problem. The gap was *realisation*: prospects who
+could reach 90 mostly did not, while those who could reach 80 mostly did.
+
+That is a statement about the ramp's shape, and it is the one thing no attempt
+had touched.
+
+### Result, averaged over fifteen twenty-season runs
+
+| Exponent | 90+ | 85+ | 80+ | Ratio | Total abs error |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| **1.00** (was) | 13.2 | **46.7** | **109.3** | 8.3:1 | **30.8** |
+| **2.25** (now) | **12.9** | 39.4 | **94.3** | **7.3:1** | **18.0** |
+| target | 14 | 44 | 82 | 5.9:1 | — |
+
+**80+ falls by 15 while 90+ holds.** That is the independent movement five
+attempts could not produce. Total absolute error against the three targets
+nearly halves.
+
+The effect on the ceiling band shows the mechanism directly:
+
+| Scouted potential | Ceiling before | Ceiling after |
+| ---: | --- | --- |
+| 97 | 91-97 | **91-97** *(untouched)* |
+| 91 | 83-91 | 80-91 |
+| 85 | 76-85 | **72-85** |
+| 75 | 67-75 | 65-75 |
+
+### What it does not fix, stated plainly
+
+**D-P1-2 is untouched.** A number-one pick still busts **1.1%** of the time
+against a real 10-15%. Attempt 4 established why — the prospects a bust
+mechanism removes are the same population that becomes the 90+ tier — and
+bending the ramp does not change that, because it deliberately leaves the top
+report alone.
+
+**85+ is now wrong in the other direction**, 39.4 against a target of 44, where
+it had been 46.7. This buys the 80+ band by overshooting the 85+ one. It ships
+because total error nearly halves, not because it is right.
+
+### Rescored
+
+| Dimension | Was | Now | Why |
+| --- | ---: | ---: | --- |
+| Long-save distribution | **6** | **7** | 80+ at 94 against 82, down from 110; 90+ correct and stable. Still overshoots, and 85+ now undershoots. |
+| **Bust realism, picks 1-9** | **3** | **3** | Unchanged. Pick 1 busts 1.1%. |

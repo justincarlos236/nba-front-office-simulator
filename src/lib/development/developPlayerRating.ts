@@ -68,6 +68,41 @@ const HIGH_POTENTIAL_ANCHOR = 97;
 const MAX_CEILING_REALIZATION = 1.0;
 
 /**
+ * How sharply scouting reliability rises with the quality of the report.
+ *
+ * 1 is the straight line this used to be. Above 1 makes the ramp convex: a
+ * mid-first-round report stays nearly as unreliable as a late one, and only a
+ * genuine consensus top prospect earns real confidence.
+ *
+ * **This is the shape nobody had tried.** Attempts 1-5 all moved the ramp's
+ * ENDPOINTS or bolted a miss band onto it, and every one of them moved the 80+,
+ * 85+ and 90+ populations together - the failure recorded five times over in
+ * docs/DEVELOPMENT_AUDIT.md. The diagnosis that followed was that the league's
+ * SHAPE is wrong, not its scale: 80+:90+ sits at 8.5:1 against a real 5.9:1,
+ * and no scale parameter can change a ratio.
+ *
+ * Bending the ramp is a shape change. It thins the 80-88 band, which is fed by
+ * mid-round reports, while leaving the 95+ reports that feed the star tier
+ * nearly untouched - which is what moving the two independently requires.
+ *
+ * Fitted in `scripts/reliability-curve-calibration.ts`, averaged over fifteen
+ * twenty-season runs. **It is the first lever in six attempts to move the
+ * bands independently**, and the effect on the ceiling band is visible
+ * directly: a 97 report still yields 91-97, while an 85 report drops from
+ * 76-85 to 72-85.
+ *
+ *   80+ players  109.3 -> 94.3   (real 82)   BETTER
+ *   90+ players   13.2 -> 12.9   (real 14)   HELD
+ *   85+ players   46.7 -> 39.4   (real 44)   WORSE
+ *
+ * Total absolute error against the three targets falls from 30.8 to 18.0, so
+ * this ships - but it is a partial fix that buys the 80+ band by overshooting
+ * the 85+ one, not a solution. And it does NOT address D-P1-2: a number-one
+ * pick still busts 1.1% of the time against a real 10-15%.
+ */
+const RELIABILITY_CURVE_EXPONENT = 2.25;
+
+/**
  * The share of prospects whose scouting report is simply wrong, and what a
  * wrong report turns out to be worth.
  *
@@ -145,6 +180,7 @@ export function effectiveCeiling(
   potentialRating: number,
   trait: number,
   missRate: number = SCOUTING_MISS_RATE,
+  reliabilityExponent: number = RELIABILITY_CURVE_EXPONENT,
 ): number {
   // A better report is a more reliable one - see RELIABILITY_AT_HIGH_POTENTIAL.
   const reportQuality = clamp01(
@@ -152,7 +188,8 @@ export function effectiveCeiling(
   );
   const floor =
     RELIABILITY_AT_LOW_POTENTIAL +
-    reportQuality * (RELIABILITY_AT_HIGH_POTENTIAL - RELIABILITY_AT_LOW_POTENTIAL);
+    Math.pow(reportQuality, reliabilityExponent) *
+      (RELIABILITY_AT_HIGH_POTENTIAL - RELIABILITY_AT_LOW_POTENTIAL);
 
   const t = clamp01(trait);
   // The lowest slice of the trait distribution are the missed reports: they land
@@ -284,6 +321,8 @@ export interface DevelopPlayerRatingInput {
    * harness ends up measuring something the game does not do.
    */
   scoutingMissRate?: number;
+  /** Calibration seam only - see scripts/reliability-curve-calibration.ts. */
+  reliabilityExponent?: number;
 }
 
 export function developPlayerRating({
@@ -297,6 +336,7 @@ export function developPlayerRating({
   playerDevelopmentDelta,
   developmentTrait,
   scoutingMissRate,
+  reliabilityExponent,
 }: DevelopPlayerRatingInput): number {
   // The scouting report is an estimate; this is what it was actually worth.
   const realCeiling = effectiveCeiling(
@@ -304,6 +344,7 @@ export function developPlayerRating({
     potentialRating,
     developmentTrait ?? NEUTRAL_DEVELOPMENT_TRAIT,
     scoutingMissRate ?? SCOUTING_MISS_RATE,
+    reliabilityExponent ?? RELIABILITY_CURVE_EXPONENT,
   );
   const room = realCeiling - overallRating;
   const coachBonus =
