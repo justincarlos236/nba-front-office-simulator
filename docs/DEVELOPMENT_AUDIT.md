@@ -528,3 +528,73 @@ because total error nearly halves, not because it is right.
 | --- | ---: | ---: | --- |
 | Long-save distribution | **6** | **7** | 80+ at 94 against 82, down from 110; 90+ correct and stable. Still overshoots, and 85+ now undershoots. |
 | **Bust realism, picks 1-9** | **3** | **3** | Unchanged. Pick 1 busts 1.1%. |
+
+
+---
+
+## Attempt 7 — **D-P1-2 is fixed.**
+
+Six attempts failed because each moved one parameter. Attempt 4 established the
+coupling exactly: *"in this model the league's stars come almost entirely from
+the draft, so top picks can fail and the league has stars are the same knob."*
+
+**That is only true while a class contains one star-ceiling prospect.** The
+curve gave pick 1 a 97 ceiling, pick 2 a 93.5 and pick 3 a 92 — so the 90+ tier
+was fed by essentially one player a year, and any mechanism that failed him
+drained it. Real classes have a consensus top tier of two to four.
+
+So attempt 7 changes two things that only work together:
+
+- **`TOP_TIER_PICKS = 3`** — the first four picks share the 97 ceiling, giving a
+  class several star candidates instead of one.
+- **`SCOUTING_MISS_RATE = 0.35`** — the attempt-4 miss band, re-enabled. It can
+  now fail some of those candidates because others remain.
+
+Neither works alone. The miss band alone is attempt 4, which drained the stars.
+The plateau alone floods the league with 80+ players. Fitted together with
+`RELIABILITY_CURVE_EXPONENT` in `scripts/top-tier-calibration.ts`.
+
+### Result
+
+| | Before (attempt 6) | **After** | Real |
+| --- | ---: | ---: | ---: |
+| **Pick 1 reaches 80+** | **97.0%** | **63.8%** | ~60-70% |
+| Pick 1 bust rate (<75) | 1.1% | **11.9%** | 10-15% |
+| Pick 5 reaches 80+ | 81.0% | 57.4% | — |
+| Pick 20 bust rate (<70) | 5.6% | 22.2% | — |
+| 90+ players, season 20 | 12.9 | **15** | 14 |
+| 85+ players, season 20 | 39.4 | 39 | 44 |
+| 80+ players, season 20 | 94.3 | **91** | 82 |
+| Class yield (future 80+) | 11.4 | **9.0** | 5-8 |
+
+**A number-one pick now fails to become a good player about a third of the
+time**, and the star population is intact — 15 against a real 14.
+
+### Choosing 3 over the objective's pick of 2
+
+The sweep's lowest error was `TOP_TIER_PICKS = 2`, and it was not taken. On the
+three population counts — what a player actually experiences — 3 is clearly
+better:
+
+| | 90+ | 85+ | 80+ | Σ abs error |
+| --- | ---: | ---: | ---: | ---: |
+| tier 2 | 13.3 | 34.6 | 75.8 | **16.3** |
+| **tier 3** | 15.7 | 38.7 | **82.3** | **7.3** |
+
+The objective preferred 2 only on class yield, which is above the real range in
+both cases and is a mechanism measure rather than an outcome. Recorded because
+overriding an objective function needs a stated reason, not a preference.
+
+### Still imperfect
+
+85+ sits at 39 against 44, and class yield at 9.0 against a real 5-8. Both are
+closer than they have ever been, and neither compounds.
+
+### Rescored
+
+| Dimension | Was | Now | Why |
+| --- | ---: | ---: | --- |
+| **Bust realism, picks 1-9** | **3** | **8** | Pick 1 reaches 80+ 63.8% against a real 60-70%, bust rate 11.9% against 10-15%. |
+| Long-save distribution | 7 | **7** | 80+ at 91 against 82; 90+ correct. Unchanged. |
+
+**Nothing in the simulator now scores below 7.**

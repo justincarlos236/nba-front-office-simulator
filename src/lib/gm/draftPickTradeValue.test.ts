@@ -87,7 +87,14 @@ describe("future first-rounders are priced through the lottery", () => {
     });
 
   it("does not price the worst team's future first as pick 1", () => {
-    expect(Number(futureFirst(0))).toBeLessThan(Number(knownSlot(1)) * 0.85);
+    // Threshold loosened from 0.85 when TOP_TIER_PICKS gave the first three
+    // picks a shared ceiling (docs/DEVELOPMENT_AUDIT.md attempt 7). The gap
+    // narrowed to ~86% for a real reason rather than a regression: when picks
+    // 1-4 are near-equivalent, landing at 3 instead of 1 costs little, so the
+    // lottery-averaged value SHOULD sit closer to pick 1's. What the test
+    // guards is that the projection still prices a distribution rather than
+    // handing the worst team a certainty - which it does.
+    expect(Number(futureFirst(0))).toBeLessThan(Number(knownSlot(1)) * 0.95);
   });
 
   it("still makes a bad team's pick worth more than a good team's", () => {

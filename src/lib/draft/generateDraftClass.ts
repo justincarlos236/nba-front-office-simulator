@@ -64,6 +64,29 @@ function randomIntInclusive(rng: () => number, min: number, max: number): number
  */
 const POTENTIAL_FALLOFF_EXPONENT = 0.5;
 
+/**
+ * How many picks at the very top of a class share the highest ceiling.
+ *
+ * Zero is the pure power curve this used to be, where pick 1 is the only
+ * prospect with a genuine star ceiling: 97, then 93.5, then 92. One elite
+ * report per class.
+ *
+ * **That is what coupled "top picks can bust" to "the league has stars".**
+ * docs/DEVELOPMENT_AUDIT.md attempt 4 added a scouting miss band and drained
+ * the 90+ population, because the prospects it removed were the only ones who
+ * could ever reach 90. With a plateau there are several candidates a class, so
+ * a miss band can fail some of them and the star tier still fills.
+ *
+ * Real classes look like this. A consensus top tier of two to four prospects
+ * with genuine star projections is ordinary; a single anointed one is the
+ * exception.
+ *
+ * Fitted with `SCOUTING_MISS_RATE` and `RELIABILITY_CURVE_EXPONENT` together in
+ * `scripts/top-tier-calibration.ts` - the three only work as a set, which is
+ * why six single-parameter attempts failed.
+ */
+const TOP_TIER_PICKS = 3;
+
 export function expectedRatingForPick(pick: number, atPick1: number, atPick60: number): number {
   const t = (pick - 1) / (CLASS_SIZE - 1); // 0 at pick 1, 1 at pick 60
   return atPick1 + (atPick60 - atPick1) * t;
@@ -77,8 +100,12 @@ export function expectedPotentialForPick(
   atPick1: number,
   atPick60: number,
   falloffExponent: number = POTENTIAL_FALLOFF_EXPONENT,
+  topTierPicks: number = TOP_TIER_PICKS,
 ): number {
-  const t = (pick - 1) / (CLASS_SIZE - 1);
+  // The top tier shares one ceiling; the curve starts falling after it.
+  const plateau = Math.max(0, topTierPicks);
+  if (pick <= plateau + 1) return atPick1;
+  const t = (pick - plateau - 1) / (CLASS_SIZE - plateau - 1);
   return atPick1 + (atPick60 - atPick1) * Math.pow(t, falloffExponent);
 }
 
@@ -112,6 +139,7 @@ export function generateDraftClass(
    * exercises this exact generator rather than a copy of it.
    */
   falloffExponent: number = POTENTIAL_FALLOFF_EXPONENT,
+  topTierPicks: number = TOP_TIER_PICKS,
 ): GeneratedDraftClass {
   const character = pickClassCharacter(rng);
   const mods = classCharacterModifiers(character);
@@ -129,6 +157,7 @@ export function generateDraftClass(
       POTENTIAL_AT_PICK_1 + mods.potentialAtPick1Delta,
       POTENTIAL_AT_PICK_60,
       falloffExponent,
+      topTierPicks,
     );
 
     const overallVariance = randomIntInclusive(rng, -RATING_VARIANCE, RATING_VARIANCE);

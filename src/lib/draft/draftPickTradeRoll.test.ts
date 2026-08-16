@@ -103,7 +103,7 @@ describe("rollForDraftPickTrade - future picks", () => {
     const result = rollForDraftPickTrade(
       SEASON,
       team("on-clock"),
-      { pickId: "p8", overallPickNumber: 8, round: 1 },
+      { pickId: "p7", overallPickNumber: 7, round: 1 },
       [
         {
           // No later pick in THIS draft at all - only a future one. Before this
@@ -115,9 +115,17 @@ describe("rollForDraftPickTrade - future picks", () => {
               overallPickNumber: null,
               round: 1,
               season: SEASON + 1,
-              // A bottom-quartile team's first, one year out, is worth $24.3M
-              // against pick 8's $23.6M - a genuine near-even swap, so value
+              // A bottom-quartile team's first, one year out, is worth $29.3M
+              // against pick 7's $30.5M - a genuine near-even swap, so value
               // coverage is not what decides either of these tests.
+              //
+              // Re-anchored again when TOP_TIER_PICKS gave the first three
+              // picks a shared 97 ceiling (docs/DEVELOPMENT_AUDIT.md attempt
+              // 7), which lifts every early-round valuation. The fixture's
+              // intent is a near-even swap; the numbers behind it move whenever
+              // the draft curve does, and chasing them here is cheaper than
+              // loosening the acceptance threshold that makes the test mean
+              // something.
               //
               // Re-anchored when the projection became lottery-aware
               // (docs/DRAFT_AUDIT.md D-P1-1). A 0.25-percentile team is lottery

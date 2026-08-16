@@ -130,7 +130,17 @@ const RELIABILITY_CURVE_EXPONENT = 2.25;
  * cliff between "missed" and "did not miss" - the bimodal outcome that sank the
  * second attempt.
  *
- * **SET TO ZERO: this is attempt four, and it failed like the other three.**
+ * **RE-ENABLED AT 0.35 BY ATTEMPT SEVEN.** The account below is why it failed
+ * alone, and it stands - a miss band by itself drains the star tier, because
+ * the prospects it removes are the only ones who could ever reach 90. What
+ * changed is that `TOP_TIER_PICKS` now puts three or four star-ceiling
+ * prospects in a class instead of one, so the band can fail some of them and
+ * the 90+ population still fills. Neither works without the other; the two were
+ * fitted together in `scripts/top-tier-calibration.ts`.
+ *
+ * The original attempt-four record follows.
+ *
+ * **Set to zero at the time: this was attempt four, and it failed like three.**
  * Swept against five constraints at once with results averaged over five
  * twenty-season runs (scripts/development-calibration.ts), it has a genuine
  * interior optimum at 0.40 rather than a boundary artefact - and at that
@@ -156,7 +166,7 @@ const RELIABILITY_CURVE_EXPONENT = 2.25;
  * shipped function, and so attempt five does not rediscover this the hard way.
  * At zero the arithmetic is exactly the original reliability ramp.
  */
-const SCOUTING_MISS_RATE = 0;
+const SCOUTING_MISS_RATE = 0.35;
 const MISSED_REPORT_REALIZATION = 0.35;
 /**
  * The top of the miss band. Ramping all the way back up to the report's own
