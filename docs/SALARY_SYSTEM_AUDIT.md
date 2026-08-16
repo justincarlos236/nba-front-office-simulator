@@ -659,3 +659,60 @@ outright.
 
 **Every P0 is closed and two of three P1s are.** The one substantive item left
 is the rookie scale, which is independent of everything above.
+
+
+---
+
+# STAGE 6 — P1-2 FIXED — rookie scale by draft slot — 2026-08-16
+
+`rookieScale.ts` holds the published first-year scale as fractions of the cap,
+interpolated between anchors. `generateContract` takes an optional
+`overallPickNumber`; the draft passes it, every other caller omits it and is
+untouched.
+
+| Pick | Before | **After** | Real |
+| ---: | ---: | ---: | ---: |
+| **1** | **$6.5M (4.0%)** | **$13.1M (8.1%)** | **8.1%** |
+| 5 | $5.7M (3.5%) | $8.6M (5.3%) | 5.3% |
+| 10 | $5.0M (3.1%) | $6.0M (3.7%) | 3.7% |
+| 14 | $5.0M (3.1%) | $4.9M (3.0%) | 3.0% |
+| 20 | — | $3.7M (2.3%) | 2.3% |
+| 30 | $3.3M (2.0%) | $2.8M (1.7%) | 1.7% |
+| 45 (2nd rd) | $2.4M | $1.3M (0.8%) | ~0.9% |
+| 60 (2nd rd) | $1.5M | $1.3M (0.8%) | ~0.9% |
+
+**Every first-round slot now matches the published scale.** The first pick earns
+4.6x the thirtieth, which is the scale's defining property and the thing a
+service-year-only discount erased entirely.
+
+First-rounders also get the real **four-year** term. Second-rounders have no
+scale — as in reality, they price normally and land at the minimum.
+
+## Two things worth recording
+
+**The seeded league is unaffected.** Only `actions/draft.ts` passes a pick
+number, so bootstrap contracts price exactly as before and stage 1's payroll
+figures still hold.
+
+**A latent inversion, which does not arise in play.** Compared at an *equal*
+rating, a second-round pick costs slightly more than pick 30 — generic rookie
+pricing sits just above the pick-30 scale. It never occurs in a real draft
+because the class curve does not put a 70-rated prospect at pick 45, but it is
+why the regression test compares realistic ratings per slot rather than holding
+rating constant.
+
+## Audit closed
+
+| ID | Sev | Status |
+| --- | --- | --- |
+| P0-1 | P0 | **Fixed** — payroll 135% → 109% of cap |
+| P1-1 | P1 | **Fixed** |
+| S-P1-4 | P1 | **Fixed** — star discount 27% → 12% |
+| **P1-2** | **P1** | **Fixed** — rookie scale by slot |
+| S-P2-6 | P2 | Open — no supermax tier (documented simplification) |
+| ~~P0-2~~ | — | Withdrawn |
+| ~~P1-3~~ | — | Withdrawn |
+| ~~S-P2-2~~ | — | Superseded |
+
+**Every P0 and every P1 is closed.** The only open item is the missing supermax
+tier, which is a documented simplification rather than a defect.

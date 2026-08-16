@@ -149,6 +149,9 @@ async function draftProspectsToTeams(
       age: DRAFT_ROOKIE_ASSUMED_AGE,
       yearsOfExperience: 0,
       position: a.position,
+      // First-rounders take the rookie scale; second-rounders price normally
+      // and land at the minimum. See src/lib/contracts/rookieScale.ts.
+      overallPickNumber: a.overallPickNumber,
       seed: a.prospectId,
     }),
   }));

@@ -6,10 +6,18 @@ import {
 } from "./priceContract";
 import { createSeededRandom, randomInRange } from "./seededRandom";
 import { contractYearSalaries } from "./contractRaises";
+import { rookieScaleSalaryCents, ROOKIE_CONTRACT_YEARS } from "./rookieScale";
+import { getSeasonCapRules } from "../cap/constants";
 
 export interface GenerateContractInput extends ContractQualityInput {
   /** Season the contract is signed/starts in. */
   season: number;
+  /**
+   * Where this player was drafted, for a rookie contract being written on draft
+   * night. First-round picks take the rookie scale instead of market pricing -
+   * see `rookieScale.ts`. Omitted (or a second-round slot) prices normally.
+   */
+  overallPickNumber?: number | null;
   /** Drives both the age discount on salary and the length of the deal. */
   age: number;
   /** Years of NBA experience - drives the rookie-scale discount. */
@@ -55,7 +63,16 @@ export function generateContract(input: GenerateContractInput): GeneratedContrac
     noise: randomInRange(rng, 0.85, 1.15),
   });
 
-  const lengthYears = pickContractLength(quality, input.age, rng);
+  // A first-round pick is paid by the scale, not by the market. This is the
+  // whole reason a high pick is an asset: he is worth more than he costs, by a
+  // margin the slot decides. See docs/SALARY_SYSTEM_AUDIT.md P1-2.
+  const scaleSalaryCents =
+    input.overallPickNumber == null
+      ? null
+      : rookieScaleSalaryCents(input.overallPickNumber, getSeasonCapRules(input.season).salaryCapCents);
+
+  const lengthYears =
+    scaleSalaryCents === null ? pickContractLength(quality, input.age, rng) : ROOKIE_CONTRACT_YEARS;
   const endSeason = input.season + lengthYears - 1;
 
   // Raises are a percentage of the first year, capped by the signing mechanism
@@ -64,7 +81,7 @@ export function generateContract(input: GenerateContractInput): GeneratedContrac
   // team's own Bird re-signing earns 8%, and assuming that league-wide would
   // inflate every payroll.
   const years: GeneratedContractYear[] = contractYearSalaries(
-    BigInt(Math.round(firstYearSalaryCents)),
+    scaleSalaryCents ?? BigInt(Math.round(firstYearSalaryCents)),
     lengthYears,
     null,
   ).map((salaryCents, i) => ({
