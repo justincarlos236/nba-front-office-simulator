@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { NO_DEMAND_FLOOR } from "./evaluateFreeAgentOffer";
 import {
   computeRivalInterest,
   INTEREST_LABEL,
@@ -116,19 +117,36 @@ describe("rival interest", () => {
     ).toBe("has the room");
   });
 
-  it("requires cap space to cover the player's full expected price", () => {
-    // A team one dollar short is not a bidder.
-    const justShort = rival({
-      needs: ["RIM_PROTECTOR"],
-      capSpaceCents: STARTER_CENTER.estimatedValueCents - 1n,
-    });
-    expect(computeRivalInterest(STARTER_CENTER, [justShort]).level).toBe("none");
+  it("requires cap space to cover what the player would actually sign for", () => {
+    // This asserted the FULL ask, which is what docs/SALARY_SYSTEM_AUDIT.md
+    // S-P1-4 was about: `evaluateFreeAgentOffer` lets a player sign for as
+    // little as NO_DEMAND_FLOOR of his ask, so gating interest on the full
+    // figure meant a club that could comfortably sign him was not counted as
+    // competition - and the player then concluded nobody wanted him and took a
+    // 27% discount. The two halves of the market now use the same price.
+    const floorCents = (value: bigint) =>
+      BigInt(Math.round(Number(value) * NO_DEMAND_FLOOR));
 
-    const exact = rival({
+    // A club that cannot reach even the floor genuinely cannot sign him.
+    const cannotAfford = rival({
+      needs: ["RIM_PROTECTOR"],
+      capSpaceCents: floorCents(STARTER_CENTER.estimatedValueCents) - 1n,
+    });
+    expect(computeRivalInterest(STARTER_CENTER, [cannotAfford]).level).toBe("none");
+
+    // A club that can reach the floor is real competition, even short of the ask.
+    const canAffordTheFloor = rival({
+      needs: ["RIM_PROTECTOR"],
+      capSpaceCents: floorCents(STARTER_CENTER.estimatedValueCents),
+    });
+    expect(computeRivalInterest(STARTER_CENTER, [canAffordTheFloor]).level).toBe("real");
+
+    // And so is one that can pay the ask outright.
+    const canAffordTheAsk = rival({
       needs: ["RIM_PROTECTOR"],
       capSpaceCents: STARTER_CENTER.estimatedValueCents,
     });
-    expect(computeRivalInterest(STARTER_CENTER, [exact]).level).toBe("real");
+    expect(computeRivalInterest(STARTER_CENTER, [canAffordTheAsk]).level).toBe("real");
   });
 
   it("is deterministic, so the user can plan against it", () => {

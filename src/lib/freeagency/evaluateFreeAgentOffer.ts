@@ -34,7 +34,7 @@ import type { PlayerValueTier } from "@/lib/valuation/playerValueTier";
  * market is already a substantial bargain and the point is to remove a 35x
  * discount, not to replace it with a 2x one.
  */
-const NO_DEMAND_FLOOR = 0.6;
+export const NO_DEMAND_FLOOR = 0.6;
 
 /**
  * How many rival suitors it takes before a player insists on his full asking

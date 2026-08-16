@@ -606,3 +606,56 @@ without checking where the number came from.**
 | ~~P0-2~~ | — | withdrawn in stage 1 — max players earn the same by design |
 | ~~P1-3~~ | — | withdrawn here — positional factors are empirically measured |
 | ~~S-P2-2~~ | — | superseded by S-P1-4, which is the real mechanism |
+
+
+---
+
+# STAGE 5 — S-P1-4 FIXED — 2026-08-16
+
+`computeRivalInterest` now gates on what the player would **sign for**, not what
+he is **asking** — `NO_DEMAND_FLOOR` of the ask, the same floor
+`evaluateFreeAgentOffer` applies. One comparison changed.
+
+| | Before | **After** | |
+| --- | ---: | ---: | --- |
+| Suitors for an 85-rated player | 1 | **2** | |
+| Star discount (85-95 OVR) | **27%** | **12%** | |
+| 80 OVR | 6% discount | **24% premium** | competition now bids him up |
+| 75 OVR | 24% premium | 32% premium | unchanged in direction |
+| 70 OVR | 32% premium | 32% premium | unchanged |
+
+The residual 12% is not the bug — it is the demand model working. Two suitors is
+genuinely thin demand, and `SUITORS_FOR_FULL_PRICE = 3` is where a player holds
+out for his whole ask. A star wanted by two clubs taking 12% under is a market
+outcome; a star wanted by *five* clubs taking 27% under was an inconsistency.
+
+## Why counting a floor-only club is right
+
+A club that can reach 60% of the ask but not 100% is genuinely able to sign him
+— if nobody else bids, that is exactly the price he takes. Excluding it was
+asserting that a club which could sign the player was not competition for the
+player.
+
+## One test rewritten, not loosened
+
+`rivalInterest.test.ts` had a test named *"requires cap space to cover the
+player's full expected price"* — the old rule written down as an assertion. It
+now asserts the new rule with three cases: a club below the floor is not
+interested, a club exactly at the floor is, and so is one that can pay the ask
+outright.
+
+## Final state of the audit
+
+| ID | Sev | Status |
+| --- | --- | --- |
+| P0-1 | P0 | **Fixed** — payroll 135% → 109% of cap |
+| P1-1 | P1 | **Fixed** — same refit |
+| **S-P1-4** | **P1** | **Fixed** — star discount 27% → 12% |
+| P1-2 | P1 | Open — rookie contracts ignore draft slot |
+| S-P2-6 | P2 | Open — no supermax tier |
+| ~~P0-2~~ | — | Withdrawn — max players earn the same by design |
+| ~~P1-3~~ | — | Withdrawn — positional factors are empirically measured |
+| ~~S-P2-2~~ | — | Superseded by S-P1-4 |
+
+**Every P0 is closed and two of three P1s are.** The one substantive item left
+is the rookie scale, which is independent of everything above.

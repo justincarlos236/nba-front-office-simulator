@@ -1,4 +1,10 @@
 import { getPlayerValueTier } from "@/lib/valuation/playerValueTier";
+import { NO_DEMAND_FLOOR } from "./evaluateFreeAgentOffer";
+
+/** Bigint-safe fractional scale, matching the pattern used across pricing. */
+function scaleCents(cents: bigint, multiplier: number): bigint {
+  return BigInt(Math.round(Number(cents) * multiplier));
+}
 import type { TeamNeed } from "@/lib/gm/teamNeeds";
 
 /**
@@ -104,7 +110,22 @@ export function computeRivalInterest(
 
   for (const rival of rivals) {
     if (rival.rosterCount >= ROSTER_LIMIT) continue;
-    if (rival.capSpaceCents < player.estimatedValueCents) continue;
+    // Can this club afford what the player would actually SIGN for, not what
+    // he is asking?
+    //
+    // This gated on the full ask, while `evaluateFreeAgentOffer` lets the same
+    // player sign for as little as `NO_DEMAND_FLOOR` of it. The two halves of
+    // the market were answering the same question at different prices, and the
+    // gap fell entirely on expensive players: a club that could comfortably pay
+    // 27% below asking was not counted, so a star's suitor count came back at
+    // one and he concluded nobody wanted him. Measured, that handed any club
+    // with room a 27% discount on every star. See docs/SALARY_SYSTEM_AUDIT.md
+    // S-P1-4.
+    //
+    // Counting a club that can only reach the floor is deliberate: it can
+    // genuinely sign him if nobody else bids, and its presence is exactly what
+    // stops him concluding nobody else would.
+    if (rival.capSpaceCents < scaleCents(player.estimatedValueCents, NO_DEMAND_FLOOR)) continue;
 
     // A star answers STAR_SCORER for any team lacking one, wherever he plays.
     const fillsStarNeed = isStar && rival.needs.includes("STAR_SCORER");
