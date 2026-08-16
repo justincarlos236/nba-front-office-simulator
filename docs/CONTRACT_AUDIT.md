@@ -1031,3 +1031,57 @@ deals, which is what paying for them should cost.
 
 The first-year figure is unchanged — it is still what the contract starts at
 and what the interface quotes. Only the judgement moved.
+
+
+---
+
+# C-P0-4 FULLY CLOSED — the last unreconciled pricing path — 2026-08-16
+
+C-P0-4 is "two unreconciled rating systems: the UI shows `seedOverallRating`,
+salary uses `computePerformanceScore(stats)`", filed as *why the bug is
+visible*. The contract side was reconciled long ago and the free-agent board on
+2026-08-15. **The player profile was still on the old path**, and nothing had
+checked.
+
+Both sites in `profileData.ts` computed
+`salaryCapCents × scoreToCapFraction(performanceScore)` — no rating anchor, no
+sample-size weighting, no age term, no positional factor.
+
+Measured across 355 players with stats, the figure shown on a profile differed
+from what the contract system would actually pay by more than 1.5x for **37% of
+them**:
+
+| Player | Rating | Games | Profile said | Real price | Ratio |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Zach Edey | 71 | 11 | **$50.2M** | $5.5M | **9.20x** |
+| Cormac Ryan | 70 | 11 | $46.2M | $12.3M | 3.76x |
+| Ryan Kalkbrenner | 76 | 69 | $33.1M | $8.4M | 3.95x |
+
+Edey and Ryan are the audit's **own examples** — still displaying the number it
+was filed about, two months later.
+
+Small samples were worst, because `contractQualityScore`'s games-played
+weighting is precisely what this path skipped: eleven games were treated as a
+full season's evidence.
+
+## Fixed
+
+Both sites now call `priceContractCents` through `contractQualityScore`, the
+same function that writes every contract in the game.
+
+| Player | Before | After |
+| --- | ---: | ---: |
+| Zach Edey (71, 11 games) | $50.2M | **$4.3M** |
+| Cormac Ryan (70, 11 games) | $46.2M | **$5.0M** |
+| Ryan Kalkbrenner (76, 69 games) | $33.1M | **$7.6M** |
+| Nikola Jokić (98, 66 games) | — | **$40.5M** |
+
+## Rescored
+
+| Dimension | Was | Now | Why |
+| --- | ---: | ---: | --- |
+| **Exploit Resistance** | **6/10** | **8/10** | All four P0s closed. C-P0-1 is a dead data issue (pre-`decd646` saves, none of which still exist); C-P0-2 and C-P0-3 were closed by sample weighting and the maximum; C-P0-4 closes here. |
+
+Not a 9 or 10: `docs/FREE_AGENCY_AUDIT.md` and `docs/DRAFT_AUDIT.md` each closed
+a live exploit within the last two days, which is recent enough that "no known
+exploit" should not yet read as "hard to exploit".

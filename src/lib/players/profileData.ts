@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { estimateExperience, resolvePlayerAge } from "@/lib/players/age";
-import { computePerformanceScore, scoreToCapFraction } from "@/lib/valuation/playerValue";
-import { getSeasonCapRules } from "@/lib/cap/constants";
+import { computePerformanceScore } from "@/lib/valuation/playerValue";
+import { contractQualityScore, priceContractCents } from "@/lib/contracts/priceContract";
+import { estimateExperience, resolvePlayerAge, resolvePlayerExperience } from "@/lib/players/age";
 import { computeCareerHighs, isTripleDouble, scoringMilestone } from "@/lib/stats/milestones";
 import {
   generatePersonalityProfile,
@@ -186,6 +186,64 @@ export interface PlayerProfileData {
 /** The fixed real-world season every real player's seeded stat baseline comes from. */
 export const PROFILE_SEASON = 2023;
 
+/**
+ * A player's estimated market value, priced by the same function that writes
+ * every contract in the game.
+ *
+ * **The profile used to run a raw performance score straight through
+ * `scoreToCapFraction`** - no rating anchor, no sample-size weighting, no age
+ * term, no positional factor. That is the second of the two unreconciled
+ * rating systems in docs/CONTRACT_AUDIT.md C-P0-4, and it was the last one
+ * left: the free-agent board was corrected on 2026-08-15, this was not.
+ *
+ * Measured across 355 players with stats, the number shown here differed from
+ * what the contract system would actually pay by more than 1.5x for **37% of
+ * them**. Zach Edey's profile read $50.2M against a real $5.5M, and Cormac
+ * Ryan's $46.2M against $12.3M - both of them the audit's own examples, still
+ * displaying the figure it was filed about.
+ *
+ * Small samples are what it got worst, because `contractQualityScore`'s
+ * games-played weighting is exactly what this path skipped: Edey's eleven
+ * games were treated as a full season's evidence.
+ */
+interface ProfileStatLine {
+  gamesPlayed: number;
+  minutesPerGame: number;
+  pointsPerGame: number;
+  reboundsPerGame: number;
+  assistsPerGame: number;
+  stealsPerGame: number;
+  blocksPerGame: number;
+  turnoversPerGame: number;
+  trueShootingPct: number | null;
+}
+
+function estimateMarketValue(
+  overallRating: number,
+  stat: ProfileStatLine,
+  ageSource: { birthDate: Date | null; draftYear: number | null },
+  position: string | null,
+) {
+  const performanceScore = computePerformanceScore({
+    ...stat,
+    trueShootingPct: stat.trueShootingPct ?? 0.56,
+  });
+  const estimatedMarketValueCents = BigInt(
+    priceContractCents({
+      season: PROFILE_SEASON,
+      quality: contractQualityScore({
+        overallRating,
+        performanceScore,
+        gamesPlayed: stat.gamesPlayed,
+      }),
+      age: resolvePlayerAge(ageSource, PROFILE_SEASON),
+      yearsOfExperience: resolvePlayerExperience(ageSource, PROFILE_SEASON),
+      position,
+    }),
+  );
+  return { performanceScore, estimatedMarketValueCents: estimatedMarketValueCents.toString() };
+}
+
 function teamDTO(
   team: {
     abbreviation: string;
@@ -217,20 +275,12 @@ export async function loadReferencePlayerProfile(
 
   const stat = player.seasonStats.find((s) => s.season === PROFILE_SEASON) ?? player.seasonStats[0];
   const valuation = stat
-    ? (() => {
-        const performanceScore = computePerformanceScore({
-          ...stat,
-          trueShootingPct: stat.trueShootingPct ?? 0.56,
-        });
-        const rules = getSeasonCapRules(PROFILE_SEASON);
-        const estimatedMarketValueCents = BigInt(
-          Math.round(Number(rules.salaryCapCents) * scoreToCapFraction(performanceScore)),
-        );
-        return {
-          performanceScore,
-          estimatedMarketValueCents: estimatedMarketValueCents.toString(),
-        };
-      })()
+    ? estimateMarketValue(
+        player.seedOverallRating ?? 0,
+        stat,
+        { birthDate: player.birthDate, draftYear: player.draftYear },
+        player.position,
+      )
     : null;
 
   return {
@@ -486,20 +536,15 @@ export async function loadLeaguePlayerProfile(
     leaguePlayer.player.seasonStats.find((s) => s.season === PROFILE_SEASON) ??
     leaguePlayer.player.seasonStats[0];
   const valuation = stat
-    ? (() => {
-        const performanceScore = computePerformanceScore({
-          ...stat,
-          trueShootingPct: stat.trueShootingPct ?? 0.56,
-        });
-        const rules = getSeasonCapRules(PROFILE_SEASON);
-        const estimatedMarketValueCents = BigInt(
-          Math.round(Number(rules.salaryCapCents) * scoreToCapFraction(performanceScore)),
-        );
-        return {
-          performanceScore,
-          estimatedMarketValueCents: estimatedMarketValueCents.toString(),
-        };
-      })()
+    ? estimateMarketValue(
+        leaguePlayer.overallRating,
+        stat,
+        {
+          birthDate: leaguePlayer.player.birthDate,
+          draftYear: leaguePlayer.player.draftYear,
+        },
+        leaguePlayer.player.position,
+      )
     : null;
 
   return {
