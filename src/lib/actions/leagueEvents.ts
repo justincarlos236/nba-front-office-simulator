@@ -85,7 +85,14 @@ const INJURY_CHANCE_PER_TEAM_GAME = 0.02;
 //   0.013 - letting a CPU attach a draft pick (subsystem #8) took it to 94.7%,
 //           since a deal that was just short can now be closed.
 // Re-measure with `scripts/cpu-trade-rate.ts` if either side of this changes.
-const TRADE_CHANCE_PER_GAME = 0.013;
+// Raised from 0.013 once candidate selection stopped over-representing stars.
+// At 0.013 the league managed 13 trades a season against a real 30-50 - but
+// raising it alone would have taken star movement to 5.5 a season, because
+// `pickTradeTarget` shortlisted each club's three best men. With that fixed
+// (see TOP_CANDIDATE_POOL_SIZE and STAR_RATING_FLOOR), volume and star
+// movement are decoupled: measured across every frequency tried, star moves
+// hold near one a season. See docs/TRADE_EXPLOIT_AUDIT.md T-P1-4.
+const TRADE_CHANCE_PER_GAME = 0.03;
 /** Deliberately below the CPU-CPU rate - see the note at the call site. */
 const OFFER_TO_USER_CHANCE_PER_GAME = 0.004;
 const SIGNING_CHANCE_PER_GAME = 0.01;

@@ -275,7 +275,66 @@ const TRADEABLE_POOL_FRACTION = 0.7;
 // How many of the top-ranked candidates a picker randomizes among, rather
 // than always taking the single best - keeps CPU trades from feeling
 // mechanically identical every time the same situation recurs.
-const TOP_CANDIDATE_POOL_SIZE = 3;
+/**
+ * How many players a seeking club shortlists from a roster.
+ *
+ * Was 3, which made the weighting below almost inert: if a club's three best
+ * men were all stars, sampling among them still returned a star. Widening the
+ * shortlist is what lets `tradeTargetWeight` actually reach role players - the
+ * pool was the binding constraint, not the weight.
+ *
+ * Fitted with the weight in `scripts/cpu-trade-frequency-calibration.ts`
+ * against three targets at once: 30-50 trades a season, star moves near the
+ * real one to two, and a mean traded rating near the league's own ~73. Wider
+ * shortlists overshoot - at 8 the market moves 0.6 stars a season and trades a
+ * mean rating of 70.3, which is a league that only ever swaps bench players.
+ */
+const TOP_CANDIDATE_POOL_SIZE = 4;
+
+/**
+ * How strongly a seeking club's shortlist avoids the very best players.
+ *
+ * **The shortlist was "the three best men on that roster", and that is not how
+ * a trade market works.** `pickTradeTarget` sorts by rating descending and
+ * takes the top few, so every CPU enquiry started with a club's best player.
+ * Measured in docs/TRADE_EXPLOIT_AUDIT.md T-P1-4, that put 85+ players at
+ * 12-20% of all traded players at every volume setting, against a real ~4%.
+ *
+ * At the shipped trade frequency that ratio is invisible - 18% of thirteen
+ * trades is about two star moves a season, which reads as realistic by
+ * accident. It is only exposed when volume rises: at a realistic 34 trades a
+ * season it becomes 5.5 star moves, which is a chaos league.
+ *
+ * So the shortlist is now sampled with a weight that falls as rating rises
+ * above `STAR_RATING_FLOOR`. Stars are still reachable - clubs do ask, and the
+ * `wantsOut` and need-fit paths are untouched - but a role player is far more
+ * likely to be the man enquired about, which is what a real market looks like.
+ *
+ * Deliberately applied to WHO IS ASKED ABOUT, not to whether a deal is
+ * accepted. `evaluateTradeOffer` is unchanged: this shapes the candidate pool,
+ * not the price or the verdict.
+ */
+const STAR_RATING_FLOOR = 80;
+const STAR_TARGET_WEIGHT_DECAY = 0.72;
+
+/** Selection weight for shopping this player - 1 below the floor, falling above. */
+function tradeTargetWeight(rating: number): number {
+  if (rating <= STAR_RATING_FLOOR) return 1;
+  return STAR_TARGET_WEIGHT_DECAY ** (rating - STAR_RATING_FLOOR);
+}
+
+/** Weighted sample; falls back to the first entry if every weight is zero. */
+function pickWeighted<T>(items: T[], weightOf: (item: T) => number, rng: () => number): T | null {
+  if (items.length === 0) return null;
+  const total = items.reduce((sum, item) => sum + Math.max(0, weightOf(item)), 0);
+  if (total <= 0) return items[0];
+  let roll = rng() * total;
+  for (const item of items) {
+    roll -= Math.max(0, weightOf(item));
+    if (roll <= 0) return item;
+  }
+  return items[items.length - 1];
+}
 
 function pickTradeablePlayer(roster: CpuRosterPlayer[], rng: () => number): CpuRosterPlayer | null {
   const eligible = roster.filter((p) => !p.noTradeClause);
@@ -376,7 +435,9 @@ function pickTradeTarget(
   // have surfaced by need-fit/age-band, without forcing any team to want
   // them (evaluateTradeOffer's mutual-ACCEPT gate still decides).
   const disgruntled = eligible.filter((p) => p.wantsOut && !topPool.includes(p));
-  return pick([...topPool, ...disgruntled], rng);
+  // Weighted rather than uniform: a club asks about role players far more often
+  // than about stars. See STAR_RATING_FLOOR.
+  return pickWeighted([...topPool, ...disgruntled], (p) => tradeTargetWeight(p.rating), rng);
 }
 
 /**
