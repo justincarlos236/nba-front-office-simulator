@@ -415,3 +415,53 @@ still feels thin after the above.
   staff, amortisation).
 - **No live save was queried.** Everything here is a replay of the bootstrap
   path over committed fixture data.
+
+
+---
+
+# GAMEPLAY DEPTH RE-MEASURED — 2026-08-16
+
+The scorecard above rates **gameplay depth 5/10**, "revenue barely responds to
+anything the player does". That predates the Finances as a Gameplay Pillar
+work — business decisions (Phase 1), sponsorship deals (Phase 2), capital
+projects, and front-office departments (Phase 4) — none of which existed when it
+was written. Nothing had re-measured it.
+
+Sweeping every input of `computeSeasonRevenue` from a mid-market baseline of
+$318.3M:
+
+| Lever | Swing | % of baseline | Player-controlled? |
+| --- | ---: | ---: | --- |
+| Market size (SMALL → LARGE) | $121.9M | **38.3%** | no — fixed at team selection |
+| Playoff home games (0 → 12) | $48.0M | 15.1% | indirect — winning |
+| **Sponsorship ($0 → $40M)** | **$40.0M** | **12.6%** | **yes — direct** |
+| Attendance (70% → 100%) | $33.0M | 10.4% | indirect — winning |
+| Popularity (30 → 95) | $27.3M | 8.6% | indirect — winning |
+| **Ticket posture (fan-friendly → premium)** | **$21.8M** | **6.8%** | **yes — direct** |
+| **Business income ($0 → $15M)** | **$15.0M** | **4.7%** | **yes — direct** |
+| Championship | $12.0M | 3.8% | indirect — winning |
+| Star tier (none → superstar) | $7.8M | 2.4% | yes — roster |
+
+**Directly controllable levers move about 24% of revenue** and winning drives
+another ~38%. The expense side adds more: department budgets and business
+decisions are both player-set line items in `SeasonExpenseInputs`.
+
+So "revenue barely responds" is no longer true.
+
+## What is still fair in the original criticism
+
+**Market size remains the single largest determinant at 38.3%** — larger than
+every player-controlled lever combined, and fixed once a team is chosen. A
+small-market club cannot out-earn a large-market one by managing well; it can
+only close part of the gap. That is arguably realistic, and it is also the
+reason this does not score higher.
+
+## Rescored
+
+| Dimension | Was | Now | Why |
+| --- | ---: | ---: | --- |
+| **Gameplay depth** | **5/10** | **7/10** | Three direct revenue levers worth ~24% of the total, plus player-set department budgets on the expense side. Held at 7 because market size still outweighs everything the player decides. |
+
+> **Scope.** This measures whether the revenue *model* responds to its inputs.
+> Whether the decisions behind those inputs are *interesting* is a design
+> judgement a sweep cannot make, and is not claimed here.
