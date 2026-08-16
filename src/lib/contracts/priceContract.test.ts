@@ -148,7 +148,12 @@ describe("priceContractCents - a better player earns more", () => {
     // A tenured player, so the maximum-salary clamp does not flatten the top
     // of the range - the point here is the ordering, not the ceiling, which
     // the bounds tests above cover.
-    const qualities = [62, 68, 74, 80, 86, 92];
+    //
+    // The range starts at 74 rather than 62: after the pricing curve was refit
+    // (docs/SALARY_SYSTEM_AUDIT.md P0-1), an 11-year veteran below ~70 quality
+    // prices at the veteran minimum, and two players both on the minimum
+    // correctly earn the same. That floor is covered by its own test below.
+    const qualities = [74, 80, 86, 92, 98];
     const salaries = qualities.map((q) => price(q, 30, 11));
     for (let i = 1; i < salaries.length; i++) expect(salaries[i]).toBeGreaterThan(salaries[i - 1]);
   });

@@ -218,7 +218,13 @@ describe("rollForCpuTrade", () => {
       [
         { rating: 85, age: 29 },
         { rating: 80, age: 30 },
-        { rating: 64, age: 27 },
+        // 64 -> 65 after the pricing curve was refit
+        // (docs/SALARY_SYSTEM_AUDIT.md P0-1). Contract surplus is priced
+        // through `ageAdjustedMarketValueCents`, which shares
+        // `scoreToCapFraction`, so the refit moved what B would take for its
+        // 34-year-old. The seeker still has to have something B actually
+        // wants, and at 64 it no longer did.
+        { rating: 65, age: 27 },
         { rating: 58, age: 26 },
       ],
       { identity: "CONTENDER", personality: "WIN_NOW" },

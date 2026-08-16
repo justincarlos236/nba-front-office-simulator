@@ -133,7 +133,12 @@ describe("evaluateTradeOffer", () => {
         // differs between these two personalities, and this test is about the
         // acceptance bar alone. (Before docs/TRADE_AUDIT.md T-P2-3 that field
         // was never read in trades, so the old fixture could use any salary.)
-        incoming: [player({ overallRating: 74, age: 27, currentSalaryCents: 4_000_000_00n })],
+        // 74 -> 75 incoming after the pricing curve was refit
+        // (docs/SALARY_SYSTEM_AUDIT.md P0-1). Contract surplus is priced from
+        // `ageAdjustedMarketValueCents`, which shares `scoreToCapFraction`, so
+        // moving the curve moved where "slightly below dead-even" sits. At 74
+        // both personalities now decline; at 76 both accept.
+        incoming: [player({ overallRating: 75, age: 27, currentSalaryCents: 4_000_000_00n })],
         outgoing: [player({ overallRating: 75, age: 27, currentSalaryCents: 4_000_000_00n })],
       });
 

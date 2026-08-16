@@ -427,3 +427,92 @@ npx tsx scripts/salary-market-audit.ts
 ```
 
 Both are read-only and take no database.
+
+
+---
+
+# STAGE 1 APPLIED — pricing curve refit — 2026-08-16
+
+`scoreToCapFraction`: **MIDPOINT 80 → 82, STEEPNESS 0.17 → 0.21.** Fitted in
+`scripts/pricing-curve-calibration.ts` against the real payroll shape already in
+`realPayrollShape.ts`.
+
+## Result — identical diagnostics, re-run
+
+| | Before | **After** | Real |
+| --- | ---: | ---: | ---: |
+| **Mean team payroll** | **$220.0M (135%)** | **$176.6M (109%)** | ~110% |
+| **Total league payroll** | $6,599.8M | **$5,297.4M** | **$5,291M** |
+| Median salary | $9.4M (5.8%) | **$4.8M (3.0%)** | ~3.2% |
+| Teams under the cap | **1 of 30** | **7 of 30** | ~8-12 |
+| Teams over the tax | 24 of 30 | **8 of 30** | ~6-8 |
+| **Teams over the 2nd apron** | **20 of 30** | **0 of 30** | ~2-3 |
+| Players above 19.4% of cap | 75 | **57** | 59 |
+| Average starter (76 OVR) | $26.3M | **$18.9M** | ~$8-14M |
+| Rotation player (70 OVR) | $12.8M | **$6.8M** | ~$5-8M |
+| Long-save median/cap drift | 7.0% → 7.6% | **3.7% → 4.4%** | — |
+
+**Total league payroll lands within 0.1% of the real figure measured from
+imported contracts** ($5,297.4M against $5,291M). That was not a fitted target —
+the fit used the mean-payroll ratio and the $30M+ band — so it is an independent
+check.
+
+**P0-1 is closed. P1-1 is closed.**
+
+## P0-2 was wrong as filed, and is withdrawn
+
+P0-2 claimed "every player above 86 OVR costs the same" as an independent defect
+and proposed strict price ordering across 88/93/98 as a hard constraint.
+
+**That is wrong about the NBA.** Max-contract players genuinely do earn
+identical salaries; differentiation at the top comes from service tier, not
+talent. Sweeping under that constraint proved it — no curve satisfies both it
+and the payroll target, because the constraint asks the model not to have
+maximum salaries at all.
+
+The real question is *who* reaches the clamp, and that is P0-1. Before the
+refit the lowest-rated player reaching his maximum was **82 OVR**; after, it is
+**85**, with 3.6% of the league at a maximum against a real ~5.8%.
+
+**P0-2 is withdrawn and folded into P0-1.** Recorded rather than quietly
+dropped, because it was the audit's own headline finding.
+
+## An unreachable target, excluded from the fit
+
+The real $50M+ band holds 14 players. $50M is 32.3% of the 2026 cap, and only
+the 35% service tier can exceed 30% — so reaching 14 needs the **Designated
+Veteran (supermax)** rule, which this model does not have. Fitting to it would
+have dragged every other number off. Excluded deliberately; filed below.
+
+| ID | Sev | Type | Finding |
+| --- | --- | --- | --- |
+| S-P2-6 | P2 | INTENTIONAL SIMPLIFICATION | No supermax tier, so the $50M+ population caps at ~1 against a real 14. Only 10+ year veterans can exceed 30% of the cap. |
+
+## Six tests moved, and one bug was found by moving them
+
+Every failure was a fixture pinned to the old salary scale. Each was re-anchored
+by measurement, not by loosening an assertion:
+
+| Test | Change | Why |
+| --- | --- | --- |
+| `priceContract` ordering | qualities 62-92 → 74-98 | an 11-year veteran below ~70 quality now correctly prices at the minimum, and two minimum players earn the same |
+| re-signing identity split | 65 → 66 | marginal band moved |
+| re-signing roster ceiling | 70 → 67 | marginal band moved |
+| re-signing trade request | 74 → 68 | marginal band moved |
+| trade personality bar | incoming 74 → 75 | contract surplus shares `scoreToCapFraction` |
+| CPU trade targeting | seeker's piece 64 → 65 | same |
+
+**C-P3-1 is closed as a side effect.** That finding recorded that team identity
+never separated a WIN_NOW GM's re-signing decision at any realistic price. After
+the refit it does: at 66 OVR a rebuilding club lets the player walk where a
+contender keeps him. The finding was real, and the cause was the salary scale
+rather than the re-signing model.
+
+## Still open after stage 1
+
+| ID | Sev | Finding |
+| --- | --- | --- |
+| P1-2 | P1 | Rookie contracts ignore draft slot — every rookie takes the same 39% discount |
+| P1-3 | P1 | Positional premium is 29% between SF and C at identical rating — **re-measure on the new curve before acting** |
+| S-P2-2 | P2 | A star with no rival suitors accepts 60% of ask — now reachable, since cap space exists again |
+| S-P2-6 | P2 | No supermax tier |

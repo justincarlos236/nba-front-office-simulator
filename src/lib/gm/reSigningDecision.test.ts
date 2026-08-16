@@ -128,16 +128,14 @@ describe("evaluateReSigningDecision", () => {
     // context, not personality, is what splits it - is unchanged and still
     // holds; see docs/TRADE_AUDIT.md for why this margin is worth revisiting
     // when the re-signing model itself is next audited.
-    // Re-anchored from 59 when the salary floor became a real service-year
-    // minimum (docs/CONTRACT_AUDIT.md C-P2-1). A 31-year-old now costs about
-    // $3.8M rather than a $1.3M cap hold, so a 59-rated veteran is no longer
-    // worth keeping to ANYONE - which is correct, and erases the split this
-    // test is about. The split itself is intact, it sits at 65 now: WIN_NOW
-    // contender re-signs, play-in and rebuilding teams do not.
+    // Re-anchored twice: once when the veteran minimum became real
+    // (docs/CONTRACT_AUDIT.md C-P2-1), and again at 66 when the pricing curve
+    // was refit (docs/SALARY_SYSTEM_AUDIT.md P0-1). Both moved what a marginal
+    // veteran costs, and this test is about the margin.
     const player = {
       position: "PF" as const,
-      overallRating: 65,
-      potentialRating: 65,
+      overallRating: 66,
+      potentialRating: 66,
       age: 31,
       careerGamesMissedToInjury: 0,
     };
@@ -168,20 +166,14 @@ describe("evaluateReSigningDecision", () => {
     );
     expect(balancedPlayIn.decision).toBe("LET_WALK");
 
-    // Same WIN_NOW personality, but the team isn't win-now-postured. This USED
-    // to assert LET_WALK - that identity, not just personality, separates the
-    // decision. Measured properly, it does not: sweeping the offer directly,
-    // a REBUILDING/WIN_NOW club matches a CONTENDER/WIN_NOW one at every price
-    // except a band roughly $1.3M-$2.0M wide, and no (age, rating) pair puts a
-    // realistic offer inside it. The old fixture sat in that band by accident,
-    // at a ~$1.4M floor that C-P2-1 replaced with a real veteran minimum.
+    // Same WIN_NOW personality, but the team isn't win-now-postured - context
+    // should matter, not just personality.
     //
-    // So the assertion is scoped to what actually holds. A WIN_NOW GM re-signs
-    // this player wherever he works, which is defensible on its own terms -
-    // that is what the personality means. Whether identity SHOULD carry more
-    // weight against personality belongs to a re-signing audit; it is recorded
-    // in docs/CONTRACT_AUDIT.md rather than pinned by a knife-edge test that
-    // passes for the wrong reason.
+    // This briefly asserted RESIGN and was filed as C-P3-1, because at the old
+    // salary scale identity never separated a WIN_NOW GM's decision at any
+    // realistic price. Refitting the pricing curve restored it: at 66 a
+    // rebuilding club lets this player go where a contender keeps him.
+    // C-P3-1 is closed by that refit rather than by a change to this model.
     const winNowRebuilding = evaluateReSigningDecision(
       baseInput({
         team: {
@@ -193,17 +185,19 @@ describe("evaluateReSigningDecision", () => {
         player,
       }),
     );
-    expect(winNowRebuilding.decision).toBe("RESIGN");
+    expect(winNowRebuilding.decision).toBe("LET_WALK");
   });
 
   it("raises the bar once a team is already at the soft roster ceiling, tipping stingier personalities to let a marginal bench player walk", () => {
-    // 64 -> 70 for the same reason the fixtures above moved: a 64-rated player
-    // is now below the bar even on an empty roster, so he could not show the
-    // ceiling *changing* anything. 70 is where the ceiling actually decides.
+    // Moved 64 -> 70 -> 67 as the salary scale changed underneath it. The
+    // ceiling only decides where a retention is genuinely marginal, and after
+    // the pricing refit (docs/SALARY_SYSTEM_AUDIT.md P0-1) that band sits at
+    // 67 for a SALARY_CONSCIOUS club. Above it the player is worth keeping
+    // even with a full roster; below it he is not worth keeping at all.
     const player = {
       position: "SG" as const,
-      overallRating: 70,
-      potentialRating: 70,
+      overallRating: 67,
+      potentialRating: 67,
       age: 29,
       careerGamesMissedToInjury: 0,
     };
@@ -275,8 +269,12 @@ describe("evaluateReSigningDecision", () => {
   it("Player Morale & Personality System: a standing trade request tips a marginal retention to LET_WALK", () => {
     const player = {
       position: "SF" as const,
-      overallRating: 74,
-      potentialRating: 74,
+      // 74 -> 68 after the pricing refit (docs/SALARY_SYSTEM_AUDIT.md P0-1).
+      // A 74-rated player is now worth keeping even having asked out, so he
+      // cannot show the request CHANGING anything; below 66 he is not worth
+      // keeping either way. 68 is where the retention is genuinely marginal.
+      overallRating: 68,
+      potentialRating: 68,
       age: 28,
       careerGamesMissedToInjury: 0,
     };

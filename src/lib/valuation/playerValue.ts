@@ -162,8 +162,23 @@ export function computePerformanceScore(stats: PlayerValuationStats): number {
  */
 export function scoreToCapFraction(score: number): number {
   const MAX_CAP_FRACTION = 0.35; // roughly a supermax-caliber player
-  const MIDPOINT = 80; // score at which a player earns half of MAX_CAP_FRACTION
-  const STEEPNESS = 0.17;
+  // Score at which a player earns half of MAX_CAP_FRACTION.
+  //
+  // **This was 80, and 80 is an ordinary starter on this scale.** Paying the
+  // middle of the league half the maximum priced a 15-man roster at 135% of the
+  // cap, left 1 of 30 clubs under it and 20 of 30 over the SECOND apron - which
+  // starves free agency, because `computeRivalInterest` gates suitors on having
+  // room. It also drove the curve into the individual-maximum clamp at ~86 OVR,
+  // so an 85-rated player was a max player. See docs/SALARY_SYSTEM_AUDIT.md
+  // P0-1 and P1-1.
+  //
+  // Fitted in `scripts/pricing-curve-calibration.ts` against the real payroll
+  // shape in `realPayrollShape.ts`: mean team payroll 110% of cap, and the
+  // measured count of players above 19.4% of cap ($30M+ in 2025-26 terms).
+  const MIDPOINT = 82;
+  // Steeper to keep the tiers apart once the midpoint moved. A flatter curve at
+  // this midpoint hits the payroll target only by flattening the whole league.
+  const STEEPNESS = 0.21;
   return MAX_CAP_FRACTION / (1 + Math.exp(-STEEPNESS * (score - MIDPOINT)));
 }
 
