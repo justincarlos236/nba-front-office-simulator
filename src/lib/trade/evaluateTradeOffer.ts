@@ -52,6 +52,12 @@ export interface EvaluateTradeOfferInput {
     roster: { overallRating: number; age: number }[];
   };
   currentSeason: number;
+  /**
+   * Calibration seam only - see scripts/trade-threshold-calibration.ts.
+   * Production callers omit it and get `ACCEPT_THRESHOLD`. Exists so a sweep
+   * exercises this exact function rather than a reimplementation of it.
+   */
+  acceptThresholdOverride?: number;
   /** Assets the responding team would receive. */
   incoming: TradeAssetForEvaluation[];
   /** Assets the responding team would send away. */
@@ -290,7 +296,8 @@ export function evaluateTradeOffer(input: EvaluateTradeOfferInput): EvaluateTrad
     totalOutgoingCents += valueOf(asset, "OUT");
   }
 
-  const effectiveAcceptThreshold = ACCEPT_THRESHOLD * weights.acceptanceThresholdMultiplier;
+  const baseAcceptThreshold = input.acceptThresholdOverride ?? ACCEPT_THRESHOLD;
+  const effectiveAcceptThreshold = baseAcceptThreshold * weights.acceptanceThresholdMultiplier;
   const effectiveCounterThreshold = COUNTER_THRESHOLD * weights.acceptanceThresholdMultiplier;
 
   // A margin test, not a ratio. Once a bad contract can be a genuine liability
