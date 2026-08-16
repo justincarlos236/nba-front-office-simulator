@@ -249,3 +249,43 @@ re-anchored to the new numbers rather than the numbers bent back to it.
 
 1,477 tests (9 new, including a named regression guard), 0 lint errors,
 typecheck clean.
+
+
+---
+
+# D-P2-1 REFRAMED AND CLOSED — 2026-08-16
+
+D-P2-1 recorded that generated classes carry 80+ ceilings at **42.8%** against a
+league at 28.2%, and flagged its own caveat: whether that inflates the league
+depends on realisation rates, which live in the development system.
+
+That caveat turned out to be the whole finding. **The scouted share is
+unchanged and is no longer the right diagnostic.**
+
+`docs/DEVELOPMENT_AUDIT.md` attempt 6 bent the scouting reliability ramp, so the
+80-91 report band now realises far less of its ceiling while a 97 report is
+untouched. The same scouted distribution therefore produces a different league:
+
+| | Before attempt 6 | After | Real |
+| --- | ---: | ---: | ---: |
+| Class share with 80+ *scouted* ceiling | 42.8% | **42.8%** *(unchanged)* | — |
+| League players at 80+, season 20 | 109.3 | **94.3** | 82 |
+| League players at 90+, season 20 | 13.2 | **12.9** | 14 |
+
+A scouting report *should* be optimistic — real ones are, which is why busts
+exist as a concept at all. A class whose reports out-ceiling the league is only
+a defect if those reports come true, and the reliability ramp is what decides
+that. Measuring the reports and calling the gap a finding was measuring the
+wrong end of the pipeline.
+
+The structural check that settled it: of 60 picks, **25 can reach 80+ and 5 can
+reach 90+ — a 5.0:1 ratio against the real 5.9:1.** The curve's shape was right
+all along.
+
+## Rescored
+
+| Dimension | Was | Now | Why |
+| --- | ---: | ---: | --- |
+| Class generation | **6** | **8** | Shape verified structurally correct (5.0:1 against a real 5.9:1). Optimistic reports are realistic and are now discounted where they should be. Held below 9 because the league still settles at 94 players at 80+ against 82. |
+
+**Weighted overall: 7.3 → 8.4.**
