@@ -557,6 +557,10 @@ model LeaguePlayer {
   tradeRequestSince          Int?
   homegrown                  Boolean                   @default(false)
   joinedTeamSeason           Int?
+  /// Day within `joinedTeamSeason` that this player joined his current team.
+  /// Null for the seeded roster and for rows written before day tracking, both
+  /// of which are treated as tradeable - see src/lib/trade/recentAcquisition.ts.
+  joinedTeamDayIndex         Int?
   allStarEventParticipants   AllStarEventParticipant[]
   allStarGameStats           AllStarGameStat[]
   allStarSelections          AllStarSelection[]

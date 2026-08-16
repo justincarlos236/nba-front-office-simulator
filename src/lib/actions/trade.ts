@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
 import { prisma } from "@/lib/prisma";
+import { isWithinTradeCooldown, daysUntilTradeable } from "@/lib/trade/recentAcquisition";
 import { validateTrade, type TradeAssetInput } from "@/lib/trade/validateTrade";
 import { buildTradeCapSnapshotSide, type TradeCapSnapshot } from "@/lib/trade/capSnapshot";
 import { describeTrade } from "@/lib/transactions/describeTransaction";
@@ -36,7 +37,7 @@ import { describeIconDeparture } from "@/lib/finances/financeNews";
 import { computeSponsorshipVoidPenaltyCents } from "@/lib/finances/sponsorship";
 import { formatCentsCompact } from "@/lib/money";
 import { DEFAULT_MAX_ROSTER_SIZE } from "@/lib/data-sources/rosterConstruction";
-import { tradesAreClosed } from "@/lib/calendar/seasonCalendar";
+import { tradesAreClosed, currentRegularSeasonDayIndex } from "@/lib/calendar/seasonCalendar";
 
 // The real floor is 14 with a short grace period at 13; 13 is the number the
 // dataset validator already holds every seeded roster to, so a trade must not
@@ -284,6 +285,42 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
       round: p.round as 1 | 2,
     })),
   ];
+
+  // Where we are in the season, for the recent-acquisition cooldown below.
+  // Null outside the regular season (offseason, preseason), where the cooldown
+  // cannot bind anyway - a player acquired last season is long past it.
+  const tradeDayIndex = currentRegularSeasonDayIndex(seasonGames);
+
+  // A player acquired in a trade cannot be flipped again immediately. This is
+  // the fix for docs/TRADE_EXPLOIT_AUDIT.md P0-1: a greedy ladder of
+  // individually-reasonable trades compounded 21.5% of book value by upgrading
+  // the same roster slot over and over. Two other fixes were measured and
+  // eliminated first - a per-club trade budget (the user just rotates
+  // counterparties) and a higher acceptance threshold (no value closes the
+  // exploit without killing CPU-to-CPU trading entirely).
+  //
+  // Deliberately a legality rule rather than a valuation change: it constrains
+  // WHEN a trade may happen, not what a club thinks a player is worth, and the
+  // real league restricts re-trading recent acquisitions for the same reason.
+  if (tradeDayIndex !== null) {
+    const blocked = [...myPlayers, ...theirPlayers].find((lp) =>
+      isWithinTradeCooldown(
+        { joinedTeamSeason: lp.joinedTeamSeason, joinedTeamDayIndex: lp.joinedTeamDayIndex },
+        league.currentSeason,
+        tradeDayIndex,
+      ),
+    );
+    if (blocked) {
+      const days = daysUntilTradeable(
+        { joinedTeamSeason: blocked.joinedTeamSeason, joinedTeamDayIndex: blocked.joinedTeamDayIndex },
+        league.currentSeason,
+        tradeDayIndex,
+      );
+      throw new Error(
+        `${blocked.player.fullName} was acquired too recently to trade again - ${days} more day${days === 1 ? "" : "s"} before he is eligible.`,
+      );
+    }
+  }
 
   const validation = validateTrade({
     season: league.currentSeason,
@@ -601,6 +638,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
           // Franchise Finances (Phase D) - a traded player's tenure clock
           // restarts on the new team, and they're no longer homegrown there.
           joinedTeamSeason: league.currentSeason,
+          joinedTeamDayIndex: tradeDayIndex,
           homegrown: false,
           ...moraleUpdate,
         },
@@ -631,6 +669,7 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
           rotationSlot: null,
           targetMinutesPerGame: null,
           joinedTeamSeason: league.currentSeason,
+          joinedTeamDayIndex: tradeDayIndex,
           homegrown: false,
           ...moraleUpdate,
         },
