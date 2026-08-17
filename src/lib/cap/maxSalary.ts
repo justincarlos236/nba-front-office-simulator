@@ -1,4 +1,5 @@
 import { getSeasonCapRules } from "./constants";
+import { SUPERMAX_FRACTION_OF_CAP, SUPERMAX_MIN_YEARS } from "./supermax";
 
 /**
  * The individual maximum salary - the ceiling one player may be paid.
@@ -57,13 +58,24 @@ const MAX_SALARY_SERVICE_TIERS = [
 export function maxSalaryFractionFor(input: {
   age: number;
   yearsOfExperience?: number | null;
+  /**
+   * Set only on the incumbent club's own re-signing path, from
+   * `isSupermaxEligible`. Raises the 7-9 band to 35%; a no-op everywhere else,
+   * since 10+ is already 35% and 0-6 cannot qualify.
+   */
+  supermaxEligible?: boolean;
 }): number {
   const years = input.yearsOfExperience;
   if (years !== null && years !== undefined && Number.isFinite(years)) {
     const base = MAX_SALARY_SERVICE_TIERS[MAX_SALARY_SERVICE_TIERS.length - 1];
-    return (
-      MAX_SALARY_SERVICE_TIERS.find((tier) => years >= tier.minYears) ?? base
+    const tier = (
+      MAX_SALARY_SERVICE_TIERS.find((t) => years >= t.minYears) ?? base
     ).fractionOfCap;
+    // Re-checked here rather than trusted from the caller. `isSupermaxEligible`
+    // already enforces the band, but this function is exported and a caller
+    // passing the flag for a 4-year player must not thereby skip two tiers.
+    const qualifies = input.supermaxEligible === true && years >= SUPERMAX_MIN_YEARS;
+    return qualifies ? Math.max(tier, SUPERMAX_FRACTION_OF_CAP) : tier;
   }
   return maxSalaryFractionForAge(input.age);
 }
@@ -85,10 +97,12 @@ export function maxIndividualSalaryCents(
   age: number,
   season: number,
   yearsOfExperience?: number | null,
+  supermaxEligible?: boolean,
 ): number {
   const rules = getSeasonCapRules(season);
   return Math.round(
-    Number(rules.salaryCapCents) * maxSalaryFractionFor({ age, yearsOfExperience }),
+    Number(rules.salaryCapCents) *
+      maxSalaryFractionFor({ age, yearsOfExperience, supermaxEligible }),
   );
 }
 
@@ -102,6 +116,10 @@ export function clampToMaxSalary(
   age: number,
   season: number,
   yearsOfExperience?: number | null,
+  supermaxEligible?: boolean,
 ): number {
-  return Math.min(salaryCents, maxIndividualSalaryCents(age, season, yearsOfExperience));
+  return Math.min(
+    salaryCents,
+    maxIndividualSalaryCents(age, season, yearsOfExperience, supermaxEligible),
+  );
 }

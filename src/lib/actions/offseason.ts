@@ -83,6 +83,12 @@ import { computeTeamIdentity } from "@/lib/gm/teamIdentity";
 import { computeTeamNeeds, type TeamNeedRosterPlayer } from "@/lib/gm/teamNeeds";
 import { computePlayerTradeValue } from "@/lib/gm/playerTradeValue";
 import { computeReSigningMaxOfferCents } from "@/lib/freeagency/reSigningRights";
+import {
+  isSupermaxEligible,
+  SUPERMAX_LOOKBACK_SEASONS,
+  type SupermaxAward,
+  type SupermaxQualifyingAward,
+} from "@/lib/cap/supermax";
 import { pickContractLength } from "@/lib/contracts/priceContract";
 import { runCpuFreeAgentMarket } from "@/lib/freeagency/cpuFreeAgentMarket";
 import { evaluateReSigningDecision } from "@/lib/gm/reSigningDecision";
@@ -640,6 +646,32 @@ export async function advanceSeasonAction(leagueId: string) {
       league.teams.map((t) => ({ id: t.id, wins: t.wins, losses: t.losses })),
     );
 
+    // A Designated Veteran Extension lets the incumbent club pay a 7-9 year
+    // player 35% of the cap instead of 30%, and eligibility is earned by
+    // award rather than by rating. Only MVP and Defensive Player of the Year
+    // qualify among the categories this simulator tracks - `cap/supermax.ts`
+    // documents why the All-NBA path cannot be modelled here.
+    const supermaxAwardRows = await prisma.seasonAward.findMany({
+      where: {
+        leagueId,
+        category: { in: ["MVP", "DEFENSIVE_PLAYER_OF_THE_YEAR"] },
+        season: { gte: newSeason - SUPERMAX_LOOKBACK_SEASONS, lte: newSeason - 1 },
+      },
+      select: { leaguePlayerId: true, season: true, category: true },
+    });
+    const supermaxAwardsByPlayer = new Map<string, SupermaxAward[]>();
+    for (const row of supermaxAwardRows) {
+      const list = supermaxAwardsByPlayer.get(row.leaguePlayerId) ?? [];
+      list.push({ season: row.season, category: row.category as SupermaxQualifyingAward });
+      supermaxAwardsByPlayer.set(row.leaguePlayerId, list);
+    }
+    const supermaxFor = (leaguePlayerId: string, yearsOfExperience: number) =>
+      isSupermaxEligible({
+        yearsOfExperience,
+        awards: supermaxAwardsByPlayer.get(leaguePlayerId) ?? [],
+        currentSeason: newSeason,
+      });
+
     // The "sure roster" - everyone confirmed staying, built from
     // playerUpdates already pushed above (which naturally excludes every
     // pending re-signing candidate, no extra filtering needed).
@@ -689,6 +721,7 @@ export async function advanceSeasonAction(leagueId: string) {
             a.newAge,
             resolvePlayerExperience(lpA.player, newSeason),
             lpA.player.position,
+            supermaxFor(a.leaguePlayerId, resolvePlayerExperience(lpA.player, newSeason)),
           ),
           injuryStatus: "HEALTHY",
           careerGamesMissedToInjury: lpA.careerGamesMissedToInjury,
@@ -704,6 +737,7 @@ export async function advanceSeasonAction(leagueId: string) {
             b.newAge,
             resolvePlayerExperience(lpB.player, newSeason),
             lpB.player.position,
+            supermaxFor(b.leaguePlayerId, resolvePlayerExperience(lpB.player, newSeason)),
           ),
           injuryStatus: "HEALTHY",
           careerGamesMissedToInjury: lpB.careerGamesMissedToInjury,
@@ -714,12 +748,14 @@ export async function advanceSeasonAction(leagueId: string) {
       let rosterSize = sureRoster.length;
       for (const p of ordered) {
         const lp = leaguePlayerById.get(p.leaguePlayerId)!;
+        const experience = resolvePlayerExperience(lp.player, newSeason);
         const offerSalaryCents = computeReSigningMaxOfferCents(
           p.finalRating,
           newSeason,
           p.newAge,
-          resolvePlayerExperience(lp.player, newSeason),
+          experience,
           lp.player.position,
+          supermaxFor(p.leaguePlayerId, experience),
         );
         // Term first, so the decision can be made against what the deal
         // actually costs. `pickContractLength` is seeded on the player and

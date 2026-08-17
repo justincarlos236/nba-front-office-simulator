@@ -16,6 +16,10 @@ import { priceContractCents } from "../contracts/priceContract";
  *
  * No negotiation noise: this is a quoted ceiling, not a struck deal, and a
  * ceiling that moved on every read would be unusable in the interface.
+ *
+ * **This is the only path that may grant a supermax.** The Designated Veteran
+ * Extension is available to the incumbent club alone, so `supermaxEligible`
+ * enters the pricing model here and nowhere else - see `cap/supermax.ts`.
  */
 export function computeReSigningMaxOfferCents(
   overallRating: number,
@@ -23,8 +27,16 @@ export function computeReSigningMaxOfferCents(
   age: number,
   yearsOfExperience: number,
   position?: string | null,
+  supermaxEligible?: boolean,
 ): bigint {
   return BigInt(
-    priceContractCents({ season, quality: overallRating, age, yearsOfExperience, position }),
+    priceContractCents({
+      season,
+      quality: overallRating,
+      age,
+      yearsOfExperience,
+      position,
+      supermaxEligible,
+    }),
   );
 }

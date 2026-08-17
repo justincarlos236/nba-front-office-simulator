@@ -716,3 +716,81 @@ rating constant.
 
 **Every P0 and every P1 is closed.** The only open item is the missing supermax
 tier, which is a documented simplification rather than a defect.
+
+---
+
+# S-P2-6 — supermax, implemented
+
+## Before
+
+`maxSalary.ts` modelled the three CBA service tiers correctly — 25% of the cap
+at 0-6 years, 30% at 7-9, 35% at 10+ — and stopped there. The mechanism the
+real league uses to let a club pay *its own* franchise player above his tier did
+not exist, so a 29-year-old with eight years of service and an MVP was capped at
+30% exactly like any other eight-year veteran.
+
+## What was done
+
+A new pure module, `src/lib/cap/supermax.ts`, holding the eligibility rule, and
+an optional `supermaxEligible` flag threaded through the existing pricing chain:
+
+```
+isSupermaxEligible()            <- the rule, award-driven
+  -> computeReSigningMaxOfferCents()   <- the ONLY path that may grant it
+    -> priceContractCents()
+      -> clampToMaxSalary()
+        -> maxSalaryFractionFor()     <- re-checks the band itself
+```
+
+Two properties of the real rule are modelled deliberately:
+
+- **Incumbent club only.** A rival cannot offer a supermax in free agency, so
+  the flag enters at `computeReSigningMaxOfferCents` and nowhere else. Like Bird
+  rights, it makes keeping a homegrown star expensive rather than making him
+  cheap to poach.
+- **7-9 band only.** At 10+ the ordinary tier is already 35%, so there is
+  nothing to raise, and 0-6 cannot qualify at all.
+
+Eligibility is read from `SeasonAward` over a three-season window ending with
+the season just completed: MVP anywhere in the window, or Defensive Player of
+the Year in the most recent season or two of the three.
+
+## After
+
+At the 2027 cap of $170.5M, for a player rated 95:
+
+| Service | Standard | Supermax | Delta | % of cap |
+| --- | --- | --- | --- | --- |
+| 6 years | $42.6M | $42.6M | — | 25% (cannot qualify) |
+| 7 years | $51.1M | $59.7M | **+$8.5M** | 30% → 35% |
+| 8 years | $51.1M | $59.7M | **+$8.5M** | 30% → 35% |
+| 9 years | $51.1M | $59.7M | **+$8.5M** | 30% → 35% |
+| 10 years | $59.7M | $59.7M | — | 35% (already) |
+
+## What the measurement caught
+
+The first implementation applied `Math.max(tier, 0.35)` whenever the flag was
+set, which raised a **six-year** player from 25% to 35% — skipping two tiers on
+a single boolean. `isSupermaxEligible` returns false there, so it was
+unreachable through the live path, but `maxSalaryFractionFor` is exported and
+this module's stated contract is that a bad input must never unlock a supermax.
+The band is now re-checked inside `maxSalaryFractionFor` rather than trusted
+from the caller, with a regression test for the two-tier skip.
+
+## Stated simplification
+
+The real criteria admit a third qualifying path — All-NBA, on the same recency
+pattern as DPOY — and **this cannot be modelled, because the simulator has no
+All-NBA selection.** `AwardCategory` runs MVP, Rookie of the Year, Most
+Improved, Defensive Player of the Year and Sixth Man; nothing anywhere picks
+positional teams.
+
+The omission is one-directional: All-NBA is the most common route in reality, so
+this recognises *fewer* supermax players than the real league would, never more.
+Synthesising an All-NBA from `overallRating` was rejected — it would make the
+salary ceiling depend on a rating rather than on an achievement, which is
+exactly the confusion the service tiers were rewritten to remove.
+
+| ID | Severity | Outcome |
+| --- | --- | --- |
+| S-P2-6 | P2 | **Fixed.** Designated Veteran Extension modelled on the MVP and DPOY paths; All-NBA path documented as unmodellable. |

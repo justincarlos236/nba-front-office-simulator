@@ -177,6 +177,12 @@ export interface PriceContractInput {
    * see `POSITIONAL_MARKET_FACTOR`. Omitted means no adjustment.
    */
   position?: string | null;
+  /**
+   * Whether a Designated Veteran Extension applies, from `isSupermaxEligible`.
+   * Set only by the incumbent club's re-signing path - the supermax cannot be
+   * offered by a rival, so every other caller correctly leaves this unset.
+   */
+  supermaxEligible?: boolean;
 }
 
 /**
@@ -206,7 +212,13 @@ export function priceContractCents(input: PriceContractInput): number {
     Number(veteranMinimumCents(input.season, input.yearsOfExperience)),
   );
   return Math.round(
-    clampToMaxSalary(floored, input.age, input.season, input.yearsOfExperience),
+    clampToMaxSalary(
+      floored,
+      input.age,
+      input.season,
+      input.yearsOfExperience,
+      input.supermaxEligible,
+    ),
   );
 }
 
