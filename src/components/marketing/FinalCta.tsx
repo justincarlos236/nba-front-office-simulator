@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { resolvePrimaryCta } from "@/lib/marketing/primaryCta";
-import { TeamLogoMarquee } from "./TeamLogoMarquee";
 
 /**
  * THE WIRE - the last thing on the page.
@@ -16,9 +15,7 @@ export async function FinalCta() {
   return (
     <section className="border-b border-rule">
       <div className="mx-auto max-w-3xl px-6 py-20 text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-          Thirty jobs are open. One of them is yours.
-        </h2>
+        <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">Take the keys.</h2>
         <Link
           href={primaryCta.href}
           className="mt-8 inline-block rounded-[2px] bg-team-accent px-8 py-3.5 text-base font-semibold text-team-accent-ink transition hover:opacity-90"
@@ -26,7 +23,6 @@ export async function FinalCta() {
           {primaryCta.label}
         </Link>
       </div>
-      <TeamLogoMarquee />
     </section>
   );
 }

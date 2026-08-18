@@ -13,17 +13,16 @@ import { DATASET_ROSTER_SEASON, seasonLabel } from "@/lib/data-sources/datasetSe
  * real progress; drawing a fake fill here would be inventing a save that does
  * not exist.
  *
+ * Each phase carried a line of explanation and they came off: five paragraphs
+ * under five labels turned the shape of a season into another block of prose,
+ * and the shape was the point.
+ *
  * The season is read from the shipped dataset rather than written down, so this
  * cannot drift the way four other labels on this site had already drifted.
  */
 
-const PHASES: { label: string; note: string }[] = [
-  { label: "Regular season", note: "82 games, and a rotation you own every night." },
-  { label: "Playoffs", note: "Play-in, then a bracket that does not care about your record." },
-  { label: "Pre-draft", note: "Spend your scouting budget before the board is set." },
-  { label: "Draft", note: "The lottery decides, then you are on the clock." },
-  { label: "Offseason", note: "Contracts expire, players age, and the cap moves." },
-];
+/** The five phases every save moves through, in order. */
+const PHASES = ["Regular season", "Playoffs", "Pre-draft", "Draft", "Offseason"];
 
 export function SeasonArc() {
   return (
@@ -47,12 +46,11 @@ export function SeasonArc() {
             order still reads top to bottom. */}
         <ol className="mt-12 flex flex-col gap-6 sm:flex-row sm:items-stretch sm:gap-px">
           {PHASES.map((phase) => (
-            <li key={phase.label} className="min-w-0 sm:flex-1">
-              <div className="h-2.5 bg-raised" />
+            <li key={phase} className="min-w-0 sm:flex-1">
+              <div className="h-2.5 bg-team-accent/25" />
               <p className="mt-3 text-[11px] font-semibold tracking-[0.09em] text-ink uppercase">
-                {phase.label}
+                {phase}
               </p>
-              <p className="mt-2 text-sm leading-relaxed text-ink-muted sm:pr-4">{phase.note}</p>
             </li>
           ))}
         </ol>
