@@ -664,3 +664,55 @@ sweep against four targets at once, not a nudge.
 | --- | --- | --- |
 | D-P2-1 (80+ half) | — | **Withdrawn.** The 5-8 benchmark contradicted this file's own stock figures; 9.0 against a needed 9.1 is correct. Reference corrected in the script. |
 | D-P2-1 (85+ half) | P2 | **Open, quantified.** 34.8 stock vs 44; needs a four-target joint sweep, not a single constant. |
+
+## The 85+ sweep — four candidates fitted, all rejected on direct measurement
+
+`scripts/elite-tail-calibration.ts` sweeps the two calibration seams
+`developPlayerRating` exposes — `reliabilityExponent` and `scoutingMissRate` —
+over a 6x5 grid, 120 classes x 3 seeds per point, against four targets at once.
+
+`reliabilityExponent` was the shaped knob and the reasoning was sound as far as
+it went: realization runs off `reportQuality ^ k` with `reportQuality` in [0,1],
+so lowering `k` lifts the middle of the potential range while leaving
+`reportQuality = 1` untouched. That is the exact shape 85-89 needs.
+
+**Four candidates satisfied all four targets**, best at `exp 1.50, miss 0.35`,
+interior to the grid rather than on a boundary, with pick-one holding at 63.6%
+against D-P1-2's fitted 63.8%. On the sweep's own terms it was a clean
+one-constant win.
+
+It was rejected, because the targets it fitted were wrong.
+
+| Tier | Real | Shipped (2.25) | Candidate (1.50) |
+| --- | --- | --- | --- |
+| 90+ | 14 | 15 (+1) | 16 (+2) |
+| 85+ | 44 | 39 (-5) | **38 (-6)** |
+| 80+ | 82 | 91 (+9) | **99 (+17)** |
+
+The candidate is worse on every tier, including the one it was built to fix.
+
+**The error was fitting a proxy.** The per-class targets (9.1 at 80+, 5.5 at
+85+, 2.0 at 90+) were derived as `real stock / assumed duration`, and the
+assumed durations came from the earlier reframing rather than from measurement
+at each tier. Working backwards from the direct numbers instead: the shipped
+build yields 9.0 per class at 80+ and holds a stock of 91, which implies a
+duration of about **10.1** seasons, not the 9.2 assumed. At that duration a real
+stock of 82 wants roughly **8.1** per class — so the shipped 9.0 is already
+modestly high, and every candidate the sweep preferred pushed it further out.
+
+Two harnesses also disagreed, which was the tell. `elite-career-length.ts`
+reported 85+ stock rising 34.8 -> 41.2 under the candidate while
+`development-audit.ts` reported it falling 39 -> 38. They maintain league
+population differently — the former refills from the top of each draft class,
+which over-supplies talent — so the per-class proxy and the direct stock were
+never measuring the same thing.
+
+## Status
+
+| ID | Severity | Outcome |
+| --- | --- | --- |
+| D-P2-1 (85+ half) | P2 | **Open, no change.** The two exposed seams cannot add 85-89 mass without pushing 80+ further past 82; the candidates that fit the derived targets all fail the direct one. A real fix needs a knob that stretches the tail without lifting the whole distribution, which neither seam is. |
+
+The sweep is kept in the repository. Anyone revisiting this should fit against
+the **stock** numbers `development-audit.ts` reports directly, not against
+per-class yields divided out by an assumed career length.
