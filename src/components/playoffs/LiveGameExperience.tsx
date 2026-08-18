@@ -168,8 +168,6 @@ export function LiveGameExperience({
           leagueId={leagueId}
           seriesId={seriesId}
           result={result}
-          homeTeam={homeTeam}
-          awayTeam={awayTeam}
           userTeamId={userTeam.id}
         />
       )}

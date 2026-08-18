@@ -1,41 +1,57 @@
 "use client";
 
 import Link from "next/link";
-import type { LiveGameResult, LiveTeamInfo } from "@/components/playoffs/LiveGameExperience";
+import type { LiveGameResult } from "@/components/playoffs/LiveGameExperience";
 
 export function PostgameSummary({
   leagueId,
   seriesId,
   result,
-  homeTeam,
-  awayTeam,
   userTeamId,
 }: {
   leagueId: string;
   seriesId: string;
   result: LiveGameResult;
-  homeTeam: LiveTeamInfo;
-  awayTeam: LiveTeamInfo;
   userTeamId: string;
 }) {
-  const winner = result.homeWon ? homeTeam : awayTeam;
-  const loser = result.homeWon ? awayTeam : homeTeam;
+  /**
+   * Every label here comes off `result`, never off the `homeTeam`/`awayTeam`
+   * props.
+   *
+   * **Home court alternates between games of a series.** The props describe
+   * the fixture the page is currently pointed at, which after a completed game
+   * is the *next* one - so their home/away assignment is the reverse of the
+   * game whose box score this component is rendering. Labelling this result
+   * with them printed the winner's score beside the loser's name and put each
+   * club's players under the other club's heading, which read as the user
+   * winning a game they had lost.
+   *
+   * `playLiveSeriesGameAction` returns `homeTeamLabel`/`awayTeamLabel` for the
+   * game it actually played, alongside the ids the box score is keyed by. That
+   * is the only self-consistent source, so it is the one used.
+   */
+  const homeLabel = result.homeTeamLabel;
+  const awayLabel = result.awayTeamLabel;
 
-  const higherSeedLabel = result.higherSeedTeamId === homeTeam.id ? homeTeam.label : awayTeam.label;
-  const lowerSeedLabel = result.higherSeedTeamId === homeTeam.id ? awayTeam.label : homeTeam.label;
+  const winner = result.homeWon ? homeLabel : awayLabel;
+  const loser = result.homeWon ? awayLabel : homeLabel;
+
+  const higherSeedIsHome = result.higherSeedTeamId === result.homeTeamId;
+  const higherSeedLabel = higherSeedIsHome ? homeLabel : awayLabel;
+  const lowerSeedLabel = higherSeedIsHome ? awayLabel : homeLabel;
 
   const seriesDecided = Boolean(result.seriesWinnerTeamId);
   const seriesWinnerLabel =
-    result.seriesWinnerTeamId === homeTeam.id
-      ? homeTeam.label
-      : result.seriesWinnerTeamId === awayTeam.id
-        ? awayTeam.label
+    result.seriesWinnerTeamId === result.homeTeamId
+      ? homeLabel
+      : result.seriesWinnerTeamId === result.awayTeamId
+        ? awayLabel
         : null;
 
   const userIsHigherSeed = result.higherSeedTeamId === userTeamId;
   const userWins = userIsHigherSeed ? result.seriesHigherSeedWins : result.seriesLowerSeedWins;
   const opponentWins = userIsHigherSeed ? result.seriesLowerSeedWins : result.seriesHigherSeedWins;
-  const opponentLabel = userTeamId === homeTeam.id ? awayTeam.label : homeTeam.label;
+  const opponentLabel = userTeamId === result.homeTeamId ? awayLabel : homeLabel;
 
   const homeLines = result.boxScore
     .filter((l) => l.leagueTeamId === result.homeTeamId)
@@ -49,8 +65,8 @@ export function PostgameSummary({
       <div className="rounded-[2px] border border-rule bg-field p-6 text-center">
         <p className="text-xs font-semibold tracking-wide text-team-accent uppercase">Final</p>
         <p className="mt-2 text-3xl font-black text-ink">
-          {winner.label} {result.homeWon ? result.finalHomeScore : result.finalAwayScore} -{" "}
-          {result.homeWon ? result.finalAwayScore : result.finalHomeScore} {loser.label}
+          {winner} {result.homeWon ? result.finalHomeScore : result.finalAwayScore} -{" "}
+          {result.homeWon ? result.finalAwayScore : result.finalHomeScore} {loser}
         </p>
         <p className="mt-3 text-sm text-ink-muted">
           {seriesDecided
@@ -91,8 +107,8 @@ export function PostgameSummary({
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <BoxScoreTable label={homeTeam.label} lines={homeLines} />
-        <BoxScoreTable label={awayTeam.label} lines={awayLines} />
+        <BoxScoreTable label={homeLabel} lines={homeLines} />
+        <BoxScoreTable label={awayLabel} lines={awayLines} />
       </div>
 
       <div className="flex justify-center gap-3 pt-2">
