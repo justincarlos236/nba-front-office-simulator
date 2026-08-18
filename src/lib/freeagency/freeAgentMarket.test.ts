@@ -76,7 +76,7 @@ describe("a refusal survives a production build", () => {
 
   it("returns the failure as a value the caller checks", () => {
     expect(read(ACTION)).toContain("SignFreeAgentResult");
-    expect(read(FORM)).toContain("result.ok");
+    expect(read(FORM)).toContain("isActionFailure");
   });
 
   it("tells the user what the player would have signed for", () => {

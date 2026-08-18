@@ -1,5 +1,6 @@
 "use server";
 
+import { reportFailures } from "@/lib/errors/actionResult";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import {
@@ -195,6 +196,10 @@ async function requireOwnedLeague(leagueId: string) {
  * actually unlocks the next season.
  */
 export async function advanceSeasonAction(leagueId: string) {
+  return reportFailures(() => runAdvanceSeasonAction(leagueId));
+}
+
+async function runAdvanceSeasonAction(leagueId: string) {
   const league = await requireOwnedLeague(leagueId);
   const season = league.currentSeason;
   const newSeason = season + 1;
@@ -1257,31 +1262,31 @@ export async function advanceSeasonAction(leagueId: string) {
       cpuReSignings
         .filter((r) => !alreadyReSigned.has(r.leaguePlayerId))
         .map(async (r) => {
-        const contract = await prisma.contract.create({
-          data: {
-            leaguePlayerId: r.leaguePlayerId,
-            leagueTeamId: r.leagueTeamId,
-            signedSeason: newSeason,
-            startSeason: newSeason,
-            endSeason: newSeason + r.years - 1,
-            signedUsing: "BIRD_RIGHTS",
-          },
-        });
-        // 8% raises: this is a Bird-rights re-signing, which is exactly the
-        // deal the higher ceiling exists for. These were flat, so a CPU club's
-        // payroll never grew across a contract and its future apron position
-        // was quietly too healthy. See docs/CONTRACT_AUDIT.md C-P2-3.
-        await prisma.contractYear.createMany({
-          data: contractYearSalaries(r.offerSalaryCents, r.years, "BIRD_RIGHTS").map(
-            (salaryCents, i) => ({
-              contractId: contract.id,
-              season: newSeason + i,
-              salaryCents,
-              guaranteedCents: salaryCents,
-            }),
-          ),
-        });
-      }),
+          const contract = await prisma.contract.create({
+            data: {
+              leaguePlayerId: r.leaguePlayerId,
+              leagueTeamId: r.leagueTeamId,
+              signedSeason: newSeason,
+              startSeason: newSeason,
+              endSeason: newSeason + r.years - 1,
+              signedUsing: "BIRD_RIGHTS",
+            },
+          });
+          // 8% raises: this is a Bird-rights re-signing, which is exactly the
+          // deal the higher ceiling exists for. These were flat, so a CPU club's
+          // payroll never grew across a contract and its future apron position
+          // was quietly too healthy. See docs/CONTRACT_AUDIT.md C-P2-3.
+          await prisma.contractYear.createMany({
+            data: contractYearSalaries(r.offerSalaryCents, r.years, "BIRD_RIGHTS").map(
+              (salaryCents, i) => ({
+                contractId: contract.id,
+                season: newSeason + i,
+                salaryCents,
+                guaranteedCents: salaryCents,
+              }),
+            ),
+          });
+        }),
     );
   }
   if (cpuReSigningNewsRows.length > 0) {
@@ -1311,27 +1316,27 @@ export async function advanceSeasonAction(leagueId: string) {
       cpuFreeAgentSignings
         .filter((x) => !alreadySigned.has(x.leaguePlayerId))
         .map(async (s) => {
-        const contract = await prisma.contract.create({
-          data: {
-            leaguePlayerId: s.leaguePlayerId,
-            leagueTeamId: s.leagueTeamId,
-            signedSeason: newSeason,
-            startSeason: newSeason,
-            endSeason: newSeason + s.years - 1,
-            signedUsing: "NONE",
-          },
-        });
-        // 5%: signed into cap space, not with Bird rights, so the standard
-        // ceiling applies - matching the `signedUsing: NONE` above.
-        await prisma.contractYear.createMany({
-          data: contractYearSalaries(s.salaryCents, s.years, "NONE").map((salaryCents, i) => ({
-            contractId: contract.id,
-            season: newSeason + i,
-            salaryCents,
-            guaranteedCents: salaryCents,
-          })),
-        });
-      }),
+          const contract = await prisma.contract.create({
+            data: {
+              leaguePlayerId: s.leaguePlayerId,
+              leagueTeamId: s.leagueTeamId,
+              signedSeason: newSeason,
+              startSeason: newSeason,
+              endSeason: newSeason + s.years - 1,
+              signedUsing: "NONE",
+            },
+          });
+          // 5%: signed into cap space, not with Bird rights, so the standard
+          // ceiling applies - matching the `signedUsing: NONE` above.
+          await prisma.contractYear.createMany({
+            data: contractYearSalaries(s.salaryCents, s.years, "NONE").map((salaryCents, i) => ({
+              contractId: contract.id,
+              season: newSeason + i,
+              salaryCents,
+              guaranteedCents: salaryCents,
+            })),
+          });
+        }),
     );
 
     // The market is only pressure if the user can see it resolve. A player they
@@ -1425,7 +1430,7 @@ export async function advanceSeasonAction(leagueId: string) {
         endSeason: newSeason + CPU_AUTO_HIRE_CONTRACT_YEARS - 1,
         annualSalaryCents: computeStaffSalary(hire.role, hire.quality),
       })),
-          skipDuplicates: true,
+      skipDuplicates: true,
     });
   }
 
@@ -1654,7 +1659,11 @@ export async function advanceSeasonAction(leagueId: string) {
   await prisma.draftPick.createMany({
     data: (farEdgeExisting > 0
       ? []
-      : buildFuturePickRows(leagueId, league.teams.map((t) => t.id), [farEdgeSeason])
+      : buildFuturePickRows(
+          leagueId,
+          league.teams.map((t) => t.id),
+          [farEdgeSeason],
+        )
     ).map((row) => ({ ...row, overallPickNumber: null })),
   });
 
@@ -2099,7 +2108,7 @@ export async function advanceSeasonAction(leagueId: string) {
       attendancePct: u.attendancePct,
       franchisePopularity: u.franchisePopularity,
     })),
-      skipDuplicates: true,
+    skipDuplicates: true,
   });
 
   // Fans Page Redesign (Phase 3) - Fan Culture, recomputed wholesale for

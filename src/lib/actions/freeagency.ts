@@ -22,6 +22,7 @@ import { resolveFreeAgentMarket } from "@/lib/freeagency/freeAgentMarket";
 import { contractYearSalaries } from "@/lib/contracts/contractRaises";
 import { formatCentsCompact } from "@/lib/money";
 import { toUserFacingError, type UserFacingError } from "@/lib/errors/userFacing";
+import type { ActionFailure } from "@/lib/errors/actionResult";
 
 export interface SignFreeAgentInput {
   leagueId: string;
@@ -43,7 +44,7 @@ export interface SignFreeAgentInput {
  * There is no success member: the action redirects to the new contract sheet,
  * so a caller that gets a value back is looking at a failure.
  */
-export type SignFreeAgentResult = { ok: false; error: UserFacingError };
+export type SignFreeAgentResult = ActionFailure;
 
 const fail = (error: UserFacingError): SignFreeAgentResult => ({ ok: false, error });
 

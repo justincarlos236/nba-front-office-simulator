@@ -1,5 +1,6 @@
 "use server";
 
+import { reportFailures } from "@/lib/errors/actionResult";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
@@ -103,6 +104,10 @@ async function loadCapState(leagueTeamId: string, season: number) {
  * TradeBuilder is a UX affordance, not the authorization boundary.
  */
 export async function executeTradeAction(input: ExecuteTradeInput) {
+  return reportFailures(() => runExecuteTradeAction(input));
+}
+
+async function runExecuteTradeAction(input: ExecuteTradeInput) {
   const session = await auth();
   if (!session?.user) redirect("/sign-in");
 
@@ -312,7 +317,10 @@ export async function executeTradeAction(input: ExecuteTradeInput) {
     );
     if (blocked) {
       const days = daysUntilTradeable(
-        { joinedTeamSeason: blocked.joinedTeamSeason, joinedTeamDayIndex: blocked.joinedTeamDayIndex },
+        {
+          joinedTeamSeason: blocked.joinedTeamSeason,
+          joinedTeamDayIndex: blocked.joinedTeamDayIndex,
+        },
         league.currentSeason,
         tradeDayIndex,
       );

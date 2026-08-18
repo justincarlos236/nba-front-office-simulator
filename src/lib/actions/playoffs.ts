@@ -1,5 +1,6 @@
 "use server";
 
+import { reportFailures } from "@/lib/errors/actionResult";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { computeLeagueTeamStrengths } from "@/lib/actions/leagueTeamStrength";
@@ -71,6 +72,10 @@ async function startingGameNumber(leagueId: string, season: number): Promise<num
  * for this season - both enforced server-side, not just hidden in the UI.
  */
 export async function startPlayoffsAction(leagueId: string) {
+  return reportFailures(() => runStartPlayoffsAction(leagueId));
+}
+
+async function runStartPlayoffsAction(leagueId: string) {
   const league = await requireOwnedLeague(leagueId);
   const season = league.currentSeason;
 
@@ -285,6 +290,10 @@ async function advanceRoundIfComplete(
  * it's decided (see `advanceRoundIfComplete`).
  */
 export async function simulateRoundAction(leagueId: string) {
+  return reportFailures(() => runSimulateRoundAction(leagueId));
+}
+
+async function runSimulateRoundAction(leagueId: string) {
   const league = await requireOwnedLeague(leagueId);
   const season = league.currentSeason;
 

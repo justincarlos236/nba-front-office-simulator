@@ -1,5 +1,6 @@
 "use client";
 
+import { isActionFailure } from "@/lib/errors/actionResult";
 import { useMemo, useState } from "react";
 import {
   advanceDraftAction,
@@ -65,7 +66,9 @@ export function DraftExperience({
   );
   const [isBusy, setIsBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // `unknown` because it holds either a returned failure or a caught Error;
+  // `ErrorNotice` accepts both.
+  const [errorMessage, setErrorMessage] = useState<unknown>(null);
   // Scouting Pillar Redesign (Phase 3) - the ordered list IS "My Board";
   // see the same conversion in PreDraftScoutingView.tsx.
   const [boardOrder, setBoardOrder] = useState<string[]>(initialBookmarkedProspectIds);
@@ -212,9 +215,10 @@ export function DraftExperience({
     setIsBusy(true);
     try {
       const result = await advanceDraftAction(leagueId);
-      setPendingReveal({ resolvedPicks: result.resolvedPicks, done: result.done });
+      if (isActionFailure(result)) setErrorMessage(result.error);
+      else setPendingReveal({ resolvedPicks: result.resolvedPicks, done: result.done });
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : "Something went wrong.");
+      setErrorMessage(err);
     } finally {
       setIsBusy(false);
     }
@@ -233,9 +237,10 @@ export function DraftExperience({
     setIsBusy(true);
     try {
       const result = await makeDraftPickAction(leagueId, prospectId);
-      setPendingReveal({ resolvedPicks: [result.resolvedPick], done: false });
+      if (isActionFailure(result)) setErrorMessage(result.error);
+      else setPendingReveal({ resolvedPicks: [result.resolvedPick], done: false });
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : "Something went wrong.");
+      setErrorMessage(err);
     } finally {
       setIsBusy(false);
     }
@@ -322,10 +327,10 @@ export function DraftExperience({
       {/* Immediate feedback on what just happened stays at the top - it is a
           response to an action the player just took. The running night log is
           a feed, so it sits below the board rather than above it. */}
-      {(message || errorMessage) && (
+      {(message || errorMessage != null) && (
         <div className="border-t border-rule bg-field p-4">
           {message && <p className="text-[15px] text-team-accent">{message}</p>}
-          {errorMessage && <ErrorNotice error={errorMessage} />}
+          {errorMessage != null && <ErrorNotice error={errorMessage} />}
         </div>
       )}
 

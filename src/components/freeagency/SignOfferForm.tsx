@@ -1,5 +1,6 @@
 "use client";
 
+import { isActionFailure } from "@/lib/errors/actionResult";
 import { useMemo, useState, useTransition } from "react";
 import { HowDoesThisWork } from "@/components/guide/HowDoesThisWork";
 import { ApronLevel, eligibleMidLevelException } from "@/lib/cap/apron";
@@ -94,7 +95,7 @@ export function SignOfferForm({
           offerSalaryCents: offerSalaryCents.toString(),
           years,
         });
-        if (result && !result.ok) setSubmitError(result.error);
+        if (isActionFailure(result)) setSubmitError(result.error);
       } catch (error) {
         if (error instanceof Error && error.message !== "NEXT_REDIRECT") {
           setSubmitError(error);

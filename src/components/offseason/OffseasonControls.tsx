@@ -1,5 +1,6 @@
 "use client";
 
+import { isActionFailure } from "@/lib/errors/actionResult";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { advanceSeasonAction } from "@/lib/actions/offseason";
@@ -23,7 +24,9 @@ export function OffseasonControls({
 }) {
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // `unknown` because it holds either a returned failure or a caught Error;
+  // `ErrorNotice` accepts both.
+  const [errorMessage, setErrorMessage] = useState<unknown>(null);
   const [confirming, setConfirming] = useState(false);
 
   /**
@@ -43,6 +46,10 @@ export function OffseasonControls({
     startTransition(async () => {
       try {
         const result = await advanceSeasonAction(leagueId);
+        if (isActionFailure(result)) {
+          setErrorMessage(result.error);
+          return;
+        }
         // The action reports the tenure ending. It already revalidated this
         // route, and the league layout swaps every sub-page for the career
         // recap once `league.endedAt` is set - so the correct behaviour is to
@@ -61,7 +68,7 @@ export function OffseasonControls({
             : `Welcome to the ${nextSeasonLabel} season.`,
         );
       } catch (err) {
-        setErrorMessage(err instanceof Error ? err.message : "Something went wrong.");
+        setErrorMessage(err);
       }
     });
   }
@@ -139,7 +146,7 @@ export function OffseasonControls({
         </div>
       )}
       {message && <p className="mt-3 text-sm text-team-accent">{message}</p>}
-      {errorMessage && (
+      {errorMessage != null && (
         <div className="mt-3">
           <ErrorNotice error={errorMessage} />
         </div>

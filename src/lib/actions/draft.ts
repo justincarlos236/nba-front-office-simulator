@@ -1,5 +1,6 @@
 "use server";
 
+import { reportFailures } from "@/lib/errors/actionResult";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { generateContract } from "@/lib/contracts/generateContract";
@@ -281,6 +282,10 @@ async function buildCpuTeamStates(
  * filling in pick by pick instead of jumping straight to the end state.
  */
 export async function advanceDraftAction(leagueId: string) {
+  return reportFailures(() => runAdvanceDraftAction(leagueId));
+}
+
+async function runAdvanceDraftAction(leagueId: string) {
   const league = await requireOwnedLeague(leagueId);
   const season = league.currentSeason;
   const userTeamId = league.userControlledTeamId;
@@ -607,6 +612,10 @@ export async function advanceDraftAction(leagueId: string) {
  * the user's own picks too - see draftNightNarrative.ts.
  */
 export async function makeDraftPickAction(leagueId: string, prospectId: string) {
+  return reportFailures(() => runMakeDraftPickAction(leagueId, prospectId));
+}
+
+async function runMakeDraftPickAction(leagueId: string, prospectId: string) {
   const league = await requireOwnedLeague(leagueId);
   const season = league.currentSeason;
   const userTeamId = league.userControlledTeamId;
@@ -726,6 +735,10 @@ export async function makeDraftPickAction(leagueId: string, prospectId: string) 
 
 /** Toggles a bookmark on/off for "build your own draft board" - a league is one user's save, so no separate per-user dimension is needed. */
 export async function toggleDraftProspectBookmarkAction(leagueId: string, prospectId: string) {
+  return reportFailures(() => runToggleDraftProspectBookmarkAction(leagueId, prospectId));
+}
+
+async function runToggleDraftProspectBookmarkAction(leagueId: string, prospectId: string) {
   const league = await requireOwnedLeague(leagueId);
   const season = league.currentSeason;
 

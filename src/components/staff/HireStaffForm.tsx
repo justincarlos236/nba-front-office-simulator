@@ -1,5 +1,6 @@
 "use client";
 
+import { isActionFailure } from "@/lib/errors/actionResult";
 import { useState, useTransition } from "react";
 import { formatCentsCompact } from "@/lib/money";
 import { hireStaffAction } from "@/lib/actions/staff";
@@ -21,7 +22,9 @@ export function HireStaffForm({
   );
   const [years, setYears] = useState(2);
   const [isPending, startTransition] = useTransition();
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  // `unknown` because it holds either a returned failure or a caught Error;
+  // `ErrorNotice` accepts both.
+  const [submitError, setSubmitError] = useState<unknown>(null);
 
   const annualSalaryCents = BigInt(Math.round(salaryDollars * 100));
   const belowMinimum = annualSalaryCents < BigInt(minAcceptableAnnualSalaryCents);
@@ -30,15 +33,16 @@ export function HireStaffForm({
     setSubmitError(null);
     startTransition(async () => {
       try {
-        await hireStaffAction({
+        const result = await hireStaffAction({
           leagueId,
           staffId,
           years,
           annualSalaryCents: annualSalaryCents.toString(),
         });
+        if (isActionFailure(result)) setSubmitError(result.error);
       } catch (error) {
         if (error instanceof Error && error.message !== "NEXT_REDIRECT") {
-          setSubmitError(error.message);
+          setSubmitError(error);
         }
       }
     });
@@ -84,7 +88,7 @@ export function HireStaffForm({
         </p>
       )}
 
-      {submitError && (
+      {submitError != null && (
         <div className="mt-3">
           <ErrorNotice error={submitError} />
         </div>

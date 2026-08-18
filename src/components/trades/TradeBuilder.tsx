@@ -1,5 +1,6 @@
 "use client";
 
+import { isActionFailure } from "@/lib/errors/actionResult";
 import { useMemo, useState, useTransition } from "react";
 import { HowDoesThisWork } from "@/components/guide/HowDoesThisWork";
 import { formatCentsCompact } from "@/lib/money";
@@ -125,7 +126,9 @@ export function TradeBuilder({
   const [mySelectedPicks, setMySelectedPicks] = useState<Set<string>>(new Set());
   const [theirSelectedPicks, setTheirSelectedPicks] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  // `unknown` because it holds either a returned failure or a caught Error;
+  // `ErrorNotice` accepts both.
+  const [submitError, setSubmitError] = useState<unknown>(null);
 
   const result = useMemo(() => {
     if (
@@ -375,7 +378,7 @@ export function TradeBuilder({
     setSubmitError(null);
     startTransition(async () => {
       try {
-        await executeTradeAction({
+        const result = await executeTradeAction({
           leagueId,
           fromTeamId: myTeam.leagueTeamId,
           toTeamId: theirTeam.leagueTeamId,
@@ -384,10 +387,11 @@ export function TradeBuilder({
           myPickIds: [...mySelectedPicks],
           theirPickIds: [...theirSelectedPicks],
         });
+        if (isActionFailure(result)) setSubmitError(result.error);
       } catch (error) {
         // redirect() throws internally on success - only real errors land here
         if (error instanceof Error && error.message !== "NEXT_REDIRECT") {
-          setSubmitError(error.message);
+          setSubmitError(error);
         }
       }
     });
@@ -558,7 +562,7 @@ export function TradeBuilder({
           className="mt-2 block w-fit text-xs text-ink-muted underline hover:text-ink"
         />
 
-        {submitError && (
+        {submitError != null && (
           <div className="mt-3">
             <ErrorNotice error={submitError} />
           </div>

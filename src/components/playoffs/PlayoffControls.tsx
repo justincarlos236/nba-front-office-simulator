@@ -1,5 +1,6 @@
 "use client";
 
+import { isActionFailure } from "@/lib/errors/actionResult";
 import { useState, useTransition } from "react";
 import { simulateRoundAction, startPlayoffsAction } from "@/lib/actions/playoffs";
 import { ErrorNotice } from "@/components/ui/ErrorNotice";
@@ -17,16 +18,22 @@ export function PlayoffControls({
 }) {
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // `unknown` because it holds either a returned failure or a caught Error;
+  // `ErrorNotice` accepts both.
+  const [errorMessage, setErrorMessage] = useState<unknown>(null);
 
   function handleStart() {
     setErrorMessage(null);
     startTransition(async () => {
       try {
-        await startPlayoffsAction(leagueId);
+        const result = await startPlayoffsAction(leagueId);
+        if (isActionFailure(result)) {
+          setErrorMessage(result.error);
+          return;
+        }
         setMessage("Play-in tournament simulated. Round 1 matchups are set.");
       } catch (err) {
-        setErrorMessage(err instanceof Error ? err.message : "Something went wrong.");
+        setErrorMessage(err);
       }
     });
   }
@@ -36,6 +43,10 @@ export function PlayoffControls({
     startTransition(async () => {
       try {
         const result = await simulateRoundAction(leagueId);
+        if (isActionFailure(result)) {
+          setErrorMessage(result.error);
+          return;
+        }
         setMessage(
           result.champion
             ? "The championship series is decided - see the champion below."
@@ -44,7 +55,7 @@ export function PlayoffControls({
               : `Round ${result.roundCompleted} complete. The bracket has advanced.`,
         );
       } catch (err) {
-        setErrorMessage(err instanceof Error ? err.message : "Something went wrong.");
+        setErrorMessage(err);
       }
     });
   }
@@ -103,7 +114,7 @@ export function PlayoffControls({
         <p className="text-sm text-ink-muted">The playoffs are complete for this season.</p>
       )}
       {message && <p className="mt-3 text-sm text-team-accent">{message}</p>}
-      {errorMessage && (
+      {errorMessage != null && (
         <div className="mt-3">
           <ErrorNotice error={errorMessage} />
         </div>

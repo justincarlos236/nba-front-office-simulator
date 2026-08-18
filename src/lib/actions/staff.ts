@@ -1,5 +1,6 @@
 "use server";
 
+import { reportFailures } from "@/lib/errors/actionResult";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -31,6 +32,10 @@ export interface HireStaffInput {
  * not trusted from the client.
  */
 export async function hireStaffAction(input: HireStaffInput) {
+  return reportFailures(() => runHireStaffAction(input));
+}
+
+async function runHireStaffAction(input: HireStaffInput) {
   const session = await auth();
   if (!session?.user) redirect("/sign-in");
 
