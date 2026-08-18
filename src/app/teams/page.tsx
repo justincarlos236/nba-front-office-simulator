@@ -21,7 +21,7 @@ export default async function TeamsPage() {
       <h1 className="text-3xl font-bold tracking-tight text-ink">The League</h1>
       <p className="mt-2 text-ink-muted">
         All 30 real NBA teams, seeded from reference data. Pick one to see its real roster and
-        2023-24 season stats.
+        2025-26 season stats.
       </p>
 
       {(["EAST", "WEST"] as const).map((conference) => (

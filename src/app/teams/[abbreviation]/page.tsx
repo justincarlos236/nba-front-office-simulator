@@ -2,6 +2,21 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { deriveOverallRating } from "@/lib/league/ratingFromStats";
+
+/**
+ * The season these public roster pages quote.
+ *
+ * This was hardcoded to 2023 and had quietly stopped working. The 2026-27
+ * re-seed replaced every roster, so the 818 `PlayerSeasonStat` rows still held
+ * for 2023 belong to players who are no longer on a team - **3 of 585 rostered
+ * players had a 2023 row**, so all but three rendered with no stats, no derived
+ * rating, and a sort key of zero.
+ *
+ * 2025 covers 483 of 585 (83%) and is the freshest season with full coverage,
+ * which also puts these pages in the same era as the rosters a new save
+ * starts from.
+ */
+const ROSTER_STATS_SEASON = 2025;
 import { RosterScatterChart } from "@/components/teams/RosterScatterChart";
 import { PlayerChip } from "@/components/players/PlayerChip";
 
@@ -22,7 +37,7 @@ export default async function TeamDetailPage({ params }: PageProps) {
     include: {
       players: {
         include: {
-          seasonStats: { where: { season: 2023 } },
+          seasonStats: { where: { season: ROSTER_STATS_SEASON } },
         },
       },
     },
