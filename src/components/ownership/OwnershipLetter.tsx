@@ -1,6 +1,7 @@
 import { formatCentsCompact } from "@/lib/money";
 import { Artifact, ArtifactHead, ArtifactSignature } from "@/components/ui/Artifact";
 import { Stamp } from "@/components/ui/Stamp";
+import { seasonLabel } from "@/lib/data-sources/datasetSeasons";
 
 /**
  * THE WIRE - Artifact. Ownership speaking to you, as a letter.
@@ -50,10 +51,6 @@ const FALLBACK_VOICE = {
   salutation: "We need to talk about the books.",
   close: "I trust you will take care of it.",
 };
-
-function seasonLabel(season: number): string {
-  return `${season}-${(season + 1).toString().slice(-2)}`;
-}
 
 export function OwnershipLetter({
   demand,

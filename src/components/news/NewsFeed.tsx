@@ -9,6 +9,7 @@ import { rankNews, type RankableStory } from "@/lib/news/storyRank";
 import { dayLabel, groupByDay, ROLLUP_LABEL, type NewsDay } from "@/lib/news/newsDay";
 import { buildStoryCards, type StoryCard } from "@/lib/news/storyCards";
 import { recordLabel, streakLabel, type LeaguePulse } from "@/lib/news/leaguePulse";
+import { seasonLabel } from "@/lib/data-sources/datasetSeasons";
 
 export type NewsItem = RankableStory;
 
@@ -97,10 +98,6 @@ const TYPE_LABEL: Record<string, string> = {
   FINANCIAL_REPORT: "Finances",
   FRANCHISE_MILESTONE: "Franchise Value",
 };
-
-function seasonLabel(season: number): string {
-  return `${season}-${(season + 1).toString().slice(-2)}`;
-}
 
 function pillClass(active: boolean): string {
   return `rounded-[2px] border px-2.5 py-1 text-[11px] font-semibold tracking-[0.09em] uppercase transition-colors duration-120 ${

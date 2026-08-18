@@ -1,5 +1,6 @@
 import type { PlayerValueTier } from "@/lib/valuation/playerValueTier";
 import type { InjuryStatus, StaffRole } from "@/generated/prisma/client";
+import { clamp } from "@/lib/math/clamp";
 import {
   scaleSentimentByPatience,
   scaleSentimentByLoyalty,
@@ -24,10 +25,6 @@ import {
  * narrowed to the categories that don't get one of these dedicated inline
  * hooks (RETIREMENT, GAME_MILESTONE, GAME_RESULT) - see offseason.ts.
  */
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
 
 /** Clamps a proposed new Fan Happiness value to the model's 0-100 range - the one shared invariant every call site below relies on. */
 export function applyFanHappinessDelta(current: number, delta: number): number {

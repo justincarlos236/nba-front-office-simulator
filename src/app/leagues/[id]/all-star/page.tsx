@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { PlayerChip } from "@/components/players/PlayerChip";
 import { ResolveWeekendButton } from "@/components/allstar/ResolveWeekendButton";
+import { seasonLabel } from "@/lib/data-sources/datasetSeasons";
 
 /**
  * Resolving All-Star weekend runs several events and writes their results.
@@ -30,10 +31,6 @@ const ROLE_LABEL: Record<string, string> = {
   RESERVE: "Reserve",
   INJURY_REPLACEMENT: "Injury Replacement",
 };
-
-function seasonLabel(season: number): string {
-  return `${season}-${(season + 1).toString().slice(-2)}`;
-}
 
 /** Rising Stars participant rows encode side/MVP as "<captainLeaguePlayerId>[_MVP]" - see generateAllStarWeekend. */
 function risingStarsSide(result: string): string | null {

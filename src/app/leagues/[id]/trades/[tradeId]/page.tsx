@@ -12,6 +12,7 @@ import { resolveTeamAccent } from "@/lib/design/teamAccent";
 import { PlayerAvatar } from "@/components/players/PlayerAvatar";
 import { ButtonLink, Label, Status } from "@/components/ui/primitives";
 import { Stamp } from "@/components/ui/Stamp";
+import { seasonLabel } from "@/lib/data-sources/datasetSeasons";
 
 export const dynamic = "force-dynamic";
 
@@ -31,10 +32,6 @@ interface PageProps {
   /** `?just=1` is set by the execute redirect, so the page can greet a fresh
    *  execution without guessing from wall-clock time on a revisit. */
   searchParams: Promise<{ just?: string }>;
-}
-
-function seasonLabel(season: number): string {
-  return `${season}-${(season + 1).toString().slice(-2)}`;
 }
 
 /** Signed delta, in the reader's terms: "+$4.2M" / "-$1.1M" / "no change". */

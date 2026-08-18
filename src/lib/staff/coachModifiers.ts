@@ -1,6 +1,7 @@
 import type { CoachStyle, DepartmentLevel } from "@/generated/prisma/client";
 import type { CoachModifier } from "@/lib/simulation/boxScore";
 import { departmentQualityDelta } from "@/lib/finances/departments";
+import { clamp } from "@/lib/math/clamp";
 
 /**
  * Translates a Head Coach's quality/style into the small numeric nudges
@@ -17,10 +18,6 @@ const THREE_PA_MULTIPLIER: Record<CoachStyle, number> = {
   BALANCED: 1.0,
   GRIND_IT_OUT: 0.85,
 };
-
-function clamp(v: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, v));
-}
 
 /**
  * A small, additive win-probability nudge - same scale as the engine's flat

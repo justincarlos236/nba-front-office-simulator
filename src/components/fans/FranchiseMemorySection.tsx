@@ -1,3 +1,4 @@
+import { seasonLabel } from "@/lib/data-sources/datasetSeasons";
 /**
  * Fans Page Redesign, Section 5 - "Franchise Memory"
  * (docs/design/FANS_PAGE_REDESIGN.md Part 3.5). The short, permanent list of
@@ -9,10 +10,6 @@ export interface MemoryItem {
   id: string;
   season: number;
   description: string;
-}
-
-function seasonLabel(season: number): string {
-  return `${season}-${(season + 1).toString().slice(-2)}`;
 }
 
 export function FranchiseMemorySection({ memories }: { memories: MemoryItem[] }) {

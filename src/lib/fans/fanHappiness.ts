@@ -1,6 +1,7 @@
 import type { EvaluationVerdict } from "@/lib/gm/seasonEvaluation";
 import type { PlayerValueTier } from "@/lib/valuation/playerValueTier";
 import type { CoachStyle, MarketSize } from "@/generated/prisma/client";
+import { clamp } from "@/lib/math/clamp";
 
 /**
  * Fan Happiness is its own model, separate from League.ownerConfidence -
@@ -60,10 +61,6 @@ const COACH_STYLE_DELTA: Record<CoachStyle, number> = {
 // meaningful but bounded happiness swing.
 const TRANSACTION_SENTIMENT_SCALE = 3;
 const TRANSACTION_SENTIMENT_CAP = 15;
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
 
 /** Returns a delta to apply to LeagueTeam.fanHappiness - the caller clamps the result to 0-100, same convention as reputation drift elsewhere in this codebase. */
 export function computeFanHappinessDelta(inputs: FanHappinessInputs): number {

@@ -10,6 +10,7 @@ import { OffseasonControls } from "@/components/offseason/OffseasonControls";
 import { HowDoesThisWork } from "@/components/guide/HowDoesThisWork";
 import { PlayerChip } from "@/components/players/PlayerChip";
 import { PlayerAvatar } from "@/components/players/PlayerAvatar";
+import { seasonLabel } from "@/lib/data-sources/datasetSeasons";
 
 /**
  * Season advance: re-signings, progression, awards, finances, draft-order
@@ -32,10 +33,6 @@ export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ id: string }>;
-}
-
-function seasonLabel(season: number): string {
-  return `${season}-${(season + 1).toString().slice(-2)}`;
 }
 
 const AWARD_LABELS: Record<string, string> = {

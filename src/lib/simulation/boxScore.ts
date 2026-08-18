@@ -3,6 +3,7 @@ import { deriveOverallRating } from "@/lib/league/ratingFromStats";
 import type { RosterPlayerForSimulation, RealStatBaseline } from "@/lib/actions/leagueTeamStrength";
 import { resolveRotation } from "@/lib/rotation/resolveRotation";
 import { RANK_MINUTE_WEIGHTS, TEAM_MINUTES, WEIGHT_PER_MINUTE } from "@/lib/rotation/autoRotation";
+import { clamp } from "@/lib/math/clamp";
 
 /**
  * A lightweight (not possession-by-possession) per-game player box-score
@@ -67,10 +68,6 @@ const GARBAGE_TIME_MARGIN_CEIL = 40;
 const MAX_PLAYER_MINUTES = 48;
 const DEEP_BENCH_SCRATCH_RANK = 9; // rank >= this can DNP-CD
 const DEEP_BENCH_SCRATCH_CHANCE = 0.4;
-
-function clamp(v: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, v));
-}
 
 // Triangular random in [-spread, +spread], mode 0 - cheap, and matches this
 // codebase's existing convention of a uniform rng() with no normal-RNG

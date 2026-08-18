@@ -21,6 +21,7 @@
  * of players where this model still disagrees with broad NBA consensus.
  */
 import type { CanonicalSeasonStat } from "./canonical";
+import { clamp } from "@/lib/math/clamp";
 
 // Average-starter anchor baselines (per game) - the statline that scores ~0
 // production points, i.e. lands near the ANCHOR overall.
@@ -115,10 +116,6 @@ export function seedPriorFromSalary(salaryCents: number, capCents: number): numb
     return lo.rating + t * (hi.rating - lo.rating);
   }
   return last.rating;
-}
-
-function clamp(x: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, x));
 }
 
 /**

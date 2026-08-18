@@ -1,4 +1,5 @@
-"use client";
+import { seasonLabel } from "@/lib/data-sources/datasetSeasons";
+("use client");
 
 import {
   CartesianGrid,
@@ -24,10 +25,6 @@ export interface FinancesTrendPoint {
   franchiseValue: number;
   /** Season net income in dollars (can be negative). */
   netIncome: number;
-}
-
-function seasonLabel(season: number): string {
-  return `${season}-${(season + 1).toString().slice(-2)}`;
 }
 
 function billions(dollars: number): string {

@@ -1,6 +1,7 @@
 import { randomInRange } from "@/lib/contracts/seededRandom";
 import { generateProspectName } from "@/lib/draft/prospectNames";
 import type { CoachStyle, StaffRole } from "@/generated/prisma/client";
+import { clamp } from "@/lib/math/clamp";
 
 /**
  * Algorithmic staff generation - no real-world coach/executive data is
@@ -47,10 +48,6 @@ const MAX_CONTRACT_YEARS = 4;
 
 function randomIntInclusive(rng: () => number, min: number, max: number): number {
   return min + Math.floor(rng() * (max - min + 1));
-}
-
-function clamp(v: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, v));
 }
 
 /** Averaging two uniform draws biases toward the middle of the range, so extreme hires (60 or 99) stay rare - same shape as a real hiring pool. */

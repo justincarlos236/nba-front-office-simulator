@@ -12,15 +12,12 @@ import { TrophyCabinet } from "@/components/history/TrophyCabinet";
 import { MemoryTimeline } from "@/components/history/MemoryTimeline";
 import { curateFranchiseMemory } from "@/lib/fans/franchiseMemory";
 import { Label } from "@/components/ui/primitives";
+import { seasonLabel } from "@/lib/data-sources/datasetSeasons";
 
 export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ id: string }>;
-}
-
-function seasonLabel(season: number): string {
-  return `${season}-${(season + 1).toString().slice(-2)}`;
 }
 
 const AWARD_LABELS: Record<string, string> = {

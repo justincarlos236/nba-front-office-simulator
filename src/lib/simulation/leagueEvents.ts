@@ -17,6 +17,7 @@ import { computeDraftPickTradeValue } from "@/lib/gm/draftPickTradeValue";
 import { GM_PERSONALITY_WEIGHTS, type GmPersonality } from "@/lib/gm/gmPersonality";
 import type { TeamIdentity } from "@/lib/gm/teamIdentity";
 import type { TeamNeed } from "@/lib/gm/teamNeeds";
+import { clamp } from "@/lib/math/clamp";
 
 /**
  * Around-the-league activity rolled as regular-season games are simulated:
@@ -68,10 +69,6 @@ const MAJOR_INJURIES = [
 
 function pick<T>(pool: readonly T[], rng: () => number): T {
   return pool[Math.floor(rng() * pool.length)];
-}
-
-function clamp(v: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, v));
 }
 
 // a real, modest nudge on both how often

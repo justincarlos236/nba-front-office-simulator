@@ -1,4 +1,5 @@
-"use client";
+import { seasonLabel } from "@/lib/data-sources/datasetSeasons";
+("use client");
 
 import {
   CartesianGrid,
@@ -23,10 +24,6 @@ const COLORS = {
 export interface FanHappinessTrendPoint {
   season: number;
   fanHappiness: number;
-}
-
-function seasonLabel(season: number): string {
-  return `${season}-${(season + 1).toString().slice(-2)}`;
 }
 
 function ChartTooltip({

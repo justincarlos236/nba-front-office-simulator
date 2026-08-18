@@ -1,6 +1,4 @@
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
+import { clamp } from "@/lib/math/clamp";
 
 /** Clamps a proposed new morale value to the model's 0-100 range - same shared-invariant pattern as applyFanHappinessDelta. */
 export function applyMoraleDelta(current: number, delta: number): number {

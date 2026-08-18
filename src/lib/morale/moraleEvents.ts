@@ -3,6 +3,7 @@ import { applyMoraleDelta } from "@/lib/morale/moraleLevel";
 import type { RotationRole } from "@/lib/rotation/roleLabel";
 import type { PlayerValueTier } from "@/lib/valuation/playerValueTier";
 import type { TeamIdentity } from "@/lib/gm/teamIdentity";
+import { clamp } from "@/lib/math/clamp";
 
 /**
  * Per-event morale deltas (Player Morale & Personality System) - same
@@ -10,10 +11,6 @@ import type { TeamIdentity } from "@/lib/gm/teamIdentity";
  * at the real call site where a curated event actually happens, each
  * bounded and personality-weighted rather than a flat per-event bonus.
  */
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
 
 // Every axis is stored 0-100; this converts it into a 0.5x-1.5x weight
 // around the midpoint so a maxed-out axis reacts at 1.5x baseline and a
