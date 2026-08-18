@@ -598,3 +598,69 @@ closer than they have ever been, and neither compounds.
 | Long-save distribution | 7 | **7** | 80+ at 91 against 82; 90+ correct. Unchanged. |
 
 **Nothing in the simulator now scores below 7.**
+
+---
+
+# D-P2-1, reframed a second time — and one of its two halves was a bad benchmark
+
+The residual was carried as a contradiction: the league holds **39** players at
+85+ against a real **44**, while a draft class yields **9.0** future stars
+against a real **5-8**. More stars produced, fewer stars present. Nothing could
+be tuned without pushing the other number further out.
+
+There was no contradiction. **The two figures measure different tiers** — the
+class-yield line counts 80+, the stock line counts 85+ — so they were never in
+tension and the framing was wrong.
+
+## Measuring all three tiers against one identity
+
+`stock = yield x duration` has to hold at every tier at once.
+`scripts/elite-career-length.ts` measures stock, arrivals and duration together
+over 25 seasons x 5 seeds, and a per-class distribution run supplies the yields:
+
+| Tier | Realized per class | Real stock | Duration that implies | Verdict |
+| --- | --- | --- | --- | --- |
+| 80+ | 8.90 | 82 | 9.2 seasons | consistent |
+| 85+ | 4.50 | 44 | 9.8 seasons, vs 8.0 measured | **low** |
+| 90+ | 2.04 | 14 | 6.9 seasons | consistent |
+
+Measured directly, elite duration is **8.0 seasons** (real 6-8) and mean age at
+85+ is **28.6** — both in range. Retirement was ruled out first by inspection:
+`retirementProbability` applies no rating penalty above 72, so an 85-rated
+player faces only the age term.
+
+## The "5-8" reference was wrong, and it was the louder half of the finding
+
+`REAL_80_PLUS` is 82 players held at 80+, and that tier is held for roughly nine
+seasons, so a steady state requires about **82/9 = 9.1** arrivals a year. The
+simulator produces **9.0**. A class yielding 5-8 would drain the league.
+
+That reference had been written independently of the stock figures the same
+script checks against. It is now derived from them. **The 80+ half of D-P2-1 was
+never a defect** — it was the benchmark disagreeing with its own file.
+
+## What actually remains
+
+One tier, modestly thin: 85+ stock measures **34.8** against a real **44**, and
+realized 85+ per class is **4.50** where a stock of 44 wants about 5.5.
+
+The cause is structural rather than a loose constant. Growth is bounded by
+`ceiling = MIN_RATING + (potentialRating - MIN_RATING) x realization`, where
+realization is `reportQuality ^ 2.25` and is always below 1 — potential is a
+*scout's report*, not an attainable truth, which is a deliberate and defensible
+design. The consequence is that the shortfall in absolute points widens as
+potential rises, thinning the band just under the top. Per class there are
+15.43 prospects with 85+ potential and 4.50 realize it, a 29% rate.
+
+**No change was made, and a fix here is narrower than it looks.** The 80+ and
+90+ tiers are both correct, so any adjustment must add mass specifically in
+85-89 without disturbing either — and the three constants that would do it
+(`SCOUTING_MISS_RATE`, `MISSED_REPORT_REALIZATION`, `RELIABILITY_CURVE_EXPONENT`)
+are the same ones holding D-P1-2's pick-one bust rate at its fitted 63.8%.
+Moving them trades one calibrated target for another, so this needs a joint
+sweep against four targets at once, not a nudge.
+
+| ID | Severity | Outcome |
+| --- | --- | --- |
+| D-P2-1 (80+ half) | — | **Withdrawn.** The 5-8 benchmark contradicted this file's own stock figures; 9.0 against a needed 9.1 is correct. Reference corrected in the script. |
+| D-P2-1 (85+ half) | P2 | **Open, quantified.** 34.8 stock vs 44; needs a four-target joint sweep, not a single constant. |

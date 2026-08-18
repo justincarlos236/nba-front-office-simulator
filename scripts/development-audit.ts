@@ -237,6 +237,13 @@ for (const slot of [1, 5, 10, 20, 30, 45, 60]) {
 }
 
 // How many future 80+ players does a whole class actually yield?
+//
+// The reference used to read "5-8", which is not consistent with the rest of
+// this file. `REAL_80_PLUS` is 82 players held at 80+, and a player holds that
+// tier for roughly nine seasons, so a steady state needs about 82/9 = 9.1
+// arriving every year. A class yielding 5-8 would drain the league. The band
+// below is derived from the stock this same script already checks against,
+// rather than guessed independently of it - see docs/DEVELOPMENT_AUDIT.md.
 const classRng = makeRng(4242);
 const CLASS_TRIALS = 300;
 let starTotal = 0;
@@ -260,7 +267,10 @@ for (let t = 0; t < CLASS_TRIALS; t++) {
   }
 }
 futureStarsPerClass = starTotal / CLASS_TRIALS;
-console.log(`\n  future 80+ players per class: ${futureStarsPerClass.toFixed(1)}  (real: 5-8)`);
+console.log(
+  `\n  future 80+ players per class: ${futureStarsPerClass.toFixed(1)}` +
+    `  (needed to hold a stock of ${REAL_80_PLUS}: ~9.1)`,
+);
 
 line();
 console.log("Reproduce: npx tsx scripts/development-audit.ts");
