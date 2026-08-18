@@ -132,6 +132,11 @@ export async function getScoutingBudgetSummary(
   leagueId: string,
   season: number,
 ): Promise<ScoutingBudgetSummary> {
+  // Exported from a "use server" module, so this is a callable endpoint and
+  // has to prove ownership like every other one - it used to read a league by
+  // id alone, which let any caller learn another save's scouting budget.
+  await requireOwnedLeagueTeam(leagueId);
+
   const league = await prisma.league.findUnique({ where: { id: leagueId } });
   if (!league?.userControlledTeamId) return { capacity: 0, spent: 0, remaining: 0 };
 

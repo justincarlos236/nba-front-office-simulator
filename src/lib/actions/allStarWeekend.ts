@@ -114,10 +114,32 @@ export interface AllStarPerformancePool {
  * leagueEvents.ts ranks candidates from this exact pool rather than a
  * second, separately invented signal.
  */
+/**
+ * Both exported helpers below are invoked server-side from already-guarded
+ * actions - `generateAllStarWeekend` from `simulation.ts` and
+ * `buildAllStarPerformancePool` from `leagueEvents.ts`. That is not sufficient
+ * on its own: every export of a `"use server"` module is a callable POST
+ * endpoint, so each is independently reachable by anyone who can name a
+ * league. `generateAllStarWeekend` performs seven writes.
+ *
+ * 404-shaped rather than 403-shaped, matching `loadOwnedProposal` in
+ * `tradeOffers.ts` - a non-owner must not learn that a league exists.
+ */
+async function requireOwnedLeague(leagueId: string) {
+  const session = await auth();
+  if (!session?.user) redirect("/sign-in");
+
+  const league = await prisma.league.findUnique({ where: { id: leagueId } });
+  if (!league || league.ownerId !== session.user.id) throw new Error("League not found");
+  return league;
+}
+
 export async function buildAllStarPerformancePool(
   leagueId: string,
   season: number,
 ): Promise<AllStarPerformancePool> {
+  await requireOwnedLeague(leagueId);
+
   const rosteredPlayers = await prisma.leaguePlayer.findMany({
     where: { leagueId, leagueTeamId: { not: null }, isActive: true },
     select: {
@@ -244,6 +266,8 @@ export async function generateAllStarWeekend(
   season: number,
   triggeredAtDayIndex: number | null = null,
 ): Promise<{ allStarWeekendId: string }> {
+  await requireOwnedLeague(leagueId);
+
   const {
     performanceSnapshots,
     risingStarsCandidates,
