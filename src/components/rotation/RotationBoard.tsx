@@ -21,6 +21,8 @@ import { PlayerChip } from "@/components/players/PlayerChip";
 import { updateRotationAction } from "@/lib/actions/rotation";
 import {
   MAX_ROTATION_SIZE,
+  MAX_TARGET_MINUTES,
+  SUSTAINABLE_MINUTES,
   suggestedMinutesForRank,
   buildAutoRotation,
 } from "@/lib/rotation/autoRotation";
@@ -228,11 +230,13 @@ function SortableRow({
           <input
             type="number"
             min={0}
-            max={40}
+            max={MAX_TARGET_MINUTES}
             value={minutes}
             disabled={!healthy}
             onChange={(e) =>
-              onMinutesChange(Math.max(0, Math.min(40, Number(e.target.value) || 0)))
+              onMinutesChange(
+                Math.max(0, Math.min(MAX_TARGET_MINUTES, Number(e.target.value) || 0)),
+              )
             }
             className={`w-14 rounded border border-rule px-1.5 py-1 text-right ${
               healthy ? "bg-raised text-ink" : "bg-field text-rule line-through"
@@ -285,6 +289,15 @@ export function RotationBoard({
 
   const total = order.slice(0, MAX_ROTATION_SIZE).reduce((sum, id) => sum + (minutes[id] ?? 0), 0);
   const totalIsUnbalanced = total < MIN_TOTAL_FOR_WARNING || total > MAX_TOTAL_FOR_WARNING;
+
+  // Who is being asked for more than a sustainable load. Only players actually
+  // in the rotation count - a target sitting on a thirteenth man nobody plays
+  // costs nothing and should not raise a warning.
+  const heavilyLoaded = order
+    .slice(0, MAX_ROTATION_SIZE)
+    .filter((id) => (minutes[id] ?? 0) > SUSTAINABLE_MINUTES)
+    .map((id) => playerById.get(id)?.fullName)
+    .filter((name): name is string => Boolean(name));
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -354,11 +367,14 @@ export function RotationBoard({
     // Close the rounding gap on the highest-minute player, same convention allocateMinutes itself uses.
     const residual = TEAM_MINUTES - scaled.reduce((sum, m) => sum + m, 0);
     const highestIndex = scaled.indexOf(Math.max(...scaled));
-    scaled[highestIndex] = Math.max(0, Math.min(40, scaled[highestIndex] + residual));
+    scaled[highestIndex] = Math.max(
+      0,
+      Math.min(MAX_TARGET_MINUTES, scaled[highestIndex] + residual),
+    );
 
     const updated = { ...minutes };
     inRotationIds.forEach((id, i) => {
-      updated[id] = Math.max(0, Math.min(40, scaled[i]));
+      updated[id] = Math.max(0, Math.min(MAX_TARGET_MINUTES, scaled[i]));
     });
     setMinutes(updated);
   }
@@ -409,6 +425,20 @@ export function RotationBoard({
               Each player&apos;s target will be proportionally scaled to fit 240 team-minutes during
               games, so actual minutes may differ from what you entered - use Auto-balance to make
               this exact.
+            </p>
+          )}
+          {/* The ceiling is 48, and riding a player that hard is a legitimate
+              call - but it is priced, and a cost the user cannot see is not a
+              decision he made. Names the two mechanisms rather than warning
+              vaguely: injury risk that also climbs as the season wears on, and
+              a return on those minutes that is real but reduced. */}
+          {heavilyLoaded.length > 0 && (
+            <p className="max-w-xs text-xs text-caution">
+              {heavilyLoaded.length === 1
+                ? `${heavilyLoaded[0]} is above a sustainable load.`
+                : `${heavilyLoaded.length} players are above a sustainable load.`}{" "}
+              Heavy minutes raise injury risk, more so late in the season, and the minutes past{" "}
+              {SUSTAINABLE_MINUTES} return less than the ones before them.
             </p>
           )}
         </div>

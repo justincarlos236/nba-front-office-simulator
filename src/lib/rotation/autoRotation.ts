@@ -26,6 +26,33 @@ const FULL_ROTATION_WEIGHT_SUM = RANK_MINUTE_WEIGHTS.reduce((sum, w) => sum + w,
 export const TEAM_MINUTES = 240;
 
 /**
+ * The most one player may be assigned for a single game - a full regulation 48.
+ *
+ * Lives here rather than in the action so the client board, the server action
+ * and the engine clamp all read one value; a board that let a user type a
+ * number the action would silently clamp is a save that does not do what it
+ * said. Was 40, which made "ride your best player" unavailable rather than
+ * costly. See MAX_PLAYER_MINUTES in src/lib/simulation/boxScore.ts for the
+ * engine-side clamp this must stay in step with.
+ */
+export const MAX_TARGET_MINUTES = 48;
+
+/**
+ * The workload above which a minute stops returning full value.
+ *
+ * Lives beside the ceiling because the two only make sense together: raising
+ * the ceiling to 48 is what created a range that needed pricing. See
+ * `effectiveMinutes` in ./rotationStrength.ts for the discount itself and the
+ * evidence behind the number - briefly, no NBA player has averaged 40 minutes
+ * for a season since the 1970s despite nothing forbidding it, which is what
+ * coaches converging on 36-38 looks like from the outside.
+ *
+ * Exported so the rotation board can tell the user which of his players are
+ * past it. A cost he cannot see is not a decision he made.
+ */
+export const SUSTAINABLE_MINUTES = 36;
+
+/**
  * How many RANK_MINUTE_WEIGHTS units one minute of intended playing time is
  * worth, so an absolute `targetMinutesPerGame` can share a weighting pool with
  * the relative rank curve above.

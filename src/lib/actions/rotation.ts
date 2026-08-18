@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveRotation } from "@/lib/rotation/resolveRotation";
+import { MAX_TARGET_MINUTES } from "@/lib/rotation/autoRotation";
 import { rotationRoleForRank } from "@/lib/rotation/roleLabel";
 import { importanceForRating } from "@/lib/transactions/newsImportance";
 import {
@@ -27,11 +28,18 @@ import type { RosterPlayerForSimulation } from "@/lib/actions/leagueTeamStrength
 import type { NewsImportance } from "@/generated/prisma/client";
 
 const MIN_TARGET_MINUTES = 0;
-// Matches allocateMinutes's own hard per-player clamp (src/lib/simulation/boxScore.ts) -
-// a UI input above this would silently get engine-clamped down, so the
-// action enforces the same real ceiling rather than letting the user set
-// an unreachable target.
-const MAX_TARGET_MINUTES = 40;
+// MAX_TARGET_MINUTES matches allocateMinutes's own hard per-player clamp
+// (src/lib/simulation/boxScore.ts) - a UI input above it would silently get
+// engine-clamped down, so the action enforces the same real ceiling rather
+// than letting the user set an unreachable target. Imported rather than
+// restated so the board, this action and the engine cannot drift.
+//
+// It is a full regulation 48. It was 40, which stopped a user from making the
+// call a real head coach can make - ride your best player and accept what it
+// costs. Two models already price that cost: the injury rate climbs with the
+// heaviest assignment on the roster and again as the season wears on
+// (src/lib/simulation/leagueEvents.ts), and minutes above a sustainable load
+// contribute at half credit to team strength (src/lib/rotation/rotationStrength.ts).
 const STARTER_RANK_CEILING = 5; // ranks 0-4 are "starting five"
 
 export interface RotationOrderEntry {

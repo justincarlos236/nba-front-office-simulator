@@ -57,6 +57,14 @@ export interface GameRosters {
 
 const GARBAGE_TIME_MARGIN_FLOOR = 15;
 const GARBAGE_TIME_MARGIN_CEIL = 40;
+
+/**
+ * The hard per-player ceiling for one game: a full regulation 48.
+ *
+ * Kept in step with MAX_TARGET_MINUTES in src/lib/actions/rotation.ts, which
+ * clamps user input to the same value so a saved target is always reachable.
+ */
+const MAX_PLAYER_MINUTES = 48;
 const DEEP_BENCH_SCRATCH_RANK = 9; // rank >= this can DNP-CD
 const DEEP_BENCH_SCRATCH_CHANCE = 0.4;
 
@@ -134,7 +142,9 @@ export function allocateMinutes(
   const totalWeight = weights.reduce((sum, w) => sum + w, 0);
   if (totalWeight <= 0) return new Map();
 
-  const minutes = weights.map((w) => clamp(Math.round((w / totalWeight) * TEAM_MINUTES), 0, 40));
+  const minutes = weights.map((w) =>
+    clamp(Math.round((w / totalWeight) * TEAM_MINUTES), 0, MAX_PLAYER_MINUTES),
+  );
 
   // Close the rounding gap by nudging the highest-minute players first -
   // never the deep bench, so a scratch player doesn't suddenly show up.
@@ -146,7 +156,7 @@ export function allocateMinutes(
     const delta = residual > 0 ? 1 : -1;
     if (
       minutes[idx] + delta >= 0 &&
-      minutes[idx] + delta <= 40 &&
+      minutes[idx] + delta <= MAX_PLAYER_MINUTES &&
       (minutes[idx] > 0 || delta > 0)
     ) {
       minutes[idx] += delta;

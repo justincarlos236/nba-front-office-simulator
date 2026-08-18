@@ -114,8 +114,8 @@ describe("positional balance", () => {
   const allGuards: Pos[] = Array(12).fill("PG");
   const allCentres: Pos[] = Array(12).fill("C");
 
-  const noPointGuard: Pos[] = ["SG","SG","SF","PF","C","SF","SG","SF","PF","C","SF","C"];
-  const noCentre: Pos[] = ["PG","SG","SF","PF","PF","PG","SG","SF","PF","PF","SF","PF"];
+  const noPointGuard: Pos[] = ["SG", "SG", "SF", "PF", "C", "SF", "SG", "SF", "PF", "C", "SF", "C"];
+  const noCentre: Pos[] = ["PG", "SG", "SF", "PF", "PF", "PG", "SG", "SF", "PF", "PF", "SF", "PF"];
 
   it("charges a rotation with nobody to create off the dribble", () => {
     // Wings can run some point, so this is a real cost rather than the full
@@ -129,7 +129,7 @@ describe("positional balance", () => {
   });
 
   it("charges more for missing both than for missing either alone", () => {
-    const both: Pos[] = ["SG","SG","SF","PF","PF","SF","SG","SF","PF","PF","SF","SF"];
+    const both: Pos[] = ["SG", "SG", "SF", "PF", "PF", "SF", "SG", "SF", "PF", "PF", "SF", "SF"];
     expect(strength(balanced) - strength(both)).toBeGreaterThan(
       strength(balanced) - strength(noPointGuard),
     );
@@ -160,5 +160,74 @@ describe("positional balance", () => {
     for (const shape of [allGuards, allCentres]) {
       expect(strength(shape)).toBeLessThan(strength(balanced));
     }
+  });
+});
+
+/**
+ * Heavy minutes must pay, but not at face value.
+ *
+ * The per-player ceiling was raised from 40 to 48 so a user can make the call a
+ * real head coach can - ride your best player and wear the consequences. That
+ * only reads as a decision if the extra range costs something. The injury model
+ * prices the whole 36-to-48 jump at roughly +0.14 expected injuries a season,
+ * which on its own would have made 48 close to free, so minutes above a
+ * sustainable load contribute at half credit here.
+ */
+describe("minutes above a sustainable load", () => {
+  const POSITIONS: Position[] = ["PG", "SG", "SF", "PF", "C", "PG", "SG", "SF", "PF", "C"];
+  const OTHERS = [34, 32, 30, 28, 22, 20, 18, 14, 12];
+
+  /** A balanced ten-man rotation whose best player is set to `starMinutes`. */
+  function withStarAt(starMinutes: number): RosterPlayerForSimulation[] {
+    const minutes = [starMinutes, ...OTHERS];
+    return POSITIONS.map((position, i) =>
+      player({
+        position,
+        overallRating: 92 - i * 3,
+        rotationSlot: i,
+        targetMinutesPerGame: minutes[i],
+      }),
+    );
+  }
+
+  const at = (m: number) => computeRotationAdjustedStrength(withStarAt(m));
+
+  it("still rewards playing the best player more", () => {
+    // The discount must not invert the incentive. Leaning on a 92 ahead of a
+    // 65 is correct; it is simply not free.
+    expect(at(48)).toBeGreaterThan(at(36));
+    expect(at(36)).toBeGreaterThan(at(30));
+  });
+
+  it("pays less for a minute above the plateau than one below it", () => {
+    // The property the constant exists to create. Below 36 each minute is
+    // worth full credit; above it, half. Compared per minute so the two
+    // stretches are measured on the same scale.
+    const belowPerMinute = (at(36) - at(30)) / 6;
+    const abovePerMinute = (at(42) - at(36)) / 6;
+    expect(abovePerMinute).toBeLessThan(belowPerMinute);
+    expect(abovePerMinute).toBeCloseTo(belowPerMinute / 2, 2);
+  });
+
+  it("keeps a near-linear return within the sustainable range", () => {
+    // No discount applies below the plateau, so equal minute steps there are
+    // worth about the same - a curve that bent everywhere would be a different
+    // change from the one intended. "About": strength is a weighted *average*,
+    // so raising one player's minutes also raises the divisor, which bends the
+    // return slightly on its own. That residual is ~2%, against the ~50% the
+    // discount itself produces, so the two are not confusable.
+    const stepA = (at(34) - at(30)) / 4;
+    const stepB = (at(36) - at(32)) / 4;
+    expect(Math.abs(stepA / stepB - 1)).toBeLessThan(0.05);
+  });
+
+  it("does not discount a rotation left on the automatic curve", () => {
+    // CPU teams set no targets and must be unaffected by any of this.
+    const auto = POSITIONS.map((position, i) =>
+      player({ position, overallRating: 92 - i * 3, rotationSlot: i }),
+    );
+    const before = computeRotationAdjustedStrength(auto);
+    expect(before).toBeGreaterThan(0);
+    expect(computeRotationAdjustedStrength(auto)).toBe(before);
   });
 });

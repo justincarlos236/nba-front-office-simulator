@@ -1,6 +1,6 @@
 import type { RosterPlayerForSimulation } from "@/lib/actions/leagueTeamStrength";
 import { resolveRotation } from "./resolveRotation";
-import { RANK_MINUTE_WEIGHTS, WEIGHT_PER_MINUTE } from "./autoRotation";
+import { RANK_MINUTE_WEIGHTS, SUSTAINABLE_MINUTES, WEIGHT_PER_MINUTE } from "./autoRotation";
 
 /**
  * "How strong is this team tonight, given who is actually slated to play and
@@ -52,6 +52,37 @@ const SUBSTITUTE_CREDIT = 0.35;
 const MAX_ROLE_PENALTY = 6;
 const MAX_TOTAL_PENALTY = 9;
 
+/**
+ * Minutes above a sustainable workload are worth less than minutes below it.
+ *
+ * This exists because the per-player ceiling was raised from 40 to 48, and
+ * without it the extra range was free. Strength is a minutes-weighted average
+ * of ratings, so a star's share of it rises with every minute assigned, while
+ * the injury model prices the whole jump from 36 to 48 at about **+0.15
+ * expected injuries a season**. A decision that costs almost nothing and always
+ * pays is not a decision; "play the best five for 48 and dress nobody else"
+ * would simply have been correct.
+ *
+ * **The anchor is what real coaches do when nothing stops them.** There is no
+ * rule against playing a starter the full 48, and no NBA player has averaged
+ * even 40 for a season since the 1970s. Coaches with every incentive to lean on
+ * their best players converge in the 36-38 range, which is evidence that heavy
+ * minutes do not return face value - legs go, and the last quarter is played by
+ * a worse version of the same man.
+ *
+ * Half credit above the plateau is a stated modelling choice rather than a
+ * fitted constant. What it buys is a genuine optimum: pushing a star past the
+ * high 30s still helps, but by progressively less, against an injury risk that
+ * keeps climbing.
+ */
+const HEAVY_MINUTE_CREDIT = 0.5;
+
+/** A target in minutes, discounted for the part above a sustainable load. */
+function effectiveMinutes(targetMinutes: number): number {
+  if (targetMinutes <= SUSTAINABLE_MINUTES) return targetMinutes;
+  return SUSTAINABLE_MINUTES + (targetMinutes - SUSTAINABLE_MINUTES) * HEAVY_MINUTE_CREDIT;
+}
+
 /** Minutes covering each role, counting neighbours at partial credit. */
 function rolePenalty(
   rotation: { position: string; weight: number }[],
@@ -95,13 +126,19 @@ export function computeRotationAdjustedStrength(roster: RosterPlayerForSimulatio
   const weighted: { position: string; weight: number }[] = [];
 
   for (const { player, rank, targetMinutes } of rotation) {
-    // `targetMinutes` is absolute minutes (8-40); RANK_MINUTE_WEIGHTS is a
+    // `targetMinutes` is absolute minutes (0-48); RANK_MINUTE_WEIGHTS is a
     // relative curve (0.08-1.42). Mixing them raw made one player with a
     // custom target worth ~27x his rotation-mates and inflated team strength
     // by up to 8 rating points. `boxScore.ts` always applied this conversion;
     // this function did not. See WEIGHT_PER_MINUTE in autoRotation.ts.
+    //
+    // The discount applies here and nowhere else: the player really does play
+    // those 48 minutes and really does accumulate the box score for them. What
+    // he does not do is contribute at a fresh player's rate throughout.
     const weight =
-      targetMinutes !== null ? targetMinutes * WEIGHT_PER_MINUTE : (RANK_MINUTE_WEIGHTS[rank] ?? 0);
+      targetMinutes !== null
+        ? effectiveMinutes(targetMinutes) * WEIGHT_PER_MINUTE
+        : (RANK_MINUTE_WEIGHTS[rank] ?? 0);
     weightedSum += player.overallRating * weight;
     weightTotal += weight;
     weighted.push({ position: player.position, weight });
