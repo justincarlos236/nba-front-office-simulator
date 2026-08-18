@@ -86,7 +86,8 @@ const PATTERNS: { test: RegExp; error: UserFacingError }[] = [
     test: /man minimum|under the \d+-man/i,
     error: {
       summary: "That would leave the roster too thin.",
-      remedy: "A team has to finish a trade with at least 13 players. Send fewer, or take more back.",
+      remedy:
+        "A team has to finish a trade with at least 13 players. Send fewer, or take more back.",
     },
   },
   {
@@ -125,10 +126,34 @@ const FALLBACK: UserFacingError = {
 };
 
 /**
+ * True when a value is already written for the user and needs no translation.
+ *
+ * **Server actions cannot report by throwing.** Next.js redacts the message of
+ * any error thrown out of a server action in a production build, replacing it
+ * with a generic string carrying only a digest. Every pattern above therefore
+ * matched nothing once deployed, and every failure - a cap ruling, a full
+ * roster, a player refusing an offer - reached the user as the fallback
+ * "That didn't go through." It read as a broken feature rather than a rule.
+ *
+ * The fix is for an action to *return* its failure rather than throw it, since
+ * a returned value crosses the boundary intact. This guard lets `ErrorNotice`
+ * accept either form, so a caught `Error` and a returned failure render the
+ * same way.
+ */
+export function isUserFacingError(value: unknown): value is UserFacingError {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as UserFacingError).summary === "string"
+  );
+}
+
+/**
  * Translate a caught error. Never returns the raw engine message as the
  * summary; an unmatched failure gets the plain fallback instead.
  */
 export function toUserFacingError(error: unknown): UserFacingError {
+  if (isUserFacingError(error)) return error;
   const message = error instanceof Error ? error.message : String(error ?? "");
   // Next's redirect() throws internally on success - never an error to show.
   if (message === "NEXT_REDIRECT") return FALLBACK;

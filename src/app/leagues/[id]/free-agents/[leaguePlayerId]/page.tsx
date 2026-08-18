@@ -3,11 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
 import { prisma } from "@/lib/prisma";
-import { loadInSimPerformance } from "@/lib/valuation/inSimPerformance";
-import { computePerformanceScore, scoreToCapFraction } from "@/lib/valuation/playerValue";
-import { getSeasonCapRules } from "@/lib/cap/constants";
 import { computeReSigningMaxOfferCents } from "@/lib/freeagency/reSigningRights";
-import { contractQualityScore, priceContractCents } from "@/lib/contracts/priceContract";
+import { resolveFreeAgentMarket } from "@/lib/freeagency/freeAgentMarket";
 import { resolvePlayerAge, resolvePlayerExperience } from "@/lib/players/age";
 import { getSigningExceptionUsage } from "@/lib/actions/signingException";
 import { SignOfferForm } from "@/components/freeagency/SignOfferForm";
@@ -73,31 +70,21 @@ export default async function SignFreeAgentPage({ params }: PageProps) {
     freeAgent.player.position,
   );
 
-  // The number quoted to the user is the number a rival would pay - same
-  // pricing function, same inputs. It used to be a raw performance score run
-  // through the cap curve with no age term and no rating anchor, so the board
-  // could suggest a figure no other club in the league would have offered.
-  // In-sim performance first, seeded real-world stats only as a fallback.
-  // seasonStats never advances, so from a save's second season it is empty for
-  // everyone - see docs/CONTRACT_AUDIT.md C-P1-2.
-  const inSim = await loadInSimPerformance(league.id, league.currentSeason);
-  const stat = inSim.get(freeAgent.id) ?? freeAgent.player.seasonStats[0];
-  const rules = getSeasonCapRules(league.currentSeason);
-  const suggestedSalaryCents = BigInt(
-    priceContractCents({
-      season: league.currentSeason,
-      quality: contractQualityScore({
-        overallRating: freeAgent.overallRating,
-        performanceScore: stat
-          ? computePerformanceScore({ ...stat, trueShootingPct: stat.trueShootingPct ?? 0.56 })
-          : null,
-        gamesPlayed: stat?.gamesPlayed ?? 0,
-      }),
-      age: faAge,
-      yearsOfExperience: faExperience,
-      position: freeAgent.player.position,
-    }),
-  );
+  // The quoted figure is the figure he is held to - literally the same call
+  // `signFreeAgentAction` makes to decide whether he signs.
+  //
+  // These were two separate computations, and they disagreed. The page priced
+  // him off his in-sim production while the action priced him off his rating
+  // alone, and only the action moved the price for rival demand or scaled it
+  // into a salary he would actually accept. A user typing the number this page
+  // suggested was refused, with no explanation, on every free agent he tried.
+  const market = await resolveFreeAgentMarket({
+    leagueId: league.id,
+    season: league.currentSeason,
+    userLeagueTeamId: myLeagueTeam.id,
+    freeAgent,
+  });
+  const suggestedSalaryCents = market.requiredSalaryCents;
 
   return (
     <main className="mx-auto max-w-2xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
@@ -119,7 +106,12 @@ export default async function SignFreeAgentPage({ params }: PageProps) {
           </h1>
           <p className="mt-2 text-ink-muted">
             {freeAgent.player.position} &middot; Rating {freeAgent.overallRating}
-            {stat ? ` · ${stat.pointsPerGame.toFixed(1)} PPG in 2023-24` : ""}
+            {/* The season is read from the record the price was taken off,
+                not hardcoded - this said "in 2023-24" for every player,
+                including production from a save's tenth season. */}
+            {market.pricedOn
+              ? ` · ${market.pricedOn.pointsPerGame.toFixed(1)} PPG in ${market.pricedOn.season}-${String((market.pricedOn.season + 1) % 100).padStart(2, "0")}`
+              : ""}
           </p>
         </div>
       </div>

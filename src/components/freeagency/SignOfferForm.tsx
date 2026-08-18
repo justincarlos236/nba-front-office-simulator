@@ -38,7 +38,9 @@ export function SignOfferForm({
   );
   const [years, setYears] = useState(2);
   const [isPending, startTransition] = useTransition();
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  // `unknown` because it holds either a returned failure or a caught Error;
+  // `ErrorNotice` accepts both.
+  const [submitError, setSubmitError] = useState<unknown>(null);
 
   const offerSalaryCents = BigInt(Math.round(salaryMillions * 1_000_000 * 100));
   const signingExceptionUsedCents = BigInt(team.signingExceptionUsedCents);
@@ -82,15 +84,20 @@ export function SignOfferForm({
     setSubmitError(null);
     startTransition(async () => {
       try {
-        await signFreeAgentAction({
+        // A refusal comes back as a value, not an exception: a thrown message
+        // is redacted by Next in a production build, which is how every
+        // failure on this screen came to read "That didn't go through."
+        // Success never returns - the action redirects to the contract sheet.
+        const result = await signFreeAgentAction({
           leagueId,
           leaguePlayerId,
           offerSalaryCents: offerSalaryCents.toString(),
           years,
         });
+        if (result && !result.ok) setSubmitError(result.error);
       } catch (error) {
         if (error instanceof Error && error.message !== "NEXT_REDIRECT") {
-          setSubmitError(error.message);
+          setSubmitError(error);
         }
       }
     });
@@ -169,7 +176,7 @@ export function SignOfferForm({
           className="mt-1 inline-block text-xs text-ink-muted underline hover:text-ink"
         />
 
-        {submitError && (
+        {submitError != null && (
           <div className="mt-3">
             <ErrorNotice error={submitError} />
           </div>

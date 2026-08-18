@@ -18,118 +18,10 @@ import {
 } from "@/lib/fans/sentimentEvents";
 import { recordFanSentimentManyTx } from "@/lib/fans/recordSentiment";
 import { describeSigningSentiment } from "@/lib/fans/describeSentiment";
-import { evaluateFreeAgentOffer } from "@/lib/freeagency/evaluateFreeAgentOffer";
-import { computeRivalInterest, type RivalTeam } from "@/lib/freeagency/rivalInterest";
-import { demandAdjustedPriceCents } from "@/lib/freeagency/cpuFreeAgentPass";
-import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
-import { contractQualityScore, priceContractCents } from "@/lib/contracts/priceContract";
-import { veteranMinimumCents } from "@/lib/cap/veteranMinimum";
+import { resolveFreeAgentMarket } from "@/lib/freeagency/freeAgentMarket";
 import { contractYearSalaries } from "@/lib/contracts/contractRaises";
 import { formatCentsCompact } from "@/lib/money";
-
-/**
- * Prices a free agent and counts who else is bidding, then asks whether he
- * would accept.
- *
- * The asking price uses `priceContractCents` - the same function the free-agent
- * detail page quotes and the same one a rival club pays - so the figure the
- * user was shown is the figure he is held to.
- *
- * Rivals are assembled exactly as `free-agents/page.tsx` builds them, from live
- * cap sheets and roster needs, and the user's own club is excluded: the
- * question is who else wants him.
- */
-async function evaluateOfferAcceptance(input: {
-  leagueId: string;
-  season: number;
-  userLeagueTeamId: string;
-  freeAgent: {
-    overallRating: number;
-    player: { position: string; birthDate: Date | null; draftYear: number | null };
-  };
-  offerSalaryCents: bigint;
-}) {
-  const { leagueId, season, userLeagueTeamId, freeAgent, offerSalaryCents } = input;
-
-  const rosterRows = await prisma.leaguePlayer.findMany({
-    where: { leagueId, leagueTeamId: { not: null }, isActive: true },
-    select: {
-      leagueTeamId: true,
-      playerId: true,
-      overallRating: true,
-      player: { select: { position: true } },
-      contract: { select: { years: { where: { season }, select: { salaryCents: true } } } },
-    },
-  });
-
-  const rosterByTeam = new Map<string, typeof rosterRows>();
-  for (const row of rosterRows) {
-    if (!row.leagueTeamId || row.leagueTeamId === userLeagueTeamId) continue;
-    const list = rosterByTeam.get(row.leagueTeamId) ?? [];
-    list.push(row);
-    rosterByTeam.set(row.leagueTeamId, list);
-  }
-
-  const age = resolvePlayerAge(freeAgent.player, season);
-  const askingPriceCents = BigInt(
-    priceContractCents({
-      season,
-      quality: contractQualityScore({
-        overallRating: freeAgent.overallRating,
-        performanceScore: null,
-        gamesPlayed: 0,
-      }),
-      age,
-      yearsOfExperience: resolvePlayerExperience(freeAgent.player, season),
-      position: freeAgent.player.position,
-    }),
-  );
-
-  const rivals: RivalTeam[] = [...rosterByTeam.entries()].map(([teamId, roster]) => ({
-    leagueTeamId: teamId,
-    // Never rendered from here; the board computes its own labels.
-    abbreviation: teamId,
-    capSpaceCents: computeCapSheet({
-      season,
-      contracts: roster
-        .filter((lp) => lp.contract?.years[0])
-        .map((lp) => ({ playerId: lp.playerId, salaryCents: lp.contract!.years[0].salaryCents })),
-    }).capSpaceCents,
-    needs: computeTeamNeeds(
-      roster.map((lp) => ({ position: lp.player.position, overallRating: lp.overallRating })),
-    ),
-    rosterCount: roster.length,
-  }));
-
-  const interest = computeRivalInterest(
-    {
-      position: freeAgent.player.position,
-      overallRating: freeAgent.overallRating,
-      estimatedValueCents: askingPriceCents,
-    },
-    rivals,
-  );
-  const rivalSuitors = interest.rivals.length;
-
-  // Competition moves the ask by the same rule it moves it for a rival club.
-  const demandAdjustedAsk = demandAdjustedPriceCents(
-    askingPriceCents,
-    rivalSuitors,
-    age,
-    season,
-    resolvePlayerExperience(freeAgent.player, season),
-  );
-
-  const result = evaluateFreeAgentOffer({
-    askingPriceCents: demandAdjustedAsk,
-    offerSalaryCents,
-    rivalSuitors,
-    valueTier: getPlayerValueTier(freeAgent.overallRating),
-    minimumSalaryCents: veteranMinimumCents(season, resolvePlayerExperience(freeAgent.player, season)),
-  });
-
-  return { ...result, rivalSuitors };
-}
+import { toUserFacingError, type UserFacingError } from "@/lib/errors/userFacing";
 
 export interface SignFreeAgentInput {
   leagueId: string;
@@ -139,12 +31,29 @@ export interface SignFreeAgentInput {
 }
 
 /**
+ * A signing that did not happen, and why.
+ *
+ * **Returned, never thrown.** Next.js redacts the message of any error thrown
+ * out of a server action in a production build, so on the deployed site every
+ * refusal - a cap ruling, a full roster, a player holding out for more - was
+ * flattened into "That didn't go through. Nothing was changed." The user could
+ * not sign anybody and was told nothing about why. A returned value crosses
+ * the boundary intact.
+ *
+ * There is no success member: the action redirects to the new contract sheet,
+ * so a caller that gets a value back is looking at a failure.
+ */
+export type SignFreeAgentResult = { ok: false; error: UserFacingError };
+
+const fail = (error: UserFacingError): SignFreeAgentResult => ({ ok: false, error });
+
+/**
  * Re-validates and executes a free-agent signing. Same principle as trade
  * execution: the client-side validateSigning check in SignOfferForm is a
  * UX affordance, not the authorization boundary - everything is re-derived
  * from current DB state here before any write happens.
  */
-export async function signFreeAgentAction(input: SignFreeAgentInput) {
+export async function signFreeAgentAction(input: SignFreeAgentInput): Promise<SignFreeAgentResult> {
   const session = await auth();
   if (!session?.user) redirect("/sign-in");
 
@@ -153,29 +62,53 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
     include: { teams: true },
   });
   if (!league || league.ownerId !== session.user.id) {
-    throw new Error("League not found");
+    return fail({
+      summary: "That save couldn't be found.",
+      remedy: "It may have been deleted. Head back to your leagues.",
+    });
   }
 
   const myLeagueTeamId = league.userControlledTeamId;
-  if (!myLeagueTeamId) throw new Error("You don't control a team in this league");
+  if (!myLeagueTeamId) {
+    return fail({
+      summary: "You don't control a team in this league.",
+      remedy: "Only the club you run can sign players.",
+    });
+  }
 
   const freeAgent = await prisma.leaguePlayer.findUnique({
     where: { id: input.leaguePlayerId },
-    include: { player: true },
+    include: {
+      player: { include: { seasonStats: { where: { season: league.currentSeason } } } },
+    },
   });
   if (!freeAgent || freeAgent.leagueId !== league.id) {
-    throw new Error("Player not found");
+    return fail({
+      summary: "That player couldn't be found.",
+      remedy: "Head back to the free agent list and pick again.",
+    });
   }
   if (freeAgent.leagueTeamId !== null) {
-    throw new Error("This player has already signed elsewhere");
+    return fail({
+      summary: "Someone got there first.",
+      remedy: "He has already signed elsewhere. Refresh to see who is still available.",
+    });
   }
   if (!freeAgent.isActive) {
-    throw new Error("This player has retired");
+    return fail({
+      summary: `${freeAgent.player.fullName} has retired.`,
+      remedy: "He is no longer available to sign.",
+    });
   }
 
   const years = Math.min(4, Math.max(1, Math.round(input.years)));
   const offerSalaryCents = BigInt(input.offerSalaryCents);
-  if (offerSalaryCents <= 0n) throw new Error("Offer must be a positive amount");
+  if (offerSalaryCents <= 0n) {
+    return fail({
+      summary: "Enter a salary above zero.",
+      remedy: "The first-year salary is in millions - type 4.5 to offer $4,500,000.",
+    });
+  }
 
   const [myPlayers, myLeagueTeam, signingExceptionUsedCents] = await Promise.all([
     prisma.leaguePlayer.findMany({
@@ -200,9 +133,10 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
   // check with docs/TRADE_AUDIT.md; this closes the last way past it.
   const activeRosterCount = myPlayers.filter((lp) => lp.isActive).length;
   if (activeRosterCount >= DEFAULT_MAX_ROSTER_SIZE) {
-    throw new Error(
-      `Your roster is full at ${DEFAULT_MAX_ROSTER_SIZE} players - release or trade someone first.`,
-    );
+    return fail({
+      summary: `Your roster is full at ${DEFAULT_MAX_ROSTER_SIZE} players.`,
+      remedy: "Trade someone away before signing anyone else.",
+    });
   }
 
   const validation = validateSigning({
@@ -226,7 +160,11 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
     },
   });
   if (!validation.isValid) {
-    throw new Error(validation.violation ?? "This offer isn't legal under current cap rules.");
+    // Still routed through the translator: `violation` is an engine string and
+    // the cap patterns there already turn it into a ruling with a remedy.
+    return fail(
+      toUserFacingError(validation.violation ?? "This offer isn't legal under current cap rules."),
+    );
   }
 
   // Would he actually take it? docs/FREE_AGENCY_AUDIT.md FA-P0-1: nothing on
@@ -234,21 +172,23 @@ export async function signFreeAgentAction(input: SignFreeAgentInput) {
   // agent in the game signed for $1.4M. `validateSigning` above is right - it
   // answers whether the money is legal - but that is a different question from
   // whether the player says yes, and this is where the second one belongs.
-  const decision = await evaluateOfferAcceptance({
+  const market = await resolveFreeAgentMarket({
     leagueId: league.id,
     season: league.currentSeason,
     userLeagueTeamId: myLeagueTeamId,
     freeAgent,
-    offerSalaryCents,
   });
-  if (!decision.accepted) {
-    throw new Error(
-      `${freeAgent.player.fullName} turned this down. He wants at least ` +
-        `${formatCentsCompact(decision.requiredSalaryCents)} per year` +
-        (decision.rivalSuitors > 0
-          ? ` - ${decision.rivalSuitors} other ${decision.rivalSuitors === 1 ? "club is" : "clubs are"} interested.`
-          : "."),
-    );
+  if (offerSalaryCents < market.requiredSalaryCents) {
+    const { requiredSalaryCents, rivalSuitors } = market;
+    return fail({
+      summary: `${freeAgent.player.fullName} turned this down.`,
+      remedy:
+        `He will sign for ${formatCentsCompact(requiredSalaryCents)} per year` +
+        (rivalSuitors > 0
+          ? `, with ${rivalSuitors} other ${rivalSuitors === 1 ? "club" : "clubs"} bidding.`
+          : ".") +
+        " Raise your offer to at least that.",
+    });
   }
 
   const signedContractId = await prisma.$transaction(async (tx) => {

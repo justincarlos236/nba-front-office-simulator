@@ -50,3 +50,26 @@ describe("toUserFacingError", () => {
     expect(remedy?.toLowerCase()).toContain("aggregate");
   });
 });
+
+describe("an already-user-facing failure passes through", () => {
+  it("returns a returned failure unchanged", () => {
+    // Server actions report by returning, because a thrown message is redacted
+    // in production. ErrorNotice takes `unknown` and must handle both forms.
+    const returned = {
+      summary: "Bismack Biyombo turned this down.",
+      remedy: "He will sign for $6.1M per year. Raise your offer to at least that.",
+    };
+    expect(toUserFacingError(returned)).toBe(returned);
+  });
+
+  it("keeps a ruling flagged as one", () => {
+    const ruling = { summary: "The second apron blocks this deal.", ruling: true };
+    expect(toUserFacingError(ruling).ruling).toBe(true);
+  });
+
+  it("does not mistake an Error for one, since Error has no summary", () => {
+    expect(toUserFacingError(new Error("second apron")).summary).toBe(
+      "The second apron blocks this deal.",
+    );
+  });
+});
