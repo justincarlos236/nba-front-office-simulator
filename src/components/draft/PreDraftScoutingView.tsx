@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore, useTransition } from "react";
+import { Fragment, useMemo, useState, useSyncExternalStore, useTransition } from "react";
 import { ProspectBoard } from "./ProspectBoard";
 import { ProspectProfileModal } from "./ProspectProfileModal";
 import { ProspectCompareTray } from "./ProspectCompareTray";
@@ -250,33 +250,34 @@ export function PreDraftScoutingView({
             </button>
           </div>
           <p className="mt-2 text-sm text-ink-muted">
-            The draft class is out, but the lottery hasn&apos;t run yet - you&apos;re scouting blind
-            on where you&apos;ll actually pick. You have a limited pool of{" "}
-            <span className="text-ink">scouting assignments</span> for this whole window (set by
-            your Scouting department). Spend them to learn more about specific prospects before
-            Draft Night:
+            The lottery hasn&apos;t run, so you don&apos;t know where you pick yet. Spend your
+            assignments before it does - <span className="text-ink">whatever is left is lost</span>.
           </p>
-          <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-ink-muted">
-            <li>
-              <span className="text-ink">Focused Look</span> - open a prospect and spend 1
-              assignment to sharpen your read on him specifically.
-            </li>
-            <li>
-              <span className="text-ink">Regional Sweep</span> - spend 1 assignment to find new
-              names across a whole pathway (college tier, international, etc.) at once.
-            </li>
-            <li>
-              <span className="text-ink">Private Workout</span> - spend 2 assignments to resolve one
-              specific uncertainty (work ethic or injury outlook) outright, once you&apos;ve scouted
-              him enough.
-            </li>
-          </ul>
-          <p className="mt-2 text-sm text-ink-muted">
-            Don&apos;t want to manage it yourself?{" "}
-            <span className="text-ink">Get a recommendation</span> below spends your whole remaining
-            budget for you, weighted to your team&apos;s needs. Once spent, assignments don&apos;t
-            come back this window - what you learn (or don&apos;t) here is what you walk into the
-            draft with. <HowDoesThisWork topic="scouting" className="underline hover:text-ink" />
+
+          {/* Cost first, in the column, because the cost is what the user is
+              actually deciding between. Three lines replace three sentences
+              that each buried their number mid-clause. */}
+          <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm">
+            {[
+              ["1", "Focused Look", "Sharpen your read on one prospect."],
+              ["1", "Regional Sweep", "Surface new names across a whole pathway."],
+              ["2", "Private Workout", "Settle his work ethic or injury outlook for good."],
+            ].map(([cost, name, what]) => (
+              <Fragment key={name}>
+                <dt className="text-right font-mono text-xs tabular-nums text-team-accent">
+                  {cost}
+                </dt>
+                <dd className="text-ink-muted">
+                  <span className="text-ink">{name}</span> - {what}
+                </dd>
+              </Fragment>
+            ))}
+          </dl>
+
+          <p className="mt-3 text-sm text-ink-muted">
+            Or <span className="text-ink">Get a recommendation</span> to spend the lot at once,
+            weighted to your needs.{" "}
+            <HowDoesThisWork topic="scouting" className="underline hover:text-ink" />
           </p>
         </div>
       )}

@@ -110,13 +110,6 @@ export default async function DraftPage({ params }: PageProps) {
     <main className="mx-auto max-w-6xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
       <h1 className="text-3xl font-bold tracking-tight text-ink">{season} NBA Draft</h1>
 
-      <p className="mt-2 max-w-2xl text-ink-muted">
-        Picks 1-14 are decided by the real post-2019 lottery odds (the 3 worst records tied at
-        14.0%); picks 15-30 go to playoff teams in reverse regular-season order; round 2 is a
-        straight reverse-record sweep. Prospects are procedurally generated - no real future draft
-        class exists yet. See docs/SYSTEMS.md.
-      </p>
-
       {gatePhase === "regular-season" && (
         <div className="mt-8 rounded-[2px] border border-rule bg-field p-6">
           <p className="text-sm text-ink-muted">
