@@ -141,6 +141,7 @@ function SortableRow({
     id: player.leaguePlayerId,
   });
   const inRotation = rank < MAX_ROTATION_SIZE;
+  const healthy = player.injuryStatus === "HEALTHY";
 
   return (
     <div
@@ -196,20 +197,46 @@ function SortableRow({
           )}
         </span>
       )}
-      <span className="w-28 shrink-0 text-right text-xs text-ink-muted">
-        {inRotation ? rotationRoleLabel(rank) : "Out of Rotation"}
+      {/* An injured player keeps his slot - you want the lineup back intact
+          when he returns - but the board must not call him a Starter. The
+          simulation loads only `injuryStatus: "HEALTHY"` rosters
+          (actions/leagueTeamStrength.ts), so he will not play a second and
+          his minutes are redistributed to whoever is fit. Labelling him
+          Starter beside an editable 32 described a lineup that cannot happen. */}
+      <span
+        className={`w-28 shrink-0 text-right text-xs ${
+          !healthy && inRotation ? "text-negative" : "text-ink-muted"
+        }`}
+      >
+        {!healthy && inRotation
+          ? "Not available"
+          : inRotation
+            ? rotationRoleLabel(rank)
+            : "Out of Rotation"}
       </span>
       {inRotation ? (
-        <label className="flex shrink-0 items-center gap-1 text-xs text-ink-muted">
+        <label
+          className={`flex shrink-0 items-center gap-1 text-xs ${
+            healthy ? "text-ink-muted" : "text-rule"
+          }`}
+          title={
+            healthy
+              ? undefined
+              : "These minutes go to healthy players until he returns. His slot is kept."
+          }
+        >
           <input
             type="number"
             min={0}
             max={40}
             value={minutes}
+            disabled={!healthy}
             onChange={(e) =>
               onMinutesChange(Math.max(0, Math.min(40, Number(e.target.value) || 0)))
             }
-            className="w-14 rounded border border-rule bg-raised px-1.5 py-1 text-right text-ink"
+            className={`w-14 rounded border border-rule px-1.5 py-1 text-right ${
+              healthy ? "bg-raised text-ink" : "bg-field text-rule line-through"
+            }`}
           />
           min
         </label>
