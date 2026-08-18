@@ -22,7 +22,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 const DESCRIPTION =
   "Run an NBA franchise as its GM: build a roster, negotiate trades against " +
-  "the real 2023 CBA salary-cap rules, scout a draft class, and simulate " +
+  "the real 2026 CBA salary-cap rules, scout a draft class, and simulate " +
   "seasons from a real snapshot of the league.";
 
 export const metadata: Metadata = {

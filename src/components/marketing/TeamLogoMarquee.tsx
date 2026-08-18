@@ -29,7 +29,7 @@ export async function TeamLogoMarquee() {
             key={`${team.id}-${i}`}
             logoUrl={team.logoUrl}
             size={40}
-            className="opacity-50 grayscale transition hover:opacity-90 hover:grayscale-0"
+            className="opacity-90 transition hover:opacity-100"
           />
         ))}
       </div>

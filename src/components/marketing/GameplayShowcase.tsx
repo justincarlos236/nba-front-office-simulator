@@ -12,7 +12,7 @@ const EXPERIENCES: Experience[] = [
   {
     title: "Master the Cap",
     description:
-      "Real 2023 CBA rules turn every contract into a bet on the future. Spend into the luxury tax to chase a title, or stay disciplined and build for later.",
+      "Real 2026 CBA rules turn every contract into a bet on the future. Spend into the luxury tax to chase a title, or stay disciplined and build for later.",
   },
   {
     title: "Run the Whole Organization",

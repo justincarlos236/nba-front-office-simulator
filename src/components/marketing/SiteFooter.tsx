@@ -4,7 +4,9 @@ export function SiteFooter() {
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-sm text-ink-muted sm:flex-row">
         <div className="flex flex-col items-center gap-1 sm:items-start">
           <p>NBA Front Office Simulator</p>
-          <p className="text-xs tracking-wide opacity-70">A project by Justin Carlos</p>
+          <p className="text-sm text-ink">
+            A project by <span className="font-semibold text-team-accent">Justin Carlos</span>
+          </p>
         </div>
         <p>
           Not affiliated with the NBA. Contract figures are approximate and for simulation only.
