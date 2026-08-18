@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getSeasonCapRules } from "@/lib/cap/constants";
 import { formatCentsCompact } from "@/lib/money";
-import { estimateAge } from "@/lib/players/age";
+import { resolvePlayerAge } from "@/lib/players/age";
 import { computeLeaguePhase } from "@/lib/league/leaguePhase";
 import { getJobSecurityLevel } from "@/lib/gm/jobSecurity";
 import { OffseasonControls } from "@/components/offseason/OffseasonControls";
@@ -225,7 +225,7 @@ export default async function OffseasonPage({ params }: PageProps) {
                   />
                 </span>
                 <span className="text-ink-muted">
-                  Retired at {estimateAge(r.player.draftYear, previousSeason)} &middot; final rating{" "}
+                  Retired at {resolvePlayerAge(r.player, season)} &middot; final rating{" "}
                   {r.overallRating}
                 </span>
               </div>

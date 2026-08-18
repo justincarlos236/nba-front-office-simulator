@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { estimateAge } from "@/lib/players/age";
+import { resolvePlayerAge } from "@/lib/players/age";
 import { detectNotableMovement } from "@/lib/draft/lotteryPresentation";
 import { PlayerChip } from "@/components/players/PlayerChip";
 import { PlayerAvatar } from "@/components/players/PlayerAvatar";
@@ -308,7 +308,7 @@ export default async function HistoryPage({ params }: PageProps) {
                             />
                           </span>
                           <span className="text-ink-muted">
-                            Retired at {estimateAge(r.player.draftYear, season + 1)} &middot; final
+                            Retired at {resolvePlayerAge(r.player, season + 1)} &middot; final
                             rating {r.overallRating}
                           </span>
                         </div>
