@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
+import { currentSeasonSalaryCents } from "@/lib/contracts/currentSeasonSalary";
 import { DEFAULT_MAX_ROSTER_SIZE } from "@/lib/data-sources/rosterConstruction";
 import { prisma } from "@/lib/prisma";
 import { validateSigning } from "@/lib/freeagency/validateSigning";
@@ -123,7 +124,10 @@ export async function signFreeAgentAction(input: SignFreeAgentInput): Promise<Si
     season: league.currentSeason,
     contracts: myPlayers
       .filter((lp) => lp.contract?.years[0])
-      .map((lp) => ({ playerId: lp.playerId, salaryCents: lp.contract!.years[0].salaryCents })),
+      .map((lp) => ({
+        playerId: lp.playerId,
+        salaryCents: currentSeasonSalaryCents(lp.contract, league.currentSeason),
+      })),
   });
 
   // Roster limit. `validateSigning` is a *cap* validator - it answers whether

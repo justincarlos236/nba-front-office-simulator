@@ -4,6 +4,7 @@ import { reportFailures } from "@/lib/errors/actionResult";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
+import { currentSeasonSalaryCents } from "@/lib/contracts/currentSeasonSalary";
 import { prisma } from "@/lib/prisma";
 import { isWithinTradeCooldown, daysUntilTradeable } from "@/lib/trade/recentAcquisition";
 import { validateTrade, type TradeAssetInput } from "@/lib/trade/validateTrade";
@@ -91,7 +92,7 @@ async function loadCapState(leagueTeamId: string, season: number) {
     .map((lp) => ({
       leaguePlayerId: lp.id,
       playerId: lp.playerId,
-      salaryCents: lp.contract!.years[0].salaryCents,
+      salaryCents: currentSeasonSalaryCents(lp.contract, season),
     }));
   const capSheet = computeCapSheet({ season, contracts });
   return { capSheet, contracts };
@@ -262,7 +263,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
       fromTeamId: input.fromTeamId,
       toTeamId: input.toTeamId,
       playerId: lp.id,
-      salaryCents: lp.contract!.years[0].salaryCents,
+      salaryCents: currentSeasonSalaryCents(lp.contract, league.currentSeason),
       noTradeClause: lp.contract!.noTradeClause,
     })),
     ...theirPlayers.map((lp): TradeAssetInput => ({
@@ -270,7 +271,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
       fromTeamId: input.toTeamId,
       toTeamId: input.fromTeamId,
       playerId: lp.id,
-      salaryCents: lp.contract!.years[0].salaryCents,
+      salaryCents: currentSeasonSalaryCents(lp.contract, league.currentSeason),
       noTradeClause: lp.contract!.noTradeClause,
     })),
     ...myPicks.map((p): TradeAssetInput => ({
@@ -403,7 +404,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
     potentialRating: lp.potentialRating,
     age: resolvePlayerAge(lp.player, league.currentSeason),
     position: lp.player.position,
-    currentSalaryCents: lp.contract!.years[0].salaryCents,
+    currentSalaryCents: currentSeasonSalaryCents(lp.contract, league.currentSeason),
     futureSalaryCents: lp.contract!.years.slice(1).map((y) => y.salaryCents),
     injuryStatus: lp.injuryStatus,
     careerGamesMissedToInjury: lp.careerGamesMissedToInjury,
@@ -554,7 +555,8 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
   // across, which is exactly what the roster will look like once the writes
   // below land. Frozen here because cap sheets are otherwise always computed
   // from *current* state - see src/lib/trade/capSnapshot.ts.
-  const salaryFor = (lp: (typeof myPlayers)[number]) => lp.contract?.years[0]?.salaryCents ?? 0n;
+  const salaryFor = (lp: (typeof myPlayers)[number]) =>
+    currentSeasonSalaryCents(lp.contract, tradeSeason);
 
   const capSnapshot: TradeCapSnapshot = {
     season: tradeSeason,

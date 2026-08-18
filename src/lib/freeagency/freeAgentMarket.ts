@@ -1,5 +1,6 @@
 import { computeCapSheet } from "@/lib/cap/capSheet";
 import { veteranMinimumCents } from "@/lib/cap/veteranMinimum";
+import { currentSeasonSalaryCents } from "@/lib/contracts/currentSeasonSalary";
 import { contractQualityScore, priceContractCents } from "@/lib/contracts/priceContract";
 import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
 import { prisma } from "@/lib/prisma";
@@ -92,7 +93,9 @@ export async function resolveFreeAgentMarket(input: {
         playerId: true,
         overallRating: true,
         player: { select: { position: true } },
-        contract: { select: { years: { where: { season }, select: { salaryCents: true } } } },
+        contract: {
+          select: { years: { where: { season }, select: { season: true, salaryCents: true } } },
+        },
       },
     }),
     loadInSimPerformance(leagueId, season),
@@ -148,7 +151,10 @@ export async function resolveFreeAgentMarket(input: {
       season,
       contracts: roster
         .filter((lp) => lp.contract?.years[0])
-        .map((lp) => ({ playerId: lp.playerId, salaryCents: lp.contract!.years[0].salaryCents })),
+        .map((lp) => ({
+          playerId: lp.playerId,
+          salaryCents: currentSeasonSalaryCents(lp.contract, season),
+        })),
     }).capSpaceCents,
     needs: computeTeamNeeds(
       roster.map((lp) => ({ position: lp.player.position, overallRating: lp.overallRating })),
