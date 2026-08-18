@@ -226,9 +226,21 @@ export async function advanceSeasonAction(leagueId: string) {
     throw new Error("Finish the draft before advancing to the next season.");
   }
 
-  const alreadyAdvanced = await prisma.game.count({ where: { leagueId, season: newSeason } });
-  if (alreadyAdvanced > 0) {
-    throw new Error("This season has already been advanced.");
+  // Next season's games existing while `currentSeason` has NOT moved is not a
+  // double-advance - it is the signature of an advance that died partway.
+  // `season` is read from `league.currentSeason`, so a genuinely completed
+  // advance cannot reach this line looking for `newSeason`; it would be
+  // computing `season + 2` and would have been stopped by the champion check
+  // above. A real double-advance is already impossible.
+  //
+  // This used to throw, which is what made that failure permanent: the league
+  // held a schedule it could not use and refused every retry. Recovery instead
+  // - the orphaned schedule is discarded here so the rebuild below writes a
+  // clean one. Those games are unplayed by definition, because the season they
+  // belong to has not started. See docs/OFFSEASON_INTEGRITY_AUDIT.md, O-P1-1.
+  const orphanedSchedule = await prisma.game.count({ where: { leagueId, season: newSeason } });
+  if (orphanedSchedule > 0) {
+    await prisma.game.deleteMany({ where: { leagueId, season: newSeason } });
   }
 
   const leaguePlayers = await prisma.leaguePlayer.findMany({
@@ -1228,8 +1240,23 @@ export async function advanceSeasonAction(leagueId: string) {
   });
 
   if (cpuReSignings.length > 0) {
+    // `Contract.leaguePlayerId` is unique, and the expiring deals were already
+    // deleted further up. A retry after a half-finished advance therefore finds
+    // these players already re-signed, and a plain create would throw. Skipping
+    // them is the right recovery: the contract that exists IS this pass's own
+    // work from the attempt that died. O-P1-1.
+    const alreadyReSigned = new Set(
+      (
+        await prisma.contract.findMany({
+          where: { leaguePlayerId: { in: cpuReSignings.map((r) => r.leaguePlayerId) } },
+          select: { leaguePlayerId: true },
+        })
+      ).map((c) => c.leaguePlayerId),
+    );
     await Promise.all(
-      cpuReSignings.map(async (r) => {
+      cpuReSignings
+        .filter((r) => !alreadyReSigned.has(r.leaguePlayerId))
+        .map(async (r) => {
         const contract = await prisma.contract.create({
           data: {
             leaguePlayerId: r.leaguePlayerId,
@@ -1269,8 +1296,21 @@ export async function advanceSeasonAction(leagueId: string) {
   // `signedUsing: NONE` is correct rather than a placeholder - the pass only
   // ever signs within a team's own cap space, so no exception was invoked.
   if (cpuFreeAgentSignings.length > 0) {
+    // Same unique-key recovery as the re-signings above: `Contract` is unique
+    // on `leaguePlayerId`, so a retry after a half-finished advance finds these
+    // players already signed and a plain create would throw. O-P1-1.
+    const alreadySigned = new Set(
+      (
+        await prisma.contract.findMany({
+          where: { leaguePlayerId: { in: cpuFreeAgentSignings.map((x) => x.leaguePlayerId) } },
+          select: { leaguePlayerId: true },
+        })
+      ).map((c) => c.leaguePlayerId),
+    );
     await Promise.all(
-      cpuFreeAgentSignings.map(async (s) => {
+      cpuFreeAgentSignings
+        .filter((x) => !alreadySigned.has(x.leaguePlayerId))
+        .map(async (s) => {
         const contract = await prisma.contract.create({
           data: {
             leaguePlayerId: s.leaguePlayerId,
@@ -1385,6 +1425,7 @@ export async function advanceSeasonAction(leagueId: string) {
         endSeason: newSeason + CPU_AUTO_HIRE_CONTRACT_YEARS - 1,
         annualSalaryCents: computeStaffSalary(hire.role, hire.quality),
       })),
+          skipDuplicates: true,
     });
   }
 
@@ -1602,11 +1643,18 @@ export async function advanceSeasonAction(leagueId: string) {
   // Keep the rolling future-pick window (Phase 11a) sliding forward: the
   // window through `newSeason + FUTURE_PICK_WINDOW_YEARS` already exists
   // except for this one new far-edge season.
+  // Skipped rather than rewritten if a previous attempt got this far.
+  // `DraftPick` has no unique constraint (only indexes), so a retry would
+  // otherwise duplicate the whole far-edge round - and deleting instead would
+  // be the wrong instinct, since these are tradeable assets.
+  const farEdgeSeason = newSeason + FUTURE_PICK_WINDOW_YEARS;
+  const farEdgeExisting = await prisma.draftPick.count({
+    where: { leagueId, season: farEdgeSeason },
+  });
   await prisma.draftPick.createMany({
-    data: buildFuturePickRows(
-      leagueId,
-      league.teams.map((t) => t.id),
-      [newSeason + FUTURE_PICK_WINDOW_YEARS],
+    data: (farEdgeExisting > 0
+      ? []
+      : buildFuturePickRows(leagueId, league.teams.map((t) => t.id), [farEdgeSeason])
     ).map((row) => ({ ...row, overallPickNumber: null })),
   });
 
@@ -1861,8 +1909,12 @@ export async function advanceSeasonAction(leagueId: string) {
     );
     const newExpectationLevel = EXPECTATION_LEVEL_ORDER[shiftedIndex];
 
-    await prisma.seasonExpectation.create({
-      data: { leagueId, season: newSeason, expectationLevel: newExpectationLevel },
+    // Upsert, not create: unique on (leagueId, season), so a retry after a
+    // half-finished advance would throw here. O-P1-1.
+    await prisma.seasonExpectation.upsert({
+      where: { leagueId_season: { leagueId, season: newSeason } },
+      create: { leagueId, season: newSeason, expectationLevel: newExpectationLevel },
+      update: { expectationLevel: newExpectationLevel },
     });
     ownershipMessages.push(describeNewExpectation(newExpectationLevel));
 
@@ -2047,6 +2099,7 @@ export async function advanceSeasonAction(leagueId: string) {
       attendancePct: u.attendancePct,
       franchisePopularity: u.franchisePopularity,
     })),
+      skipDuplicates: true,
   });
 
   // Fans Page Redesign (Phase 3) - Fan Culture, recomputed wholesale for

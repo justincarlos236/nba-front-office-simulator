@@ -91,7 +91,7 @@ the idempotency route as the recommended one.
 
 | ID | Severity | Outcome |
 | --- | --- | --- |
-| O-P1-1 | P1 | **Partially fixed.** Window 1 no longer bricks the save; window 2 is unchanged. See below. |
+| O-P1-1 | P1 | **Fixed for both windows.** Neither failure window leaves an unadvanceable league; a retry now completes. `advanceSeasonAction` remains non-atomic, so a retry still re-runs committed work - documented as an accepted trade, not as done. |
 
 ## Partial fix — the awards no longer make window 1 permanent
 
@@ -114,12 +114,44 @@ re-signings. Those degrade a save; they do not end it. The trade is
 deliberate - a blemished league the player can keep playing beats a pristine
 one they cannot open.
 
-**Window 2 is untouched.** Closing it needs the guard moved onto
-`league.currentSeason`, which in turn needs schedule creation to be idempotent -
-and `Game` carries no unique constraint (only `@@index([leagueId, season])`), so
-`skipDuplicates` cannot do it. That needs either a migration or a delete-then-
-create, and allowing more retries is only safe once the non-idempotent steps
-above are fixed. Left for the deliberate pass.
+## Window 2 closed — the guard became a recovery path
+
+The plan had been to move the guard onto `league.currentSeason`. That turned out
+to be impossible and unnecessary in the same breath: `season` is *read from*
+`league.currentSeason`, so it is the function's input, not something a guard can
+be moved onto.
+
+Reading the condition properly settled it. Next season's games existing while
+`currentSeason` has not moved is not a double-advance - a completed advance
+cannot reach that line looking for `newSeason`, because it would be computing
+`season + 2` and would already have been stopped by the champion check. **The
+condition fires in exactly one situation: an advance that died partway.**
+
+So it no longer throws. The orphaned schedule is discarded and rebuilt - those
+games are unplayed by definition, since the season they belong to has not
+started - and the retry runs to completion.
+
+## Securing the widened retry path
+
+Allowing window-2 retries to proceed exposed writes that had never been re-run
+before, and a check of every uniquely-keyed model on the path found **five more
+that would each have thrown**, simply relocating the brick:
+
+| Write | Constraint | Recovery |
+| --- | --- | --- |
+| `seasonExpectation.create` | `[leagueId, season]` | upsert |
+| `fanHappinessSnapshot.createMany` | `[leagueId, leagueTeamId, season]` | `skipDuplicates` |
+| CPU re-signing `contract.create` | `leaguePlayerId` unique | skip players already re-signed |
+| CPU free-agent `contract.create` | `leaguePlayerId` unique | skip players already signed |
+| `staffContract.createMany` (hires) | `staffId` unique | `skipDuplicates` |
+
+The contract cases are skips rather than upserts on purpose: a contract that
+already exists for one of these players *is this pass's own work* from the
+attempt that died, so re-creating it would be wrong even if it were possible.
+
+`Game`, `LeagueTransaction`, `Staff` and `BusinessDecision` carry no unique
+constraint, so their re-runs duplicate rows rather than throwing - cosmetic, and
+covered under the accepted trade above.
 
 ## Reproducing
 
