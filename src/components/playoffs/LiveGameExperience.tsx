@@ -1,5 +1,6 @@
 "use client";
 
+import { TeamLogo } from "@/components/teams/TeamLogo";
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { playLiveSeriesGameAction } from "@/lib/actions/playoffs";
@@ -180,7 +181,7 @@ function TeamHeader({ team, align }: { team: LiveTeamInfo; align: "left" | "righ
     <div className={`flex items-center gap-3 ${align === "right" ? "flex-row-reverse" : ""}`}>
       {team.logoUrl && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={team.logoUrl} alt="" className="h-16 w-16 object-contain" />
+        <TeamLogo logoUrl={team.logoUrl} size={64} />
       )}
       <p className="max-w-[10rem] text-lg font-bold text-ink">{team.label}</p>
     </div>

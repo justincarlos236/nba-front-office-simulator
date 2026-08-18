@@ -22,7 +22,8 @@
     "import:dataset": "tsx scripts/import-dataset.ts",
     "import:contracts": "tsx scripts/import-contracts.ts",
     "postinstall": "prisma generate",
-    "prepare": "husky"
+    "prepare": "husky",
+    "db:backfill-logos": "tsx scripts/backfill-team-logos.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

@@ -1,3 +1,4 @@
+import { TeamLogo } from "@/components/teams/TeamLogo";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
@@ -99,7 +100,7 @@ export default async function LeagueLayout({
           >
             {userTeam?.team.logoUrl && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={userTeam.team.logoUrl} alt="" className="h-6 w-6 object-contain" />
+              <TeamLogo logoUrl={userTeam.team.logoUrl} size={24} />
             )}
             <span className="font-medium text-ink">
               {userTeam ? `${userTeam.team.city} ${userTeam.team.name}` : league.name}

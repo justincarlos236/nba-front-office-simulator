@@ -1,5 +1,6 @@
 "use client";
 
+import { TeamLogo } from "@/components/teams/TeamLogo";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LiveGameResult, LiveTeamInfo } from "@/components/playoffs/LiveGameExperience";
 
@@ -345,7 +346,7 @@ function ScoreSide({ team, score }: { team: LiveTeamInfo; score: number }) {
     <div className="flex flex-col items-center gap-2">
       {team.logoUrl && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={team.logoUrl} alt="" className="h-14 w-14 object-contain" />
+        <TeamLogo logoUrl={team.logoUrl} size={56} />
       )}
       <p className="max-w-[8rem] truncate text-center text-sm font-semibold text-ink">
         {team.label}

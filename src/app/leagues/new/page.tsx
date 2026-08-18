@@ -1,3 +1,4 @@
+import { TeamLogo } from "@/components/teams/TeamLogo";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
@@ -171,8 +172,7 @@ function JobConference({ title, teams }: { title: string; teams: JobTeam[] }) {
             >
               <div className="flex items-center gap-3">
                 {team.logoUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={team.logoUrl} alt="" width={32} height={32} className="shrink-0 object-contain" />
+                  <TeamLogo logoUrl={team.logoUrl} size={32} />
                 )}
                 <div className="min-w-0">
                   <h3 className="font-semibold text-ink">

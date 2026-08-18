@@ -1,3 +1,4 @@
+import { TeamLogo } from "@/components/teams/TeamLogo";
 import { prisma } from "@/lib/prisma";
 
 /** A quiet, continuously-scrolling strip of every real team's crest - texture/identity behind the hero, not a functional carousel (see the /teams page for actually browsing teams). */
@@ -24,11 +25,11 @@ export async function TeamLogoMarquee() {
     >
       <div className="animate-logo-marquee flex w-max items-center gap-12">
         {track.map((team, i) => (
-          <img
+          <TeamLogo
             key={`${team.id}-${i}`}
-            src={team.logoUrl!}
-            alt=""
-            className="h-10 w-10 shrink-0 object-contain opacity-50 grayscale transition hover:opacity-90 hover:grayscale-0"
+            logoUrl={team.logoUrl}
+            size={40}
+            className="opacity-50 grayscale transition hover:opacity-90 hover:grayscale-0"
           />
         ))}
       </div>

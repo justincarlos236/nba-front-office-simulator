@@ -45,3 +45,39 @@ describe("TEAM_SEEDS", () => {
     }
   });
 });
+
+/**
+ * Logo URLs, checked for the shape of the failure that actually happened.
+ *
+ * Chicago's URL pointed at `wikipedia/en` for a file hosted on
+ * `wikipedia/commons`. Both are valid-looking Wikimedia thumbnail URLs, so
+ * nothing caught it - the card simply rendered nothing, and it stayed that way
+ * through several sessions. A live fetch belongs in `scripts/check-team-logos.ts`
+ * (Wikimedia throttles, so it cannot run in a test suite); what is checkable
+ * here is that every URL is well-formed and none is obviously stale.
+ */
+describe("team logo urls", () => {
+  const URLS = TEAM_SEEDS.map((t) => [t.abbreviation, t.logoUrl] as const);
+
+  it.each(URLS)("%s points at a Wikimedia thumbnail", (_ab, url) => {
+    expect(url).toMatch(
+      /^https:\/\/upload\.wikimedia\.org\/wikipedia\/(en|commons)\/thumb\/[0-9a-f]\/[0-9a-f]{2}\/.+\/\d+px-.+\.png$/,
+    );
+  });
+
+  it.each(URLS)("%s requests a thumbnail wide enough for the largest use", (_ab, url) => {
+    // The biggest on-screen draw is the lottery's `xl` badge at 112px, and a
+    // wide mark is scaled to 1.6x that. Anything under ~200px would be
+    // upscaled and soft there.
+    const width = Number(url.match(/\/(\d+)px-/)?.[1]);
+    expect(width).toBeGreaterThanOrEqual(200);
+  });
+
+  it("gives every club its own logo", () => {
+    // A copy-paste between two entries would otherwise show one club's mark on
+    // another's card, which reads as a data bug long before anyone suspects the
+    // URL.
+    const urls = TEAM_SEEDS.map((t) => t.logoUrl);
+    expect(new Set(urls).size).toBe(urls.length);
+  });
+});

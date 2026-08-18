@@ -1,3 +1,4 @@
+import { TeamLogo } from "@/components/teams/TeamLogo";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
@@ -235,14 +236,7 @@ export default async function HistoryPage({ params }: PageProps) {
                   <h2 className="text-lg font-semibold text-ink">{seasonLabel(season)}</h2>
                   <div className="flex items-center gap-2">
                     {series.winnerTeam?.team.logoUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={series.winnerTeam.team.logoUrl}
-                        alt=""
-                        width={24}
-                        height={24}
-                        className="shrink-0"
-                      />
+                      <TeamLogo logoUrl={series.winnerTeam.team.logoUrl} size={24} />
                     )}
                     <p className="text-sm font-medium text-team-accent">
                       {series.winnerTeam
@@ -360,14 +354,7 @@ export default async function HistoryPage({ params }: PageProps) {
                     <p className="text-xs tracking-wide text-ink-muted uppercase">Draft Lottery</p>
                     <div className="mt-2 flex items-center gap-2 text-sm">
                       {lotteryWinner.currentOwner.team.logoUrl && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={lotteryWinner.currentOwner.team.logoUrl}
-                          alt=""
-                          width={20}
-                          height={20}
-                          className="shrink-0"
-                        />
+                        <TeamLogo logoUrl={lotteryWinner.currentOwner.team.logoUrl} size={20} />
                       )}
                       <p className="text-ink">
                         <span className="font-semibold">

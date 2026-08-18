@@ -1,3 +1,5 @@
+import { TeamLogo } from "@/components/teams/TeamLogo";
+
 interface BracketTeam {
   city: string;
   name: string;
@@ -288,7 +290,7 @@ function TeamLine({
       <div className="flex min-w-0 items-center gap-1">
         {team.logoUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={team.logoUrl} alt="" width={13} height={13} className="shrink-0 object-contain" />
+          <TeamLogo logoUrl={team.logoUrl} size={13} />
         )}
         <span
           className={`truncate ${

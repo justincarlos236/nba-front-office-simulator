@@ -1,9 +1,7 @@
-const SIZE_CLASS = {
-  sm: "h-6 w-6",
-  md: "h-10 w-10",
-  lg: "h-20 w-20",
-  xl: "h-28 w-28",
-} as const;
+import { TeamLogo } from "@/components/teams/TeamLogo";
+
+/** Named sizes in pixels, so the mark and its empty-slot placeholder agree. */
+const SIZE_PX = { sm: 24, md: 40, lg: 80, xl: 112 } as const;
 
 export function TeamBadge({
   logoUrl,
@@ -11,18 +9,22 @@ export function TeamBadge({
   faded = false,
 }: {
   logoUrl: string | null;
-  size?: keyof typeof SIZE_CLASS;
+  size?: keyof typeof SIZE_PX;
   faded?: boolean;
 }) {
   if (!logoUrl) {
-    return <div className={`${SIZE_CLASS[size]} shrink-0 rounded-full bg-raised`} />;
+    return (
+      <div
+        className="shrink-0 rounded-full bg-raised"
+        style={{ height: SIZE_PX[size], width: SIZE_PX[size] }}
+      />
+    );
   }
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={logoUrl}
-      alt=""
-      className={`${SIZE_CLASS[size]} shrink-0 object-contain transition ${faded ? "opacity-30" : ""}`}
+    <TeamLogo
+      logoUrl={logoUrl}
+      size={SIZE_PX[size]}
+      className={`transition ${faded ? "opacity-30" : ""}`}
     />
   );
 }

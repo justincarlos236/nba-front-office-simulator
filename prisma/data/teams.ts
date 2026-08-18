@@ -91,7 +91,7 @@ export const TEAM_SEEDS: readonly TeamSeed[] = [
   {
     abbreviation: "CHI",
     logoUrl:
-      "https://upload.wikimedia.org/wikipedia/en/thumb/6/67/Chicago_Bulls_logo.svg/330px-Chicago_Bulls_logo.svg.png",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Chicago_Bulls_logo.svg/330px-Chicago_Bulls_logo.svg.png",
     name: "Bulls",
     city: "Chicago",
     conference: "EAST",

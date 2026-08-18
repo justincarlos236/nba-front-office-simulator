@@ -1,3 +1,4 @@
+import { TeamLogo } from "@/components/teams/TeamLogo";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
@@ -104,14 +105,7 @@ export default async function DashboardPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
                           {userTeam?.team.logoUrl && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={userTeam.team.logoUrl}
-                              alt=""
-                              width={40}
-                              height={40}
-                              className="shrink-0"
-                            />
+                            <TeamLogo logoUrl={userTeam.team.logoUrl} size={40} />
                           )}
                           <div>
                             <h3 className="font-semibold text-ink transition group-hover:text-team-accent">
