@@ -8,9 +8,36 @@
  * primary and secondary. Brooklyn and San Antonio are literally #000000.
  *
  * So the accent is resolved through a documented cascade instead, and every
- * team lands at 4.5:1 or better. The outcomes are recognisable rather than
- * arbitrary: the Lakers resolve to gold, the Nets to white, the Celtics to
- * gold - the colour a fan associates with the team anyway.
+ * team lands at 4.5:1 or better.
+ *
+ * **The cascade lightens a club's own primary before it reaches for the
+ * secondary.** The first version preferred the secondary, on the reasoning that
+ * it is the colour fans pair with the primary anyway. Measured across all 30,
+ * that reasoning did not hold:
+ *
+ *   - 13 clubs resolved to their secondary, at a mean hue distance of **62deg**
+ *     from their own primary. Eight of those sat more than 120deg away - the
+ *     opposite side of the wheel. New York rendered orange, Golden State,
+ *     Indiana, Utah, Denver and Memphis all rendered gold off a navy primary.
+ *   - Because so many NBA secondaries *are* gold, the cascade manufactured
+ *     collisions between clubs with nothing in common. Cleveland (wine) and
+ *     Indiana (navy) resolved to the *same hex*; so did Miami (wine) and Utah
+ *     (navy). Both counts of distinct accents are 24 of 30, before and after -
+ *     what changes is that every remaining collision is now a set of clubs that
+ *     genuinely share a brand primary (Toronto/Chicago/Houston on #CE1141,
+ *     Atlanta/Portland on #E03A3E), rather than one the resolver invented.
+ *   - Boston - green, unmistakably - rendered gold. That is what prompted this.
+ *
+ * Lightening in OKLCH holds chroma essentially constant (a club's resolved
+ * chroma now tracks its primary's to within 0.001), so the obvious objection -
+ * that a lightened navy washes out to grey - is measurably false. Where a
+ * result does read muted, it is because the club's own primary is muted:
+ * Denver's navy carries a chroma of 0.063, and Minnesota and New Orleans have
+ * shipped at that exact value since the first version.
+ *
+ * The cost is real and accepted: a few clubs lose a secondary that is arguably
+ * more iconic than their primary, Golden State's gold most of all. Rendering
+ * seven franchises in near-identical gold was the worse trade.
  *
  * See DESIGN.md "Team accent intake".
  */
@@ -147,9 +174,11 @@ export function accentHue(hex: string): number | null {
 }
 
 /**
- * The cascade. Order matters: a team's own primary is preferred, then its
- * secondary (which is usually the colour fans pair with it anyway), and only
- * then a synthesised lightening.
+ * The cascade. Order matters, and it is ordered by *hue fidelity*: the club's
+ * own primary, then that same primary lightened until it clears the bar, and
+ * only once the primary carries no usable hue at all does the secondary get a
+ * turn. See the note at the top of this file for the measurements behind that
+ * ordering.
  *
  * Each candidate must clear both bars - legible against the ground *and*
  * chromatic enough to read as a franchise colour rather than a grey field.
@@ -173,6 +202,15 @@ export function resolveTeamAccent(
   ) {
     return withInk(primaryColor, "primary");
   }
+  // The club's own hue, raised until it is legible. This is where 28 of the 30
+  // land, because no NBA primary clears 4.5:1 against a ground this dark.
+  if (primaryColor && hasRealColour(primaryColor)) {
+    const lightened = lightenUntilLegible(primaryColor);
+    if (lightened) return withInk(lightened, "lightened");
+  }
+  // Only reached when the primary has no hue to raise - a black or white
+  // primary paired with a coloured secondary. No current club takes this path;
+  // it exists so a franchise rebrand does not fall straight to the neutral.
   if (
     secondaryColor &&
     contrastRatio(secondaryColor, GROUND) >= TARGET_CONTRAST &&
@@ -180,11 +218,8 @@ export function resolveTeamAccent(
   ) {
     return withInk(secondaryColor, "secondary");
   }
-  // Lighten whichever brand colour actually carries chroma. For a monochrome
-  // identity like Brooklyn's, neither does.
-  for (const candidate of [primaryColor, secondaryColor]) {
-    if (!candidate || !hasRealColour(candidate)) continue;
-    const lightened = lightenUntilLegible(candidate);
+  if (secondaryColor && hasRealColour(secondaryColor)) {
+    const lightened = lightenUntilLegible(secondaryColor);
     if (lightened) return withInk(lightened, "lightened");
   }
 

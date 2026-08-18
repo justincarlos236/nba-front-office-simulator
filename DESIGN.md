@@ -121,10 +121,26 @@ must clear **two** bars — legible against the ground, _and_ chromatic enough t
 read as a franchise colour:
 
 1. Use `primaryColor` if it clears 4.5:1 and carries real chroma (OKLCH C ≥ 0.04).
-2. Otherwise `secondaryColor` under the same two conditions.
-3. Otherwise lighten whichever brand colour has chroma, in OKLCH, preserving hue
-   until it clears 4.5:1.
+2. Otherwise lighten `primaryColor` in OKLCH, preserving hue and chroma, until it
+   clears 4.5:1. **28 of 30 clubs land here** — no NBA primary clears 4.5:1
+   against a ground this dark.
+3. Otherwise `secondaryColor`, raw then lightened, under the same two conditions.
+   Reached only when the primary has no hue to raise; no current club takes it.
 4. Otherwise — a genuinely monochrome franchise — use the muted slate `#748799`.
+
+**Why the primary is lightened before the secondary is tried.** The first
+version had these two steps the other way round, reasoning that a club's
+secondary is the colour fans pair with the primary anyway. Measured across all
+30, it wasn't: 13 clubs resolved to their secondary at a **mean hue distance of
+62°** from their own primary, 8 of them more than 120° — the opposite side of
+the wheel. Boston rendered gold, New York orange, and five navy clubs all
+rendered gold. Because so many NBA secondaries _are_ gold, the resolver also
+manufactured collisions between unrelated clubs: Cleveland (wine) and Indiana
+(navy) resolved to the same hex, as did Miami (wine) and Utah (navy). Lightening
+in OKLCH holds chroma to within 0.001 of the primary's, so the obvious
+objection — that a lightened navy washes out to grey — is measurably false. The
+accepted cost is that a few clubs lose a secondary that is arguably more iconic
+than their primary, Golden State's gold most of all.
 
 **Why the chroma bar exists.** Contrast alone is not sufficient, and shipping
 without this was a real defect. Brooklyn's colours are `#000000` and `#FFFFFF`:

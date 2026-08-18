@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contrastRatio, resolveTeamAccent } from "./teamAccent";
+import { accentHue, contrastRatio, resolveTeamAccent } from "./teamAccent";
 import { TEAM_SEEDS } from "../../../prisma/data/teams";
 
 const GROUND = "#0b0f14";
@@ -23,9 +23,21 @@ describe("resolveTeamAccent", () => {
     expect(accent.hex).toBe("#FDBB30");
   });
 
-  it("falls to the secondary when the primary is too dark", () => {
-    // Cleveland: wine primary fails contrast, gold secondary carries real chroma.
+  it("lightens a dark primary rather than taking the secondary's hue", () => {
+    // Cleveland: wine primary fails contrast, gold secondary would pass. The
+    // first version returned the gold, which is how Cleveland and Indiana came
+    // to render the same hex. The club's own hue wins instead.
     const accent = resolveTeamAccent("#860038", "#FDBB30");
+    expect(accent.via).toBe("lightened");
+    expect(accent.hex).not.toBe("#FDBB30");
+    expect(contrastRatio(accent.hex, GROUND)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("reaches the secondary only when the primary has no hue to raise", () => {
+    // Lightening is not available to a black primary: there is no chroma to
+    // preserve, so raising its lightness yields grey. The secondary is then the
+    // only real colour on offer.
+    const accent = resolveTeamAccent("#000000", "#FDBB30");
     expect(accent.via).toBe("secondary");
     expect(accent.hex).toBe("#FDBB30");
   });
@@ -85,7 +97,32 @@ describe("every real NBA team resolves to a legible accent", () => {
     }
     // Measured against the real seed data. If this changes, the team fixture
     // changed and the DESIGN.md intake note needs updating with it.
-    expect(byVia).toEqual({ primary: 0, secondary: 13, lightened: 15, monochrome: 2 });
+    //
+    // No NBA primary clears 4.5:1 against a ground this dark, so `primary` is
+    // empty and almost everything is the club's own hue raised. `secondary` is
+    // empty because every club whose primary lacks chroma (Brooklyn, San
+    // Antonio) has a secondary that lacks it too.
+    expect(byVia).toEqual({ primary: 0, secondary: 0, lightened: 28, monochrome: 2 });
+  });
+
+  it("renders each club in its own hue rather than its secondary's", () => {
+    // The defect this ordering exists to prevent. Boston rendered gold, New
+    // York orange, and five navy clubs all rendered gold, because the cascade
+    // preferred a legible secondary over the club's actual colour. A resolved
+    // accent must stay in the primary's hue family - the only exemption is a
+    // franchise with no hue at all.
+    const strays = TEAM_SEEDS.map((team) => {
+      const { hex } = resolveTeamAccent(team.primaryColor, team.secondaryColor);
+      const from = accentHue(team.primaryColor);
+      const to = accentHue(hex);
+      if (from === null || to === null) return null;
+      const deg = (rad: number) => ((rad * 180) / Math.PI + 360) % 360;
+      const raw = Math.abs(deg(from) - deg(to));
+      const distance = raw > 180 ? 360 - raw : raw;
+      return distance > 15 ? `${team.abbreviation} (${Math.round(distance)}deg)` : null;
+    }).filter(Boolean);
+
+    expect(strays).toEqual([]);
   });
 
   it("never paints a near-neutral as a franchise colour", () => {
