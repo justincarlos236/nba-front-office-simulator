@@ -89,12 +89,12 @@ export interface SeasonRevenueInputs {
   /** Home games played this postseason (regular playoffs + play-in). */
   playoffHomeGames: number;
   wonChampionship: boolean;
-  /** Finances as a Gameplay Pillar (Phase 1) - the season's resolved
+  /** Finances as a Gameplay Pillar - the season's resolved
    *  BusinessDecision/business-event income, summed from
    *  BusinessLedgerEntry. Optional/defaults to 0 so every existing caller
    *  and test keeps working unchanged. */
   otherIncomeCents?: number;
-  /** Finances as a Gameplay Pillar (Phase 2) - this season's active
+  /** Finances as a Gameplay Pillar - this season's active
    *  SponsorshipDeal income: real signed deals for the user, a formula
    *  baseline for CPU teams (see src/lib/finances/sponsorship.ts).
    *  Optional/defaults to 0, same reasoning as otherIncomeCents. */
@@ -201,18 +201,18 @@ export interface SeasonExpenseInputs {
   salaryFloorCents?: number;
   /** Sum of this team's staff contract salaries. */
   staffCents: number;
-  /** Finances as a Gameplay Pillar (Phase 4) - the season's total Front
+  /** Finances as a Gameplay Pillar - the season's total Front
    *  Office Department budget cost (totalDepartmentBudgetCostCents,
    *  src/lib/finances/departments.ts) - replaces the old separate
    *  facilities/medical investment levels with one precomputed figure, so
    *  this module stays decoupled from the department scale itself. */
   departmentBudgetCostCents: number;
-  /** Finances as a Gameplay Pillar (Phase 1) - the season's resolved
+  /** Finances as a Gameplay Pillar - the season's resolved
    *  BusinessDecision/business-event expense, summed from
    *  BusinessLedgerEntry. Optional/defaults to 0, same reasoning as
    *  SeasonRevenueInputs.otherIncomeCents. */
   otherExpenseCents?: number;
-  /** Finances as a Gameplay Pillar (Phase 5) - this season's debt interest
+  /** Finances as a Gameplay Pillar - this season's debt interest
    *  (computeAnnualInterestCents, src/lib/finances/financing.ts). Optional/
    *  defaults to 0, same reasoning as otherExpenseCents. */
   interestExpenseCents?: number;

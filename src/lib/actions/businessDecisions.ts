@@ -24,7 +24,7 @@ import { formatCentsCompact } from "@/lib/money";
 import type { NegotiationKind } from "@/generated/prisma/client";
 
 /**
- * Finances as a Gameplay Pillar (Phase 1) - resolves one pending
+ * resolves one pending
  * BusinessDecision with the user's chosen option: applies its cash/fan-
  * happiness/owner-confidence effects, records a BusinessLedgerEntry (so it
  * shows up in the P&L before the season boundary, not just after it) and a
@@ -176,7 +176,7 @@ async function resolveStandardDecision(
         teamIds: [userControlledTeamId],
       },
     }),
-    // Fans Page Redesign (Phase 1) - business decisions (ticket pricing,
+    // business decisions (ticket pricing,
     // sponsorship trade-offs, crisis responses) are among the most direct
     // ways a GM moves public opinion, so they belong in the ledger.
     ...fanSentimentCreateOps([
@@ -194,7 +194,7 @@ async function resolveStandardDecision(
 }
 
 /**
- * Finances as a Gameplay Pillar (Phase 5) - resolves one round of a
+ * resolves one round of a
  * multi-round Negotiation (ARENA_FUNDING or RELOCATION_DECISION). The
  * chosen option's instant deltas apply the same way a standard decision's
  * do; additionally, its cityWillingnessDelta moves the negotiation's
@@ -289,7 +289,7 @@ async function resolveNegotiationRound(
       where: { id: leagueId },
       data: { ownerConfidence: applied.ownerConfidence },
     }),
-    // Fans Page Redesign (Phase 1) - negotiation rounds (arena funding, and
+    // negotiation rounds (arena funding, and
     // especially the relocation sequence) carry some of the largest fan
     // deltas in the game.
     ...fanSentimentCreateOps([
@@ -467,7 +467,7 @@ async function applyNegotiationOutcome(
     where: { id: leagueTeamId },
     select: { fanHappiness: true, franchiseValueCents: true },
   });
-  // Fans Page Redesign (Phase 3) - deliberately NOT scaled by Fan Culture.
+  // deliberately NOT scaled by Fan Culture.
   // Relocation is itself one of the inputs recomputeFanCultures reads to
   // set next season's Loyalty; softening the hit by the very trait it's
   // meant to damage would be circular. This permanent, severe wound is
@@ -504,7 +504,7 @@ async function applyNegotiationOutcome(
         teamIds: [leagueTeamId],
       },
     }),
-    // Fans Page Redesign (Phase 1) - the single largest fan-happiness event
+    // the single largest fan-happiness event
     // in the game; it belongs in the "Franchise Memory" this fanbase will
     // reference for the rest of the save.
     ...fanSentimentCreateOps([

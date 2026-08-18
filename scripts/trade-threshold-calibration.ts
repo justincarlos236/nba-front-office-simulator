@@ -33,7 +33,10 @@ import { getSeasonCapRules } from "../src/lib/cap/constants";
 import { computeTeamStrength } from "../src/lib/simulation/teamStrength";
 import { computeTeamIdentity } from "../src/lib/gm/teamIdentity";
 import { resolvePlayerAge, resolvePlayerExperience } from "../src/lib/players/age";
-import { selectTopPerTeam, DEFAULT_MAX_ROSTER_SIZE } from "../src/lib/data-sources/rosterConstruction";
+import {
+  selectTopPerTeam,
+  DEFAULT_MAX_ROSTER_SIZE,
+} from "../src/lib/data-sources/rosterConstruction";
 
 const S = 2026;
 const rules = getSeasonCapRules(S);
@@ -41,61 +44,98 @@ const usd = (c: bigint | number) => `$${(Number(c) / 1e8).toFixed(1)}M`;
 const line = (n = 92) => console.log("=".repeat(n));
 
 interface Row {
-  fullName: string; teamAbbreviation: string | null; position: string;
-  seedOverallRating: number | null; seedPotentialRating: number | null;
-  birthDate?: string | null; draftYear?: number | null;
+  fullName: string;
+  teamAbbreviation: string | null;
+  position: string;
+  seedOverallRating: number | null;
+  seedPotentialRating: number | null;
+  birthDate?: string | null;
+  draftYear?: number | null;
 }
 const ds = JSON.parse(
   fs.readFileSync(path.join(__dirname, "..", "prisma", "data", "nbaDataset.json"), "utf8"),
 ) as { players: Row[] };
 const { rostered } = selectTopPerTeam<Row>(
-  ds.players, (p) => p.teamAbbreviation, (p) => p.seedOverallRating ?? 0, DEFAULT_MAX_ROSTER_SIZE,
+  ds.players,
+  (p) => p.teamAbbreviation,
+  (p) => p.seedOverallRating ?? 0,
+  DEFAULT_MAX_ROSTER_SIZE,
 );
 
-interface Owned { asset: TradePlayerAsset; name: string }
+interface Owned {
+  asset: TradePlayerAsset;
+  name: string;
+}
 const teams = new Map<string, Owned[]>();
 for (const p of ds.players) {
   if (!rostered.has(p) || p.seedOverallRating == null || !p.teamAbbreviation) continue;
-  const src = { birthDate: p.birthDate ? new Date(p.birthDate) : null, draftYear: p.draftYear ?? null };
+  const src = {
+    birthDate: p.birthDate ? new Date(p.birthDate) : null,
+    draftYear: p.draftYear ?? null,
+  };
   const age = resolvePlayerAge(src, S);
   const exp = resolvePlayerExperience(src, S);
-  const salary = BigInt(priceContractCents({
-    season: S,
-    quality: contractQualityScore({ overallRating: p.seedOverallRating, performanceScore: null, gamesPlayed: 0 }),
-    age, yearsOfExperience: exp, position: p.position,
-  }));
+  const salary = BigInt(
+    priceContractCents({
+      season: S,
+      quality: contractQualityScore({
+        overallRating: p.seedOverallRating,
+        performanceScore: null,
+        gamesPlayed: 0,
+      }),
+      age,
+      yearsOfExperience: exp,
+      position: p.position,
+    }),
+  );
   const pos = (["PG", "SG", "SF", "PF", "C"] as const).includes(p.position.toUpperCase() as never)
-    ? (p.position.toUpperCase() as TradePlayerAsset["position"]) : "SF";
+    ? (p.position.toUpperCase() as TradePlayerAsset["position"])
+    : "SF";
   const asset: TradePlayerAsset = {
-    type: "PLAYER", overallRating: p.seedOverallRating,
+    type: "PLAYER",
+    overallRating: p.seedOverallRating,
     potentialRating: p.seedPotentialRating ?? p.seedOverallRating,
-    age, position: pos, currentSalaryCents: salary,
-    injuryStatus: "HEALTHY", careerGamesMissedToInjury: 0,
+    age,
+    position: pos,
+    currentSalaryCents: salary,
+    injuryStatus: "HEALTHY",
+    careerGamesMissedToInjury: 0,
   };
-  teams.set(p.teamAbbreviation, [...(teams.get(p.teamAbbreviation) ?? []), { asset, name: p.fullName }]);
+  teams.set(p.teamAbbreviation, [
+    ...(teams.get(p.teamAbbreviation) ?? []),
+    { asset, name: p.fullName },
+  ]);
 }
 
 const payroll = (r: Owned[]) => r.reduce((s, o) => s + o.asset.currentSalaryCents, 0n);
 const apron = (r: Owned[]) => getApronLevel(payroll(r), rules);
 const value = (a: TradeAssetForEvaluation) =>
   a.type === "PLAYER"
-    ? Number(computePlayerTradeValue({
-        season: S, overallRating: a.overallRating, potentialRating: a.potentialRating,
-        age: a.age, currentSalaryCents: a.currentSalaryCents,
-        injuryStatus: a.injuryStatus, careerGamesMissedToInjury: a.careerGamesMissedToInjury,
-      }))
+    ? Number(
+        computePlayerTradeValue({
+          season: S,
+          overallRating: a.overallRating,
+          potentialRating: a.potentialRating,
+          age: a.age,
+          currentSalaryCents: a.currentSalaryCents,
+          injuryStatus: a.injuryStatus,
+          careerGamesMissedToInjury: a.careerGamesMissedToInjury,
+        }),
+      )
     : 0;
 const bookValue = (r: Owned[]) => r.reduce((s, o) => s + value(o.asset), 0);
 
 /** League-wide competitiveness percentiles, for each club's identity. */
 const strengths = [...teams.entries()].map(([t, r]) => ({
-  team: t, strength: computeTeamStrength(r.map((o) => o.asset.overallRating)),
+  team: t,
+  strength: computeTeamStrength(r.map((o) => o.asset.overallRating)),
 }));
 const sorted = [...strengths].sort((a, b) => a.strength - b.strength);
 const identityOf = new Map(
   sorted.map((e, i) => {
     const pct = i / (sorted.length - 1);
-    const avgAge = teams.get(e.team)!.reduce((s, o) => s + o.asset.age, 0) / teams.get(e.team)!.length;
+    const avgAge =
+      teams.get(e.team)!.reduce((s, o) => s + o.asset.age, 0) / teams.get(e.team)!.length;
     return [e.team, computeTeamIdentity(pct, avgAge)];
   }),
 );
@@ -131,15 +171,23 @@ function chainGain(threshold: number): { gain: number; steps: number } {
             if (roster.length - 1 + give.length > DEFAULT_MAX_ROSTER_SIZE) continue;
             const r = evaluateTradeOffer({
               respondingTeam: {
-                identity, needs: [], personality: "BALANCED",
-                roster: roster.map((o) => ({ overallRating: o.asset.overallRating, age: o.asset.age })),
+                identity,
+                needs: [],
+                personality: "BALANCED",
+                roster: roster.map((o) => ({
+                  overallRating: o.asset.overallRating,
+                  age: o.asset.age,
+                })),
               },
-              currentSeason: S, acceptThresholdOverride: threshold,
-              incoming: give.map((o) => o.asset), outgoing: [target.asset],
+              currentSeason: S,
+              acceptThresholdOverride: threshold,
+              incoming: give.map((o) => o.asset),
+              outgoing: [target.asset],
             });
             if (r.decision !== "ACCEPT") continue;
             const gain = value(target.asset) - give.reduce((s, o) => s + value(o.asset), 0);
-            if (gain > 0 && (!best || gain > best.gain)) best = { gain, give, get: target, from: team };
+            if (gain > 0 && (!best || gain > best.gain))
+              best = { gain, give, get: target, from: team };
           }
         }
       }
@@ -170,26 +218,35 @@ function cpuMarketLiveliness(threshold: number): number {
       const [tb, rb] = entries[b];
       for (let i = 0; i < ra.length; i += 4) {
         for (let j = 0; j < rb.length; j += 4) {
-          const pa = ra[i].asset, pb = rb[j].asset;
+          const pa = ra[i].asset,
+            pb = rb[j].asset;
           if (!legal(pa.currentSalaryCents, pb.currentSalaryCents, ra)) continue;
           if (!legal(pb.currentSalaryCents, pa.currentSalaryCents, rb)) continue;
           considered++;
           const aSide = evaluateTradeOffer({
             respondingTeam: {
-              identity: identityOf.get(ta)!, needs: [], personality: "BALANCED",
+              identity: identityOf.get(ta)!,
+              needs: [],
+              personality: "BALANCED",
               roster: ra.map((o) => ({ overallRating: o.asset.overallRating, age: o.asset.age })),
             },
-            currentSeason: S, acceptThresholdOverride: threshold,
-            incoming: [pb], outgoing: [pa],
+            currentSeason: S,
+            acceptThresholdOverride: threshold,
+            incoming: [pb],
+            outgoing: [pa],
           });
           if (aSide.decision !== "ACCEPT") continue;
           const bSide = evaluateTradeOffer({
             respondingTeam: {
-              identity: identityOf.get(tb)!, needs: [], personality: "BALANCED",
+              identity: identityOf.get(tb)!,
+              needs: [],
+              personality: "BALANCED",
               roster: rb.map((o) => ({ overallRating: o.asset.overallRating, age: o.asset.age })),
             },
-            currentSeason: S, acceptThresholdOverride: threshold,
-            incoming: [pa], outgoing: [pb],
+            currentSeason: S,
+            acceptThresholdOverride: threshold,
+            incoming: [pa],
+            outgoing: [pb],
           });
           if (bSide.decision === "ACCEPT") mutual++;
         }
@@ -204,7 +261,9 @@ console.log("ACCEPT_THRESHOLD CALIBRATION");
 line();
 console.log("  two objectives: chain gain under ~5% over 15 steps, and a CPU market");
 console.log("  that still clears trades. Raising the bar helps the first, hurts the second.");
-console.log(`${"THRESHOLD".padStart(11)}${"CHAIN GAIN".padStart(13)}${"STEPS".padStart(8)}${"CPU MUTUAL".padStart(13)}`);
+console.log(
+  `${"THRESHOLD".padStart(11)}${"CHAIN GAIN".padStart(13)}${"STEPS".padStart(8)}${"CPU MUTUAL".padStart(13)}`,
+);
 for (const t of [0.95, 1.0, 1.05, 1.1, 1.15, 1.2]) {
   const c = chainGain(t);
   const m = cpuMarketLiveliness(t);

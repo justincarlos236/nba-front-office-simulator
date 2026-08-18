@@ -31,7 +31,7 @@ export interface PlayerBoxScoreLine {
 }
 
 /**
- * Head Coach effects (Phase 15a) - kept decoupled from the Staff/CoachStyle
+ * kept decoupled from the Staff/CoachStyle
  * model itself; the caller (simulateGamesAction) translates a Head Coach's
  * quality/style into this shape, so this module stays a pure function of
  * numbers, same as everywhere else in it.

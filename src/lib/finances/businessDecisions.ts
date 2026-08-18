@@ -7,7 +7,7 @@ import type {
 import { formatCentsCompact } from "@/lib/money";
 import { departmentQualityDelta } from "@/lib/finances/departments";
 
-// Finances as a Gameplay Pillar (Phase 4) - Marketing's specific identity:
+// Marketing's specific identity:
 // richer sponsorship offers. Scales departmentQualityDelta (roughly
 // -10..+14) into a bounded multiplier on BusinessDecisionContext.
 // marketingMultiplier's consumers (the 4 sponsorship cards below).
@@ -21,7 +21,7 @@ export function computeMarketingSponsorshipMultiplier(level: DepartmentLevel): n
 }
 
 /**
- * Finances as a Gameplay Pillar (Phase 1) - System 7, "Business Events": the
+ * System 7, "Business Events": the
  * weighted card deck rolled during regular-season simulation (see
  * src/lib/actions/leagueEvents.ts) that makes the Front Office Inbox feel
  * alive rather than a menu the user has to remember to visit. Pure,
@@ -37,7 +37,7 @@ export function computeMarketingSponsorshipMultiplier(level: DepartmentLevel): n
  */
 
 /**
- * Finances as a Gameplay Pillar (Phase 2) - the payload an option needs to
+ * the payload an option needs to
  * carry when choosing it should sign a multi-year SponsorshipDeal instead
  * of (or alongside) an instant delta. `conditionLeaguePlayerId`/`Name` are
  * resolved at generation time from the context's `starPlayer` - never
@@ -65,9 +65,9 @@ export interface BusinessDecisionOption {
   fanHappinessDelta: number;
   /** Applied to League.ownerConfidence, same clamped-delta convention as computeConfidenceDelta - can be 0. */
   ownerConfidenceDelta: number;
-  /** Finances as a Gameplay Pillar (Phase 2) - present only on a sponsorship card's "sign" option. Choosing it creates a SponsorshipDeal row instead of (or alongside) the instant deltas above. */
+  /** Finances as a Gameplay Pillar - present only on a sponsorship card's "sign" option. Choosing it creates a SponsorshipDeal row instead of (or alongside) the instant deltas above. */
   sponsorshipDeal?: SponsorshipDealOption;
-  /** Finances as a Gameplay Pillar (Phase 3) - present only on a negotiation card's "push back" option. Sets League.payrollDirectiveStaked/financialMandateStaked, read at the existing directive/mandate resolution point in advanceSeasonAction to apply an amplified reward/penalty instead of the standard one. */
+  /** Finances as a Gameplay Pillar - present only on a negotiation card's "push back" option. Sets League.payrollDirectiveStaked/financialMandateStaked, read at the existing directive/mandate resolution point in advanceSeasonAction to apply an amplified reward/penalty instead of the standard one. */
   directiveStake?: "PAYROLL_DIRECTIVE" | "FINANCIAL_MANDATE";
 }
 
@@ -92,9 +92,9 @@ export interface BusinessDecisionContext {
   /** The roster's best active player if they're STAR tier (80+) or higher - null otherwise. Phase 2's sponsorship "star clause" card names this exact player. */
   starPlayer: { leaguePlayerId: string; fullName: string } | null;
   ticketPricingPosture: "FAN_FRIENDLY" | "STANDARD" | "PREMIUM";
-  /** Finances as a Gameplay Pillar (Phase 2) - true within the early-season window sponsorship offers cluster in (a "preseason-ish" proxy; this simulator has no separate preseason phase). */
+  /** Finances as a Gameplay Pillar - true within the early-season window sponsorship offers cluster in (a "preseason-ish" proxy; this simulator has no separate preseason phase). */
   isEarlySeasonWindow: boolean;
-  /** Finances as a Gameplay Pillar (Phase 4) - the Marketing department's multiplier on sponsorship-card dollar values (1.0 at STANDARD). Applied only within the sponsorship cards, never the crisis/opportunity ones - "richer sponsorship offers" is Marketing's identity, not a blanket cash bonus. */
+  /** Finances as a Gameplay Pillar - the Marketing department's multiplier on sponsorship-card dollar values (1.0 at STANDARD). Applied only within the sponsorship cards, never the crisis/opportunity ones - "richer sponsorship offers" is Marketing's identity, not a blanket cash bonus. */
   marketingMultiplier: number;
   /** Business Decision catalog expansion (2026-08-06) - LeagueTeam.currentStreak passed straight through: positive is a win streak, negative a loss streak. */
   currentStreak: number;
@@ -376,7 +376,7 @@ const CATALOG: CatalogEntry[] = [
   },
 
   // -------------------------------------------------------------------
-  // Finances as a Gameplay Pillar (Phase 2) - Sponsorship & Commercial
+  // Sponsorship & Commercial
   // Deals. Each "sign" option carries a sponsorshipDeal payload (a real,
   // multi-year commitment) rather than an instant cash delta - the
   // recurring value lands at each season boundary once the deal is
@@ -1000,7 +1000,7 @@ export function rollForBusinessDecision(
 }
 
 // ---------------------------------------------------------------------------
-// Finances as a Gameplay Pillar (Phase 3) - "Ownership as a Character."
+// "Ownership as a Character."
 // Hand-built, NOT part of CATALOG/rollForBusinessDecision - offseason.ts
 // calls these directly, exactly when it's about to issue a payroll
 // directive or financial mandate (see advanceSeasonAction), turning what

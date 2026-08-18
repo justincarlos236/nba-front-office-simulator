@@ -169,7 +169,7 @@ export async function updateRotationAction(
     type: "ROTATION_CHANGE" | "PLAYER_MORALE";
     subjectLeaguePlayerId?: string;
   }[] = [];
-  // Fan Engagement Deepening (Phase 1) - summed across every player whose
+  // summed across every player whose
   // starter/bench status actually flipped this call (usually one, but a
   // full reshuffle can cross more than one boundary at once).
   let fanHappinessDelta = 0;
@@ -193,7 +193,7 @@ export async function updateRotationAction(
         starTier: getPlayerValueTier(r.overallRating),
         promoted: isStarting,
       });
-      // Fans Page Redesign (Phase 3) - scaled by culture before it's summed
+      // scaled by culture before it's summed
       // or recorded. Each player's delta is small, so the pre-loop
       // happiness value is a fine reference point for the scale even though
       // several may apply in one call.
@@ -205,7 +205,7 @@ export async function updateRotationAction(
           ).scaledDelta
         : rawRotationDelta;
       fanHappinessDelta += rotationDelta;
-      // Fans Page Redesign (Phase 1) - one ledger row per player whose
+      // one ledger row per player whose
       // starter status actually flipped, rather than a single lumped total,
       // so the page can name who the fanbase reacted to.
       rotationSentimentRows.push({
@@ -306,7 +306,7 @@ export async function updateRotationAction(
           }),
         ]
       : []),
-    // Fans Page Redesign (Phase 1) - committed in the same transaction as the
+    // committed in the same transaction as the
     // happiness change they explain.
     ...(userLeagueTeam ? fanSentimentCreateOps(rotationSentimentRows) : []),
   ]);

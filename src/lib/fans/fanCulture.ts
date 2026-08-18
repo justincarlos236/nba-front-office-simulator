@@ -1,7 +1,7 @@
 import type { MarketSize } from "@/generated/prisma/client";
 
 /**
- * Fans Page Redesign (Phase 3) - "Fan Culture" (docs/FANS_PAGE_REDESIGN.md
+ * "Fan Culture" (docs/FANS_PAGE_REDESIGN.md
  * Part 3.1a). Mood is weather (LeagueTeam.fanHappiness, swings week to
  * week); this is climate - three slow-moving 0-100 traits describing what
  * a fanbase has *become* after years of being treated a certain way.

@@ -31,7 +31,6 @@ import { ScaleBar } from "@/components/dashboard/ScaleBar";
  */
 export const maxDuration = 60;
 
-
 // This page's correctness depends on request-time session + DB state (has
 // this user already started a league? what's their reputation?) - it must
 // never serve a cached RSC payload from an earlier visit.
@@ -171,9 +170,7 @@ function JobConference({ title, teams }: { title: string; teams: JobTeam[] }) {
               style={{ borderLeftColor: team.primaryColor, borderLeftWidth: "4px" }}
             >
               <div className="flex items-center gap-3">
-                {team.logoUrl && (
-                  <TeamLogo logoUrl={team.logoUrl} size={32} />
-                )}
+                {team.logoUrl && <TeamLogo logoUrl={team.logoUrl} size={32} />}
                 <div className="min-w-0">
                   <h3 className="font-semibold text-ink">
                     {team.city} {team.name}

@@ -3,7 +3,7 @@ import type { FanSentimentKind } from "@/generated/prisma/client";
 import type { Prisma } from "@/generated/prisma/client";
 
 /**
- * Fans Page Redesign (Phase 1) - the one shared write path for the
+ * the one shared write path for the
  * sentiment ledger, so the ~14 call sites that already compute a
  * fan-happiness delta don't each hand-roll the same insert.
  *

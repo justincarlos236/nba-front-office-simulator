@@ -125,7 +125,9 @@ function simulateLeagueOnce(exponent: number, seed: number) {
  * is fitting to noise. Averaging over seeds is what makes the guardrails
  * readable at all.
  */
-const SEEDS = [20260815, 7, 991, 40413, 66012, 123, 4567, 88, 30011, 777, 2468, 13579, 60606, 42, 909];
+const SEEDS = [
+  20260815, 7, 991, 40413, 66012, 123, 4567, 88, 30011, 777, 2468, 13579, 60606, 42, 909,
+];
 
 function simulateLeague(exponent: number) {
   const runs = SEEDS.map((seed) => simulateLeagueOnce(exponent, seed));
@@ -219,5 +221,7 @@ for (const exponent of [1.0, 1.75, 2.0, 2.25, 2.5, 3.0]) {
   );
 }
 
-console.log(`\n  BEST FIT: RELIABILITY_CURVE_EXPONENT = ${best.exponent.toFixed(2)}  (err ${best.err.toFixed(3)})`);
+console.log(
+  `\n  BEST FIT: RELIABILITY_CURVE_EXPONENT = ${best.exponent.toFixed(2)}  (err ${best.err.toFixed(3)})`,
+);
 console.log(`  targets:  ${TARGET_90} / ${TARGET_85} / ${TARGET_80}`);

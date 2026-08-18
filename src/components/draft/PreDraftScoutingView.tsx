@@ -50,7 +50,7 @@ const SWEEPABLE_PATHWAYS: ProspectPathway[] = [
 ];
 
 /**
- * Scouting Pillar Redesign (Phase 2) - the pre-draft window's own view,
+ * the pre-draft window's own view,
  * separate from `DraftExperience`. The lottery hasn't run yet here, so
  * there's no pick order, no "on the clock," no broadcast header - just the
  * class, the assignment budget, and the ability to spend it. Draft Night
@@ -73,7 +73,7 @@ export function PreDraftScoutingView({
   initialScoutingAssignmentsRemaining: number;
 }) {
   const [prospects, setProspects] = useState<DraftProspectInfo[]>(initialProspects);
-  // Scouting Pillar Redesign (Phase 5 follow-up) - a first-time user
+  // a first-time user
   // landing here has no orientation before this point (the offseason page
   // only says "scouting the class... comes before advancing"); this is a
   // one-time explainer, dismissed permanently per league via localStorage
@@ -86,7 +86,7 @@ export function PreDraftScoutingView({
     window.localStorage.setItem(dismissKey, "1");
     setForceDismissed(true);
   }
-  // Scouting Pillar Redesign (Phase 3) - the ordered list IS the Draft
+  // the ordered list IS the Draft
   // Board; a Set can't represent order, so this replaces what used to be
   // `bookmarkedIds: Set<string>`. Membership is still a cheap `.includes`
   // away for the handful of places that only need "is this bookmarked."
@@ -107,7 +107,7 @@ export function PreDraftScoutingView({
   const profileProspect = prospects.find((p) => p.id === profileModalProspectId);
   const compareProspects = prospects.filter((p) => compareSelectedIds.has(p.id));
   const prospectById = useMemo(() => new Map(prospects.map((p) => [p.id, p])), [prospects]);
-  // Scouting Pillar Redesign (Phase 4) - identical across every prospect in
+  // identical across every prospect in
   // the class (see schema.prisma's ClassCharacter comment), so any one of
   // them tells the whole class's character.
   const classCharacter = prospects[0]?.classCharacter ?? "BALANCED";

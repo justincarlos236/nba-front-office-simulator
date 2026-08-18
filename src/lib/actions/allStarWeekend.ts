@@ -477,15 +477,15 @@ export async function generateAllStarWeekend(
     return teamId ? [teamId] : [];
   };
 
-  // Fan Engagement Deepening (Phase 1) - only ever knowable right here (the
+  // only ever knowable right here (the
   // break), so applied directly rather than deferred to season end. The
   // generic "rosters are set" headline below is skipped for sentiment
   // purposes - it would double-credit a captain's team alongside their own
   // individual selection row in the loop right after it.
   const fanHappinessDeltaByTeam = new Map<string, number>();
-  // Fans Page Redesign (Phase 1).
+  // Fans Page Redesign.
   const allStarSentimentRows: SentimentRecord[] = [];
-  // Fans Page Redesign (Phase 3) - fetched once, up front, so every call to
+  // fetched once, up front, so every call to
   // addFanHappinessDelta below can scale by this team's Fan Culture.
   const involvedTeamIds = [...new Set(teamIdById.values())];
   const teamFanState = await prisma.leagueTeam.findMany({
@@ -498,7 +498,7 @@ export async function generateAllStarWeekend(
   });
   const fanHappinessById = new Map(teamFanState.map((t) => [t.id, t.fanHappiness]));
   const cultureById = new Map(teamFanState.map((t) => [t.id, t.fanCulture]));
-  // Scouting Pillar Redesign (Phase 5) - team display labels for the
+  // team display labels for the
   // hindsight beat below. Batched alongside teamFanState's team set rather
   // than queried per-selectee.
   const teamLabelRows = await prisma.leagueTeam.findMany({
@@ -531,7 +531,7 @@ export async function generateAllStarWeekend(
     });
   }
 
-  // Scouting Pillar Redesign (Phase 5) - the long-tail payoff
+  // the long-tail payoff
   // (docs/SCOUTING_PILLAR_DESIGN.md Part 3.5, "years later, via existing
   // systems"). Only ever checked for a first-time selectee (the loop below
   // already filters to that), and only ever queried for the handful of
@@ -715,8 +715,8 @@ export async function generateAllStarWeekend(
     })),
   });
 
-  // Fan Engagement Deepening (Phase 1) - one flush for everything accumulated
-  // above, reusing the fanHappiness snapshot fetched up front (Phase 3) -
+  // one flush for everything accumulated
+  // above, reusing the fanHappiness snapshot fetched up front -
   // it's read-only for this whole pass, no event in this function re-reads
   // a team's happiness mid-way through.
   if (fanHappinessDeltaByTeam.size > 0) {

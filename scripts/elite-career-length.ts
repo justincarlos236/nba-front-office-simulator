@@ -219,10 +219,11 @@ const stock = mean(results.map((r) => r.stock));
 const yieldPer = mean(results.map((r) => r.yieldPerSeason));
 const duration = mean(results.map((r) => r.duration));
 
-const verdict = (v: number, lo: number, hi: number) =>
-  v < lo ? "LOW" : v > hi ? "HIGH" : "ok";
+const verdict = (v: number, lo: number, hi: number) => (v < lo ? "LOW" : v > hi ? "HIGH" : "ok");
 
-console.log(`\n${"".padStart(11)}${"MEASURED".padStart(12)}${"REAL".padStart(16)}${"VERDICT".padStart(10)}`);
+console.log(
+  `\n${"".padStart(11)}${"MEASURED".padStart(12)}${"REAL".padStart(16)}${"VERDICT".padStart(10)}`,
+);
 console.log(
   `${"stock".padStart(11)}${stock.toFixed(1).padStart(12)}${String(REAL_STOCK).padStart(16)}` +
     `${verdict(stock, REAL_STOCK - 4, REAL_STOCK + 4).padStart(10)}`,
@@ -238,7 +239,9 @@ console.log(
     `${verdict(duration, REAL_DURATION_LOW, REAL_DURATION_HIGH).padStart(10)}`,
 );
 
-console.log(`\n  implied stock from measured yield x duration: ${(yieldPer * duration).toFixed(1)}`);
+console.log(
+  `\n  implied stock from measured yield x duration: ${(yieldPer * duration).toFixed(1)}`,
+);
 console.log(`  if duration is the LOW one, the class ceiling and the development`);
 console.log(`  curve are both fine and the decline curve is the defect.`);
 line();

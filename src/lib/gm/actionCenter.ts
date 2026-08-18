@@ -71,7 +71,7 @@ export interface ActionCenterInput {
   staffVacancies: StaffRole[];
   /** An unsolicited CPU trade offer awaiting a decision. Null when none is open. */
   pendingTradeOffer: { tradeId: string; fromTeamLabel: string } | null;
-  /** Finances as a Gameplay Pillar (Phase 1) - the Front Office Inbox. Null when nothing's pending. */
+  /** Finances as a Gameplay Pillar - the Front Office Inbox. Null when nothing's pending. */
   pendingBusinessDecisions: {
     count: number;
     earliestDeadlineDays: number;
@@ -177,7 +177,7 @@ export function computeActionCenterItems(input: ActionCenterInput): ActionCenter
   }
 
   if (input.pendingDraftLottery) {
-    // Scouting Pillar Redesign (Phase 2) - the draft class is revealed
+    // the draft class is revealed
     // before the lottery runs on purpose (docs/SCOUTING_PILLAR_DESIGN.md
     // Part 3.0): scouting without knowing where you'll pick is the whole
     // point. Points at the Draft page (where scouting now lives) rather
@@ -209,7 +209,7 @@ export function computeActionCenterItems(input: ActionCenterInput): ActionCenter
     });
   }
 
-  // Finances as a Gameplay Pillar (Phase 1) - a BREAKING decision is
+  // a BREAKING decision is
   // critical (it's already blocking simulation, same as job security);
   // otherwise it's a warning once the earliest deadline is close, and info
   // if there's still real runway.
@@ -456,7 +456,7 @@ export async function getActionCenterItems(
       orderBy: { overallPickNumber: "asc" },
       select: { currentOwnerId: true },
     }),
-    // Finances as a Gameplay Pillar (Phase 1) - the Front Office Inbox.
+    // the Front Office Inbox.
     prisma.businessDecision.findMany({
       where: { leagueId, leagueTeamId: userTeamId, status: "PENDING" },
       orderBy: { deadlineDayIndex: "asc" },
@@ -547,7 +547,7 @@ export async function getActionCenterItems(
     noGamesPlayedThisSeasonYet: lastPlayedGame == null,
     allStarWeekendPending: allStarWeekend?.status === "PENDING",
     pendingBusinessDecisions,
-    // Scouting Pillar Redesign (Phase 1) - `pre-draft` is now the phase
+    // `pre-draft` is now the phase
     // whose entire definition is "champion crowned, lottery not run yet"
     // (see leaguePhase.ts), so this condition simplifies to just checking
     // the phase. Previously gated on `phase === "draft-incomplete" &&

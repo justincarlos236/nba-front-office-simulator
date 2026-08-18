@@ -221,7 +221,7 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
     latestFinancialSnapshot ? Number(latestFinancialSnapshot.netIncomeCents) : 0,
   );
 
-  // Team identity/needs (Phase 11b) - the lens the trade-AI evaluation
+  // the lens the trade-AI evaluation
   // engine (11c) reasons through.
   const competitivenessPercentiles = await computeCompetitivenessPercentiles(league.teams);
   const competitivenessPercentile = competitivenessPercentiles.get(userLeagueTeam.id) ?? 1;
@@ -255,7 +255,7 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
       })),
   });
 
-  // Action Center (Phase 2 of the onboarding/flow work) - reuses this
+  // reuses this
   // page's own already-fetched roster/cap/needs data.
   const actionCenterRoster: ActionCenterRosterPlayer[] = leaguePlayers.map((lp) => ({
     fullName: lp.player.fullName,

@@ -25,7 +25,6 @@ import { ScheduleExperience } from "@/components/schedule/ScheduleExperience";
  */
 export const maxDuration = 60;
 
-
 export const dynamic = "force-dynamic";
 
 interface PageProps {
@@ -45,47 +44,47 @@ export default async function SchedulePage({ params }: PageProps) {
 
   const [myGames, gamesRemaining, pendingWeekend, pendingBreakingDecision, leagueGames] =
     await Promise.all([
-    prisma.game.findMany({
-      where: {
-        leagueId: league.id,
-        season: league.currentSeason,
-        type: "REGULAR_SEASON",
-        OR: [{ homeLeagueTeamId: myLeagueTeamId }, { awayLeagueTeamId: myLeagueTeamId }],
-      },
-      include: { homeTeam: { include: { team: true } }, awayTeam: { include: { team: true } } },
-      orderBy: { gameNumber: "asc" },
-    }),
-    prisma.game.count({
-      where: {
-        leagueId: league.id,
-        season: league.currentSeason,
-        type: "REGULAR_SEASON",
-        playedAt: null,
-        OR: [{ homeLeagueTeamId: myLeagueTeamId }, { awayLeagueTeamId: myLeagueTeamId }],
-      },
-    }),
-    prisma.allStarWeekend.findUnique({
-      where: { leagueId_season: { leagueId: league.id, season: league.currentSeason } },
-    }),
-    // Finances as a Gameplay Pillar (Phase 1) - mirrors the All-Star-weekend
-    // pending check, see standings/page.tsx.
-    prisma.businessDecision.findFirst({
-      where: {
-        leagueId: league.id,
-        leagueTeamId: myLeagueTeamId,
-        status: "PENDING",
-        severity: "BREAKING",
-      },
-      select: { id: true },
-    }),
-    // League-wide, not just this team's: the deadline and the All-Star break
-    // are league events, so "what day is it" has to be read off the whole
-    // schedule rather than one club's fixtures.
-    prisma.game.findMany({
-      where: { leagueId: league.id, season: league.currentSeason, type: "REGULAR_SEASON" },
-      select: { dayIndex: true, playedAt: true },
-    }),
-  ]);
+      prisma.game.findMany({
+        where: {
+          leagueId: league.id,
+          season: league.currentSeason,
+          type: "REGULAR_SEASON",
+          OR: [{ homeLeagueTeamId: myLeagueTeamId }, { awayLeagueTeamId: myLeagueTeamId }],
+        },
+        include: { homeTeam: { include: { team: true } }, awayTeam: { include: { team: true } } },
+        orderBy: { gameNumber: "asc" },
+      }),
+      prisma.game.count({
+        where: {
+          leagueId: league.id,
+          season: league.currentSeason,
+          type: "REGULAR_SEASON",
+          playedAt: null,
+          OR: [{ homeLeagueTeamId: myLeagueTeamId }, { awayLeagueTeamId: myLeagueTeamId }],
+        },
+      }),
+      prisma.allStarWeekend.findUnique({
+        where: { leagueId_season: { leagueId: league.id, season: league.currentSeason } },
+      }),
+      // mirrors the All-Star-weekend
+      // pending check, see standings/page.tsx.
+      prisma.businessDecision.findFirst({
+        where: {
+          leagueId: league.id,
+          leagueTeamId: myLeagueTeamId,
+          status: "PENDING",
+          severity: "BREAKING",
+        },
+        select: { id: true },
+      }),
+      // League-wide, not just this team's: the deadline and the All-Star break
+      // are league events, so "what day is it" has to be read off the whole
+      // schedule rather than one club's fixtures.
+      prisma.game.findMany({
+        where: { leagueId: league.id, season: league.currentSeason, type: "REGULAR_SEASON" },
+        select: { dayIndex: true, playedAt: true },
+      }),
+    ]);
 
   const dayIndexedGames = myGames.filter((g) => g.dayIndex !== null);
 
@@ -138,10 +137,7 @@ export default async function SchedulePage({ params }: PageProps) {
         <SeasonCalendarPanel
           season={league.currentSeason}
           currentDayIndex={currentRegularSeasonDayIndex(leagueGames)}
-          regularSeasonEndDayIndex={Math.max(
-            1,
-            ...leagueGames.map((g) => g.dayIndex ?? 0),
-          )}
+          regularSeasonEndDayIndex={Math.max(1, ...leagueGames.map((g) => g.dayIndex ?? 0))}
         />
       </div>
 

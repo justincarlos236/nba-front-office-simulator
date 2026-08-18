@@ -1,5 +1,5 @@
 /**
- * Finances as a Gameplay Pillar (Phase 5), System 3 - "Financing, Debt &
+ * Finances as a Gameplay Pillar, System 3 - "Financing, Debt &
  * the Owner's Wallet." Structure for the previously-inert cash balance:
  * three ways to get money you don't have, each with a different price.
  * Debt is a single revolving balance (LeagueTeam.debtCents) - interest-

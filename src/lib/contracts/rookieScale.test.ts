@@ -52,9 +52,15 @@ describe("rookieScaleFraction", () => {
 describe("rookie contracts as generated", () => {
   const rookie = (pick: number | null, overallRating = 70) =>
     generateContract({
-      season: SEASON, overallRating, performanceScore: null, gamesPlayed: 0,
-      age: 20, yearsOfExperience: 0, position: "SF",
-      overallPickNumber: pick, seed: `pick-${pick}`,
+      season: SEASON,
+      overallRating,
+      performanceScore: null,
+      gamesPlayed: 0,
+      age: 20,
+      yearsOfExperience: 0,
+      position: "SF",
+      overallPickNumber: pick,
+      seed: `pick-${pick}`,
     });
 
   /**

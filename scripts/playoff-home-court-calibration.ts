@@ -52,7 +52,10 @@ const { rostered } = selectTopPerTeam<Row>(
 const byTeam = new Map<string, number[]>();
 for (const p of ds.players) {
   if (!rostered.has(p) || !p.teamAbbreviation) continue;
-  byTeam.set(p.teamAbbreviation, [...(byTeam.get(p.teamAbbreviation) ?? []), p.seedOverallRating ?? 0]);
+  byTeam.set(p.teamAbbreviation, [
+    ...(byTeam.get(p.teamAbbreviation) ?? []),
+    p.seedOverallRating ?? 0,
+  ]);
 }
 /** Strongest sixteen clubs, which is who actually plays playoff games. */
 const strengths = [...byTeam.values()]

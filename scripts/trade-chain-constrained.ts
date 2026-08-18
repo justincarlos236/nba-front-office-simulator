@@ -33,7 +33,10 @@ import { getSeasonCapRules } from "../src/lib/cap/constants";
 import { computeTeamStrength } from "../src/lib/simulation/teamStrength";
 import { computeTeamIdentity } from "../src/lib/gm/teamIdentity";
 import { resolvePlayerAge, resolvePlayerExperience } from "../src/lib/players/age";
-import { selectTopPerTeam, DEFAULT_MAX_ROSTER_SIZE } from "../src/lib/data-sources/rosterConstruction";
+import {
+  selectTopPerTeam,
+  DEFAULT_MAX_ROSTER_SIZE,
+} from "../src/lib/data-sources/rosterConstruction";
 
 const S = 2026;
 const rules = getSeasonCapRules(S);
@@ -41,61 +44,98 @@ const usd = (c: bigint | number) => `$${(Number(c) / 1e8).toFixed(1)}M`;
 const line = (n = 92) => console.log("=".repeat(n));
 
 interface Row {
-  fullName: string; teamAbbreviation: string | null; position: string;
-  seedOverallRating: number | null; seedPotentialRating: number | null;
-  birthDate?: string | null; draftYear?: number | null;
+  fullName: string;
+  teamAbbreviation: string | null;
+  position: string;
+  seedOverallRating: number | null;
+  seedPotentialRating: number | null;
+  birthDate?: string | null;
+  draftYear?: number | null;
 }
 const ds = JSON.parse(
   fs.readFileSync(path.join(__dirname, "..", "prisma", "data", "nbaDataset.json"), "utf8"),
 ) as { players: Row[] };
 const { rostered } = selectTopPerTeam<Row>(
-  ds.players, (p) => p.teamAbbreviation, (p) => p.seedOverallRating ?? 0, DEFAULT_MAX_ROSTER_SIZE,
+  ds.players,
+  (p) => p.teamAbbreviation,
+  (p) => p.seedOverallRating ?? 0,
+  DEFAULT_MAX_ROSTER_SIZE,
 );
 
-interface Owned { asset: TradePlayerAsset; name: string }
+interface Owned {
+  asset: TradePlayerAsset;
+  name: string;
+}
 const teams = new Map<string, Owned[]>();
 for (const p of ds.players) {
   if (!rostered.has(p) || p.seedOverallRating == null || !p.teamAbbreviation) continue;
-  const src = { birthDate: p.birthDate ? new Date(p.birthDate) : null, draftYear: p.draftYear ?? null };
+  const src = {
+    birthDate: p.birthDate ? new Date(p.birthDate) : null,
+    draftYear: p.draftYear ?? null,
+  };
   const age = resolvePlayerAge(src, S);
   const exp = resolvePlayerExperience(src, S);
-  const salary = BigInt(priceContractCents({
-    season: S,
-    quality: contractQualityScore({ overallRating: p.seedOverallRating, performanceScore: null, gamesPlayed: 0 }),
-    age, yearsOfExperience: exp, position: p.position,
-  }));
+  const salary = BigInt(
+    priceContractCents({
+      season: S,
+      quality: contractQualityScore({
+        overallRating: p.seedOverallRating,
+        performanceScore: null,
+        gamesPlayed: 0,
+      }),
+      age,
+      yearsOfExperience: exp,
+      position: p.position,
+    }),
+  );
   const pos = (["PG", "SG", "SF", "PF", "C"] as const).includes(p.position.toUpperCase() as never)
-    ? (p.position.toUpperCase() as TradePlayerAsset["position"]) : "SF";
+    ? (p.position.toUpperCase() as TradePlayerAsset["position"])
+    : "SF";
   const asset: TradePlayerAsset = {
-    type: "PLAYER", overallRating: p.seedOverallRating,
+    type: "PLAYER",
+    overallRating: p.seedOverallRating,
     potentialRating: p.seedPotentialRating ?? p.seedOverallRating,
-    age, position: pos, currentSalaryCents: salary,
-    injuryStatus: "HEALTHY", careerGamesMissedToInjury: 0,
+    age,
+    position: pos,
+    currentSalaryCents: salary,
+    injuryStatus: "HEALTHY",
+    careerGamesMissedToInjury: 0,
   };
-  teams.set(p.teamAbbreviation, [...(teams.get(p.teamAbbreviation) ?? []), { asset, name: p.fullName }]);
+  teams.set(p.teamAbbreviation, [
+    ...(teams.get(p.teamAbbreviation) ?? []),
+    { asset, name: p.fullName },
+  ]);
 }
 
 const payroll = (r: Owned[]) => r.reduce((s, o) => s + o.asset.currentSalaryCents, 0n);
 const apron = (r: Owned[]) => getApronLevel(payroll(r), rules);
 const value = (a: TradeAssetForEvaluation) =>
   a.type === "PLAYER"
-    ? Number(computePlayerTradeValue({
-        season: S, overallRating: a.overallRating, potentialRating: a.potentialRating,
-        age: a.age, currentSalaryCents: a.currentSalaryCents,
-        injuryStatus: a.injuryStatus, careerGamesMissedToInjury: a.careerGamesMissedToInjury,
-      }))
+    ? Number(
+        computePlayerTradeValue({
+          season: S,
+          overallRating: a.overallRating,
+          potentialRating: a.potentialRating,
+          age: a.age,
+          currentSalaryCents: a.currentSalaryCents,
+          injuryStatus: a.injuryStatus,
+          careerGamesMissedToInjury: a.careerGamesMissedToInjury,
+        }),
+      )
     : 0;
 const bookValue = (r: Owned[]) => r.reduce((s, o) => s + value(o.asset), 0);
 
 /** League-wide competitiveness percentiles, for each club's identity. */
 const strengths = [...teams.entries()].map(([t, r]) => ({
-  team: t, strength: computeTeamStrength(r.map((o) => o.asset.overallRating)),
+  team: t,
+  strength: computeTeamStrength(r.map((o) => o.asset.overallRating)),
 }));
 const sorted = [...strengths].sort((a, b) => a.strength - b.strength);
 const identityOf = new Map(
   sorted.map((e, i) => {
     const pct = i / (sorted.length - 1);
-    const avgAge = teams.get(e.team)!.reduce((s, o) => s + o.asset.age, 0) / teams.get(e.team)!.length;
+    const avgAge =
+      teams.get(e.team)!.reduce((s, o) => s + o.asset.age, 0) / teams.get(e.team)!.length;
     return [e.team, computeTeamIdentity(pct, avgAge)];
   }),
 );
@@ -107,7 +147,9 @@ function legal(sideOut: bigint, sideIn: bigint, r: Owned[]): boolean {
 
 const USER = sorted[Math.floor(sorted.length / 2)].team; // a median club
 let mine = [...teams.get(USER)!];
-const others = new Map([...teams.entries()].filter(([t]) => t !== USER).map(([t, r]) => [t, [...r]]));
+const others = new Map(
+  [...teams.entries()].filter(([t]) => t !== USER).map(([t, r]) => [t, [...r]]),
+);
 
 line();
 console.log("TRADE CHAIN UNDER REAL CONSTRAINTS");
@@ -115,7 +157,9 @@ line();
 console.log(`  user club: ${USER}  (${identityOf.get(USER)})`);
 console.log(`  starting book value ${usd(bookValue(mine))}, payroll ${usd(payroll(mine))}`);
 console.log(`  best player ${Math.max(...mine.map((o) => o.asset.overallRating))}\n`);
-console.log(`${"STEP".padStart(5)}${"GAVE".padStart(26)}${"GOT".padStart(26)}${"GAIN".padStart(10)}${"BOOK".padStart(11)}${"BEST".padStart(6)}`);
+console.log(
+  `${"STEP".padStart(5)}${"GAVE".padStart(26)}${"GOT".padStart(26)}${"GAIN".padStart(10)}${"BOOK".padStart(11)}${"BEST".padStart(6)}`,
+);
 
 const startBook = bookValue(mine);
 const startBest = Math.max(...mine.map((o) => o.asset.overallRating));
@@ -141,8 +185,13 @@ for (; step < 15; step++) {
 
           const r = evaluateTradeOffer({
             respondingTeam: {
-              identity, needs: [], personality: "BALANCED",
-              roster: roster.map((o) => ({ overallRating: o.asset.overallRating, age: o.asset.age })),
+              identity,
+              needs: [],
+              personality: "BALANCED",
+              roster: roster.map((o) => ({
+                overallRating: o.asset.overallRating,
+                age: o.asset.age,
+              })),
             },
             currentSeason: S,
             incoming: give.map((o) => o.asset),
@@ -151,7 +200,8 @@ for (; step < 15; step++) {
           if (r.decision !== "ACCEPT") continue;
 
           const gain = value(target.asset) - give.reduce((s, o) => s + value(o.asset), 0);
-          if (gain > 0 && (!best || gain > best.gain)) best = { gain, give, get: target, from: team };
+          if (gain > 0 && (!best || gain > best.gain))
+            best = { gain, give, get: target, from: team };
         }
       }
     }
@@ -165,15 +215,21 @@ for (; step < 15; step++) {
 
   const bestOvr = Math.max(...mine.map((o) => o.asset.overallRating));
   console.log(
-    `${String(step + 1).padStart(5)}${best.give.map((o) => o.name.split(" ").pop()).join("+").slice(0, 24).padStart(26)}` +
+    `${String(step + 1).padStart(5)}${best.give
+      .map((o) => o.name.split(" ").pop())
+      .join("+")
+      .slice(0, 24)
+      .padStart(26)}` +
       `${`${best.get.name.split(" ").pop()} (${best.get.asset.overallRating})`.slice(0, 24).padStart(26)}` +
-      `${(`+${usd(best.gain)}`).padStart(10)}${usd(bookValue(mine)).padStart(11)}${String(bestOvr).padStart(6)}`,
+      `${`+${usd(best.gain)}`.padStart(10)}${usd(bookValue(mine)).padStart(11)}${String(bestOvr).padStart(6)}`,
   );
 }
 
 const endBook = bookValue(mine);
 console.log(`\n  profitable trades found: ${step}`);
-console.log(`  book value ${usd(startBook)} -> ${usd(endBook)}  (${(((endBook / startBook) - 1) * 100).toFixed(1)}%)`);
+console.log(
+  `  book value ${usd(startBook)} -> ${usd(endBook)}  (${((endBook / startBook - 1) * 100).toFixed(1)}%)`,
+);
 console.log(`  best player ${startBest} -> ${Math.max(...mine.map((o) => o.asset.overallRating))}`);
 console.log(`  final payroll ${usd(payroll(mine))}  (cap ${usd(rules.salaryCapCents)})`);
 console.log(`\n  unconstrained harness reported +25.7% over 8 trades.`);

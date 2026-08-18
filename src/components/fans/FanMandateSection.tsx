@@ -5,7 +5,7 @@ import {
 } from "@/lib/fans/fanMandate";
 
 /**
- * Fans Page Redesign (Phase 4), Section 2 - "What the City Wants"
+ * Fans Page Redesign, Section 2 - "What the City Wants"
  * (docs/FANS_PAGE_REDESIGN.md Part 3.2). The answer to "what do fans expect
  * from me this season" - deliberately distinct from ExpectationLevel
  * (ownership's own bar, shown on the Home Dashboard). `keepOurGuy` renders

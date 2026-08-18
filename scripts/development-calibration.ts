@@ -218,5 +218,7 @@ for (let missRate = 0; missRate <= 0.6001; missRate += 0.04) {
   );
 }
 
-console.log(`\n  BEST FIT: SCOUTING_MISS_RATE = ${best.missRate.toFixed(2)}  (err ${best.err.toFixed(3)})`);
+console.log(
+  `\n  BEST FIT: SCOUTING_MISS_RATE = ${best.missRate.toFixed(2)}  (err ${best.err.toFixed(3)})`,
+);
 console.log(`  targets:  ${TARGET_90} / ${TARGET_85} / ${TARGET_80}`);

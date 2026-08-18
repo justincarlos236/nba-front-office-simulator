@@ -1,5 +1,5 @@
 /**
- * Fans Page Redesign (Phase 5) - "Franchise Memory" (docs/FANS_PAGE_REDESIGN.md
+ * "Franchise Memory" (docs/FANS_PAGE_REDESIGN.md
  * Part 3.5). A short, permanent list of the moments this fanbase will not
  * forget: championships, a franchise icon traded away, a brutal collapse, a
  * relocation. Deliberately "nearly free" per the design - no new model, no

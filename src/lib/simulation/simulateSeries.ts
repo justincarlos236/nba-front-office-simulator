@@ -37,14 +37,7 @@ export function simulateNextSeriesGame(
   // Postseason home court is larger than the regular season's - see
   // PLAYOFF_HOME_COURT_ADVANTAGE. This call used to take the regular-season
   // default, which made a playoff game differ from a February one by nothing.
-  const result = simulateGame(
-    homeStrength,
-    awayStrength,
-    rng,
-    0,
-    0,
-    PLAYOFF_HOME_COURT_ADVANTAGE,
-  );
+  const result = simulateGame(homeStrength, awayStrength, rng, 0, 0, PLAYOFF_HOME_COURT_ADVANTAGE);
   const higherSeedWonGame = isHigherSeedHome ? result.homeWon : !result.homeWon;
 
   const newState: SeriesState = {

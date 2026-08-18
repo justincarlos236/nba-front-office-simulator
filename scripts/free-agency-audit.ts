@@ -128,9 +128,7 @@ for (const i of samples) {
       `${(discount.toFixed(1) + "x").padStart(11)}  ${result.isValid ? "LEGAL" : "blocked"}`,
   );
 }
-console.log(
-  `\n  The offer above is made by a SECOND-APRON team with ZERO cap space - the most`,
-);
+console.log(`\n  The offer above is made by a SECOND-APRON team with ZERO cap space - the most`);
 console.log(`  constrained state in the model. It is still legal for every player listed.`);
 console.log(`  Largest discount available: ${worstDiscount.toFixed(1)}x market price.`);
 
@@ -241,7 +239,9 @@ const band = (lo: number, hi: number) => {
   const left = inBand.filter((p) => !signedNames.has(p.fullName));
   return { total: inBand.length, left: left.length };
 };
-console.log(`${"RATING BAND".padStart(14)}${"IN POOL".padStart(10)}${"UNSIGNED".padStart(11)}${"LEFT FOR USER".padStart(15)}`);
+console.log(
+  `${"RATING BAND".padStart(14)}${"IN POOL".padStart(10)}${"UNSIGNED".padStart(11)}${"LEFT FOR USER".padStart(15)}`,
+);
 for (const [lo, hi, label] of [
   [85, 100, "85+ (stars)"],
   [80, 85, "80-84"],
@@ -281,7 +281,9 @@ line();
 const REFERENCE_INDEX = 180;
 const referencePlayer = byRating[REFERENCE_INDEX];
 const referenceValue = BigInt(Math.round(marketPrice(referencePlayer)));
-console.log(`  reference player: ${byRating[20].fullName} (${byRating[20].seedOverallRating}), base ${usd(referenceValue)}\n`);
+console.log(
+  `  reference player: ${byRating[20].fullName} (${byRating[20].seedOverallRating}), base ${usd(referenceValue)}\n`,
+);
 console.log(`${"SUITORS".padStart(9)}${"PRICE".padStart(12)}${"PREMIUM".padStart(11)}`);
 for (const suitors of [1, 2, 3, 4, 5, 8, 12]) {
   const price = demandAdjustedPriceCents(referenceValue, suitors, ageOf(referencePlayer), SEASON);
@@ -297,8 +299,12 @@ const starAt1 = demandAdjustedPriceCents(starBase, 1, ageOf(star), SEASON);
 const starAt8 = demandAdjustedPriceCents(starBase, 8, ageOf(star), SEASON);
 console.log(`
   At the top of the market the premium is absorbed by the individual maximum:`);
-console.log(`    ${star.fullName} (${star.seedOverallRating}) base ${usd(starBase)} -> 1 suitor ${usd(starAt1)}, 8 suitors ${usd(starAt8)}`);
-console.log(`    ${starAt1 === starAt8 ? "identical - competition cannot move a max player's price" : "premium survives the cap"}`);
+console.log(
+  `    ${star.fullName} (${star.seedOverallRating}) base ${usd(starBase)} -> 1 suitor ${usd(starAt1)}, 8 suitors ${usd(starAt8)}`,
+);
+console.log(
+  `    ${starAt1 === starAt8 ? "identical - competition cannot move a max player's price" : "premium survives the cap"}`,
+);
 
 // ---------------------------------------------------------------------------
 // FA-4. Contract escalation on the user path
@@ -351,7 +357,9 @@ for (const i of samples) {
 }
 console.log(`
   players still signable at the minimum for >3x their value: ${stillExploitable}`);
-console.log(`  (a fringe player with no suitors SHOULD accept the minimum - that is roster filling)`);
+console.log(
+  `  (a fringe player with no suitors SHOULD accept the minimum - that is roster filling)`,
+);
 
 line();
 console.log("Reproduce: npx tsx scripts/free-agency-audit.ts");

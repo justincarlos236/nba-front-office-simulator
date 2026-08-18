@@ -1,5 +1,5 @@
 /**
- * Fans Page Redesign (Phase 5), Section 5 - "Franchise Memory"
+ * Fans Page Redesign, Section 5 - "Franchise Memory"
  * (docs/FANS_PAGE_REDESIGN.md Part 3.5). The short, permanent list of
  * moments this fanbase will not forget. What makes a 20-season save's
  * fanbase feel different from a fresh one.

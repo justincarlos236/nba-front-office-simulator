@@ -1,5 +1,5 @@
 /**
- * Fans Page Redesign (Phase 3) - plain-language labels for the three Fan
+ * plain-language labels for the three Fan
  * Culture traits, and the "why" text the page uses to explain each trait
  * with real facts rather than a bare 0-100 number. Pure presentation; the
  * numbers themselves come from src/lib/fans/fanCulture.ts.

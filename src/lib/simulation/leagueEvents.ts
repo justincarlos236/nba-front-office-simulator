@@ -74,7 +74,7 @@ function clamp(v: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, v));
 }
 
-// Medical Staff effect (Phase 15a) - a real, modest nudge on both how often
+// a real, modest nudge on both how often
 // a team gets hit and how long an injury lasts. 72 (this codebase's
 // standard neutral anchor) means no effect - null (no Medical Staff hired
 // yet) is treated identically, same convention as the other staff hooks.
@@ -82,7 +82,7 @@ const MEDICAL_QUALITY_ANCHOR = 72;
 const MEDICAL_FREQUENCY_FACTOR_PER_POINT = 0.01;
 const MEDICAL_DURATION_FACTOR_PER_POINT = 0.006;
 
-// Finances as a Gameplay Pillar (Phase 4) - the Sports Science department
+// the Sports Science department
 // (was "medical investment"). A second, independent injury-frequency lever
 // on top of Medical Staff quality. Input is departmentQualityDelta
 // (src/lib/finances/departments.ts) - 0 at STANDARD (no effect), positive

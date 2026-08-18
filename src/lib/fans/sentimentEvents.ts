@@ -7,7 +7,7 @@ import {
 } from "@/lib/fans/fanCulture";
 
 /**
- * Mid-season Fan Happiness deltas (Fan Engagement Deepening, Phase 1) -
+ * Mid-season Fan Happiness deltas -
  * applied inline at the exact existing call site where a curated event
  * actually happens (trade/signing execution, a real win/loss streak, an
  * injury or recovery, a staff hire/fire, a notable rotation change),
@@ -35,7 +35,7 @@ export function applyFanHappinessDelta(current: number, delta: number): number {
 }
 
 /**
- * Fans Page Redesign (Phase 3) - the one chokepoint every sentiment call
+ * the one chokepoint every sentiment call
  * site routes through so Fan Culture (src/lib/fans/fanCulture.ts) actually
  * changes gameplay rather than sitting as a cosmetic label (Part 3.1a,
  * "not just flavor"). Composes Patience (dampens negative-delta magnitude)

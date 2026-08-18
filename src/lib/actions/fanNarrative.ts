@@ -14,7 +14,7 @@ import {
 import type { FanMandateKind } from "@/lib/fans/fanMandate";
 
 /**
- * Fans Page Redesign (Phase 5) - the thin DB shell around
+ * the thin DB shell around
  * src/lib/fans/fanNarrative.ts's pure open/close logic.
  */
 

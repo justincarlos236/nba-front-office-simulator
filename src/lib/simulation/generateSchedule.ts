@@ -189,12 +189,7 @@ function pairKey(a: string, b: string): string {
  * - The loop runs past the target length if the eligibility rule needs
  *   more room; it never fails to schedule everyone.
  */
-function assignDays(
-  games: UnscheduledGame[],
-  rng: () => number,
-  season: number,
-): ScheduledGame[] {
-
+function assignDays(games: UnscheduledGame[], rng: () => number, season: number): ScheduledGame[] {
   const remainingByPair = new Map<string, UnscheduledGame[]>();
   for (const g of shuffledIndices(games.length, rng).map((i) => games[i])) {
     const key = pairKey(g.homeLeagueTeamId, g.awayLeagueTeamId);

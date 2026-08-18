@@ -137,7 +137,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
     toTeamRoster,
     fromTeamRoster,
     competitivenessPercentiles,
-    // Finances as a Gameplay Pillar (Phase 2) - "star clause" sponsorship
+    // "star clause" sponsorship
     // deals whose condition player is among the players the user is
     // sending away. Only the user's team ever has real SponsorshipDeal
     // rows (CPU teams use a formula baseline, never a signed deal), so
@@ -218,7 +218,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
       where: { leagueTeamId: input.toTeamId, isActive: true },
       include: { player: true },
     }),
-    // Fan Engagement Deepening (Phase 1) - the user's own roster, so their
+    // the user's own roster, so their
     // own fans' reaction can be judged from the user's own side via the
     // same evaluateTradeOffer call the CPU side already gets, not a
     // simplified proxy.
@@ -380,7 +380,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
     }
   }
 
-  // Trade-AI evaluation (Phase 11c): does the CPU team actually want this
+  // Trade-AI evaluation: does the CPU team actually want this
   // deal? Runs only after legality passes - a real GM never considers a
   // trade its team can't even legally make.
   const toTeamAvgAge =
@@ -445,7 +445,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
     throw new Error(`The ${teamLabel} don't believe this trade is in their favor.`);
   }
 
-  // Fan Engagement Deepening (Phase 1) - the same evaluateTradeOffer call,
+  // the same evaluateTradeOffer call,
   // asked from the user's own side too (the "ask both sides" pattern
   // CPU-CPU trades already use), purely to judge how the user's own fans
   // read this deal - it never gates whether the trade executes, only how
@@ -503,7 +503,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
     let valueHitCents = 0;
     let fanHit = 0;
     const departedNames: string[] = [];
-    // Fans Page Redesign (Phase 1) - the per-player hit is kept alongside the
+    // the per-player hit is kept alongside the
     // aggregate so the sentiment ledger can attribute each icon's departure
     // its own real number, rather than splitting a summed hit evenly across
     // however many icons happened to move in the same deal.
@@ -534,7 +534,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
   const fromIconLoss = iconLoss(myPlayers);
   const toIconLoss = iconLoss(theirPlayers);
 
-  // Finances as a Gameplay Pillar (Phase 2) - trading away a "star clause"
+  // trading away a "star clause"
   // deal's condition player voids the deal: a real, understood cost for
   // the roster flexibility the clause was pricing in the first place. Cap/
   // CBA legality is untouched - this only ever adds a cash penalty, never
@@ -700,7 +700,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
       });
     }
 
-    // Finances as a Gameplay Pillar (Phase 2) - void every sponsorship deal
+    // void every sponsorship deal
     // whose condition player just left, and charge the buyout penalty.
     if (sponsorshipVoids.length > 0) {
       await Promise.all(
@@ -713,7 +713,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
       );
     }
 
-    // Fan Engagement Deepening (Phase 1) + Franchise Finances (Phase D) - the
+    // Fan Engagement Deepening + Franchise Finances (Phase D) - the
     // trade sentiment delta and any franchise-icon-departure hit (fan + value)
     // are applied together in one update per team.
     const [fromTeamState, toTeamState] = await Promise.all([
@@ -736,7 +736,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
       }),
     ]);
 
-    // Fans Page Redesign (Phase 3) - each component delta is scaled by this
+    // each component delta is scaled by this
     // team's culture BEFORE it's summed for the actual fanHappiness write,
     // and the same scaled value is what gets recorded to the ledger below -
     // never the raw one, so a ledger row always explains the real number.
@@ -794,7 +794,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
           cashReserveCents: fromTeamState.cashReserveCents - BigInt(totalVoidPenaltyCents),
         },
       });
-      // Fans Page Redesign (Phase 5) - "The Reed Trade Fallout" opens the
+      // "The Reed Trade Fallout" opens the
       // moment the departure actually happens, not deferred to season end.
       for (const icon of fromIconLoss.departed) {
         await openIconDepartureFalloutIfEligible(tx, {
@@ -869,7 +869,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
       }
     }
 
-    // Fans Page Redesign (Phase 1) - record *why* the numbers just moved.
+    // record *why* the numbers just moved.
     // The trade reaction and the franchise-icon departure are logged
     // separately even though they're summed into one fanHappiness write
     // above: fans remember "we got fleeced" and "they traded our guy" as
@@ -904,7 +904,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
       });
     }
 
-    // Finances as a Gameplay Pillar (Phase 2) - a news beat for every
+    // a news beat for every
     // voided sponsorship deal, naming the real buyout cost.
     if (sponsorshipVoids.length > 0) {
       await tx.leagueTransaction.createMany({

@@ -17,7 +17,11 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { rollForCpuTrade, type CpuTeam, type CpuRosterPlayer } from "../src/lib/simulation/leagueEvents";
+import {
+  rollForCpuTrade,
+  type CpuTeam,
+  type CpuRosterPlayer,
+} from "../src/lib/simulation/leagueEvents";
 import { ApronLevel } from "../src/lib/cap/apron";
 import { computeTeamIdentity } from "../src/lib/gm/teamIdentity";
 import { computeTeamNeeds } from "../src/lib/gm/teamNeeds";
@@ -31,7 +35,7 @@ const SEASON = 2026;
 const TARGET_TRADES_PER_SEASON = 15;
 const TOLERANCE = 3;
 const TRADE_CHANCE_PER_GAME = 0.013;
-const GAMES_PER_SEASON = 82 * 30 / 2; // league-wide game rows a season
+const GAMES_PER_SEASON = (82 * 30) / 2; // league-wide game rows a season
 
 interface Row {
   fullName: string;

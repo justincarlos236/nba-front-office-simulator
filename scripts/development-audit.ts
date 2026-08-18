@@ -98,7 +98,9 @@ line();
 console.log("DEVELOPMENT AUDIT");
 line();
 console.log(`  ${startingLeague.length} players at season 0, simulated ${SEASONS} seasons`);
-console.log(`  real reference: ${REAL_90_PLUS} at 90+, ${REAL_85_PLUS} at 85+, ${REAL_80_PLUS} at 80+\n`);
+console.log(
+  `  real reference: ${REAL_90_PLUS} at 90+, ${REAL_85_PLUS} at 85+, ${REAL_80_PLUS} at 80+\n`,
+);
 
 // ---------------------------------------------------------------------------
 // DEV-1. Does the league hold its talent distribution over twenty seasons?
@@ -155,7 +157,9 @@ for (let season = 0; season <= SEASONS; season++) {
         `${String(season).padStart(7)}${String(league.length).padStart(9)}` +
           `${String(countAtLeast(league, 90)).padStart(7)}${String(countAtLeast(league, 85)).padStart(7)}` +
           `${String(countAtLeast(league, 80)).padStart(7)}` +
-          `${median(league.map((p) => p.overall)).toFixed(1).padStart(9)}${String(retired).padStart(9)}`,
+          `${median(league.map((p) => p.overall))
+            .toFixed(1)
+            .padStart(9)}${String(retired).padStart(9)}`,
       );
     }
   } else {
@@ -163,7 +167,9 @@ for (let season = 0; season <= SEASONS; season++) {
       `${String(season).padStart(7)}${String(league.length).padStart(9)}` +
         `${String(countAtLeast(league, 90)).padStart(7)}${String(countAtLeast(league, 85)).padStart(7)}` +
         `${String(countAtLeast(league, 80)).padStart(7)}` +
-        `${median(league.map((p) => p.overall)).toFixed(1).padStart(9)}${"-".padStart(9)}`,
+        `${median(league.map((p) => p.overall))
+          .toFixed(1)
+          .padStart(9)}${"-".padStart(9)}`,
     );
   }
   snapshots.push({

@@ -1,5 +1,5 @@
 /**
- * Fans Page Redesign (Phase 2), Section 1 - "The Mood." Converts raw Fan
+ * Fans Page Redesign, Section 1 - "The Mood." Converts raw Fan
  * Happiness + its recent trajectory into a plain-language label. The design
  * point (docs/FANS_PAGE_REDESIGN.md Part 3.1): a fanbase at 55 and climbing
  * is a completely different room than one at 55 and falling, and one static

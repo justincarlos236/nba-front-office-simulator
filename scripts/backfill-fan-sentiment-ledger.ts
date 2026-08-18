@@ -1,5 +1,5 @@
 /**
- * One-time backfill for the Fans Page Redesign (Phase 1): every league
+ * One-time backfill for the Fans Page Redesign: every league
  * created before FanSentimentEvent shipped has a real fanHappiness number
  * but zero ledger rows explaining it, so "Why They Feel This Way" would
  * render empty for every existing save until its next in-season event.

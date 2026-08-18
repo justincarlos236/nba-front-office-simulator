@@ -57,7 +57,7 @@ interface ProspectAssignment {
   weightLbs: number | null;
   round: number;
   overallPickNumber: number;
-  /** Scouting Pillar Redesign (Phase 4) - carried onto the real Player row; previously silently dropped at this exact boundary. */
+  /** Scouting Pillar Redesign - carried onto the real Player row; previously silently dropped at this exact boundary. */
   pathway: ProspectPathway | null;
 }
 
@@ -89,7 +89,7 @@ async function draftProspectsToTeams(
       heightInches: a.heightInches,
       weightLbs: a.weightLbs,
       pathway: a.pathway,
-      // Scouting Pillar Redesign (Phase 5) - the durable link back to this
+      // the durable link back to this
       // prospect's scouting record (Depth, resolvedHiddenTraits), for the
       // post-draft recap and the long-tail "you passed on a future
       // All-Star" News beat.
@@ -202,7 +202,7 @@ export interface ResolvedPick {
   tradedFromTeamId: string | null;
   /** "REACH" or "STEAL" only when this selection genuinely clears the notable-movement threshold - see draftNightNarrative.ts. */
   narrative: "REACH" | "STEAL" | null;
-  /** Scouting Pillar Redesign (Phase 5) - only ever set for the user's own pick (makeDraftPickAction), never a CPU selection. Deliberately excludes potentialRating/bustRisk/any verdict - see draftResolution.ts. */
+  /** Scouting Pillar Redesign - only ever set for the user's own pick (makeDraftPickAction), never a CPU selection. Deliberately excludes potentialRating/bustRisk/any verdict - see draftResolution.ts. */
   resolutionSummary: DraftResolutionSummary | null;
 }
 
@@ -696,7 +696,7 @@ async function runMakeDraftPickAction(leagueId: string, prospectId: string) {
     });
   }
 
-  // Scouting Pillar Redesign (Phase 5) - the post-draft recap's two rank
+  // the post-draft recap's two rank
   // inputs, computed at the exact moment of the pick (never persisted
   // separately - both are cheaply re-derivable from data already loaded
   // above). The tournament factor is always folded in here, same
@@ -752,7 +752,7 @@ async function runToggleDraftProspectBookmarkAction(leagueId: string, prospectId
     return { bookmarked: false };
   }
 
-  // Scouting Pillar Redesign (Phase 3) - joins the bottom of the player's
+  // joins the bottom of the player's
   // own Draft Board (docs/SCOUTING_PILLAR_DESIGN.md Part 3.4), one rank
   // past whatever's currently lowest. Starts at 1 for an empty board.
   const lowestRanked = await prisma.draftProspectBookmark.findFirst({

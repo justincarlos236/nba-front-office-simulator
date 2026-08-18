@@ -1,7 +1,7 @@
 import type { DepartmentLevel } from "@/generated/prisma/client";
 
 /**
- * Finances as a Gameplay Pillar (Phase 4), System 6 - "Front Office
+ * Finances as a Gameplay Pillar, System 6 - "Front Office
  * Departments." A zero-sum operations budget across 6 departments,
  * replacing the old independent facilitiesInvestment/medicalInvestment
  * dropdowns. Every department shares the same 5-level scale and the same

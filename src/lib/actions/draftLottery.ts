@@ -21,7 +21,7 @@ import { Prisma, type NewsImportance } from "@/generated/prisma/client";
 import { requireSessionUserId, assertLeagueOwned } from "@/lib/auth/requireOwnedLeague";
 
 const LOTTERY_LEAGUE_INCLUDE = {
-  // Fans Page Redesign (Phase 3).
+  // Fans Page Redesign.
   teams: { include: { team: true, fanCulture: true } },
 } as const;
 
@@ -112,7 +112,7 @@ export async function runDraftLotteryAction(leagueId: string): Promise<DraftLott
   const seededLotteryTeams = getSeededLotteryTeams(teams, playoffTeamIds);
   const pickOrder = computeDraftOrder(teams, playoffTeamIds, rng);
 
-  // Scouting Pillar Redesign (Phase 1) - the class now exists for the whole
+  // the class now exists for the whole
   // pre-draft window, generated the moment the league enters it (or lazily
   // here as a fallback for a save that reaches the lottery without ever
   // visiting a scouting surface). No-op if it's already there.
@@ -152,7 +152,7 @@ export async function runDraftLotteryAction(leagueId: string): Promise<DraftLott
   );
   const teamLabelById = new Map(league.teams.map((t) => [t.id, `${t.team.city} ${t.team.name}`]));
   const fanHappinessById = new Map(league.teams.map((t) => [t.id, t.fanHappiness]));
-  // Fans Page Redesign (Phase 3).
+  // Fans Page Redesign.
   const fanCultureById = new Map(league.teams.map((t) => [t.id, t.fanCulture]));
   const userTeamId = league.userControlledTeamId;
 
@@ -211,7 +211,7 @@ export async function runDraftLotteryAction(leagueId: string): Promise<DraftLott
     const movement = computeMovement(r);
     const rawDelta = computeLotteryResultSentimentDelta(movement, r.resultPickNumber === 1);
     const current = fanHappinessById.get(r.currentOwnerId) ?? 65;
-    // Fans Page Redesign (Phase 3).
+    // Fans Page Redesign.
     const { newFanHappiness, scaledDelta } = applyScaledFanHappinessDelta(
       current,
       rawDelta,
@@ -236,7 +236,7 @@ export async function runDraftLotteryAction(leagueId: string): Promise<DraftLott
         data: { fanHappiness: u.fanHappiness },
       }),
     ),
-    // Fans Page Redesign (Phase 1).
+    // Fans Page Redesign.
     recordFanSentimentMany(
       fanHappinessUpdates.map((u) => ({
         leagueId,

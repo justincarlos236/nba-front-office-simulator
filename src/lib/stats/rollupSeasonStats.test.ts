@@ -14,7 +14,13 @@ import { computeCareerHighs, type StatLine } from "./milestones";
  * lossless rather than approximate.
  */
 
-const line = (points: number, rebounds: number, assists: number, steals = 0, blocks = 0): StatLine => ({
+const line = (
+  points: number,
+  rebounds: number,
+  assists: number,
+  steals = 0,
+  blocks = 0,
+): StatLine => ({
   points,
   rebounds,
   assists,

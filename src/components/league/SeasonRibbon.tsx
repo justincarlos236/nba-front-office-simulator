@@ -90,8 +90,7 @@ export function SeasonRibbon({
   // Outside the regular season the active segment fills whole, for the reason
   // in the docstring, so the frontier is that segment's trailing edge.
   const arcFraction = inRegularSeason ? seasonPct / 100 : 1;
-  const markerPct =
-    activeIndex < 0 ? null : ((activeIndex + arcFraction) / ORDER.length) * 100;
+  const markerPct = activeIndex < 0 ? null : ((activeIndex + arcFraction) / ORDER.length) * 100;
 
   return (
     <div className={className}>

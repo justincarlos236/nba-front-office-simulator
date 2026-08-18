@@ -125,7 +125,7 @@ export default async function StandingsPage({ params }: PageProps) {
       prisma.allStarWeekend.findUnique({
         where: { leagueId_season: { leagueId: league.id, season: league.currentSeason } },
       }),
-      // Finances as a Gameplay Pillar (Phase 1) - mirrors the All-Star-weekend
+      // mirrors the All-Star-weekend
       // pending check so the sim buttons don't invite a click that will just
       // no-op server-side (see simulateGamesAction's own BREAKING gate).
       myLeagueTeamId

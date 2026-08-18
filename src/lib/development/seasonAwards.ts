@@ -1,7 +1,7 @@
 /**
  * Awards computed only from data the simulator actually tracks honestly:
  * rating, team record, rookie status, and season-over-season rating
- * change. MVP/ROY/MIP predate the box-score engine (Phase 14a) and stay
+ * change. MVP/ROY/MIP predate the box-score engine and stay
  * exactly as they were - untouched, already tuned and tested.
  *
  * DEFENSIVE_PLAYER_OF_THE_YEAR and SIXTH_MAN_OF_THE_YEAR were added once

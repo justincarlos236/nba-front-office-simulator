@@ -24,7 +24,7 @@ describe("deriveLeaguePhase", () => {
     expect(deriveLeaguePhase(0, true, true, true)).toBe("ready");
   });
 
-  // Scouting Pillar Redesign (Phase 1) - an existing save that already ran
+  // an existing save that already ran
   // its lottery must land in exactly the phase it did before the pre-draft
   // window existed, never in a half-state that skips backward.
   it("keeps a save that already started its draft in draft-incomplete, not pre-draft", () => {

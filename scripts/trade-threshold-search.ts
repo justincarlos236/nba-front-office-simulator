@@ -181,45 +181,45 @@ const byIdentity = new Map<string, number[]>();
 const byPersonality = new Map<string, number[]>();
 
 for (const personality of ALL_GM_PERSONALITIES)
-for (const { t } of strengths) {
-  const roster = teams.get(t)!;
-  const identity = identityOf.get(t)!;
-  const needs = computeTeamNeeds(
-    roster.map((o) => ({ position: o.asset.position, overallRating: o.asset.overallRating })),
-  );
-  const respondingTeam = {
-    identity,
-    needs,
-    personality,
-    roster: roster.map((o) => ({ overallRating: o.asset.overallRating, age: o.asset.age })),
-  };
-  // Target: the club's 4th-best player - good enough to matter, not untouchable.
-  const target = [...roster].sort((a, b) => b.asset.overallRating - a.asset.overallRating)[3];
-  if (!target) continue;
+  for (const { t } of strengths) {
+    const roster = teams.get(t)!;
+    const identity = identityOf.get(t)!;
+    const needs = computeTeamNeeds(
+      roster.map((o) => ({ position: o.asset.position, overallRating: o.asset.overallRating })),
+    );
+    const respondingTeam = {
+      identity,
+      needs,
+      personality,
+      roster: roster.map((o) => ({ overallRating: o.asset.overallRating, age: o.asset.age })),
+    };
+    // Target: the club's 4th-best player - good enough to matter, not untouchable.
+    const target = [...roster].sort((a, b) => b.asset.overallRating - a.asset.overallRating)[3];
+    if (!target) continue;
 
-  const accepts = (rating: number) =>
-    evaluateTradeOffer({
-      respondingTeam,
-      currentSeason: S,
-      incoming: [offerAt(rating, target.asset.position)],
-      outgoing: [target.asset],
-    }).decision === "ACCEPT";
+    const accepts = (rating: number) =>
+      evaluateTradeOffer({
+        respondingTeam,
+        currentSeason: S,
+        incoming: [offerAt(rating, target.asset.position)],
+        outgoing: [target.asset],
+      }).decision === "ACCEPT";
 
-  // Bracket, then binary-search the flip point.
-  if (!accepts(99)) continue;
-  let lo = 40;
-  let hi = 99;
-  for (let i = 0; i < 40; i++) {
-    const mid = (lo + hi) / 2;
-    if (accepts(mid)) hi = mid;
-    else lo = mid;
+    // Bracket, then binary-search the flip point.
+    if (!accepts(99)) continue;
+    let lo = 40;
+    let hi = 99;
+    for (let i = 0; i < 40; i++) {
+      const mid = (lo + hi) / 2;
+      if (accepts(mid)) hi = mid;
+      else lo = mid;
+    }
+    const minAccepted = offerAt(hi, target.asset.position);
+    const edge = neutral(target.asset) / neutral(minAccepted) - 1;
+    edges.push(edge);
+    byIdentity.set(identity, [...(byIdentity.get(identity) ?? []), edge]);
+    byPersonality.set(personality, [...(byPersonality.get(personality) ?? []), edge]);
   }
-  const minAccepted = offerAt(hi, target.asset.position);
-  const edge = neutral(target.asset) / neutral(minAccepted) - 1;
-  edges.push(edge);
-  byIdentity.set(identity, [...(byIdentity.get(identity) ?? []), edge]);
-  byPersonality.set(personality, [...(byPersonality.get(personality) ?? []), edge]);
-}
 
 const sorted = [...edges].sort((a, b) => a - b);
 console.log(`\n  clubs measured: ${edges.length}`);
@@ -236,8 +236,7 @@ console.log(
 );
 for (const [p, xs] of [...byPersonality.entries()].sort((a, b) => mean(b[1]) - mean(a[1]))) {
   const mult =
-    GM_PERSONALITY_WEIGHTS[p as keyof typeof GM_PERSONALITY_WEIGHTS]
-      .acceptanceThresholdMultiplier;
+    GM_PERSONALITY_WEIGHTS[p as keyof typeof GM_PERSONALITY_WEIGHTS].acceptanceThresholdMultiplier;
   const ceiling = 1 / (ACCEPT_THRESHOLD * mult) - 1;
   const over = xs.filter((e) => e > ceiling + 0.001).length;
   console.log(

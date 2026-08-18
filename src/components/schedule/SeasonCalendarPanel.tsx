@@ -41,8 +41,7 @@ export function SeasonCalendarPanel({
 
   const isPast = (e: CalendarEvent) =>
     currentDayIndex !== null && e.dayIndex !== null && e.dayIndex < currentDayIndex;
-  const isToday = (e: CalendarEvent) =>
-    currentDayIndex !== null && e.dayIndex === currentDayIndex;
+  const isToday = (e: CalendarEvent) => currentDayIndex !== null && e.dayIndex === currentDayIndex;
 
   return (
     <div className="rounded-[2px] border border-rule bg-field p-6">
@@ -66,7 +65,9 @@ export function SeasonCalendarPanel({
               }`}
             >
               <div className="flex min-w-0 flex-col">
-                <span className={`text-sm font-semibold ${today ? "text-team-accent" : "text-ink"}`}>
+                <span
+                  className={`text-sm font-semibold ${today ? "text-team-accent" : "text-ink"}`}
+                >
                   {event.label}
                 </span>
                 <span className="text-xs text-ink-muted">{event.detail}</span>

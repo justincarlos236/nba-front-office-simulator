@@ -1,5 +1,5 @@
 /**
- * GM Career Mode (Phase 2) - the reputation-gated GM Job Market. Pure logic
+ * the reputation-gated GM Job Market. Pure logic
  * over an already-computed team-strength ranking. Reputation (earned across a
  * user's whole career, see careerRecord.ts) gates which jobs a GM is offered:
  * a stacked contender only calls a proven executive, while a rebuild will take

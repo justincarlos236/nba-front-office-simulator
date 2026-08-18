@@ -110,10 +110,10 @@ export function computeScoutingConfidence(age: number): ScoutingConfidence {
 }
 
 /**
- * Scouting Pillar Redesign (Phase 2) - what actually buys report
+ * what actually buys report
  * reliability is now per-prospect Scouting Depth (0-3, see
  * scoutingAssignments.ts), not the flat department level. Originally
- * (Finances as a Gameplay Pillar, Phase 4) this was keyed directly off
+ * this was keyed directly off
  * `DepartmentLevel`; the department level now sets the *assignment budget*
  * that earns Depth, rather than reliability itself - a team with a high
  * Scouting budget but no assignments spent on a given prospect still knows
@@ -284,7 +284,7 @@ export interface ScoutableProspectForReport {
   age: number;
 }
 
-/** The two axes with no underlying derivable stat - the only ones a Private Workout can resolve outright (Scouting Pillar Redesign, Phase 4). */
+/** The two axes with no underlying derivable stat - the only ones a Private Workout can resolve outright. */
 export type ResolvableHiddenAxis = "WORK_ETHIC" | "INJURY_OUTLOOK";
 
 export function generateScoutingReport(
@@ -292,7 +292,7 @@ export function generateScoutingReport(
   /** Scouting Depth (0 Unknown - 3 Known) - clamped defensively since it's a raw DB int, not a constrained enum. */
   depth: number,
   /**
-   * Scouting Pillar Redesign (Phase 4) - axes a Private Workout has
+   * axes a Private Workout has
    * resolved outright for this prospect. A resolved axis always returns
    * its true value, bypassing `scoutedLabel`'s uncertainty entirely,
    * regardless of Depth - that's the whole point of paying for a workout
@@ -305,7 +305,7 @@ export function generateScoutingReport(
    * untouched byte-for-byte.
    */
   resolvedAxes: readonly ResolvableHiddenAxis[] = [],
-  /** Scouting Pillar Redesign (Phase 4) - class character variance's injuryRiskDelta (see classCharacter.ts), 0 for a BALANCED class. */
+  /** Scouting Pillar Redesign - class character variance's injuryRiskDelta (see classCharacter.ts), 0 for a BALANCED class. */
   injuryRiskDelta = 0,
 ): ScoutingReport {
   const clampedDepth = Math.max(0, Math.min(3, Math.round(depth)));

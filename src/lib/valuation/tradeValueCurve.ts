@@ -70,7 +70,6 @@ export function talentScore(
 
 /** What a talent score is worth in trade, before age, injury or contract. */
 export function tradeValueCents(score: number, season: number): number {
-  const unit =
-    Number(getSeasonCapRules(season).salaryCapCents) * VALUE_UNIT_AS_FRACTION_OF_CAP;
+  const unit = Number(getSeasonCapRules(season).salaryCapCents) * VALUE_UNIT_AS_FRACTION_OF_CAP;
   return unit / (1 + Math.exp(-STEEPNESS * (score - MIDPOINT)));
 }

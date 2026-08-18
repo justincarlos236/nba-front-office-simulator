@@ -43,7 +43,7 @@ const MARKET_SIZE_LABEL: Record<string, string> = {
   SMALL: "Small-market franchise",
 };
 
-// Fans Page Redesign (Phase 2) - Merchandise and Season Tickets cards were
+// Merchandise and Season Tickets cards were
 // deleted (docs/FANS_PAGE_REDESIGN.md Part 2.1/5): both were the same
 // popularity-tier number relabeled, not independent signals, and Season
 // Tickets already has a real home on /finances/operations. Popularity's own
@@ -94,13 +94,13 @@ export default async function FansPage({ params }: PageProps) {
       where: { leagueId: league.id, leagueTeamId: myLeagueTeamId },
       orderBy: { season: "asc" },
     }),
-    // Fans Page Redesign (Phase 1) - this season's sentiment ledger, for
+    // this season's sentiment ledger, for
     // "Why They Feel This Way" and the in-season trend reconstruction.
     prisma.fanSentimentEvent.findMany({
       where: { leagueId: league.id, leagueTeamId: myLeagueTeamId, season: league.currentSeason },
       orderBy: { dayIndex: "asc" },
     }),
-    // Fans Page Redesign (Phase 2) - "Fan Reactions," ordered by recency
+    // "Fan Reactions," ordered by recency
     // rather than season, so a trade from just before a season flip
     // doesn't vanish from the feed the moment the season turns over.
     prisma.fanSentimentEvent.findMany({
@@ -108,7 +108,7 @@ export default async function FansPage({ params }: PageProps) {
       orderBy: { createdAt: "desc" },
       take: 25,
     }),
-    // Fans Page Redesign (Phase 4) - roster strength/age for explaining
+    // roster strength/age for explaining
     // the mandate with the same signals the derivation used.
     prisma.leaguePlayer.findMany({
       where: { leagueTeamId: myLeagueTeamId, isActive: true },
@@ -127,7 +127,7 @@ export default async function FansPage({ params }: PageProps) {
         selectedProspectId: { not: null },
       },
     }),
-    // Fans Page Redesign (Phase 5) - "The Conversation." Open narratives
+    // "The Conversation." Open narratives
     // plus anything resolved this season, so a just-closed story's
     // resolution beat is still visible for one season rather than
     // vanishing the instant it closes.
@@ -138,7 +138,7 @@ export default async function FansPage({ params }: PageProps) {
       },
       orderBy: { openedSeason: "desc" },
     }),
-    // Fans Page Redesign (Phase 5) - "Franchise Memory." Read-only over
+    // "Franchise Memory." Read-only over
     // the existing news log, per the design's "nearly free" framing - no
     // new derivation, just a curated view.
     prisma.leagueTransaction.findMany({
@@ -164,7 +164,7 @@ export default async function FansPage({ params }: PageProps) {
   );
   const popularityTier = getFranchisePopularityTier(franchisePopularity);
 
-  // Fans Page Redesign (Phase 2) - the two comparison points Section 1's
+  // the two comparison points Section 1's
   // mood label needs. "This stretch" is a real, recent window from the
   // sentiment ledger; "vs. last season" is the prior FanHappinessSnapshot,
   // null for a franchise's first season (nothing to compare against yet).
@@ -180,7 +180,7 @@ export default async function FansPage({ params }: PageProps) {
     seasonOverSeasonDelta,
   });
 
-  // Fans Page Redesign (Phase 3) - "who this city has become," explained
+  // "who this city has become," explained
   // with the same real facts recomputeFanCultures already used to set the
   // trait numbers (never a second opinion on the derivation).
   const iconScore = bestPlayer
@@ -206,7 +206,7 @@ export default async function FansPage({ params }: PageProps) {
   const cultureHistory = cultureHistoryByTeam.get(myLeagueTeamId)!;
   const cultureFacts = explainFanCulture(cultureHistory);
 
-  // Fans Page Redesign (Phase 4) - "why it's the mandate," reading the same
+  // "why it's the mandate," reading the same
   // signals recomputeFanMandates used to set it, for whichever mandate is
   // currently persisted on this team.
   const teamStrength = computeTeamStrength(roster.map((p) => p.overallRating));
@@ -232,7 +232,7 @@ export default async function FansPage({ params }: PageProps) {
       )
     : [];
 
-  // Fans Page Redesign (Phase 5) - Franchise Memory. The relocation entry
+  // Franchise Memory. The relocation entry
   // (if any) is prepended unconditionally - it outranks the cap.
   const memoryEntries = curateFranchiseMemory(memoryTransactions);
   const relocationEntry = relocationMemoryEntry({

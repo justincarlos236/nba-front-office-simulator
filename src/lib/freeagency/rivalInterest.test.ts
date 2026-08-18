@@ -124,8 +124,7 @@ describe("rival interest", () => {
     // figure meant a club that could comfortably sign him was not counted as
     // competition - and the player then concluded nobody wanted him and took a
     // 27% discount. The two halves of the market now use the same price.
-    const floorCents = (value: bigint) =>
-      BigInt(Math.round(Number(value) * NO_DEMAND_FLOOR));
+    const floorCents = (value: bigint) => BigInt(Math.round(Number(value) * NO_DEMAND_FLOOR));
 
     // A club that cannot reach even the floor genuinely cannot sign him.
     const cannotAfford = rival({

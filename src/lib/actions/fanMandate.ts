@@ -14,7 +14,7 @@ import { buildFanCultureHistoryInputs, type TeamCultureContext } from "@/lib/act
 import type { FanCultureHistoryInputs } from "@/lib/fans/fanCulture";
 
 /**
- * Fans Page Redesign (Phase 4) - the thin DB shell around
+ * the thin DB shell around
  * src/lib/fans/fanMandate.ts's pure derivation. Recomputed alongside
  * FanCulture at every season boundary (the mandate depends on that same
  * pass's Patience/Expectation Ceiling values, so it's computed second).

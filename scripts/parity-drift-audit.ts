@@ -84,7 +84,12 @@ for (const p of ds.players) {
       : 27;
   startingRosters.set(p.teamAbbreviation, [
     ...(startingRosters.get(p.teamAbbreviation) ?? []),
-    { id: p.fullName, overall: p.seedOverallRating, potential: p.seedPotentialRating ?? p.seedOverallRating, age },
+    {
+      id: p.fullName,
+      overall: p.seedOverallRating,
+      potential: p.seedPotentialRating ?? p.seedOverallRating,
+      age,
+    },
   ]);
 }
 
@@ -112,12 +117,18 @@ interface SeasonSnapshot {
 function simulate(seed: number): SeasonSnapshot[] {
   const rng = makeRng(seed);
   const rosters = new Map<string, Player[]>();
-  for (const [team, roster] of startingRosters) rosters.set(team, roster.map((p) => ({ ...p })));
+  for (const [team, roster] of startingRosters)
+    rosters.set(
+      team,
+      roster.map((p) => ({ ...p })),
+    );
   const snapshots: SeasonSnapshot[] = [];
   let classCounter = 0;
 
   const snapshot = () => {
-    const strengths = [...rosters.values()].map((r) => computeTeamStrength(r.map((p) => p.overall)));
+    const strengths = [...rosters.values()].map((r) =>
+      computeTeamStrength(r.map((p) => p.overall)),
+    );
     const mean = strengths.reduce((a, b) => a + b, 0) / strengths.length;
     const wins = strengths.map((s) => impliedWins(s, mean));
     snapshots.push({
@@ -149,7 +160,10 @@ function simulate(seed: number): SeasonSnapshot[] {
 
     // Draft: worst team picks first, which is the equalizing force.
     const order = [...rosters.entries()]
-      .map(([team, roster]) => ({ team, strength: computeTeamStrength(roster.map((p) => p.overall)) }))
+      .map(([team, roster]) => ({
+        team,
+        strength: computeTeamStrength(roster.map((p) => p.overall)),
+      }))
       .sort((a, b) => a.strength - b.strength);
     classCounter += 1;
     const prospects = generateDraftClass(rng).prospects;
@@ -203,6 +217,8 @@ for (let season = 0; season <= SEASONS; season++) {
 
 const first = mean(runs.map((r) => r[0].strengthSd));
 const last = mean(runs.map((r) => r[SEASONS].strengthSd));
-console.log(`\n  strength SD: ${first.toFixed(2)} -> ${last.toFixed(2)}  (${((last / first - 1) * 100).toFixed(0)}%)`);
+console.log(
+  `\n  strength SD: ${first.toFixed(2)} -> ${last.toFixed(2)}  (${((last / first - 1) * 100).toFixed(0)}%)`,
+);
 console.log(`  real NBA win SD is about 12; talent-only about 11`);
 console.log(`\nReproduce: npx tsx scripts/parity-drift-audit.ts`);

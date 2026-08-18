@@ -69,7 +69,10 @@ export function generateContract(input: GenerateContractInput): GeneratedContrac
   const scaleSalaryCents =
     input.overallPickNumber == null
       ? null
-      : rookieScaleSalaryCents(input.overallPickNumber, getSeasonCapRules(input.season).salaryCapCents);
+      : rookieScaleSalaryCents(
+          input.overallPickNumber,
+          getSeasonCapRules(input.season).salaryCapCents,
+        );
 
   const lengthYears =
     scaleSalaryCents === null ? pickContractLength(quality, input.age, rng) : ROOKIE_CONTRACT_YEARS;

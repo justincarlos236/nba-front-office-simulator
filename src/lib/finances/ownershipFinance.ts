@@ -46,7 +46,7 @@ export const FINANCIAL_STANDING_DESCRIPTION: Record<FinancialStanding, string> =
  * include the season just completed; `cashReserveCents` is the post-season
  * cash.
  */
-// Finances as a Gameplay Pillar (Phase 5) - System 3, "Financing." High
+// System 3, "Financing." High
 // leverage caps how good a franchise's standing can read, even with
 // healthy income/cash - real debt, real patience cost. Optional/defaults
 // to 0 so every existing caller and test keeps working unchanged.

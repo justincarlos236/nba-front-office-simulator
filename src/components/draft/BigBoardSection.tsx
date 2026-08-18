@@ -8,7 +8,7 @@ import { HowDoesThisWork } from "@/components/guide/HowDoesThisWork";
 const DISPLAY_LIMIT = 20;
 
 /**
- * Scouting Pillar Redesign (Phase 3) - the public consensus, ranked by
+ * the public consensus, ranked by
  * `publicEvaluation`, never by true rating (docs/SCOUTING_PILLAR_DESIGN.md
  * Part 3.1). Shown next to each prospect's own overallRating so the
  * disagreement is visible at a glance - "everyone else has him ranked too

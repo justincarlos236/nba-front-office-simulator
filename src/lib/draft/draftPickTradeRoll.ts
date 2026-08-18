@@ -126,7 +126,9 @@ function violatesStepien(
   offered: DraftPickForTrade[],
   draftSeason: number,
 ): boolean {
-  const futureFirsts = offered.filter((p) => (p.season ?? draftSeason) > draftSeason && p.round === 1);
+  const futureFirsts = offered.filter(
+    (p) => (p.season ?? draftSeason) > draftSeason && p.round === 1,
+  );
   if (futureFirsts.length === 0) return false;
 
   const inertCapState = {
@@ -182,7 +184,9 @@ export function rollForDraftPickTrade(
       .filter((p) => {
         const pickSeason = p.season ?? season;
         if (pickSeason > season) return true;
-        return p.overallPickNumber !== null && p.overallPickNumber > teamOnClockPick.overallPickNumber!;
+        return (
+          p.overallPickNumber !== null && p.overallPickNumber > teamOnClockPick.overallPickNumber!
+        );
       })
       // Cheapest first, so the trade that fires is the smallest one that works
       // rather than the first combination stumbled upon.

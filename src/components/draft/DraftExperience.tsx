@@ -56,7 +56,7 @@ export function DraftExperience({
   initialPicks: DraftPickInfo[];
   initialProspects: DraftProspectInfo[];
   initialBookmarkedProspectIds: string[];
-  /** Scouting Pillar Redesign (Phase 2) - assignments left in the whole pre-draft window's budget. */
+  /** Scouting Pillar Redesign - assignments left in the whole pre-draft window's budget. */
   initialScoutingAssignmentsRemaining: number;
 }) {
   const [picks, setPicks] = useState<DraftPickInfo[]>(initialPicks);
@@ -69,7 +69,7 @@ export function DraftExperience({
   // `unknown` because it holds either a returned failure or a caught Error;
   // `ErrorNotice` accepts both.
   const [errorMessage, setErrorMessage] = useState<unknown>(null);
-  // Scouting Pillar Redesign (Phase 3) - the ordered list IS "My Board";
+  // the ordered list IS "My Board";
   // see the same conversion in PreDraftScoutingView.tsx.
   const [boardOrder, setBoardOrder] = useState<string[]>(initialBookmarkedProspectIds);
   const bookmarkedIds = useMemo(() => new Set(boardOrder), [boardOrder]);
@@ -186,11 +186,11 @@ export function DraftExperience({
   }
 
   const prospectsById = useMemo(() => new Map(prospects.map((p) => [p.id, p])), [prospects]);
-  // Scouting Pillar Redesign (Phase 4) - identical across every prospect in
+  // identical across every prospect in
   // the class.
   const classCharacter = prospects[0]?.classCharacter ?? "BALANCED";
   const bigBoardNoiseMultiplier = classCharacterModifiers(classCharacter).bigBoardNoiseMultiplier;
-  // Scouting Pillar Redesign (Phase 3) - by Draft Night the pre-draft
+  // by Draft Night the pre-draft
   // window has closed, so the tournament factor is always folded in here
   // (unlike PreDraftScoutingView, where it's gated on scouting activity).
   const bigBoard = useMemo(

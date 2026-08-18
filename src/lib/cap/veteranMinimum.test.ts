@@ -29,9 +29,10 @@ describe("veteranMinimumCents", () => {
     const ratio =
       Number(getSeasonCapRules(2025).salaryCapCents) /
       Number(getSeasonCapRules(2023).salaryCapCents);
-    expect(
-      Number(veteranMinimumCents(2025, 5)) / Number(veteranMinimumCents(2023, 5)),
-    ).toBeCloseTo(ratio, 5);
+    expect(Number(veteranMinimumCents(2025, 5)) / Number(veteranMinimumCents(2023, 5))).toBeCloseTo(
+      ratio,
+      5,
+    );
   });
 
   it("treats an unknown service length as a rookie, the lowest rung", () => {

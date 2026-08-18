@@ -26,7 +26,10 @@ import { getApronLevel } from "../src/lib/cap/apron";
 import { getSeasonCapRules } from "../src/lib/cap/constants";
 import { computeCapSheet } from "../src/lib/cap/capSheet";
 import { resolvePlayerAge, resolvePlayerExperience } from "../src/lib/players/age";
-import { selectTopPerTeam, DEFAULT_MAX_ROSTER_SIZE } from "../src/lib/data-sources/rosterConstruction";
+import {
+  selectTopPerTeam,
+  DEFAULT_MAX_ROSTER_SIZE,
+} from "../src/lib/data-sources/rosterConstruction";
 
 const S = 2026;
 const rules = getSeasonCapRules(S);
@@ -37,41 +40,69 @@ const line = (n = 88) => console.log("=".repeat(n));
 
 function makeRng(seed: number) {
   let s = seed >>> 0;
-  return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
 }
 
 interface Row {
-  fullName: string; teamAbbreviation: string | null; position: string;
-  seedOverallRating: number | null; seedPotentialRating: number | null;
-  birthDate?: string | null; draftYear?: number | null;
+  fullName: string;
+  teamAbbreviation: string | null;
+  position: string;
+  seedOverallRating: number | null;
+  seedPotentialRating: number | null;
+  birthDate?: string | null;
+  draftYear?: number | null;
 }
 const ds = JSON.parse(
   fs.readFileSync(path.join(__dirname, "..", "prisma", "data", "nbaDataset.json"), "utf8"),
 ) as { players: Row[] };
 const { rostered } = selectTopPerTeam<Row>(
-  ds.players, (p) => p.teamAbbreviation, (p) => p.seedOverallRating ?? 0, DEFAULT_MAX_ROSTER_SIZE,
+  ds.players,
+  (p) => p.teamAbbreviation,
+  (p) => p.seedOverallRating ?? 0,
+  DEFAULT_MAX_ROSTER_SIZE,
 );
 
 const POSITIONS = ["PG", "SG", "SF", "PF", "C"] as const;
 const rosterByTeam = new Map<string, CpuTeam["roster"]>();
 for (const p of ds.players) {
   if (!rostered.has(p) || p.seedOverallRating == null || !p.teamAbbreviation) continue;
-  const src = { birthDate: p.birthDate ? new Date(p.birthDate) : null, draftYear: p.draftYear ?? null };
+  const src = {
+    birthDate: p.birthDate ? new Date(p.birthDate) : null,
+    draftYear: p.draftYear ?? null,
+  };
   const age = resolvePlayerAge(src, S);
-  const salary = BigInt(priceContractCents({
-    season: S,
-    quality: contractQualityScore({ overallRating: p.seedOverallRating, performanceScore: null, gamesPlayed: 0 }),
-    age, yearsOfExperience: resolvePlayerExperience(src, S), position: p.position,
-  }));
+  const salary = BigInt(
+    priceContractCents({
+      season: S,
+      quality: contractQualityScore({
+        overallRating: p.seedOverallRating,
+        performanceScore: null,
+        gamesPlayed: 0,
+      }),
+      age,
+      yearsOfExperience: resolvePlayerExperience(src, S),
+      position: p.position,
+    }),
+  );
   const pos = (POSITIONS as readonly string[]).includes(p.position.toUpperCase())
-    ? (p.position.toUpperCase() as (typeof POSITIONS)[number]) : "SF";
+    ? (p.position.toUpperCase() as (typeof POSITIONS)[number])
+    : "SF";
   rosterByTeam.set(p.teamAbbreviation, [
     ...(rosterByTeam.get(p.teamAbbreviation) ?? []),
     {
-      leaguePlayerId: `${p.teamAbbreviation}-${p.fullName}`, playerName: p.fullName,
-      rating: p.seedOverallRating, potentialRating: p.seedPotentialRating ?? p.seedOverallRating,
-      age, position: pos, injuryStatus: "HEALTHY", careerGamesMissedToInjury: 0,
-      salaryCents: salary, noTradeClause: false,
+      leaguePlayerId: `${p.teamAbbreviation}-${p.fullName}`,
+      playerName: p.fullName,
+      rating: p.seedOverallRating,
+      potentialRating: p.seedPotentialRating ?? p.seedOverallRating,
+      age,
+      position: pos,
+      injuryStatus: "HEALTHY",
+      careerGamesMissedToInjury: 0,
+      salaryCents: salary,
+      noTradeClause: false,
     },
   ]);
 }
@@ -90,16 +121,21 @@ function buildTeams(): CpuTeam[] {
       contracts: roster.map((p) => ({ playerId: p.leaguePlayerId, salaryCents: p.salaryCents })),
     });
     return {
-      leagueTeamId: t, teamLabel: t, roster: roster.map((p) => ({ ...p })),
+      leagueTeamId: t,
+      teamLabel: t,
+      roster: roster.map((p) => ({ ...p })),
       capState: {
         apronLevel: getApronLevel(
-          roster.reduce((s, p) => s + p.salaryCents, 0n), rules,
+          roster.reduce((s, p) => s + p.salaryCents, 0n),
+          rules,
         ),
         capSpaceCents: capSheet.capSpaceCents,
         ownedFutureFirstRoundPickSeasons: [S + 1, S + 2, S + 3],
       },
       identity: computeTeamIdentity(pct, avgAge),
-      needs: computeTeamNeeds(roster.map((p) => ({ position: p.position, overallRating: p.rating }))),
+      needs: computeTeamNeeds(
+        roster.map((p) => ({ position: p.position, overallRating: p.rating })),
+      ),
       personality: "BALANCED",
     };
   });
@@ -144,8 +180,14 @@ function measure(chancePerGame: number, maxAttempts: number) {
       }
       const a = teams.find((t) => t.leagueTeamId === result.teamA.leagueTeamId)!;
       const b = teams.find((t) => t.leagueTeamId === result.teamB.leagueTeamId)!;
-      a.roster = [...a.roster.filter((p) => p.leaguePlayerId !== result.teamA.player.leaguePlayerId), result.teamB.player];
-      b.roster = [...b.roster.filter((p) => p.leaguePlayerId !== result.teamB.player.leaguePlayerId), result.teamA.player];
+      a.roster = [
+        ...a.roster.filter((p) => p.leaguePlayerId !== result.teamA.player.leaguePlayerId),
+        result.teamB.player,
+      ];
+      b.roster = [
+        ...b.roster.filter((p) => p.leaguePlayerId !== result.teamB.player.leaguePlayerId),
+        result.teamA.player,
+      ];
     }
   }
   const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
@@ -160,19 +202,27 @@ line();
 console.log("CPU TRADE FREQUENCY CALIBRATION");
 line();
 console.log("  targets: 30-50 trades a season, star (85+) moves near 1-2.");
-console.log(`${"CHANCE".padStart(8)}${"ATTEMPTS".padStart(10)}${"TRADES/SEASON".padStart(15)}${"STAR MOVES".padStart(12)}${"MEAN RATING".padStart(13)}`);
+console.log(
+  `${"CHANCE".padStart(8)}${"ATTEMPTS".padStart(10)}${"TRADES/SEASON".padStart(15)}${"STAR MOVES".padStart(12)}${"MEAN RATING".padStart(13)}`,
+);
 for (const [chance, attempts] of [
-  [0.013, 40], [0.013, 80], [0.013, 150],
-  [0.03, 40], [0.03, 80], [0.03, 150],
-  [0.05, 40], [0.05, 80], [0.05, 150],
+  [0.013, 40],
+  [0.013, 80],
+  [0.013, 150],
+  [0.03, 40],
+  [0.03, 80],
+  [0.03, 150],
+  [0.05, 40],
+  [0.05, 80],
+  [0.05, 150],
   [0.07, 80],
 ] as [number, number][]) {
   const r = measure(chance, attempts);
   const inBand = r.tradesPerSeason >= 30 && r.tradesPerSeason <= 50 && r.starMovesPerSeason <= 3;
   console.log(
     `${chance.toFixed(3).padStart(8)}${String(attempts).padStart(10)}` +
-    `${r.tradesPerSeason.toFixed(1).padStart(15)}${r.starMovesPerSeason.toFixed(1).padStart(12)}` +
-    `${r.meanRating.toFixed(1).padStart(13)}${inBand ? "  <-- in band" : ""}`,
+      `${r.tradesPerSeason.toFixed(1).padStart(15)}${r.starMovesPerSeason.toFixed(1).padStart(12)}` +
+      `${r.meanRating.toFixed(1).padStart(13)}${inBand ? "  <-- in band" : ""}`,
   );
 }
 line();

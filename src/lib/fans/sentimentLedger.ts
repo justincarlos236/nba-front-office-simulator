@@ -1,7 +1,7 @@
 import type { FanSentimentKind } from "@/generated/prisma/client";
 
 /**
- * Fans Page Redesign (Phase 1) - the presentation layer over the
+ * the presentation layer over the
  * FanSentimentEvent ledger. Pure and Prisma-free (the model type import is
  * type-only): this module decides how persisted sentiment events are
  * labeled, grouped, and aggregated into "why the fanbase feels this way,"

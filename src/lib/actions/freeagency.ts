@@ -262,7 +262,7 @@ export async function signFreeAgentAction(input: SignFreeAgentInput): Promise<Si
       },
     });
 
-    // Fan Engagement Deepening (Phase 1).
+    // Fan Engagement Deepening.
     const teamFans = await tx.leagueTeam.findUnique({
       where: { id: myLeagueTeamId },
       select: { fanHappiness: true, fanCulture: { select: { patience: true, loyalty: true } } },
@@ -273,7 +273,7 @@ export async function signFreeAgentAction(input: SignFreeAgentInput): Promise<Si
         signedStarTier: getPlayerValueTier(freeAgent.overallRating),
         isReSigning,
       });
-      // Fans Page Redesign (Phase 3) - scaled by this team's Fan Culture
+      // scaled by this team's Fan Culture
       // before it's applied or recorded.
       const { newFanHappiness, scaledDelta: delta } = applyScaledFanHappinessDelta(
         teamFans.fanHappiness,
@@ -284,7 +284,7 @@ export async function signFreeAgentAction(input: SignFreeAgentInput): Promise<Si
         where: { id: myLeagueTeamId },
         data: { fanHappiness: newFanHappiness },
       });
-      // Fans Page Redesign (Phase 1) - persist why, not just the result.
+      // persist why, not just the result.
       await recordFanSentimentManyTx(tx, [
         {
           leagueId: league.id,

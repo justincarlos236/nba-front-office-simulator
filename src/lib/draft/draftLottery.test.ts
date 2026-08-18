@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { LOTTERY_ODDS, runLottery, type LotteryTeam, expectedLotterySlotForSeed } from "./draftLottery";
+import {
+  LOTTERY_ODDS,
+  runLottery,
+  type LotteryTeam,
+  expectedLotterySlotForSeed,
+} from "./draftLottery";
 
 function teams(): LotteryTeam[] {
   return Array.from({ length: 14 }, (_, i) => ({
@@ -111,7 +116,9 @@ describe("expectedLotterySlotForSeed", () => {
 
   it("never improves a team's expectation by having a better record", () => {
     for (let seed = 2; seed <= 14; seed++) {
-      expect(expectedLotterySlotForSeed(seed)).toBeGreaterThan(expectedLotterySlotForSeed(seed - 1));
+      expect(expectedLotterySlotForSeed(seed)).toBeGreaterThan(
+        expectedLotterySlotForSeed(seed - 1),
+      );
     }
   });
 

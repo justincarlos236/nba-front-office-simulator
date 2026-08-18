@@ -113,7 +113,9 @@ console.log(
 );
 for (const rating of [93, 85, 75]) {
   const at27 = Number(
-    value(synth({ overallRating: rating, potentialRating: rating, age: 27, currentSalaryCents: 0n })),
+    value(
+      synth({ overallRating: rating, potentialRating: rating, age: 27, currentSalaryCents: 0n }),
+    ),
   );
   for (const age of [22, 27, 31, 34, 37, 40]) {
     const aged = Math.min(100, rating * ageValueMultiplier(age));
@@ -208,9 +210,17 @@ console.log(
     "  depending on which way it moves.\n",
 );
 
-const identities: TeamIdentity[] = ["CONTENDER", "PLAYOFF_TEAM", "PLAY_IN_TEAM", "REBUILDING", "TANKING"];
+const identities: TeamIdentity[] = [
+  "CONTENDER",
+  "PLAYOFF_TEAM",
+  "PLAY_IN_TEAM",
+  "REBUILDING",
+  "TANKING",
+];
 const rosterOf = (team: string) =>
-  league.filter((p) => p.team === team).map((p) => ({ overallRating: p.overallRating, age: p.age }));
+  league
+    .filter((p) => p.team === team)
+    .map((p) => ({ overallRating: p.overallRating, age: p.age }));
 const teams = [...new Set(league.map((p) => p.team))];
 
 function ask(
@@ -360,13 +370,12 @@ for (const [identity, personality] of [
 console.log("\n" + line());
 console.log("T9  PICK PRICING: what is a pick worth against a player?");
 console.log(line());
-console.log(
-  `${"PICK".padEnd(22)}${"VALUE".padStart(11)}${"= player rated".padStart(17)}`,
-);
+console.log(`${"PICK".padEnd(22)}${"VALUE".padStart(11)}${"= player rated".padStart(17)}`);
 const ratingForValue = (target: number) => {
   for (let r = 60; r <= 99; r++) {
     if (
-      Number(value(synth({ overallRating: r, potentialRating: r, currentSalaryCents: 0n }))) >= target
+      Number(value(synth({ overallRating: r, potentialRating: r, currentSalaryCents: 0n }))) >=
+      target
     )
       return r;
   }
@@ -453,7 +462,10 @@ const reference = synth({ overallRating: 75, potentialRating: 75, age: 27 });
 // That one preference is deliberately one-sided - it is about what a team is
 // willing to take ON - so for those personalities a deviation is the intended
 // behaviour. For a neutral GM the product must be exactly 1.
-const buckets = { neutral: { n: 0, off: 0, worst: 1, label: "none" }, sensitive: { n: 0, off: 0, worst: 1, label: "none" } };
+const buckets = {
+  neutral: { n: 0, off: 0, worst: 1, label: "none" },
+  sensitive: { n: 0, off: 0, worst: 1, label: "none" },
+};
 for (const identity of identities) {
   for (const personality of ALL_GM_PERSONALITIES) {
     const bucket =
@@ -503,8 +515,20 @@ for (const [identity, personality, label] of [
     ).includes("RIM_PROTECTOR"),
   );
   if (!needyTeam) continue;
-  const asIncoming = ask(identity, personality, needyTeam, [probe], [synth({ overallRating: 76, potentialRating: 84, age: 23 })]);
-  const asOutgoing = ask(identity, personality, needyTeam, [synth({ overallRating: 76, potentialRating: 84, age: 23 })], [probe]);
+  const asIncoming = ask(
+    identity,
+    personality,
+    needyTeam,
+    [probe],
+    [synth({ overallRating: 76, potentialRating: 84, age: 23 })],
+  );
+  const asOutgoing = ask(
+    identity,
+    personality,
+    needyTeam,
+    [synth({ overallRating: 76, potentialRating: 84, age: 23 })],
+    [probe],
+  );
   console.log(
     `    ${label.padEnd(46)} incoming/outgoing score ratio: ${(asIncoming.score * asOutgoing.score).toFixed(2)}`,
   );
@@ -550,7 +574,9 @@ console.log(line());
 console.log(
   `${"RATING".padStart(7)}${"VALUE (age 27, unpaid)".padStart(24)}${"x a 70-rated".padStart(14)}${"marginal/pt".padStart(13)}`,
 );
-const base70 = Number(value(synth({ overallRating: 70, potentialRating: 70, currentSalaryCents: 0n })));
+const base70 = Number(
+  value(synth({ overallRating: 70, potentialRating: 70, currentSalaryCents: 0n })),
+);
 let prevV: number | null = null;
 let prevR = 0;
 for (const r of [70, 75, 80, 85, 88, 90, 93, 96, 99]) {
@@ -586,7 +612,8 @@ console.log(
   "  Same player, same salary this season - only the number of years left\n" +
     "  changes. Before contract length was modelled these were identical.\n",
 );
-const years = (n: number, perYear: number) => Array.from({ length: n }, () => BigInt(perYear * 100_000_000));
+const years = (n: number, perYear: number) =>
+  Array.from({ length: n }, () => BigInt(perYear * 100_000_000));
 for (const [label, ovr, age, sal] of [
   ["BARGAIN  (85 ovr, 27)", 85, 27, 20],
   ["FAIR     (78 ovr, 28)", 78, 28, 27],
@@ -596,7 +623,12 @@ for (const [label, ovr, age, sal] of [
   for (const n of [0, 1, 2, 3, 4]) {
     const v = Number(
       value({
-        ...synth({ overallRating: ovr, potentialRating: ovr, age, currentSalaryCents: BigInt(sal * 100_000_000) }),
+        ...synth({
+          overallRating: ovr,
+          potentialRating: ovr,
+          age,
+          currentSalaryCents: BigInt(sal * 100_000_000),
+        }),
         futureSalaryCents: years(n, sal),
       }),
     );

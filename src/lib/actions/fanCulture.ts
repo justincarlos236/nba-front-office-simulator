@@ -10,7 +10,7 @@ import { TICKET_POSTURE_FAN_DELTA } from "@/lib/finances/finances";
 import type { MarketSize, TicketPricingPosture } from "@/generated/prisma/client";
 
 /**
- * Fans Page Redesign (Phase 3) - the thin DB shell around
+ * the thin DB shell around
  * src/lib/fans/fanCulture.ts's pure derivation. Every query here is scoped
  * to the bounded lookback window (season > cutoff), so cost stays fixed
  * regardless of how long the save has run.

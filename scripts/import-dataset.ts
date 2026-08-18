@@ -73,9 +73,7 @@ async function main() {
   // is the exact leak documented at length in `src/lib/players/age.ts`.
   // Measured on this run, 18 of them survived the 15-man cut.
   const bios = mergedBios.map((bio) =>
-    bio.birthDate === null && bio.draftYear === null
-      ? { ...bio, draftYear: TARGET_SEASON }
-      : bio,
+    bio.birthDate === null && bio.draftYear === null ? { ...bio, draftYear: TARGET_SEASON } : bio,
   );
   const assumedRookies = bios.filter(
     (b, i) => mergedBios[i].draftYear === null && b.draftYear !== null,

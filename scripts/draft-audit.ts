@@ -74,8 +74,20 @@ for (let t = 0; t < TRIALS; t++) {
  * landing anywhere in the top four, by lottery seed.
  */
 const REAL_TOP_FOUR: Record<number, number> = {
-  1: 0.521, 2: 0.521, 3: 0.521, 4: 0.482, 5: 0.423, 6: 0.375, 7: 0.319,
-  8: 0.265, 9: 0.203, 10: 0.139, 11: 0.094, 12: 0.071, 13: 0.048, 14: 0.024,
+  1: 0.521,
+  2: 0.521,
+  3: 0.521,
+  4: 0.482,
+  5: 0.423,
+  6: 0.375,
+  7: 0.319,
+  8: 0.265,
+  9: 0.203,
+  10: 0.139,
+  11: 0.094,
+  12: 0.071,
+  13: 0.048,
+  14: 0.024,
 };
 
 console.log(
@@ -128,7 +140,10 @@ const leaguePlayers = ds.players.filter((p) => rostered.has(p) && p.seedOverallR
 const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
 
 const classRng = makeRng(7);
-const allProspects = Array.from({ length: 200 }, () => generateDraftClass(classRng).prospects).flat();
+const allProspects = Array.from(
+  { length: 200 },
+  () => generateDraftClass(classRng).prospects,
+).flat();
 
 const leagueOverall = leaguePlayers.map((p) => p.seedOverallRating!);
 const leaguePotential = leaguePlayers.map((p) => p.seedPotentialRating ?? p.seedOverallRating!);
@@ -137,13 +152,23 @@ const classPotential = allProspects.map((p) => p.potentialRating);
 const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
 console.log(`${"".padStart(22)}${"CLASS".padStart(10)}${"LEAGUE".padStart(10)}`);
-console.log(`${"mean overall".padStart(22)}${mean(classOverall).toFixed(1).padStart(10)}${mean(leagueOverall).toFixed(1).padStart(10)}`);
-console.log(`${"median overall".padStart(22)}${median(classOverall).toFixed(1).padStart(10)}${median(leagueOverall).toFixed(1).padStart(10)}`);
-console.log(`${"mean potential".padStart(22)}${mean(classPotential).toFixed(1).padStart(10)}${mean(leaguePotential).toFixed(1).padStart(10)}`);
-console.log(`${"median potential".padStart(22)}${median(classPotential).toFixed(1).padStart(10)}${median(leaguePotential).toFixed(1).padStart(10)}`);
+console.log(
+  `${"mean overall".padStart(22)}${mean(classOverall).toFixed(1).padStart(10)}${mean(leagueOverall).toFixed(1).padStart(10)}`,
+);
+console.log(
+  `${"median overall".padStart(22)}${median(classOverall).toFixed(1).padStart(10)}${median(leagueOverall).toFixed(1).padStart(10)}`,
+);
+console.log(
+  `${"mean potential".padStart(22)}${mean(classPotential).toFixed(1).padStart(10)}${mean(leaguePotential).toFixed(1).padStart(10)}`,
+);
+console.log(
+  `${"median potential".padStart(22)}${median(classPotential).toFixed(1).padStart(10)}${median(leaguePotential).toFixed(1).padStart(10)}`,
+);
 const classAt80 = classPotential.filter((p) => p >= 80).length / allProspects.length;
 const leagueAt80 = leaguePotential.filter((p) => p >= 80).length / leaguePlayers.length;
-console.log(`${"share potential 80+".padStart(22)}${pct(classAt80).padStart(10)}${pct(leagueAt80).padStart(10)}`);
+console.log(
+  `${"share potential 80+".padStart(22)}${pct(classAt80).padStart(10)}${pct(leagueAt80).padStart(10)}`,
+);
 console.log(
   `\n  A class of ${CLASS_SIZE} enters a league of ~${leaguePlayers.length}. Intake at or below the`,
 );
@@ -164,7 +189,9 @@ const valueAt = (pick: number, round: 1 | 2 = 1) =>
     originalTeamCompetitivenessPercentile: 0.5,
   });
 
-console.log(`${"PICK".padStart(6)}${"VALUE".padStart(12)}${"VS PICK 30".padStart(13)}${"EXP OVR".padStart(10)}${"EXP POT".padStart(10)}`);
+console.log(
+  `${"PICK".padStart(6)}${"VALUE".padStart(12)}${"VS PICK 30".padStart(13)}${"EXP OVR".padStart(10)}${"EXP POT".padStart(10)}`,
+);
 const v30 = Number(valueAt(30));
 for (const pick of [1, 3, 5, 10, 14, 20, 30, 40, 50, 60]) {
   const v = Number(valueAt(pick));

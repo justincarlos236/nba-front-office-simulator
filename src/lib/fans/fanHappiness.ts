@@ -97,7 +97,7 @@ const MARKET_SIZE_POPULARITY_MULTIPLIER: Record<MarketSize, number> = {
   SMALL: 0.9,
 };
 
-// Finances as a Gameplay Pillar (Phase 4) - the Marketing department grows
+// the Marketing department grows
 // the brand faster, on top of whatever winning/star-power/market already
 // earns. Scales departmentQualityDelta (roughly -10..+14) down into a
 // modest, bounded popularity nudge - Marketing accelerates growth, it

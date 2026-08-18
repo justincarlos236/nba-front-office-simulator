@@ -1,5 +1,5 @@
 /**
- * One-time backfill for the Fans Page Redesign (Phase 5): trajectory
+ * One-time backfill for the Fans Page Redesign: trajectory
  * narratives (Rebuild Progress Watch, Championship Window Watch) only ever
  * open/close at the season boundary, so an existing save with an active
  * SHOW_ME_PROGRESS or CHAMPIONSHIP_OR_BUST mandate (already backfilled in

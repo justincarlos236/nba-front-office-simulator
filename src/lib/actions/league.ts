@@ -64,7 +64,7 @@ export async function createLeagueAction(formData: FormData) {
     throw new Error("Missing teamId");
   }
 
-  // GM Career Mode (Phase 2) - only ACTIVE franchises count toward the cap;
+  // only ACTIVE franchises count toward the cap;
   // an ended (fired/retired) league is a permanent record, not a live save, so
   // it must never block taking a new job.
   const existingCount = await prisma.league.count({
@@ -106,7 +106,7 @@ export async function createLeagueAction(formData: FormData) {
   ]);
   if (!chosenTeam) throw new Error("Unknown team");
 
-  // GM Career Mode (Phase 2) - the reputation gate. Rank all 30 teams by real
+  // the reputation gate. Rank all 30 teams by real
   // roster strength (same derivation the job-market page shows), and refuse the
   // job if the user's reputation doesn't clear the chosen team's situation.
   // Never trust the client - the gate is authoritative here. The job's
@@ -129,13 +129,13 @@ export async function createLeagueAction(formData: FormData) {
       name: `${chosenTeam.city} ${chosenTeam.name}`,
       ownerId: session.user.id,
       currentSeason: SEASON,
-      // GM Career Mode (Phase 2) - the leash: a contender job starts you on a
+      // the leash: a contender job starts you on a
       // shorter one (lower owner confidence) than a rebuild.
       ownerConfidence: jobOffer.startingOwnerConfidence,
     },
   });
 
-  // GM personality (Phase 11c) - a persistent per-team front-office
+  // a persistent per-team front-office
   // philosophy, seeded deterministically per league+team so the same
   // league always reproduces the same personalities.
   const leagueTeams = await prisma.leagueTeam.createManyAndReturn({
@@ -165,7 +165,7 @@ export async function createLeagueAction(formData: FormData) {
         ticketPricingPosture:
           team.id === teamId ? "STANDARD" : pickCpuTicketPosture(team.marketSize),
         // Phase 6 - every team gets its own rolled owner personality from day
-        // one, including CPU teams (was league-wide, user-only, in Phase 3).
+        // one, including CPU teams.
         ownerArchetype: rollOwnerArchetype(
           createSeededRandom(`${league.id}-${team.id}-owner-archetype`),
         ),
@@ -175,7 +175,7 @@ export async function createLeagueAction(formData: FormData) {
   });
   const teamIdToLeagueTeamId = new Map(leagueTeams.map((lt) => [lt.teamId, lt.id]));
 
-  // Staff Management (Phase 15a) - every team starts with an algorithmically
+  // every team starts with an algorithmically
   // generated Head Coach, Player Development Coach, and Medical Staff (no
   // real-world data sourced - see docs/SYSTEMS.md's Data sourcing
   // section for why, same reasoning as generated contracts), plus a small
@@ -209,7 +209,7 @@ export async function createLeagueAction(formData: FormData) {
     })),
   });
 
-  // Every team owns its own future picks from day one (Phase 11a) - a
+  // a
   // rolling window of [SEASON, SEASON + FUTURE_PICK_WINDOW_YEARS], kept
   // one season further out each time `advanceSeasonAction` runs.
   // `overallPickNumber` stays null until that season's own draft actually
@@ -341,7 +341,7 @@ export async function createLeagueAction(formData: FormData) {
   });
   await prisma.contractYear.createMany({ data: contractYearInputs });
 
-  // GM accountability (Phase 10d) starts from day one, not just from the
+  // GM accountability starts from day one, not just from the
   // first offseason - otherwise advanceSeasonAction would need a special
   // "no expectation exists yet" bootstrap case every league would hit
   // exactly once. Setting it here means there's only ever one place that

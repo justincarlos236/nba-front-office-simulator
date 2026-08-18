@@ -33,7 +33,10 @@ import { getSeasonCapRules } from "../src/lib/cap/constants";
 import { computeTeamStrength } from "../src/lib/simulation/teamStrength";
 import { computeTeamIdentity } from "../src/lib/gm/teamIdentity";
 import { resolvePlayerAge, resolvePlayerExperience } from "../src/lib/players/age";
-import { selectTopPerTeam, DEFAULT_MAX_ROSTER_SIZE } from "../src/lib/data-sources/rosterConstruction";
+import {
+  selectTopPerTeam,
+  DEFAULT_MAX_ROSTER_SIZE,
+} from "../src/lib/data-sources/rosterConstruction";
 import { isWithinTradeCooldown, TRADE_COOLDOWN_DAYS } from "../src/lib/trade/recentAcquisition";
 import { REGULAR_SEASON_TARGET_DAYS } from "../src/lib/calendar/seasonCalendar";
 
@@ -43,61 +46,98 @@ const usd = (c: bigint | number) => `$${(Number(c) / 1e8).toFixed(1)}M`;
 const line = (n = 92) => console.log("=".repeat(n));
 
 interface Row {
-  fullName: string; teamAbbreviation: string | null; position: string;
-  seedOverallRating: number | null; seedPotentialRating: number | null;
-  birthDate?: string | null; draftYear?: number | null;
+  fullName: string;
+  teamAbbreviation: string | null;
+  position: string;
+  seedOverallRating: number | null;
+  seedPotentialRating: number | null;
+  birthDate?: string | null;
+  draftYear?: number | null;
 }
 const ds = JSON.parse(
   fs.readFileSync(path.join(__dirname, "..", "prisma", "data", "nbaDataset.json"), "utf8"),
 ) as { players: Row[] };
 const { rostered } = selectTopPerTeam<Row>(
-  ds.players, (p) => p.teamAbbreviation, (p) => p.seedOverallRating ?? 0, DEFAULT_MAX_ROSTER_SIZE,
+  ds.players,
+  (p) => p.teamAbbreviation,
+  (p) => p.seedOverallRating ?? 0,
+  DEFAULT_MAX_ROSTER_SIZE,
 );
 
-interface Owned { asset: TradePlayerAsset; name: string }
+interface Owned {
+  asset: TradePlayerAsset;
+  name: string;
+}
 const teams = new Map<string, Owned[]>();
 for (const p of ds.players) {
   if (!rostered.has(p) || p.seedOverallRating == null || !p.teamAbbreviation) continue;
-  const src = { birthDate: p.birthDate ? new Date(p.birthDate) : null, draftYear: p.draftYear ?? null };
+  const src = {
+    birthDate: p.birthDate ? new Date(p.birthDate) : null,
+    draftYear: p.draftYear ?? null,
+  };
   const age = resolvePlayerAge(src, S);
   const exp = resolvePlayerExperience(src, S);
-  const salary = BigInt(priceContractCents({
-    season: S,
-    quality: contractQualityScore({ overallRating: p.seedOverallRating, performanceScore: null, gamesPlayed: 0 }),
-    age, yearsOfExperience: exp, position: p.position,
-  }));
+  const salary = BigInt(
+    priceContractCents({
+      season: S,
+      quality: contractQualityScore({
+        overallRating: p.seedOverallRating,
+        performanceScore: null,
+        gamesPlayed: 0,
+      }),
+      age,
+      yearsOfExperience: exp,
+      position: p.position,
+    }),
+  );
   const pos = (["PG", "SG", "SF", "PF", "C"] as const).includes(p.position.toUpperCase() as never)
-    ? (p.position.toUpperCase() as TradePlayerAsset["position"]) : "SF";
+    ? (p.position.toUpperCase() as TradePlayerAsset["position"])
+    : "SF";
   const asset: TradePlayerAsset = {
-    type: "PLAYER", overallRating: p.seedOverallRating,
+    type: "PLAYER",
+    overallRating: p.seedOverallRating,
     potentialRating: p.seedPotentialRating ?? p.seedOverallRating,
-    age, position: pos, currentSalaryCents: salary,
-    injuryStatus: "HEALTHY", careerGamesMissedToInjury: 0,
+    age,
+    position: pos,
+    currentSalaryCents: salary,
+    injuryStatus: "HEALTHY",
+    careerGamesMissedToInjury: 0,
   };
-  teams.set(p.teamAbbreviation, [...(teams.get(p.teamAbbreviation) ?? []), { asset, name: p.fullName }]);
+  teams.set(p.teamAbbreviation, [
+    ...(teams.get(p.teamAbbreviation) ?? []),
+    { asset, name: p.fullName },
+  ]);
 }
 
 const payroll = (r: Owned[]) => r.reduce((s, o) => s + o.asset.currentSalaryCents, 0n);
 const apron = (r: Owned[]) => getApronLevel(payroll(r), rules);
 const value = (a: TradeAssetForEvaluation) =>
   a.type === "PLAYER"
-    ? Number(computePlayerTradeValue({
-        season: S, overallRating: a.overallRating, potentialRating: a.potentialRating,
-        age: a.age, currentSalaryCents: a.currentSalaryCents,
-        injuryStatus: a.injuryStatus, careerGamesMissedToInjury: a.careerGamesMissedToInjury,
-      }))
+    ? Number(
+        computePlayerTradeValue({
+          season: S,
+          overallRating: a.overallRating,
+          potentialRating: a.potentialRating,
+          age: a.age,
+          currentSalaryCents: a.currentSalaryCents,
+          injuryStatus: a.injuryStatus,
+          careerGamesMissedToInjury: a.careerGamesMissedToInjury,
+        }),
+      )
     : 0;
 const bookValue = (r: Owned[]) => r.reduce((s, o) => s + value(o.asset), 0);
 
 /** League-wide competitiveness percentiles, for each club's identity. */
 const strengths = [...teams.entries()].map(([t, r]) => ({
-  team: t, strength: computeTeamStrength(r.map((o) => o.asset.overallRating)),
+  team: t,
+  strength: computeTeamStrength(r.map((o) => o.asset.overallRating)),
 }));
 const sorted = [...strengths].sort((a, b) => a.strength - b.strength);
 const identityOf = new Map(
   sorted.map((e, i) => {
     const pct = i / (sorted.length - 1);
-    const avgAge = teams.get(e.team)!.reduce((s, o) => s + o.asset.age, 0) / teams.get(e.team)!.length;
+    const avgAge =
+      teams.get(e.team)!.reduce((s, o) => s + o.asset.age, 0) / teams.get(e.team)!.length;
     return [e.team, computeTeamIdentity(pct, avgAge)];
   }),
 );
@@ -136,8 +176,13 @@ function runChain(cooldownDays: number, threshold?: number) {
             // The cooldown: a player we just acquired cannot be flipped yet.
             const locked = give.some((o) =>
               isWithinTradeCooldown(
-                { joinedTeamSeason: joinedOn.get(o) === null ? null : S, joinedTeamDayIndex: joinedOn.get(o) ?? null },
-                S, day, cooldownDays,
+                {
+                  joinedTeamSeason: joinedOn.get(o) === null ? null : S,
+                  joinedTeamDayIndex: joinedOn.get(o) ?? null,
+                },
+                S,
+                day,
+                cooldownDays,
               ),
             );
             if (locked) continue;
@@ -149,15 +194,23 @@ function runChain(cooldownDays: number, threshold?: number) {
             if (roster.length - 1 + give.length > DEFAULT_MAX_ROSTER_SIZE) continue;
             const r = evaluateTradeOffer({
               respondingTeam: {
-                identity, needs: [], personality: "BALANCED",
-                roster: roster.map((o) => ({ overallRating: o.asset.overallRating, age: o.asset.age })),
+                identity,
+                needs: [],
+                personality: "BALANCED",
+                roster: roster.map((o) => ({
+                  overallRating: o.asset.overallRating,
+                  age: o.asset.age,
+                })),
               },
-              currentSeason: S, acceptThresholdOverride: threshold,
-              incoming: give.map((o) => o.asset), outgoing: [target.asset],
+              currentSeason: S,
+              acceptThresholdOverride: threshold,
+              incoming: give.map((o) => o.asset),
+              outgoing: [target.asset],
             });
             if (r.decision !== "ACCEPT") continue;
             const gain = value(target.asset) - give.reduce((s, o) => s + value(o.asset), 0);
-            if (gain > 0 && (!best || gain > best.gain)) best = { gain, give, get: target, from: team };
+            if (gain > 0 && (!best || gain > best.gain))
+              best = { gain, give, get: target, from: team };
           }
         }
       }
@@ -188,15 +241,22 @@ line();
 console.log(`  one season is ${REGULAR_SEASON_TARGET_DAYS} days; the real restriction is 60.`);
 console.log(`  the user trades as fast as the rule allows.
 `);
-console.log(`${"COOLDOWN".padStart(10)}${"THRESHOLD".padStart(11)}${"CHAIN GAIN".padStart(13)}${"TRADES".padStart(9)}`);
+console.log(
+  `${"COOLDOWN".padStart(10)}${"THRESHOLD".padStart(11)}${"CHAIN GAIN".padStart(13)}${"TRADES".padStart(9)}`,
+);
 for (const [cd, th] of [
-  [0, undefined], [60, undefined], [90, undefined],
-  [0, 1.0], [60, 1.0], [60, 1.02], [90, 1.0],
+  [0, undefined],
+  [60, undefined],
+  [90, undefined],
+  [0, 1.0],
+  [60, 1.0],
+  [60, 1.02],
+  [90, 1.0],
 ] as [number, number | undefined][]) {
   const r = runChain(cd, th);
   console.log(
     `${(cd === 0 ? "none" : `${cd}d`).padStart(10)}${(th === undefined ? "0.95" : th.toFixed(2)).padStart(11)}` +
-    `${(r.gain.toFixed(1) + "%").padStart(13)}${String(r.steps).padStart(9)}`,
+      `${(r.gain.toFixed(1) + "%").padStart(13)}${String(r.steps).padStart(9)}`,
   );
 }
 console.log(`

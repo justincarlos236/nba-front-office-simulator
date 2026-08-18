@@ -37,7 +37,7 @@ interface RosterPlayerDTO {
   noTradeClause: boolean;
   injuryStatus: "HEALTHY" | "DAY_TO_DAY" | "OUT" | "SEASON_ENDING";
   careerGamesMissedToInjury: number;
-  /** Finances as a Gameplay Pillar (Phase 2) - an active sponsorship deal's "star clause" names this player. Trading him away voids the deal with a real buyout cost - warned here, never blocked (cap/CBA legality is untouched). */
+  /** Finances as a Gameplay Pillar - an active sponsorship deal's "star clause" names this player. Trading him away voids the deal with a real buyout cost - warned here, never blocked (cap/CBA legality is untouched). */
   hasSponsorshipClause: boolean;
 }
 
@@ -66,7 +66,7 @@ interface TeamSideDTO {
   personality: GmPersonality;
   /** Full active roster ratings/ages - the untouchable-player check's input. */
   roster: { overallRating: number; age: number }[];
-  /** Finances as a Gameplay Pillar (Phase 4) - only meaningful for myTeam (the user's own Analytics investment); undefined for theirTeam. HIGH/MAXIMUM reveals evaluateTradeOffer's precise fair-value score instead of just the ACCEPT/COUNTER/REJECT bucket. */
+  /** Finances as a Gameplay Pillar - only meaningful for myTeam (the user's own Analytics investment); undefined for theirTeam. HIGH/MAXIMUM reveals evaluateTradeOffer's precise fair-value score instead of just the ACCEPT/COUNTER/REJECT bucket. */
   analyticsLevel?: DepartmentLevel;
 }
 
@@ -246,7 +246,7 @@ export function TradeBuilder({
     return describeTradeFeasibility(result, teams, season);
   }, [result, mySelected, theirSelected, myTeam, theirTeam, season]);
 
-  // Trade-AI preview (Phase 11c) - the same evaluation executeTradeAction
+  // Trade-AI preview - the same evaluation executeTradeAction
   // runs server-side as the authoritative gate, previewed here purely for
   // UX (like validateTrade's own live preview). Only meaningful once the
   // deal is at least financially legal.
@@ -282,7 +282,7 @@ export function TradeBuilder({
     season,
   ]);
 
-  // Counter-offer suggestion (Phase 11d) - only worth computing once we
+  // Counter-offer suggestion - only worth computing once we
   // already know the deal isn't an accept as proposed.
   const counterSuggestion = useMemo(() => {
     if (!aiPreview || aiPreview.decision === "ACCEPT") return null;
@@ -344,7 +344,7 @@ export function TradeBuilder({
     setSet(next);
   }
 
-  // Finances as a Gameplay Pillar (Phase 2) - a non-blocking warning, never
+  // a non-blocking warning, never
   // a hard stop (cap/CBA legality is the only thing validateTrade governs).
   const clausePlayersSelected = myTeam.players.filter(
     (p) => mySelected.has(p.leaguePlayerId) && p.hasSponsorshipClause,

@@ -12,7 +12,7 @@ import {
 import type { FanCultureFacts } from "@/lib/fans/fanCulture";
 
 /**
- * Fans Page Redesign (Phase 3) - "who this city has become" (Part 3.0's
+ * "who this city has become" (Part 3.0's
  * purpose sentence). Mood (Section 1) is weather; this is climate - three
  * slow-moving traits that persist across GM tenures, each explained with
  * the real facts that produced it, never a bare number.

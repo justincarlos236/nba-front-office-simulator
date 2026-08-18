@@ -70,7 +70,7 @@ const GROUP_LABEL: Record<NavGroupId, string> = {
 const PRIMARY_BY_PHASE: Record<LeaguePhase, string[]> = {
   "regular-season": ["rotation", "schedule", "standings", "playoffs"],
   "playoffs-incomplete": ["playoffs", "standings", "rotation"],
-  // Scouting Pillar Redesign (Phase 1) - during the pre-draft window the
+  // during the pre-draft window the
   // draft class exists but the lottery hasn't run, so scouting is the
   // headline activity; offseason stays adjacent for re-signings.
   "pre-draft": ["draft", "offseason", "staff"],

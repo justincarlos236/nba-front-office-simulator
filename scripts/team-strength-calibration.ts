@@ -17,7 +17,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { computeHomeWinProbability } from "../src/lib/simulation/simulateGame";
-import { selectTopPerTeam, DEFAULT_MAX_ROSTER_SIZE } from "../src/lib/data-sources/rosterConstruction";
+import {
+  selectTopPerTeam,
+  DEFAULT_MAX_ROSTER_SIZE,
+} from "../src/lib/data-sources/rosterConstruction";
 
 // Real NBA, measured over recent seasons.
 const TARGET_TALENT_SD = 11.1;
@@ -42,7 +45,10 @@ const { rostered } = selectTopPerTeam<Row>(
 const rosters = new Map<string, number[]>();
 for (const p of ds.players) {
   if (!rostered.has(p) || !p.teamAbbreviation) continue;
-  rosters.set(p.teamAbbreviation, [...(rosters.get(p.teamAbbreviation) ?? []), p.seedOverallRating ?? 0]);
+  rosters.set(p.teamAbbreviation, [
+    ...(rosters.get(p.teamAbbreviation) ?? []),
+    p.seedOverallRating ?? 0,
+  ]);
 }
 const allRosters = [...rosters.values()].map((r) => [...r].sort((a, b) => b - a));
 
@@ -120,15 +126,13 @@ function shapeIsPlausible(decay: number, bench: number): boolean {
   const total = w.reduce((a, b) => a + b, 0);
   const benchShare = (6 * bench) / total;
   return (
-    w[0] / total <= MAX_TOP_SHARE &&
-    benchShare >= MIN_BENCH_SHARE &&
-    benchShare <= MAX_BENCH_SHARE
+    w[0] / total <= MAX_TOP_SHARE && benchShare >= MIN_BENCH_SHARE && benchShare <= MAX_BENCH_SHARE
   );
 }
 
 let bestFit = { decay: 0, bench: 0, err: Infinity, talentSd: 0, best: 0, worst: 0 };
-for (let decay = 0.50; decay <= 0.99; decay += 0.005) {
-  for (let bench = 0; bench <= 0.30; bench += 0.0025) {
+for (let decay = 0.5; decay <= 0.99; decay += 0.005) {
+  for (let bench = 0; bench <= 0.3; bench += 0.0025) {
     if (!shapeIsPlausible(decay, bench)) continue;
     const r = evaluate(decay, bench);
     if (r.err < bestFit.err) {
@@ -140,8 +144,12 @@ for (let decay = 0.50; decay <= 0.99; decay += 0.005) {
 console.log("=".repeat(72));
 console.log("TEAM STRENGTH WEIGHT CALIBRATION");
 console.log("=".repeat(72));
-console.log(`  targets: talent SD ${TARGET_TALENT_SD}, best ${TARGET_BEST_WINS}W, worst ${TARGET_WORST_WINS}W\n`);
-console.log(`${"DECAY".padStart(7)}${"BENCH".padStart(8)}${"TALENT SD".padStart(11)}${"BEST".padStart(7)}${"WORST".padStart(7)}${"ERR".padStart(9)}`);
+console.log(
+  `  targets: talent SD ${TARGET_TALENT_SD}, best ${TARGET_BEST_WINS}W, worst ${TARGET_WORST_WINS}W\n`,
+);
+console.log(
+  `${"DECAY".padStart(7)}${"BENCH".padStart(8)}${"TALENT SD".padStart(11)}${"BEST".padStart(7)}${"WORST".padStart(7)}${"ERR".padStart(9)}`,
+);
 for (const d of [0.7, 0.75, 0.8, 0.85, 0.9, 0.95, bestFit.decay]) {
   const r = evaluate(d, bestFit.bench);
   console.log(
@@ -152,13 +160,17 @@ for (const d of [0.7, 0.75, 0.8, 0.85, 0.9, 0.95, bestFit.decay]) {
 const fit = evaluate(bestFit.decay, bestFit.bench);
 console.log(`\n  BEST FIT  decay ${bestFit.decay.toFixed(3)}  bench ${bestFit.bench.toFixed(3)}`);
 console.log(`    talent SD ${fit.talentSd.toFixed(1)} (target ${TARGET_TALENT_SD})`);
-console.log(`    best ${fit.best.toFixed(0)}W (target ${TARGET_BEST_WINS})   worst ${fit.worst.toFixed(0)}W (target ${TARGET_WORST_WINS})`);
+console.log(
+  `    best ${fit.best.toFixed(0)}W (target ${TARGET_BEST_WINS})   worst ${fit.worst.toFixed(0)}W (target ${TARGET_WORST_WINS})`,
+);
 
 const rounded = fit.weights.slice(0, ROTATION_SIZE).map((w) => Number(w.toFixed(2)));
 console.log(`\n  ROTATION_WEIGHTS = [${rounded.join(", ")}]`);
 console.log(`  BENCH_WEIGHT = ${Number(bestFit.bench.toFixed(2))}`);
 const total = rounded.reduce((a, b) => a + b, 0) + 6 * bestFit.bench;
-console.log(`\n  share of team: #1 ${((rounded[0] / total) * 100).toFixed(1)}%   ` +
-  `top 3 ${(((rounded[0] + rounded[1] + rounded[2]) / total) * 100).toFixed(1)}%   ` +
-  `bottom 6 ${(((6 * bestFit.bench) / total) * 100).toFixed(1)}%`);
+console.log(
+  `\n  share of team: #1 ${((rounded[0] / total) * 100).toFixed(1)}%   ` +
+    `top 3 ${(((rounded[0] + rounded[1] + rounded[2]) / total) * 100).toFixed(1)}%   ` +
+    `bottom 6 ${(((6 * bestFit.bench) / total) * 100).toFixed(1)}%`,
+);
 console.log(`  (shipped: #1 12.3%, top 3 34.2%, bottom 6 21.1%)`);

@@ -60,7 +60,9 @@ async function main() {
 
   const after = await databaseSizeMb();
   console.log(`\nafter:  ${after.toFixed(0)} MB  (freed ${(before - after).toFixed(0)} MB)`);
-  console.log(`        ${(await prisma.playerGameStat.count()).toLocaleString()} box scores remain (seasons in progress)`);
+  console.log(
+    `        ${(await prisma.playerGameStat.count()).toLocaleString()} box scores remain (seasons in progress)`,
+  );
 
   await prisma.$disconnect();
 }

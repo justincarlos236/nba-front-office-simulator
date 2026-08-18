@@ -50,12 +50,14 @@ function pickScore(pick: number): number {
 const s1 = pickScore(1);
 const s30 = pickScore(30);
 const sMvp = talentScore(98, 98);
-console.log(`Talent scores:  #1 pick ${s1.toFixed(2)}   #30 pick ${s30.toFixed(2)}   MVP ${sMvp.toFixed(2)}`);
+console.log(
+  `Talent scores:  #1 pick ${s1.toFixed(2)}   #30 pick ${s30.toFixed(2)}   MVP ${sMvp.toFixed(2)}`,
+);
 
 const logistic = (s: number, k: number, m: number) => 1 / (1 + Math.exp(-k * (s - m)));
 
 let best = { k: 0, m: 0, err: Infinity };
-for (let k = 0.05; k <= 0.60; k += 0.001) {
+for (let k = 0.05; k <= 0.6; k += 0.001) {
   for (let m = 60; m <= 100; m += 0.1) {
     const rPick = logistic(s1, k, m) / logistic(s30, k, m);
     const rMvp = logistic(sMvp, k, m) / logistic(s1, k, m);
@@ -77,7 +79,9 @@ console.log("\nResulting spread (multiple of a 70-rated player with no upside):"
 console.log(`${"SCORE".padStart(7)}${"x a 70".padStart(10)}`);
 const base = logistic(70, best.k, best.m);
 for (const s of [60, 65, 70, 75, 80, 85, 90, 95, 99]) {
-  console.log(`${String(s).padStart(7)}${(logistic(s, best.k, best.m) / base).toFixed(2).padStart(10)}`);
+  console.log(
+    `${String(s).padStart(7)}${(logistic(s, best.k, best.m) / base).toFixed(2).padStart(10)}`,
+  );
 }
 
 // Absolute scale: hold the #1 overall pick near its current $45.2M so the pick

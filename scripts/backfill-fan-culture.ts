@@ -1,5 +1,5 @@
 /**
- * One-time backfill for the Fans Page Redesign (Phase 3): every LeagueTeam
+ * One-time backfill for the Fans Page Redesign: every LeagueTeam
  * created before FanCulture shipped has no row at all, so the Fans page
  * would show a flat, meaningless neutral (50/50/50) for every save
  * regardless of its actual history - a 15-season save with a championship,

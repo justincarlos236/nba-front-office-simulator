@@ -1,5 +1,5 @@
 /**
- * GM Career Mode (Phase 1) - pure math over an already-built career
+ * pure math over an already-built career
  * snapshot. Deliberately excludes "successful trades," "drafting stars,"
  * and "developing young players" as reputation factors (per the original
  * design brief) since scoring those honestly needs new per-event

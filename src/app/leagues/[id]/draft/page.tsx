@@ -32,7 +32,7 @@ export default async function DraftPage({ params }: PageProps) {
 
   const phase = await computeLeaguePhase(league.id, season);
 
-  // Scouting Pillar Redesign (Phase 1) - self-heals a save reaching the
+  // self-heals a save reaching the
   // pre-draft window (or, for a save created before this shipped, the
   // draft itself) without the class having been generated yet. Same
   // lazy-generation convention as `ensureStaffGenerated` on the Staff
@@ -42,7 +42,7 @@ export default async function DraftPage({ params }: PageProps) {
   }
 
   const [draftPicks, draftProspects, bookmarks, scoutingBudget] = await Promise.all([
-    // A future-pick placeholder always exists by now (Phase 11a); filter to
+    // A future-pick placeholder always exists by now; filter to
     // only this season's actually-started picks, which is what
     // `DraftExperience` uses to decide whether the draft has begun.
     prisma.draftPick.findMany({
@@ -54,7 +54,7 @@ export default async function DraftPage({ params }: PageProps) {
       where: { leagueId: league.id, season },
       orderBy: { boardRank: "asc" },
     }),
-    // Scouting Pillar Redesign (Phase 2) - only meaningful once the class
+    // only meaningful once the class
     // exists, but cheap enough (one extra query) to just always fetch
     // alongside everything else rather than branching the Promise.all.
     getScoutingBudgetSummary(league.id, season),
@@ -149,8 +149,8 @@ export default async function DraftPage({ params }: PageProps) {
               Draft Lottery
             </p>
             <p className="mt-2 text-ink">
-              Done scouting? Running the lottery sets the draft order and closes this
-              window - any assignments you have left are forfeited.
+              Done scouting? Running the lottery sets the draft order and closes this window - any
+              assignments you have left are forfeited.
             </p>
             <Link
               href={`/leagues/${league.id}/draft/lottery`}

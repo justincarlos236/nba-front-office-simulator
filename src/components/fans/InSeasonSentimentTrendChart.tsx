@@ -40,7 +40,7 @@ function ChartTooltip({
 }
 
 /**
- * Fans Page Redesign (Phase 1) - the in-season counterpart to
+ * the in-season counterpart to
  * FanHappinessTrendChart's once-a-season history, reconstructed from the
  * sentiment ledger (see buildInSeasonTrend in sentimentLedger.ts). This is
  * what fixes docs/FANS_PAGE_REDESIGN.md Part 2.6: FanHappinessSnapshot alone

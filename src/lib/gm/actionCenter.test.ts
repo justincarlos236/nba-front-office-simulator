@@ -87,7 +87,7 @@ describe("computeActionCenterItems", () => {
   });
 
   it("surfaces the pre-draft scouting window, pointing at the Draft page (not straight at the lottery)", () => {
-    // Scouting Pillar Redesign (Phase 2) - the class is revealed before the
+    // the class is revealed before the
     // lottery on purpose, so this item routes to scouting, not past it.
     const items = computeActionCenterItems(baseInput({ pendingDraftLottery: true }));
     const item = items.find((i) => i.id === "pending-draft-lottery");

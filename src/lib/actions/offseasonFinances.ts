@@ -93,7 +93,7 @@ export interface TeamFinanceDeps {
   financeSalaryFloorCents: number;
 }
 
-// Finances as a Gameplay Pillar (Phase 4) - reads a LeagueTeam row's 6
+// reads a LeagueTeam row's 6
 // department-level columns into the DepartmentBudget shape
 // computeTeamSeasonFinances/departments.ts expect.
 export function teamDepartmentBudget(lt: {
@@ -148,7 +148,7 @@ export function computeTeamSeasonFinances(
   const constructionPenalty = computeConstructionAttendancePenalty(
     stillInProgressKindsByTeam.get(args.leagueTeamId) ?? [],
   );
-  // Finances as a Gameplay Pillar (Phase 4/5) - the season-ticket base is
+  // the season-ticket base is
   // a floor under the existing attendance model; arena quality adds a
   // small bonus on top; an in-progress arena project under construction
   // costs real usable capacity. Never lets attendance leave [0,1].
@@ -164,7 +164,7 @@ export function computeTeamSeasonFinances(
         constructionPenalty,
     ),
   );
-  // Finances as a Gameplay Pillar (Phase 4/5) - Marketing grows
+  // Marketing grows
   // popularity faster; a completed International Academy stacks a
   // permanent flat bonus on top.
   const franchisePopularity = computeFranchisePopularity(
@@ -177,7 +177,7 @@ export function computeTeamSeasonFinances(
     season,
     contracts: financeContractsByTeam.get(args.leagueTeamId) ?? [],
   });
-  // Finances as a Gameplay Pillar (Phase 2) - the user's team draws on
+  // the user's team draws on
   // its real signed SponsorshipDeal total; every other team (CPU, never
   // shops for a deal) gets the formula baseline instead.
   const sponsorshipRevenueCents =
@@ -192,7 +192,7 @@ export function computeTeamSeasonFinances(
     ticketPosture: args.ticketPosture,
     playoffHomeGames: args.playoffHomeGames,
     wonChampionship: args.wonChampionship,
-    // Finances as a Gameplay Pillar (Phase 5) - a completed Real Estate &
+    // a completed Real Estate &
     // Media arm adds permanent recurring income here.
     otherIncomeCents:
       (otherIncomeByTeam.get(args.leagueTeamId) ?? 0) + projectEffects.recurringIncomeCents,
@@ -206,7 +206,7 @@ export function computeTeamSeasonFinances(
     staffCents: Number(staffCentsByTeam.get(args.leagueTeamId) ?? 0n),
     departmentBudgetCostCents: totalDepartmentBudgetCostCents(args.departmentBudget),
     otherExpenseCents: otherExpenseByTeam.get(args.leagueTeamId) ?? 0,
-    // Finances as a Gameplay Pillar (Phase 5) - debt interest, charged
+    // debt interest, charged
     // every season on the full outstanding balance.
     interestExpenseCents: computeAnnualInterestCents(Number(args.debtCents)),
   });
@@ -294,7 +294,7 @@ export async function runSeasonFinances(ctx: SeasonFinanceContext) {
   const financeResults = league.teams.map((lt) => {
     const fan = fanUpdateByTeam.get(lt.id);
     const fanHappiness = fan?.fanHappiness ?? lt.fanHappiness;
-    // Finances as a Gameplay Pillar (Phase 5) - a relocated team's real
+    // a relocated team's real
     // market resolves through its override, never the canonical (shared,
     // immutable) Team fixture directly.
     const marketSize = lt.marketSizeOverride ?? lt.team.marketSize;
@@ -329,7 +329,7 @@ export async function runSeasonFinances(ctx: SeasonFinanceContext) {
       playoffOutcomeIndex: outcome.index,
       cashReserveCents: newCash,
       priorValueCents: priorValue,
-      // Finances as a Gameplay Pillar (Phase 2) - the "equity swap"
+      // the "equity swap"
       // sponsorship option's franchiseValueUpsideFraction stacks with the
       // existing icon premium; both are bounded value-premium fractions,
       // so summing them is the same reuse computeFranchiseValue already
@@ -337,7 +337,7 @@ export async function runSeasonFinances(ctx: SeasonFinanceContext) {
       iconPremiumFraction:
         (iconPremiumByTeam.get(lt.id) ?? 0) + (sponsorshipUpsideByTeam.get(lt.id) ?? 0),
     });
-    // Finances as a Gameplay Pillar (Phase 4) - the season-ticket base
+    // the season-ticket base
     // evolves at the same season boundary its own floor effect (above)
     // just fed into this season's attendance/gate revenue.
     const seasonTicketDelta = computeSeasonTicketBaseDelta({
@@ -347,7 +347,7 @@ export async function runSeasonFinances(ctx: SeasonFinanceContext) {
     });
     const newSeasonTicketBase = applySeasonTicketBaseDelta(lt.seasonTicketBase, seasonTicketDelta);
 
-    // Finances as a Gameplay Pillar (Phase 5) - a project completing this
+    // a project completing this
     // pass applies its permanent arena bump/reset/lease-extension; a team
     // with nothing completing this season instead ages, same "either
     // invest or slowly decline" shape the design calls for.
@@ -404,7 +404,7 @@ export async function runSeasonFinances(ctx: SeasonFinanceContext) {
     })),
   });
 
-  // Finances as a Gameplay Pillar (Phase 2) - a deal counted toward
+  // a deal counted toward
   // revenue for its final season above; now that the season's actually
   // closing out, transition it so next season's boundary stops counting
   // it. VOIDED deals (traded-away condition player) already left ACTIVE
@@ -433,9 +433,9 @@ export async function runSeasonFinances(ctx: SeasonFinanceContext) {
           data: {
             cashReserveCents: BigInt(newCash),
             franchiseValueCents: BigInt(newValue),
-            // Finances as a Gameplay Pillar (Phase 4).
+            // Finances as a Gameplay Pillar.
             seasonTicketBase: newSeasonTicketBase,
-            // Finances as a Gameplay Pillar (Phase 5).
+            // Finances as a Gameplay Pillar.
             arenaQualityIndex: newArenaQualityIndex,
             arenaAgeSeasons: newArenaAgeSeasons,
             arenaLeaseExpiresSeason: newArenaLeaseExpiresSeason,
@@ -449,7 +449,7 @@ export async function runSeasonFinances(ctx: SeasonFinanceContext) {
     ),
   );
 
-  // Finances as a Gameplay Pillar (Phase 5) - mark every project that
+  // mark every project that
   // completed this pass, and post a news beat per completion.
   const completedProjectIds = financeResults.flatMap((r) => r.completingProjects.map((p) => p.id));
   if (completedProjectIds.length > 0) {
@@ -471,7 +471,7 @@ export async function runSeasonFinances(ctx: SeasonFinanceContext) {
     });
   }
 
-  // Finances as a Gameplay Pillar (Phase 5) - relocation eligibility, the
+  // relocation eligibility, the
   // deliberately near-unreachable last resort. Checked only for the user's
   // own team (Tier 1 - a franchise-defining moment, never a CPU-abstracted
   // one), once per season boundary, and only if nothing is already

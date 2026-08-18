@@ -1,5 +1,5 @@
 /**
- * Fans Page Redesign (Phase 1) - human-readable descriptions for sentiment
+ * human-readable descriptions for sentiment
  * ledger rows, written at the moment the event happens (same convention as
  * LeagueTransaction.description: a past event's wording is fixed when it
  * occurs and shouldn't change if the world moves on around it).

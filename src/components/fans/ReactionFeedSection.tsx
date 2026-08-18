@@ -2,7 +2,7 @@ import type { FanSentimentKind } from "@/generated/prisma/client";
 import { FAN_SENTIMENT_KIND_LABEL, type LedgerEvent } from "@/lib/fans/sentimentLedger";
 
 /**
- * Fans Page Redesign (Phase 2) - "Fan Reactions," rebuilt. Replaces the old
+ * "Fan Reactions," rebuilt. Replaces the old
  * fanReactions.ts lookup table (`TRADE -> "Fans are buzzing"`, fired
  * identically for a lopsided win or a lopsided loss - the sharpest
  * complaint in docs/FANS_PAGE_REDESIGN.md Part 2.3) with the real,

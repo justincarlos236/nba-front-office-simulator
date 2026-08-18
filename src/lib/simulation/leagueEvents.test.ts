@@ -583,7 +583,8 @@ describe("injury frequency rises with load and with the season", () => {
     };
     let hits = 0;
     const N = 60000;
-    for (let i = 0; i < N; i++) if (rollForTeamInjury(pool, rng, 0.02, null, 0, progress)) hits += 1;
+    for (let i = 0; i < N; i++)
+      if (rollForTeamInjury(pool, rng, 0.02, null, 0, progress)) hits += 1;
     return hits / N;
   }
 

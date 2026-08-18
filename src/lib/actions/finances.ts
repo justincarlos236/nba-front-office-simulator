@@ -20,7 +20,7 @@ export interface BusinessStrategyInput {
  * ticket-base drag at the season boundary), so this action only persists
  * the choice - nothing here touches cap/CBA rules.
  *
- * Finances as a Gameplay Pillar (Phase 4) - the facilities/medical
+ * the facilities/medical
  * investment levers this action used to also set are gone; see
  * updateDepartmentBudgetAction below.
  */
@@ -53,7 +53,7 @@ export async function updateBusinessStrategyAction(
 }
 
 /**
- * Finances as a Gameplay Pillar (Phase 4) - System 6, "Front Office
+ * System 6, "Front Office
  * Departments." Sets the user team's zero-sum 6-department budget
  * allocation. Re-validated server-side (never trusts the client's own
  * zero-sum bookkeeping) against both the real DepartmentLevel enum values

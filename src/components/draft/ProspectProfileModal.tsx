@@ -32,15 +32,15 @@ export function ProspectProfileModal({
 }: {
   leagueId: string;
   prospect: DraftProspectInfo;
-  /** Scouting Pillar Redesign (Phase 3) - this prospect's rank on the public Big Board. Null if the caller doesn't compute one (e.g. Draft Night, where the board has already served its purpose). */
+  /** Scouting Pillar Redesign - this prospect's rank on the public Big Board. Null if the caller doesn't compute one (e.g. Draft Night, where the board has already served its purpose). */
   bigBoardRank: number | null;
   classSize: number;
-  /** Scouting Pillar Redesign (Phase 2) - assignments left in the whole pre-draft window's budget. */
+  /** Scouting Pillar Redesign - assignments left in the whole pre-draft window's budget. */
   remainingAssignments: number;
   onClose: () => void;
   /** Lets the parent update its own local prospect list/remaining counter after a successful Focused Look. */
   onDepthChange: (prospectId: string, newDepth: number, newRemaining: number) => void;
-  /** Scouting Pillar Redesign (Phase 4) - lets the parent sync a Private Workout's resolution and the new remaining budget. */
+  /** Scouting Pillar Redesign - lets the parent sync a Private Workout's resolution and the new remaining budget. */
   onResolvedHiddenTraitsChange: (
     prospectId: string,
     resolvedHiddenTraits: string[],

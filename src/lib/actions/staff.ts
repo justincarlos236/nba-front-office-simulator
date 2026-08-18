@@ -110,7 +110,7 @@ async function runHireStaffAction(input: HireStaffInput) {
       },
     });
 
-    // Fan Engagement Deepening (Phase 1).
+    // Fan Engagement Deepening.
     const teamFans = await tx.leagueTeam.findUnique({
       where: { id: myLeagueTeamId },
       select: { fanHappiness: true, fanCulture: { select: { patience: true, loyalty: true } } },
@@ -121,7 +121,7 @@ async function runHireStaffAction(input: HireStaffInput) {
         quality: staff.quality,
         isHire: true,
       });
-      // Fans Page Redesign (Phase 3).
+      // Fans Page Redesign.
       const { newFanHappiness, scaledDelta: delta } = applyScaledFanHappinessDelta(
         teamFans.fanHappiness,
         rawDelta,
@@ -131,7 +131,7 @@ async function runHireStaffAction(input: HireStaffInput) {
         where: { id: myLeagueTeamId },
         data: { fanHappiness: newFanHappiness },
       });
-      // Fans Page Redesign (Phase 1) - persist why, not just the result.
+      // persist why, not just the result.
       await recordFanSentimentManyTx(tx, [
         {
           leagueId: league.id,
@@ -203,7 +203,7 @@ export async function fireStaffAction(input: FireStaffInput) {
       },
     });
 
-    // Fan Engagement Deepening (Phase 1).
+    // Fan Engagement Deepening.
     const teamFans = await tx.leagueTeam.findUnique({
       where: { id: myLeagueTeamId },
       select: { fanHappiness: true, fanCulture: { select: { patience: true, loyalty: true } } },
@@ -214,7 +214,7 @@ export async function fireStaffAction(input: FireStaffInput) {
         quality: staff.quality,
         isHire: false,
       });
-      // Fans Page Redesign (Phase 3).
+      // Fans Page Redesign.
       const { newFanHappiness, scaledDelta: delta } = applyScaledFanHappinessDelta(
         teamFans.fanHappiness,
         rawDelta,
@@ -224,7 +224,7 @@ export async function fireStaffAction(input: FireStaffInput) {
         where: { id: myLeagueTeamId },
         data: { fanHappiness: newFanHappiness },
       });
-      // Fans Page Redesign (Phase 1) - persist why, not just the result.
+      // persist why, not just the result.
       await recordFanSentimentManyTx(tx, [
         {
           leagueId: league.id,

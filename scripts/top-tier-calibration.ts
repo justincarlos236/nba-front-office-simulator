@@ -175,7 +175,7 @@ function simulateProspects(tier: number, missRate: number, relExp: number) {
           rng: classRng,
           developmentTrait: trait,
           scoutingMissRate: missRate,
-        reliabilityExponent: relExp,
+          reliabilityExponent: relExp,
         });
       }
       if (overall >= 80) stars += 1;
@@ -226,5 +226,7 @@ for (const [tier, missRate, relExp] of GRID) {
   );
 }
 
-console.log(`\n  BEST FIT: TIER=${best.tier} MISS=${best.missRate.toFixed(2)} REL=${best.relExp.toFixed(2)}  (err ${best.err.toFixed(3)})`);
+console.log(
+  `\n  BEST FIT: TIER=${best.tier} MISS=${best.missRate.toFixed(2)} REL=${best.relExp.toFixed(2)}  (err ${best.err.toFixed(3)})`,
+);
 console.log(`  targets:  ${TARGET_90} / ${TARGET_85} / ${TARGET_80}`);

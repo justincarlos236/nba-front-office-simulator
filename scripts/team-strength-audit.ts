@@ -22,7 +22,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { computeTeamStrength } from "../src/lib/simulation/teamStrength";
 import { computeHomeWinProbability, simulateGame } from "../src/lib/simulation/simulateGame";
-import { selectTopPerTeam, DEFAULT_MAX_ROSTER_SIZE } from "../src/lib/data-sources/rosterConstruction";
+import {
+  selectTopPerTeam,
+  DEFAULT_MAX_ROSTER_SIZE,
+} from "../src/lib/data-sources/rosterConstruction";
 
 const line = (n = 78) => "=".repeat(n);
 const sd = (xs: number[]) => {
@@ -78,12 +81,14 @@ console.log(`${"SLOT".padStart(6)}${"WEIGHT".padStart(9)}${"SHARE OF TEAM".padSt
 for (let i = 0; i < 11; i++) {
   const w = i < 9 ? W[i] : 0.4;
   const label = i < 9 ? `#${i + 1}` : `#${i + 1}+`;
-  console.log(`${label.padStart(6)}${w.toFixed(1).padStart(9)}${`${((w / totalWeight) * 100).toFixed(1)}%`.padStart(16)}`);
+  console.log(
+    `${label.padStart(6)}${w.toFixed(1).padStart(9)}${`${((w / totalWeight) * 100).toFixed(1)}%`.padStart(16)}`,
+  );
   if (i === 9) break;
 }
 const top3Share = (W[0] + W[1] + W[2]) / totalWeight;
 console.log(`\n  top 3 players = ${(top3Share * 100).toFixed(1)}% of team strength`);
-console.log(`  bottom 6      = ${((6 * 0.4) / totalWeight * 100).toFixed(1)}%`);
+console.log(`  bottom 6      = ${(((6 * 0.4) / totalWeight) * 100).toFixed(1)}%`);
 console.log(
   `\n  Real basketball: a title team's top three routinely play 60-70% of the\n` +
     `  meaningful minutes and carry more than that in the playoffs, when rotations\n` +
@@ -97,10 +102,13 @@ console.log(line());
 const median = teams[15];
 console.log(`  Baseline: ${median.team}, strength ${median.strength.toFixed(2)}`);
 console.log(`  roster: ${median.ratings.join(", ")}\n`);
-console.log(`${"CHANGE".padEnd(36)}${"NEW STRENGTH".padStart(14)}${"MARGIN".padStart(9)}${"EXTRA WINS".padStart(12)}`);
+console.log(
+  `${"CHANGE".padEnd(36)}${"NEW STRENGTH".padStart(14)}${"MARGIN".padStart(9)}${"EXTRA WINS".padStart(12)}`,
+);
 const leagueMean = teams.reduce((s, t) => s + t.strength, 0) / teams.length;
 const winsFor = (s: number) =>
-  82 * ((computeHomeWinProbability(s, leagueMean) + (1 - computeHomeWinProbability(leagueMean, s))) / 2);
+  82 *
+  ((computeHomeWinProbability(s, leagueMean) + (1 - computeHomeWinProbability(leagueMean, s))) / 2);
 const baseWins = winsFor(median.strength);
 const swap = (label: string, mutate: (r: number[]) => number[]) => {
   const s = computeTeamStrength(mutate([...median.ratings]));
@@ -124,11 +132,13 @@ console.log(line());
 const strengths = teams.map((t) => t.strength);
 console.log(`  best  ${teams[0].team} ${strengths[0].toFixed(2)}`);
 console.log(`  worst ${teams[29].team} ${strengths[29].toFixed(2)}`);
-console.log(`  spread ${(strengths[0] - strengths[29]).toFixed(2)} strength = ${((strengths[0] - strengths[29]) * 2.31).toFixed(1)} points of margin`);
-console.log(`  SD ${sd(strengths).toFixed(2)} strength = ${(sd(strengths) * 2.31).toFixed(1)} points of margin`);
 console.log(
-  `\n  Real NBA net rating runs about +11 to -11, a 22-point spread, SD near 5.5.`,
+  `  spread ${(strengths[0] - strengths[29]).toFixed(2)} strength = ${((strengths[0] - strengths[29]) * 2.31).toFixed(1)} points of margin`,
 );
+console.log(
+  `  SD ${sd(strengths).toFixed(2)} strength = ${(sd(strengths) * 2.31).toFixed(1)} points of margin`,
+);
+console.log(`\n  Real NBA net rating runs about +11 to -11, a 22-point spread, SD near 5.5.`);
 
 /* ---------------------------------------------------------------- */
 console.log("\n" + line());
@@ -170,14 +180,24 @@ for (let s = 0; s < SEASONS; s++) {
 const realisedSd = realisedSds.reduce((a, b) => a + b, 0) / realisedSds.length;
 const luckSd = Math.sqrt(Math.max(0, realisedSd ** 2 - talentSd ** 2));
 console.log(`${"".padEnd(26)}${"THIS ENGINE".padStart(13)}${"REAL NBA".padStart(11)}`);
-console.log(`${"realised win SD".padEnd(26)}${realisedSd.toFixed(1).padStart(13)}${"~12.0".padStart(11)}`);
-console.log(`${"  of which TALENT".padEnd(26)}${talentSd.toFixed(1).padStart(13)}${"~11.1".padStart(11)}`);
-console.log(`${"  of which LUCK".padEnd(26)}${luckSd.toFixed(1).padStart(13)}${"~4.5".padStart(11)}`);
+console.log(
+  `${"realised win SD".padEnd(26)}${realisedSd.toFixed(1).padStart(13)}${"~12.0".padStart(11)}`,
+);
+console.log(
+  `${"  of which TALENT".padEnd(26)}${talentSd.toFixed(1).padStart(13)}${"~11.1".padStart(11)}`,
+);
+console.log(
+  `${"  of which LUCK".padEnd(26)}${luckSd.toFixed(1).padStart(13)}${"~4.5".padStart(11)}`,
+);
 console.log(
   `\n  talent share of variance: ${((talentSd ** 2 / realisedSd ** 2) * 100).toFixed(0)}%   real NBA ~86%`,
 );
-console.log(`\n  best team's true talent: ${Math.max(...talentWins).toFixed(0)} wins   real NBA ~60-65`);
-console.log(`  worst team's true talent: ${Math.min(...talentWins).toFixed(0)} wins   real NBA ~15-20`);
+console.log(
+  `\n  best team's true talent: ${Math.max(...talentWins).toFixed(0)} wins   real NBA ~60-65`,
+);
+console.log(
+  `  worst team's true talent: ${Math.min(...talentWins).toFixed(0)} wins   real NBA ~15-20`,
+);
 
 /* ---------------------------------------------------------------- */
 console.log("\n" + line());
@@ -222,10 +242,16 @@ for (const [label, weights, bench] of curves) {
     );
   });
   console.log(
-    `${label.padEnd(36)}${sd(wins).toFixed(1).padStart(11)}${Math.max(...wins).toFixed(0).padStart(9)}${Math.min(...wins).toFixed(0).padStart(9)}`,
+    `${label.padEnd(36)}${sd(wins).toFixed(1).padStart(11)}${Math.max(...wins)
+      .toFixed(0)
+      .padStart(9)}${Math.min(...wins)
+      .toFixed(0)
+      .padStart(9)}`,
   );
 }
-console.log(`${"REAL NBA".padEnd(36)}${"~11.1".padStart(11)}${"~63".padStart(9)}${"~18".padStart(9)}`);
+console.log(
+  `${"REAL NBA".padEnd(36)}${"~11.1".padStart(11)}${"~63".padStart(9)}${"~18".padStart(9)}`,
+);
 
 /* ---------------------------------------------------------------- */
 console.log("\n" + line());
@@ -262,15 +288,29 @@ const seriesRate = (h: number, l: number) => {
   }
   return w / N;
 };
-console.log(`${"MATCHUP".padEnd(10)}${"SHIPPED".padStart(10)}${"STEEP".padStart(9)}${"REAL".padStart(8)}`);
-for (const [hi, lo] of [[1, 8], [2, 7], [3, 6], [4, 5]] as [number, number][]) {
+console.log(
+  `${"MATCHUP".padEnd(10)}${"SHIPPED".padStart(10)}${"STEEP".padStart(9)}${"REAL".padStart(8)}`,
+);
+for (const [hi, lo] of [
+  [1, 8],
+  [2, 7],
+  [3, 6],
+  [4, 5],
+] as [number, number][]) {
   const now = seriesRate(seedNow(hi), seedNow(lo));
   const next = seriesRate(seedNew(hi), seedNew(lo));
-  const real: Record<string, string> = { "1 vs 8": "93%", "2 vs 7": "78%", "3 vs 6": "62%", "4 vs 5": "52%" };
+  const real: Record<string, string> = {
+    "1 vs 8": "93%",
+    "2 vs 7": "78%",
+    "3 vs 6": "62%",
+    "4 vs 5": "52%",
+  };
   console.log(
     `${`${hi} vs ${lo}`.padEnd(10)}${`${(now * 100).toFixed(1)}%`.padStart(10)}${`${(next * 100).toFixed(1)}%`.padStart(9)}${real[`${hi} vs ${lo}`].padStart(8)}`,
   );
 }
 const gapNow = winsFor(seedNow(1)) - winsFor(seedNow(8));
 const gapNew = winsFor(seedNew(1)) - winsFor(seedNew(8));
-console.log(`\n  1v8 win gap: ${gapNow.toFixed(0)} games -> ${gapNew.toFixed(0)} games   (real ~22)`);
+console.log(
+  `\n  1v8 win gap: ${gapNow.toFixed(0)} games -> ${gapNew.toFixed(0)} games   (real ~22)`,
+);

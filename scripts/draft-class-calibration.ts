@@ -105,7 +105,6 @@ function simulateLeagueOnce(exponent: number, seed: number) {
         age: p.age,
         rng,
         developmentTrait: developmentTraitFromId(p.id),
-        
       });
       p.age += 1;
     }
@@ -159,7 +158,6 @@ function simulateProspects(exponent: number) {
         age,
         rng,
         developmentTrait: trait,
-        
       });
     }
     if (overall < 75) pick1Bust += 1;
@@ -180,7 +178,6 @@ function simulateProspects(exponent: number) {
           age,
           rng: classRng,
           developmentTrait: trait,
-          
         });
       }
       if (overall >= 80) stars += 1;
@@ -226,5 +223,7 @@ for (let exponent = 0.15; exponent <= 0.7001; exponent += 0.05) {
   );
 }
 
-console.log(`\n  BEST FIT: POTENTIAL_FALLOFF_EXPONENT = ${best.exponent.toFixed(2)}  (err ${best.err.toFixed(3)})`);
+console.log(
+  `\n  BEST FIT: POTENTIAL_FALLOFF_EXPONENT = ${best.exponent.toFixed(2)}  (err ${best.err.toFixed(3)})`,
+);
 console.log(`  targets:  ${TARGET_90} / ${TARGET_85} / ${TARGET_80}`);

@@ -15,7 +15,7 @@ export type LeaguePhase =
  * Pure decision logic, split out from the DB fetch below so it's unit-testable
  * on its own.
  *
- * Scouting Pillar Redesign (Phase 1) added `pre-draft`: the window between a
+ * Scouting Pillar Redesign added `pre-draft`: the window between a
  * champion being crowned and the lottery being run, when the draft class
  * exists but nobody knows where they pick yet. `draftStarted` (the lottery
  * having assigned pick numbers) is the same signal that previously moved a

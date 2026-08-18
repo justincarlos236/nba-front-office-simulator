@@ -2,7 +2,7 @@ import type { MarketSize } from "@/generated/prisma/client";
 import type { SeasonOutcome } from "@/lib/fans/fanCulture";
 
 /**
- * Fans Page Redesign (Phase 4) - "What the City Wants"
+ * "What the City Wants"
  * (docs/FANS_PAGE_REDESIGN.md Part 3.2). What the FANBASE currently wants,
  * derived from real state - deliberately distinct from ExpectationLevel
  * (ownership's payroll-driven bar, src/lib/gm/expectationLevel.ts). The

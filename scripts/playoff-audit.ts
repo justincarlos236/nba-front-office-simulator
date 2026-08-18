@@ -22,7 +22,10 @@ import {
   isHigherSeedHomeGame,
 } from "../src/lib/simulation/simulateSeries";
 import { simulatePlayIn } from "../src/lib/simulation/playInTournament";
-import { selectTopPerTeam, DEFAULT_MAX_ROSTER_SIZE } from "../src/lib/data-sources/rosterConstruction";
+import {
+  selectTopPerTeam,
+  DEFAULT_MAX_ROSTER_SIZE,
+} from "../src/lib/data-sources/rosterConstruction";
 
 const line = (n = 78) => "=".repeat(n);
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
@@ -68,13 +71,17 @@ const strengths = [...strengthByTeam.values()].sort((a, b) => b - a);
 console.log(line());
 console.log("P1  WHAT STRENGTH GAPS DOES A REAL PLAYOFF SERIES ACTUALLY SEE?");
 console.log(line());
-console.log(`  30 teams, strength ${strengths[29].toFixed(1)} (worst) to ${strengths[0].toFixed(1)} (best)`);
+console.log(
+  `  30 teams, strength ${strengths[29].toFixed(1)} (worst) to ${strengths[0].toFixed(1)} (best)`,
+);
 console.log(`  spread: ${(strengths[0] - strengths[29]).toFixed(1)} rating points\n`);
 // A conference's 8 playoff teams are roughly the top 8 of 15. Approximate the
 // seeds by taking every other team from the sorted league, which is what a
 // conference split produces on average.
 const seedStrength = (seed: number) => strengths[(seed - 1) * 2];
-console.log(`${"MATCHUP".padEnd(10)}${"GAP".padStart(7)}${"HOME WIN P".padStart(12)}${"NEUTRAL WIN P".padStart(15)}`);
+console.log(
+  `${"MATCHUP".padEnd(10)}${"GAP".padStart(7)}${"HOME WIN P".padStart(12)}${"NEUTRAL WIN P".padStart(15)}`,
+);
 for (const [hi, lo] of [
   [1, 8],
   [2, 7],
@@ -94,9 +101,7 @@ const RUNS = Number(process.env.RUNS ?? 20000);
 console.log("\n" + line());
 console.log("P2  HOW OFTEN DOES THE HIGHER SEED WIN THE SERIES?");
 console.log(line());
-console.log(
-  `${"MATCHUP".padEnd(10)}${"SIMULATED".padStart(11)}${"REAL NBA".padStart(11)}   note`,
-);
+console.log(`${"MATCHUP".padEnd(10)}${"SIMULATED".padStart(11)}${"REAL NBA".padStart(11)}   note`);
 const REAL_SERIES: Record<string, string> = {
   "1 vs 8": "93%",
   "2 vs 7": "~78%",
@@ -293,7 +298,9 @@ const expectedWins = (s: number) => {
   const away = 1 - computeHomeWinProbability(leagueMean, s);
   return 82 * ((home + away) / 2);
 };
-console.log(`${"SEED".padStart(6)}${"STRENGTH".padStart(10)}${"IMPLIED W-L".padStart(14)}${"REAL NBA".padStart(12)}`);
+console.log(
+  `${"SEED".padStart(6)}${"STRENGTH".padStart(10)}${"IMPLIED W-L".padStart(14)}${"REAL NBA".padStart(12)}`,
+);
 const REAL_RECORD: Record<number, string> = {
   1: "~60-22",
   2: "~55-27",

@@ -7,7 +7,7 @@ import {
 import { ScaleBar } from "@/components/dashboard/ScaleBar";
 
 /**
- * Fans Page Redesign (Phase 2), Section 1 - "The Mood." Replaces the old
+ * Fans Page Redesign, Section 1 - "The Mood." Replaces the old
  * 2-card + 3-card stat block. Attendance/Merchandise/Season Tickets are
  * deliberately gone - all three were the same popularity-tier number
  * relabeled (docs/FANS_PAGE_REDESIGN.md Part 1.1/2.1), and Attendance/

@@ -16,7 +16,10 @@
  *
  * Reads only. Run: npx tsx scripts/schedule-realism-audit.ts
  */
-import { generateRoundRobinSchedule, type ScheduleTeam } from "../src/lib/simulation/generateSchedule";
+import {
+  generateRoundRobinSchedule,
+  type ScheduleTeam,
+} from "../src/lib/simulation/generateSchedule";
 
 const REAL = {
   days: 174,

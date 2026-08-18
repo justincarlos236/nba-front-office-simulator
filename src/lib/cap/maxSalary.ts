@@ -68,9 +68,7 @@ export function maxSalaryFractionFor(input: {
   const years = input.yearsOfExperience;
   if (years !== null && years !== undefined && Number.isFinite(years)) {
     const base = MAX_SALARY_SERVICE_TIERS[MAX_SALARY_SERVICE_TIERS.length - 1];
-    const tier = (
-      MAX_SALARY_SERVICE_TIERS.find((t) => years >= t.minYears) ?? base
-    ).fractionOfCap;
+    const tier = (MAX_SALARY_SERVICE_TIERS.find((t) => years >= t.minYears) ?? base).fractionOfCap;
     // Re-checked here rather than trusted from the caller. `isSupermaxEligible`
     // already enforces the band, but this function is exported and a caller
     // passing the flag for a 4-year player must not thereby skip two tiers.

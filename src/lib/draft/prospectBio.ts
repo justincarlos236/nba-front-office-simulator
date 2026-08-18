@@ -49,7 +49,7 @@ export function generatePhysicalProfile(
 }
 
 /**
- * Scouting Pillar Redesign (Phase 4) - how a prospect actually entered the
+ * how a prospect actually entered the
  * draft, grounded in the four real pathways NBA prospects come from. Kept
  * here (not just in scoutingAssignments.ts) since it's meant to be a
  * durable part of the prospect's identity - see the ProspectPathway

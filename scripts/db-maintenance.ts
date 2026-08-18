@@ -72,7 +72,11 @@ async function main() {
 
   console.log(`database: ${before.toFixed(0)} MB of 512 MB\n`);
   console.log(
-    "TABLE".padEnd(32) + "TOTAL".padStart(9) + "DATA".padStart(9) + "INDEX".padStart(9) + "ROWS".padStart(11),
+    "TABLE".padEnd(32) +
+      "TOTAL".padStart(9) +
+      "DATA".padStart(9) +
+      "INDEX".padStart(9) +
+      "ROWS".padStart(11),
   );
   for (const s of sizes.filter((s) => s.totalMb >= REPORT_THRESHOLD_MB)) {
     console.log(
@@ -86,7 +90,9 @@ async function main() {
 
   const candidates = sizes.filter((s) => s.totalMb >= REPORT_THRESHOLD_MB);
   if (!APPLY) {
-    console.log(`\n${candidates.length} table(s) above ${REPORT_THRESHOLD_MB} MB. Re-run with --apply to reclaim.`);
+    console.log(
+      `\n${candidates.length} table(s) above ${REPORT_THRESHOLD_MB} MB. Re-run with --apply to reclaim.`,
+    );
     console.log("VACUUM FULL locks each table exclusively - do it while nobody is playing.");
     await prisma.$disconnect();
     return;
@@ -105,7 +111,9 @@ async function main() {
   }
 
   const after = await databaseSizeMb();
-  console.log(`\ndatabase: ${before.toFixed(0)} MB -> ${after.toFixed(0)} MB  (freed ${(before - after).toFixed(0)} MB)`);
+  console.log(
+    `\ndatabase: ${before.toFixed(0)} MB -> ${after.toFixed(0)} MB  (freed ${(before - after).toFixed(0)} MB)`,
+  );
   await prisma.$disconnect();
 }
 

@@ -175,20 +175,20 @@ export async function applyLeagueEvents(
       where: { leagueId, leagueTeamId: { in: teamIds }, injuryStatus: "HEALTHY", isActive: true },
       include: { player: true },
     }),
-    // Medical Staff effect (Phase 15a) - a team with no Medical Staff hired
+    // a team with no Medical Staff hired
     // yet rolls injuries exactly as it did before this phase existed (see
     // rollForTeamInjury's null handling).
     prisma.staff.findMany({
       where: { leagueId, leagueTeamId: { in: teamIds }, role: "MEDICAL_STAFF" },
       select: { leagueTeamId: true, quality: true },
     }),
-    // Finances as a Gameplay Pillar (Phase 5) - a completed Practice
+    // a completed Practice
     // Facility stacks onto the Sports Science department below.
     prisma.capitalProject.findMany({
       where: { leagueId, leagueTeamId: { in: teamIds }, status: "COMPLETE" },
       select: { leagueTeamId: true, kind: true },
     }),
-    // Fans Page Redesign (Phase 3).
+    // Fans Page Redesign.
     prisma.fanCulture.findMany({
       where: { leagueTeamId: { in: teamIds } },
       select: { leagueTeamId: true, patience: true, loyalty: true },
@@ -212,7 +212,7 @@ export async function applyLeagueEvents(
     list.push(p.kind);
     completedProjectKindsByTeam.set(p.leagueTeamId, list);
   }
-  // Finances as a Gameplay Pillar (Phase 4/5) - the Sports Science
+  // the Sports Science
   // department is a second injury-frequency lever alongside Medical Staff
   // quality (STANDARD = neutral); a completed Practice Facility stacks a
   // permanent bonus on top. Was medicalInvestment/INVESTMENT_QUALITY_DELTA.
@@ -223,7 +223,7 @@ export async function applyLeagueEvents(
         sumCompletedProjectEffects(completedProjectKindsByTeam.get(t.id) ?? []).sportsScienceBonus,
     ]),
   );
-  // Fan Engagement Deepening (Phase 1) - accumulated per team across the
+  // accumulated per team across the
   // whole batch and flushed once at the end, the same pattern
   // winIncrements/streakByTeam already use, so this never becomes a
   // per-event query on a hot path. rollForTeamInjury's own candidate pool
@@ -236,7 +236,7 @@ export async function applyLeagueEvents(
   ]);
   const fanHappinessByTeam = new Map(batchTeams.map((t) => [t.id, t.fanHappiness]));
   const fanHappinessDeltaByTeam = new Map<string, number>();
-  // Fans Page Redesign (Phase 1) - collected alongside the aggregate so each
+  // collected alongside the aggregate so each
   // individual injury/recovery keeps its own attribution instead of being
   // lumped into one per-team total.
   const injurySentimentRows: SentimentRecord[] = [];
@@ -246,7 +246,7 @@ export async function applyLeagueEvents(
     ledger?: Omit<SentimentRecord, "leagueId" | "leagueTeamId" | "season" | "delta">,
   ) {
     if (rawDelta === 0) return;
-    // Fans Page Redesign (Phase 3) - scaled by this team's Fan Culture
+    // scaled by this team's Fan Culture
     // before it's accumulated or recorded.
     const delta = applyScaledFanHappinessDelta(
       fanHappinessByTeam.get(teamId) ?? 65,
@@ -392,7 +392,7 @@ export async function applyLeagueEvents(
     ),
   );
 
-  // Fan Engagement Deepening (Phase 1) - one flush for the whole batch's
+  // one flush for the whole batch's
   // accumulated injury/recovery deltas, reusing batchTeams' fanHappiness
   // already fetched above rather than a per-event query.
   if (fanHappinessDeltaByTeam.size > 0) {
@@ -405,7 +405,7 @@ export async function applyLeagueEvents(
           },
         }),
       ),
-      // Fans Page Redesign (Phase 1) - the per-event attributions behind the
+      // the per-event attributions behind the
       // aggregate deltas just applied.
       recordFanSentimentMany(injurySentimentRows),
     ]);
@@ -471,7 +471,7 @@ async function maybeExecuteCpuTrade(
     teamIds: string[];
   }[],
 ): Promise<void> {
-  // CPU Autonomous GM Intelligence (Phase 2) - identity needs every team's
+  // identity needs every team's
   // win/loss, not just the CPU subset, for a correct relative ranking
   // (consistent with every other computeCompetitivenessPercentiles caller).
   // Cheap alongside the roster query - a handful of rows, two columns.
@@ -728,7 +728,7 @@ async function maybeExecuteCpuTrade(
       data: { leagueTeamId: cpuResult.teamA.leagueTeamId },
     });
 
-    // Fan Engagement Deepening (Phase 1) - each side's own fans react to
+    // each side's own fans react to
     // their own perspective: the mutual-accept scores already computed to
     // decide this trade (see rollForCpuTrade), plus the star tier of what
     // each team gained vs. gave up.
@@ -752,7 +752,7 @@ async function maybeExecuteCpuTrade(
       acquiredStarTier: getPlayerValueTier(cpuResult.teamA.player.rating),
       sentStarTier: getPlayerValueTier(cpuResult.teamB.player.rating),
     });
-    // Fans Page Redesign (Phase 3).
+    // Fans Page Redesign.
     let teamADelta = rawTeamADelta;
     let teamBDelta = rawTeamBDelta;
     if (teamAFans) {
@@ -779,7 +779,7 @@ async function maybeExecuteCpuTrade(
         data: { fanHappiness: scaled.newFanHappiness },
       });
     }
-    // Fans Page Redesign (Phase 1) - a CPU trade involving the user's team
+    // a CPU trade involving the user's team
     // still moves their fanbase, so it belongs in the ledger the same way a
     // user-initiated one does.
     await recordFanSentimentManyTx(tx, [
@@ -907,7 +907,7 @@ async function maybeExecuteCpuSigning(
       },
     });
 
-    // Fan Engagement Deepening (Phase 1).
+    // Fan Engagement Deepening.
     const teamFans = await tx.leagueTeam.findUnique({
       where: { id: team.id },
       select: { fanHappiness: true, fanCulture: { select: { patience: true, loyalty: true } } },
@@ -918,7 +918,7 @@ async function maybeExecuteCpuSigning(
         signedStarTier: getPlayerValueTier(freeAgent.overallRating),
         isReSigning,
       });
-      // Fans Page Redesign (Phase 3).
+      // Fans Page Redesign.
       const { newFanHappiness, scaledDelta: delta } = applyScaledFanHappinessDelta(
         teamFans.fanHappiness,
         rawDelta,
@@ -928,7 +928,7 @@ async function maybeExecuteCpuSigning(
         where: { id: team.id },
         data: { fanHappiness: newFanHappiness },
       });
-      // Fans Page Redesign (Phase 1).
+      // Fans Page Redesign.
       await recordFanSentimentManyTx(tx, [
         {
           leagueId,
@@ -1194,7 +1194,7 @@ export async function applyPlayerMoraleEvents(
   }
 }
 
-// Finances as a Gameplay Pillar (Phase 1), System 7 "Business Events" - the
+// Finances as a Gameplay Pillar, System 7 "Business Events" - the
 // per-game chance of a new business decision landing in the user's Front
 // Office Inbox. Tuned toward the design target of ~6-10 decisions across an
 // 82-game season (see docs/FINANCES_PILLAR_DESIGN.md), same "chance per game
@@ -1202,7 +1202,7 @@ export async function applyPlayerMoraleEvents(
 // above - an approximation of "per user game," not an exact one, consistent
 // with how those existing rolls already work.
 const BUSINESS_EVENT_CHANCE_PER_GAME = 0.012;
-// Finances as a Gameplay Pillar (Phase 2) - "preseason-ish" window
+// "preseason-ish" window
 // sponsorship offers cluster in (see BusinessDecisionContext.
 // isEarlySeasonWindow). This simulator goes straight to the regular season
 // at bootstrap (no separate preseason phase), so the first month of games
@@ -1230,7 +1230,7 @@ export function applyBusinessDecisionOption(
   ownerConfidence: number;
   scaledFanHappinessDelta: number;
 } {
-  // Fans Page Redesign (Phase 3) - scaled by this team's Fan Culture before
+  // scaled by this team's Fan Culture before
   // it's applied; callers use scaledFanHappinessDelta (not
   // option.fanHappinessDelta) for the sentiment ledger row, so it always
   // explains the real number fanHappiness moved by.
@@ -1248,7 +1248,7 @@ export function applyBusinessDecisionOption(
 }
 
 /**
- * Finances as a Gameplay Pillar (Phase 1), System 7 "Business Events" - the
+ * Finances as a Gameplay Pillar, System 7 "Business Events" - the
  * Front Office Inbox's live feed. Business decisions are a user-facing
  * mechanic only (never rolled for CPU teams - see
  * docs/FINANCES_PILLAR_DESIGN.md's Tier 2 CPU abstraction), so this always
@@ -1335,7 +1335,7 @@ export async function applyBusinessDecisionEvents(
           description: `${decision.headline}: with no response, the front office defaulted to "${defaultOption.label}."`,
           importance: decision.severity,
         });
-        // Fans Page Redesign (Phase 1) - letting a decision expire is itself
+        // letting a decision expire is itself
         // a choice the fanbase reacts to, so it's recorded the same way an
         // actively-resolved one is.
         businessSentimentRows.push({
@@ -1411,7 +1411,7 @@ export async function applyBusinessDecisionEvents(
             cashReserveCents: true,
             fanHappiness: true,
             ticketPricingPosture: true,
-            // Finances as a Gameplay Pillar (Phase 4) - Marketing.
+            // Marketing.
             marketingLevel: true,
             // Business Decision catalog expansion (2026-08-06) - already
             // maintained incrementally alongside wins/losses, no derivation
@@ -1427,7 +1427,7 @@ export async function applyBusinessDecisionEvents(
           orderBy: { overallRating: "desc" },
           select: { id: true, overallRating: true, player: { select: { fullName: true } } },
         }),
-        // Finances as a Gameplay Pillar (Phase 5) - a completed International
+        // a completed International
         // Academy stacks a sponsorship-multiplier bonus onto Marketing's own.
         prisma.capitalProject.findMany({
           where: { leagueId, leagueTeamId: userControlledTeamId, status: "COMPLETE" },
@@ -1500,11 +1500,11 @@ export async function applyBusinessDecisionEvents(
             ? { leaguePlayerId: bestPlayer.id, fullName: bestPlayer.player.fullName }
             : null,
         ticketPricingPosture: team.ticketPricingPosture,
-        // Finances as a Gameplay Pillar (Phase 2) - "preseason-ish" proxy:
+        // "preseason-ish" proxy:
         // this simulator has no separate preseason phase, so sponsorship
         // offers cluster in the first month of games instead.
         isEarlySeasonWindow: lastDayIndex <= EARLY_SEASON_WINDOW_DAYS,
-        // Finances as a Gameplay Pillar (Phase 4/5) - Marketing, plus a
+        // Marketing, plus a
         // completed International Academy's stacked bonus.
         marketingMultiplier:
           computeMarketingSponsorshipMultiplier(team.marketingLevel) +

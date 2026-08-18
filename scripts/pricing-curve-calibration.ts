@@ -47,15 +47,17 @@ import {
   REAL_CAP_2025_26_CENTS,
   REAL_SALARY_BANDS,
 } from "../src/lib/valuation/realPayrollShape";
-import { selectTopPerTeam, DEFAULT_MAX_ROSTER_SIZE } from "../src/lib/data-sources/rosterConstruction";
+import {
+  selectTopPerTeam,
+  DEFAULT_MAX_ROSTER_SIZE,
+} from "../src/lib/data-sources/rosterConstruction";
 
 const SEASON = 2026;
 const cap = Number(getSeasonCapRules(SEASON).salaryCapCents);
 const usd = (c: number) => `$${(c / 1e8).toFixed(1)}M`;
 
 /** Real mean team payroll as a share of the cap that season: 170.0 / 154.647. */
-const TARGET_PAYROLL_RATIO =
-  REAL_TEAM_PAYROLL_SHAPE.meanCents / REAL_CAP_2025_26_CENTS;
+const TARGET_PAYROLL_RATIO = REAL_TEAM_PAYROLL_SHAPE.meanCents / REAL_CAP_2025_26_CENTS;
 
 const MAX_CAP_FRACTION = 0.35;
 
@@ -63,31 +65,49 @@ const MAX_CAP_FRACTION = 0.35;
 const TARGET_MAX_SHARE = 26 / 450;
 
 interface StatLine {
-  gamesPlayed: number; minutesPerGame: number; pointsPerGame: number;
-  reboundsPerGame: number; assistsPerGame: number; stealsPerGame: number;
-  blocksPerGame: number; turnoversPerGame: number; trueShootingPct: number | null;
+  gamesPlayed: number;
+  minutesPerGame: number;
+  pointsPerGame: number;
+  reboundsPerGame: number;
+  assistsPerGame: number;
+  stealsPerGame: number;
+  blocksPerGame: number;
+  turnoversPerGame: number;
+  trueShootingPct: number | null;
 }
 interface Row {
-  fullName: string; teamAbbreviation: string | null; position: string;
-  seedOverallRating: number | null; birthDate?: string | null; draftYear?: number | null;
+  fullName: string;
+  teamAbbreviation: string | null;
+  position: string;
+  seedOverallRating: number | null;
+  birthDate?: string | null;
+  draftYear?: number | null;
   stats?: StatLine | StatLine[] | null;
 }
 const ds = JSON.parse(
   fs.readFileSync(path.join(__dirname, "..", "prisma", "data", "nbaDataset.json"), "utf8"),
 ) as { players: Row[] };
 const { rostered } = selectTopPerTeam<Row>(
-  ds.players, (p) => p.teamAbbreviation, (p) => p.seedOverallRating ?? 0, DEFAULT_MAX_ROSTER_SIZE,
+  ds.players,
+  (p) => p.teamAbbreviation,
+  (p) => p.seedOverallRating ?? 0,
+  DEFAULT_MAX_ROSTER_SIZE,
 );
 
 /** Everything about a player that pricing needs, resolved once. */
 const players = ds.players
   .filter((p) => rostered.has(p) && p.seedOverallRating != null && p.teamAbbreviation)
   .map((p) => {
-    const src = { birthDate: p.birthDate ? new Date(p.birthDate) : null, draftYear: p.draftYear ?? null };
+    const src = {
+      birthDate: p.birthDate ? new Date(p.birthDate) : null,
+      draftYear: p.draftYear ?? null,
+    };
     return {
       team: p.teamAbbreviation!,
       quality: contractQualityScore({
-        overallRating: p.seedOverallRating!, performanceScore: null, gamesPlayed: 0,
+        overallRating: p.seedOverallRating!,
+        performanceScore: null,
+        gamesPlayed: 0,
       }),
       age: resolvePlayerAge(src, SEASON),
       exp: resolvePlayerExperience(src, SEASON),
@@ -99,7 +119,10 @@ const players = ds.players
 function priceWith(midpoint: number, steepness: number, p: (typeof players)[number]): number {
   const fraction = MAX_CAP_FRACTION / (1 + Math.exp(-steepness * (p.quality - midpoint)));
   const value =
-    cap * fraction * ageValueMultiplier(p.age) * rookieScaleDiscount(p.exp) *
+    cap *
+    fraction *
+    ageValueMultiplier(p.age) *
+    rookieScaleDiscount(p.exp) *
     positionalMarketFactor(p.position);
   const floored = Math.max(value, Number(veteranMinimumCents(SEASON, p.exp)));
   return Math.min(floored, cap * maxSalaryFractionFor({ age: p.age, yearsOfExperience: p.exp }));
@@ -107,8 +130,11 @@ function priceWith(midpoint: number, steepness: number, p: (typeof players)[numb
 
 /** A reference player at a given rating, for the separation constraint. */
 const reference = (ovr: number) => ({
-  team: "-", quality: contractQualityScore({ overallRating: ovr, performanceScore: null, gamesPlayed: 0 }),
-  age: 28, exp: 8, position: "SF",
+  team: "-",
+  quality: contractQualityScore({ overallRating: ovr, performanceScore: null, gamesPlayed: 0 }),
+  age: 28,
+  exp: 8,
+  position: "SF",
 });
 
 function evaluate(midpoint: number, steepness: number) {
@@ -151,42 +177,64 @@ function evaluate(midpoint: number, steepness: number) {
   // tier can reach it, so hitting 14 would need the Designated Veteran
   // (supermax) rule this model does not have. Fitting to an unreachable target
   // would drag every other number with it.
-  const bandErr = [1, 2].reduce(
-    (sum, i) => sum + ((bandCounts[i] - REAL_SALARY_BANDS[i].players) / REAL_SALARY_BANDS[i].players) ** 2, 0,
-  ) / 2;
+  const bandErr =
+    [1, 2].reduce(
+      (sum, i) =>
+        sum + ((bandCounts[i] - REAL_SALARY_BANDS[i].players) / REAL_SALARY_BANDS[i].players) ** 2,
+      0,
+    ) / 2;
   const maxShareErr = ((maxShare - TARGET_MAX_SHARE) / TARGET_MAX_SHARE) ** 2;
 
-  return { payrollRatio, underCap, bandCounts, atMax, maxShare, lowestMaxed, top, err: payrollErr + bandErr + maxShareErr };
+  return {
+    payrollRatio,
+    underCap,
+    bandCounts,
+    atMax,
+    maxShare,
+    lowestMaxed,
+    top,
+    err: payrollErr + bandErr + maxShareErr,
+  };
 }
 
 console.log("=".repeat(104));
 console.log("PRICING CURVE CALIBRATION");
 console.log("=".repeat(104));
-console.log(`  targets: mean payroll ${(TARGET_PAYROLL_RATIO * 100).toFixed(0)}% of cap; bands ${REAL_SALARY_BANDS.map((b) => `${b.players}@${b.dollars}`).join(", ")}`);
+console.log(
+  `  targets: mean payroll ${(TARGET_PAYROLL_RATIO * 100).toFixed(0)}% of cap; bands ${REAL_SALARY_BANDS.map((b) => `${b.players}@${b.dollars}`).join(", ")}`,
+);
 console.log(`  hard constraint: price(98) > price(93) > price(88)\n`);
 console.log(
   `${"MID".padStart(6)}${"STEEP".padStart(8)}${"PAYROLL%".padStart(10)}${"UNDER CAP".padStart(11)}` +
-  `${"$50M+".padStart(8)}${"$40M+".padStart(8)}${"$30M+".padStart(8)}${"AT MAX".padStart(9)}${"LOWEST MAXED".padStart(14)}${"ERR".padStart(9)}`,
+    `${"$50M+".padStart(8)}${"$40M+".padStart(8)}${"$30M+".padStart(8)}${"AT MAX".padStart(9)}${"LOWEST MAXED".padStart(14)}${"ERR".padStart(9)}`,
 );
 
 let best = { midpoint: 0, steepness: 0, err: Infinity };
 for (let midpoint = 80; midpoint <= 100.01; midpoint += 2) {
   for (const steepness of [0.13, 0.17, 0.21]) {
     const r = evaluate(midpoint, steepness);
-      if (r.err < best.err) best = { midpoint, steepness, err: r.err };
+    if (r.err < best.err) best = { midpoint, steepness, err: r.err };
     console.log(
       `${midpoint.toFixed(0).padStart(6)}${steepness.toFixed(2).padStart(8)}` +
-      `${(r.payrollRatio * 100).toFixed(0).padStart(9)}%${String(r.underCap).padStart(11)}` +
-      `${String(r.bandCounts[0]).padStart(8)}${String(r.bandCounts[1]).padStart(8)}${String(r.bandCounts[2]).padStart(8)}` +
-      `${(String(r.atMax) + ` (${(r.maxShare * 100).toFixed(1)}%)`).padStart(9)}${String(r.lowestMaxed).padStart(14)}${r.err.toFixed(3).padStart(9)}`,
+        `${(r.payrollRatio * 100).toFixed(0).padStart(9)}%${String(r.underCap).padStart(11)}` +
+        `${String(r.bandCounts[0]).padStart(8)}${String(r.bandCounts[1]).padStart(8)}${String(r.bandCounts[2]).padStart(8)}` +
+        `${(String(r.atMax) + ` (${(r.maxShare * 100).toFixed(1)}%)`).padStart(9)}${String(r.lowestMaxed).padStart(14)}${r.err.toFixed(3).padStart(9)}`,
     );
   }
 }
 
-console.log(`\n  BEST FIT (separation-constrained): MIDPOINT = ${best.midpoint}, STEEPNESS = ${best.steepness}`);
+console.log(
+  `\n  BEST FIT (separation-constrained): MIDPOINT = ${best.midpoint}, STEEPNESS = ${best.steepness}`,
+);
 const f = evaluate(best.midpoint, best.steepness);
-console.log(`    mean payroll ${(f.payrollRatio * 100).toFixed(0)}% of cap (target ${(TARGET_PAYROLL_RATIO * 100).toFixed(0)}%), ${f.underCap} of 30 under it`);
-console.log(`    bands ${f.bandCounts.join(" / ")} against real ${REAL_SALARY_BANDS.map((b) => b.players).join(" / ")}`);
-console.log(`    ${f.atMax} of ${players.length} at their maximum (${(f.maxShare * 100).toFixed(1)}%, real ~${(TARGET_MAX_SHARE * 100).toFixed(1)}%)`);
+console.log(
+  `    mean payroll ${(f.payrollRatio * 100).toFixed(0)}% of cap (target ${(TARGET_PAYROLL_RATIO * 100).toFixed(0)}%), ${f.underCap} of 30 under it`,
+);
+console.log(
+  `    bands ${f.bandCounts.join(" / ")} against real ${REAL_SALARY_BANDS.map((b) => b.players).join(" / ")}`,
+);
+console.log(
+  `    ${f.atMax} of ${players.length} at their maximum (${(f.maxShare * 100).toFixed(1)}%, real ~${(TARGET_MAX_SHARE * 100).toFixed(1)}%)`,
+);
 console.log(`    lowest-rated player still reaching his max: ${f.lowestMaxed} OVR`);
 console.log(`    88 / 93 / 98 OVR: ${f.top.map((t) => usd(t)).join("  ")}`);

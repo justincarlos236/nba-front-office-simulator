@@ -59,7 +59,7 @@ async function loadRemainingBudget(
 }
 
 /**
- * Scouting Pillar Redesign (Phase 2) - manual mode's one action: spend one
+ * manual mode's one action: spend one
  * assignment on one prospect, raising his Scouting Depth by 1. Re-validates
  * both real constraints server-side (never trusts the client's own
  * remaining-budget display) - the same "never invent a signal, never trust
@@ -299,7 +299,7 @@ export async function runSweepAction(
 }
 
 /**
- * Private Workout (Scouting Pillar Redesign, Phase 4) - spends
+ * spends
  * PRIVATE_WORKOUT_COST assignments to resolve one hidden-trait axis
  * (work ethic or injury outlook) outright for a prospect already at
  * PRIVATE_WORKOUT_MIN_DEPTH. Stores the resolution on

@@ -9,10 +9,7 @@ import {
   POTENTIAL_AT_PICK_1,
   POTENTIAL_AT_PICK_60,
 } from "../draft/generateDraftClass";
-import {
-  lotterySlotDistributionForSeed,
-  LOTTERY_SEED_COUNT,
-} from "../draft/draftLottery";
+import { lotterySlotDistributionForSeed, LOTTERY_SEED_COUNT } from "../draft/draftLottery";
 import { UPSIDE_WEIGHT } from "./playerTradeValue";
 
 export interface DraftPickTradeValueInput {
@@ -91,7 +88,7 @@ function projectedPickNumber(round: 1 | 2, competitivenessPercentile: number): n
  * `computePlayerTradeValue` uses, so picks and players can be summed and
  * compared directly in a trade. Team-direction weighting (rebuilders
  * valuing picks more than contenders do) happens one layer up in
- * `evaluateTradeOffer` (Phase 11c) - this is an objective baseline value.
+ * `evaluateTradeOffer` - this is an objective baseline value.
  */
 export function computeDraftPickTradeValue(input: DraftPickTradeValueInput): bigint {
   // A first-rounder belonging to a lottery team has no single slot to price -
@@ -139,9 +136,7 @@ function valueForSlot(pickNumber: number, input: DraftPickTradeValueInput): bigi
   // `tradeValueCurve.ts` and docs/TRADE_AUDIT.md, T-P0-1.
   const score = talentScore(expectedOverall, expectedPotential, UPSIDE_WEIGHT);
   let valueCents = BigInt(
-    Math.round(
-      tradeValueCents(score, input.pickSeason) * ageValueMultiplier(ASSUMED_ROOKIE_AGE),
-    ),
+    Math.round(tradeValueCents(score, input.pickSeason) * ageValueMultiplier(ASSUMED_ROOKIE_AGE)),
   );
 
   if (input.round === 2) {

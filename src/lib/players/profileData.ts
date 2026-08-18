@@ -43,7 +43,7 @@ export interface PlayerProfileData {
     draftYear: number | null;
     draftRound: number | null;
     draftPick: number | null;
-    /** Scouting Pillar Redesign (Phase 4) - how this player entered the draft. Null for real imported historical players, which have no pathway on file. */
+    /** Scouting Pillar Redesign - how this player entered the draft. Null for real imported historical players, which have no pathway on file. */
     pathway: ProspectPathway | null;
     age: number;
     experience: number;

@@ -2,7 +2,7 @@ import type { OwnerArchetype } from "@/generated/prisma/client";
 import type { FinancialStanding } from "@/lib/finances/ownershipFinance";
 
 /**
- * Finances as a Gameplay Pillar (Phase 3) - "Ownership as a Character."
+ * "Ownership as a Character."
  * Converts owner confidence from a hidden scoreboard into a relationship
  * with a character who has known, learnable preferences. One archetype per
  * league (the user's own owner - CPU teams have no modeled ownership

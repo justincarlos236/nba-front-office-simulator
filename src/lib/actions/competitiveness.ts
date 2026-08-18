@@ -10,7 +10,7 @@ const MIN_GAMES_FOR_WIN_PCT_SIGNAL = 20;
  * once enough games are played this season, team strength before that -
  * see `computeLeagueTeamStrengths`) and returns each team's percentile
  * (0 = league's worst, 1 = league's best). Shared by the team dashboard's
- * "Team identity" card and the trade-AI evaluation engine (Phase 11c),
+ * "Team identity" card and the trade-AI evaluation engine,
  * both of which need the same "how good is this team right now" signal.
  */
 export async function computeCompetitivenessPercentiles(

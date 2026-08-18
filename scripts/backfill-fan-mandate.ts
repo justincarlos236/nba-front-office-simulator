@@ -1,5 +1,5 @@
 /**
- * One-time backfill for the Fans Page Redesign (Phase 4): every LeagueTeam
+ * One-time backfill for the Fans Page Redesign: every LeagueTeam
  * created before FanMandate shipped has no row at all, so "What the City
  * Wants" would render blank for every existing save until its next season
  * boundary.

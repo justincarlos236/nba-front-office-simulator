@@ -156,9 +156,7 @@ describe("LeagueSubNav", () => {
     it("treats a nested page as still inside its section", () => {
       route.pathname = `/leagues/${LEAGUE_ID}/playoffs/live/series-9`;
       renderNav();
-      expect(screen.getByRole("link", { name: /playoffs/i }).className).toContain(
-        "bg-team-accent",
-      );
+      expect(screen.getByRole("link", { name: /playoffs/i }).className).toContain("bg-team-accent");
       route.pathname = `/leagues/${LEAGUE_ID}`;
     });
 
@@ -184,9 +182,7 @@ describe("LeagueSubNav", () => {
     it("drops the count once the user is already in that section", () => {
       route.pathname = `/leagues/${LEAGUE_ID}/rotation`;
       renderNav(REGULAR_SEASON, { rotation: 3 });
-      expect(
-        within(screen.getByRole("link", { name: /roster/i })).queryByText("3"),
-      ).toBeNull();
+      expect(within(screen.getByRole("link", { name: /roster/i })).queryByText("3")).toBeNull();
       route.pathname = `/leagues/${LEAGUE_ID}`;
     });
   });

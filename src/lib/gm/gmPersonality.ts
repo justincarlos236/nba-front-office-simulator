@@ -1,5 +1,5 @@
 /**
- * A persistent per-team front-office philosophy (Phase 11c), assigned once
+ * A persistent per-team front-office philosophy, assigned once
  * at league bootstrap and stable for the life of a save - real GMs don't
  * flip their approach year to year. Makes two teams react differently to
  * an *identical* proposed trade.

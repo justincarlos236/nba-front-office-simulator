@@ -210,8 +210,7 @@ export function effectiveCeiling(
     missRate > 0 && t < missRate
       ? MISSED_REPORT_REALIZATION +
         (t / missRate) * (Math.min(MISSED_REPORT_CEILING, floor) - MISSED_REPORT_REALIZATION)
-      : floor +
-        ((t - missRate) / Math.max(1e-9, 1 - missRate)) * (MAX_CEILING_REALIZATION - floor);
+      : floor + ((t - missRate) / Math.max(1e-9, 1 - missRate)) * (MAX_CEILING_REALIZATION - floor);
 
   // Anchored to the rating floor, not to what the player is rated today.
   // Measuring the shortfall from his *current* rating makes the ceiling chase
@@ -259,7 +258,7 @@ const ELITE_DECLINE_DAMPING = 0.55;
 const ELITE_DAMPING_FLOOR_RATING = 75; // below this, no damping at all
 const ELITE_DAMPING_FULL_RATING = 99;
 
-// Player Development Coach effect (Phase 15a) - a real, modest nudge, not
+// a real, modest nudge, not
 // a second growth-curve. 72 (this codebase's standard "average/neutral"
 // anchor) means no effect at all - an unhired slot behaves exactly as this
 // function always did.
@@ -282,7 +281,7 @@ const MORALE_ANCHOR = 70;
 const MORALE_BONUS_PER_POINT = 0.03;
 const MORALE_BONUS_CAP = 1.5;
 
-// Finances as a Gameplay Pillar (Phase 4) - the Player Development
+// the Player Development
 // department (was "facilities investment"). A fourth modest, neutral-
 // anchored nudge. The input is departmentQualityDelta (src/lib/finances/
 // departments.ts), 0 at STANDARD (no effect), positive for HIGH/MAXIMUM,

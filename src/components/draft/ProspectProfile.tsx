@@ -22,12 +22,12 @@ export function ProspectProfile({
   classSize,
 }: {
   prospect: DraftProspectInfo;
-  /** Scouting Pillar Redesign (Phase 3) - this prospect's rank on the public Big Board, 1-indexed. Null if the board hasn't been computed by the caller (e.g. the compare view, which doesn't show it). */
+  /** Scouting Pillar Redesign - this prospect's rank on the public Big Board, 1-indexed. Null if the board hasn't been computed by the caller (e.g. the compare view, which doesn't show it). */
   bigBoardRank: number | null;
   classSize: number;
 }) {
   const profile = deriveScoutingProfile(prospect);
-  // Scouting Pillar Redesign (Phase 2) - reliability now comes from this
+  // reliability now comes from this
   // specific prospect's own Scouting Depth, not a flat department level.
   // Phase 4: resolvedHiddenTraits (from a Private Workout) and this class's
   // injuryRiskDelta (from its character) both feed the same report.

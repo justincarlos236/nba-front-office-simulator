@@ -37,7 +37,7 @@ export function computeCoachWinBonus(quality: number | null): number {
   );
 }
 
-// Finances as a Gameplay Pillar (Phase 4) - Coaching Support "amplifies
+// Coaching Support "amplifies
 // whatever staff you've already hired" rather than being a standalone
 // number: it nudges the *effective* quality fed into every coach-quality
 // consumer below, so a MAXIMUM-funded department turns a good Head Coach

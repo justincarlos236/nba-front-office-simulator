@@ -189,9 +189,7 @@ if (fitting.length === 0) {
   console.log(`  constants - do not ship a compromise that misses a target.`);
 } else {
   for (const f of [...fitting].sort((a, b) => a.s - b.s)) {
-    console.log(
-      `    exp ${f.exp.toFixed(2)}  miss ${f.miss.toFixed(2)}  score ${f.s.toFixed(2)}`,
-    );
+    console.log(`    exp ${f.exp.toFixed(2)}  miss ${f.miss.toFixed(2)}  score ${f.s.toFixed(2)}`);
   }
 }
 if (best) {

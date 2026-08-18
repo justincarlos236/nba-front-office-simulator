@@ -54,7 +54,7 @@ async function loadRoster(leagueTeamId: string, season: number) {
       },
       orderBy: { overallRating: "desc" },
     }),
-    // Finances as a Gameplay Pillar (Phase 2) - which of this team's
+    // which of this team's
     // players currently hold a "star clause" on an active sponsorship
     // deal, for the trade builder's non-blocking warning. Only ever
     // non-empty for the user's own team.
@@ -92,7 +92,7 @@ async function loadRoster(leagueTeamId: string, season: number) {
       hasSponsorshipClause: clausePlayerIds.has(lp.id),
     }));
 
-  // Team identity/needs (Phase 11b/11c) - active roster, not just the
+  // active roster, not just the
   // subset with a valid current-season contract the trade UI itself uses.
   const activeRoster = leaguePlayers.filter((lp) => lp.isActive);
   const avgAge =

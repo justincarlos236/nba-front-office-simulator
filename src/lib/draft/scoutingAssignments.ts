@@ -4,7 +4,7 @@ import type { ProspectPathway } from "@/lib/draft/prospectBio";
 import { createSeededRandom } from "@/lib/contracts/seededRandom";
 
 /**
- * Scouting Pillar Redesign (Phase 2) - the core loop. The player has a
+ * the core loop. The player has a
  * limited number of scouting assignments for the whole pre-draft window
  * (docs/SCOUTING_PILLAR_DESIGN.md Part 3.2), determined by their Scouting
  * department level. Each Focused Look spends one assignment to raise one
@@ -200,7 +200,7 @@ export interface ScoutableForRecommendation {
  * where to spend the *entire remaining* budget in one pass, weighted toward
  * team needs and the best available talent, so a casual player gets a
  * genuinely useful board in one click rather than a random spread. Deferred
- * from this: any dependency on the Big Board (Phase 3) - "Best Player
+ * from this: any dependency on the Big Board - "Best Player
  * Available" delegation strategy is out of scope until then, so this only
  * ever reasons from `overallRating` (already visible to everyone) and
  * `teamNeeds`.

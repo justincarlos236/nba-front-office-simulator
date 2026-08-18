@@ -45,9 +45,9 @@ describe("isSupermaxEligible", () => {
     });
 
     it("admits two Defensive Player of the Year awards in the window", () => {
-      expect(
-        eligible({ yearsOfExperience: 8, awards: [dpoy(SEASON - 2), dpoy(SEASON - 3)] }),
-      ).toBe(true);
+      expect(eligible({ yearsOfExperience: 8, awards: [dpoy(SEASON - 2), dpoy(SEASON - 3)] })).toBe(
+        true,
+      );
     });
 
     it("rejects a player with no awards at all", () => {
@@ -65,9 +65,9 @@ describe("isSupermaxEligible", () => {
     });
 
     it("counts only in-window Defensive Player awards toward the two-of-three test", () => {
-      expect(
-        eligible({ yearsOfExperience: 8, awards: [dpoy(SEASON - 3), dpoy(SEASON - 4)] }),
-      ).toBe(false);
+      expect(eligible({ yearsOfExperience: 8, awards: [dpoy(SEASON - 3), dpoy(SEASON - 4)] })).toBe(
+        false,
+      );
     });
   });
 

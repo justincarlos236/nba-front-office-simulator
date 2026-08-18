@@ -165,7 +165,7 @@ const DIRECTIVE_PAYROLL_REDUCTION_FRACTION = 0.85;
 // docs/ARCHITECTURE.md.
 const UPDATE_BATCH_SIZE = 50;
 
-// Staff Management (Phase 15a) - Head Coach reputation drift off plain team
+// Head Coach reputation drift off plain team
 // win% (universal across all 30 teams - SeasonExpectation is user-team-only,
 // so this can't reuse that system the way the user's own GM accountability
 // does). A CPU auto-backfill hire gets a flat, modest deal - CPU staff
@@ -178,7 +178,7 @@ async function requireOwnedLeague(leagueId: string) {
 
   const league = await prisma.league.findUnique({
     where: { id: leagueId },
-    // Fans Page Redesign (Phase 3) - fanCulture included here (as it stood
+    // fanCulture included here (as it stood
     // BEFORE this pass's own recomputeFanCultures call at the end) so this
     // season's sentiment deltas scale against last season's culture, not a
     // number this same pass is about to overwrite.
@@ -218,7 +218,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     throw new Error("Crown a champion in the playoffs before advancing to the next season.");
   }
 
-  // Future seasons' pick placeholders (Phase 11a) already exist for `season`
+  // Future seasons' pick placeholders already exist for `season`
   // by this point regardless of whether that season's draft has actually
   // started - `overallPickNumber` is the real "draft started" signal, not
   // row existence.
@@ -268,19 +268,19 @@ async function runAdvanceSeasonAction(leagueId: string) {
   });
   const teamById = new Map(league.teams.map((t) => [t.id, t]));
   // Built early (not just for the award-news section further down) so the
-  // CPU re-signing pass (Phase 1 of CPU Autonomous GM Intelligence) can look
+  // CPU re-signing pass can look
   // up a pending player's real position/potential/injury history by id
   // without a second query.
   const leaguePlayerById = new Map(leaguePlayers.map((lp) => [lp.id, lp]));
 
-  // Staff Management (Phase 15a) - every staff member (rostered and
+  // every staff member (rostered and
   // free-agent-pool alike) ages this same season boundary.
   const allStaff = await prisma.staff.findMany({
     where: { leagueId },
     include: { contract: true },
   });
 
-  // Finances as a Gameplay Pillar (Phase 5) - System 2/8's shared capital-
+  // System 2/8's shared capital-
   // project plumbing. A project committed this pass (or earlier) completes
   // once `completionSeason <= newSeason`; its permanent effects apply
   // starting the season that's about to begin, alongside every other
@@ -322,7 +322,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
       sumCompletedProjectEffects(completedKindsByTeam.get(lt.id) ?? []),
     ]),
   );
-  // Finances as a Gameplay Pillar (Phase 4) - Coaching Support amplifies
+  // Coaching Support amplifies
   // the Player Development Coach's own quality, same "amplifies staff you
   // already hired" identity as its Head Coach effect in simulation.ts.
   const coachingSupportByTeam = new Map(league.teams.map((lt) => [lt.id, lt.coachingSupportLevel]));
@@ -345,7 +345,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
       .filter((s) => s.role === "HEAD_COACH" && s.leagueTeamId)
       .map((s) => [s.leagueTeamId as string, s.quality]),
   );
-  // Finances as a Gameplay Pillar (Phase 4) - the Player Development
+  // the Player Development
   // department feeds player development, same modest neutral-anchored
   // shape as the dev-coach effect. Was facilitiesInvestment. Phase 5 -
   // a completed G-League Affiliate/Practice Facility stacks a permanent
@@ -358,7 +358,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     ]),
   );
 
-  // GM accountability (Phase 10d): the outgoing season's expectation and
+  // the outgoing season's expectation and
   // payroll must be captured now, before the contract-expiry cleanup below
   // deletes the very ContractYear rows a payroll snapshot for `season`
   // would depend on.
@@ -377,7 +377,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
 
   // Real per-game box-score aggregates for the season just completed -
   // what DPOY/Sixth Man are computed from below, now that they exist
-  // (Phase 14a/14b). One groupBy, not a query per player.
+  //. One groupBy, not a query per player.
   const boxScoreAggByPlayer = new Map(
     (
       await prisma.playerGameStat.groupBy({
@@ -437,7 +437,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     teamIds: string[];
     subjectLeaguePlayerId: string;
   }[] = [];
-  // CPU Autonomous GM Intelligence (Phase 1) - a CPU team's own expiring
+  // a CPU team's own expiring
   // player isn't pushed to playerUpdates immediately; it's decided in Pass 2
   // below (after this loop) once every team's "sure roster" is fully known.
   const pendingCpuReSignings: {
@@ -547,7 +547,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
       });
     }
 
-    // CPU Autonomous GM Intelligence (Phase 1) - the user's own expiring
+    // the user's own expiring
     // players are untouched (they re-sign manually via the free-agents
     // page, exactly as before); a CPU team's expiring player gets a real
     // retention decision in Pass 2 instead of unconditional release.
@@ -643,7 +643,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     });
   }
 
-  // --- CPU Autonomous GM Intelligence (Phase 1): CPU re-signing ---
+  // --- CPU Autonomous GM Intelligence: CPU re-signing ---
   // Runs after the loop above so every "sure roster" (everyone NOT still
   // pending a re-signing decision) is fully known - computeTeamIdentity and
   // computeTeamNeeds should see each team the way it will actually look next
@@ -897,7 +897,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     existing.leagueTeamId = signing.leagueTeamId;
   }
 
-  // --- Staff season progression (Phase 15a) ---
+  // --- Staff season progression ---
   // Uses its own seeded rng, independent of the player-development stream
   // above - adding staff rolls must never shift what an existing league's
   // players already deterministically develop into.
@@ -985,7 +985,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
   // before the owner-confidence nudge below, since it needs `verdict`) and
   // every CPU team (computed in the persistence loop further down) share
   // the same inputs without querying twice.
-  // Fan Engagement Deepening (Phase 1) - these categories now apply their
+  // these categories now apply their
   // own dedicated sentiment delta the moment they actually happen (trades,
   // signings, staff moves, rotation changes, win/loss streaks, injuries,
   // awards, All-Star), so they're excluded here to avoid double-counting;
@@ -1031,7 +1031,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
   // query on this path) lifts franchise value - a beloved homegrown legend
   // makes the whole franchise more valuable than an equal-rated newcomer.
   const iconPremiumByTeam = new Map<string, number>();
-  // Fans Page Redesign (Phase 3) - the same icon score, kept directly (not
+  // the same icon score, kept directly (not
   // just its derived value-premium fraction) as Fan Culture's "does this
   // team currently have a real icon" input.
   const iconScoreByTeam = new Map<string, number>();
@@ -1057,10 +1057,10 @@ async function runAdvanceSeasonAction(leagueId: string) {
   // computed inside the owner-accountability block); every other team is
   // computed fresh in the persistence loop near the end of this function.
   const fanHappinessByTeam = new Map<string, number>();
-  // Fan Engagement Deepening (Phase 1) - award-driven deltas, added on top
+  // award-driven deltas, added on top
   // of whichever base each team resolves to below (see fanHappinessUpdates).
   const awardFanHappinessDeltaByTeam = new Map<string, number>();
-  // Fans Page Redesign (Phase 1).
+  // Fans Page Redesign.
   const awardSentimentRows: SentimentRecord[] = [];
 
   function fallbackFanHappinessInputs(leagueTeamId: string): FanHappinessInputs {
@@ -1080,7 +1080,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
   // an identical result for a given team without threading a value through.
   const financeTaxLineCents = Number(getSeasonCapRules(season).luxuryTaxCents);
   const financeSalaryFloorCents = salaryFloorCents(getSeasonCapRules(season));
-  // Finances as a Gameplay Pillar (Phase 1) - this season's resolved
+  // this season's resolved
   // business-decision/business-event ledger, summed per team+category so it
   // folds into the P&L exactly like every other bucket (see
   // BusinessLedgerEntry). Rows are left in place afterward as permanent
@@ -1100,7 +1100,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
       otherExpenseByTeam.set(row.leagueTeamId, amount);
     }
   }
-  // Finances as a Gameplay Pillar (Phase 2) - this season's ACTIVE
+  // this season's ACTIVE
   // SponsorshipDeal income, per team. Only the user's team ever has real
   // signed deals; every other team falls back to the CPU formula baseline
   // below (Tier 2 abstraction - CPU teams never "shop" for an offer).
@@ -1177,7 +1177,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
   const dpoy = computeDefensivePlayerOfTheYear(defensiveSnapshots);
   const sixthMan = computeSixthManOfTheYear(benchSnapshots);
 
-  // Coach of the Year (Phase 15b) - eligibility uses each coach's original
+  // eligibility uses each coach's original
   // leagueTeamId from the allStaff fetch (not the staffUpdates value above),
   // so a coach whose contract expires this same offseason still gets credit
   // for the season they actually coached.
@@ -1230,7 +1230,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     }),
   ]);
 
-  // CPU Autonomous GM Intelligence (Phase 1) - a fresh Contract/ContractYear
+  // a fresh Contract/ContractYear
   // pair per CPU re-signing, mirroring the exact shape maybeExecuteCpuSigning
   // (src/lib/actions/leagueEvents.ts) already uses, with a Re-Signing-Rights
   // mechanism tag and a short 2-year term (a 1-year-only cycle would just
@@ -1375,7 +1375,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     });
   }
 
-  // --- Staff persistence (Phase 15a) ---
+  // --- Staff persistence ---
   // CPU auto-backfill: give every CPU vacancy the best available candidate
   // for that role from the pool computed below (which includes both the
   // pre-existing free-agent pool and anyone who just became unemployed this
@@ -1535,7 +1535,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     await prisma.leagueTransaction.createMany({ data: awardNewsRows });
   }
 
-  // Fan Engagement Deepening (Phase 1) - awards are only ever knowable
+  // awards are only ever knowable
   // right here (season end), so they get their own dedicated delta at this
   // natural determination point. Accumulated into awardFanHappinessDeltaByTeam
   // (declared earlier, alongside the other per-team maps) rather than
@@ -1547,7 +1547,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     const winner = leaguePlayerById.get(a.leaguePlayerId);
     if (!winner?.leagueTeamId) continue;
     const rawDelta = computeAwardSentimentDelta(a.category);
-    // Fans Page Redesign (Phase 3) - award deltas are always positive, so
+    // award deltas are always positive, so
     // only Loyalty's bidirectional dampening applies here (Patience only
     // scales negative deltas).
     const winnerTeam = teamById.get(winner.leagueTeamId);
@@ -1560,7 +1560,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
       winner.leagueTeamId,
       (awardFanHappinessDeltaByTeam.get(winner.leagueTeamId) ?? 0) + delta,
     );
-    // Fans Page Redesign (Phase 1) - one row per award, not just the
+    // one row per award, not just the
     // per-team aggregate, so the page can name whose trophy it was.
     awardSentimentRows.push({
       leagueId,
@@ -1573,7 +1573,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     });
   }
 
-  // Coach of the Year (Phase 15b) - separate StaffAward model/table, not a
+  // separate StaffAward model/table, not a
   // branch on SeasonAward (see coachOfTheYear.ts / docs/ARCHITECTURE.md for
   // why), so it gets its own createMany + news block parallel to the player
   // award ones above rather than reusing awardRows/awardNewsRows.
@@ -1658,7 +1658,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     })),
   });
 
-  // Keep the rolling future-pick window (Phase 11a) sliding forward: the
+  // Keep the rolling future-pick window sliding forward: the
   // window through `newSeason + FUTURE_PICK_WINDOW_YEARS` already exists
   // except for this one new far-edge season.
   // Skipped rather than rewritten if a previous attempt got this far.
@@ -1687,7 +1687,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
   // mandate carries forward untouched unless the owner block below issues,
   // resolves, or clears it.
   let financialMandateSeason: number | null = league.financialMandateSeason;
-  // Finances as a Gameplay Pillar (Phase 3) - whether the currently
+  // whether the currently
   // outstanding directive/mandate was a negotiated, higher-stakes one (see
   // OWNERSHIP_PAYROLL_NEGOTIATION/OWNERSHIP_FINANCIAL_NEGOTIATION) - read
   // at the resolution point below, then cleared either way.
@@ -1700,7 +1700,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
   let ownerArchetype = userLeagueTeamForArchetype?.ownerArchetype ?? "PATIENT_BUILDER";
   let ownerArchetypeSince = userLeagueTeamForArchetype?.ownerArchetypeSince ?? newSeason;
   const ownershipMessages: string[] = [];
-  // Finances as a Gameplay Pillar (Phase 3) - negotiation cards created this
+  // negotiation cards created this
   // pass (payroll directive / financial mandate), created alongside the
   // standard directive so the user can push back on it - see the
   // OWNERSHIP_PAYROLL_NEGOTIATION/OWNERSHIP_FINANCIAL_NEGOTIATION kinds.
@@ -1830,7 +1830,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
       baseConfidenceDelta < 0
         ? Math.round(baseConfidenceDelta * financialStandingPatienceFactor(financialStanding))
         : baseConfidenceDelta;
-    // Finances as a Gameplay Pillar (Phase 3) - "Ownership as a Character":
+    // "Ownership as a Character":
     // a second, archetype-level multiplier on top of the verdict/payroll/
     // fan-happiness/financial-standing swing already computed above - a
     // Meddler feels a bad season much more than an Absentee does.
@@ -1870,7 +1870,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     // once its deadline season arrives.
     if (league.payrollReductionTargetCents != null && league.payrollDirectiveSeason === season) {
       const complied = oldCapSheet.totalSalaryCents <= league.payrollReductionTargetCents;
-      // Finances as a Gameplay Pillar (Phase 3) - a staked directive
+      // a staked directive
       // (the user pushed back and bet on delivering it) swings harder both
       // ways than the standard +5/-15.
       const [metReward, missedPenalty] = payrollDirectiveStaked ? [12, -30] : [5, -15];
@@ -1886,7 +1886,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     // firing band. Cleared either way - a one-time check like the payroll one.
     if (financialMandateSeason === season) {
       const met = userNewCash >= 0 && userNetIncome >= 0;
-      // Finances as a Gameplay Pillar (Phase 3) - a staked mandate doubles
+      // a staked mandate doubles
       // both the reward and the penalty versus the standard terms.
       const [metReward, missedPenalty] = financialMandateStaked
         ? [FINANCIAL_MANDATE_MET_REWARD * 2, FINANCIAL_MANDATE_IGNORED_PENALTY * 2]
@@ -1919,7 +1919,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     const newPayrollTier = computePayrollTier(newCapSheet.apronLevel);
     const newTeamStrength = computeTeamStrength(newSeasonRoster.map((u) => u.overallRating));
     const baseExpectationLevel = computeExpectationLevel(newPayrollTier, newTeamStrength);
-    // Finances as a Gameplay Pillar (Phase 3) - the same roster reads as a
+    // the same roster reads as a
     // higher or lower bar depending on who owns the team.
     const baseExpectationIndex = EXPECTATION_LEVEL_ORDER.indexOf(baseExpectationLevel);
     const shiftedIndex = Math.max(
@@ -1948,7 +1948,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     // contender together. Cap rules are unchanged - only the owner's reaction.
     const stillHeavySpend = newPayrollTier === "SIGNIFICANT" || newPayrollTier === "EXTREME";
     if (
-      // Finances as a Gameplay Pillar (Phase 3) - archetype-adjusted
+      // archetype-adjusted
       // effective threshold (a Penny-Pincher's is higher, easier to fall
       // under; an Absentee's is much lower, rarely triggers).
       ownerConfidence <
@@ -1963,7 +1963,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
       ownershipMessages.push(
         describePayrollDirective(payrollReductionTargetCents, payrollDirectiveSeason),
       );
-      // Finances as a Gameplay Pillar (Phase 3) - the companion negotiation
+      // the companion negotiation
       // card: accept the standard terms above, or push back and stake a
       // bigger swing on delivering more.
       negotiationDecisions.push(
@@ -1992,7 +1992,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
       );
     }
 
-    // Finances as a Gameplay Pillar (Phase 3) - the highest-value
+    // the highest-value
     // replayability mechanic in the design brief: occasionally the
     // franchise sells, and the new owner brings their own personality.
     // Not something the user opts into or out of - it happens TO them,
@@ -2015,7 +2015,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
   // (computed above, alongside the owner-confidence nudge); every other
   // team falls back to the win%-based path, same split already
   // established for Head Coach reputation drift.
-  // Fans Page Redesign (Phase 1) - the season-result and ticket-posture
+  // the season-result and ticket-posture
   // deltas below were previously folded straight into one number with no
   // record of either cause; captured here so the ledger can name them
   // separately from the award deltas already collected above.
@@ -2024,7 +2024,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     const rawSeasonResultDelta = fanHappinessByTeam.has(lt.id)
       ? fanHappinessByTeam.get(lt.id)! - lt.fanHappiness
       : computeFanHappinessDelta(fallbackFanHappinessInputs(lt.id));
-    // Fans Page Redesign (Phase 3).
+    // Fans Page Redesign.
     const seasonResultDelta = applyScaledFanHappinessDelta(
       lt.fanHappiness,
       rawSeasonResultDelta,
@@ -2044,7 +2044,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
             : "The season fell short of what fans expected.",
       });
     }
-    // Fan Engagement Deepening (Phase 1) - award deltas layer on top of
+    // award deltas layer on top of
     // whichever base this team resolved to above, applied here (not
     // written immediately when the award was determined) so this is the
     // one place fanHappiness is actually persisted for the season boundary,
@@ -2054,7 +2054,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     // each season, fan-friendly pricing wins a little goodwill. Small and
     // bounded (STANDARD is 0), applied to every team since CPU teams price
     // too. The revenue half of the tradeoff is already applied in the P&L pass.
-    // Fans Page Redesign (Phase 3) - scaled against the post-season-result
+    // scaled against the post-season-result
     // baseline, since it's applied on top of that base below.
     const ticketPostureDelta = applyScaledFanHappinessDelta(
       baseFanHappiness,
@@ -2079,7 +2079,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
       (awardFanHappinessDeltaByTeam.get(lt.id) ?? 0) + ticketPostureDelta,
     );
     const starPowerTier = starPowerTierByTeam.get(lt.id) ?? null;
-    // Finances as a Gameplay Pillar (Phase 4) - matches computeTeamSeasonFinances'
+    // matches computeTeamSeasonFinances'
     // own attendance-floor/Marketing-boost treatment exactly, so this
     // persisted snapshot (the trend-chart numbers) never disagrees with
     // what actually drove that season's P&L.
@@ -2107,7 +2107,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
         data: { fanHappiness: u.fanHappiness },
       }),
     ),
-    // Fans Page Redesign (Phase 1) - the season-result, ticket-posture, and
+    // the season-result, ticket-posture, and
     // award attributions collected above, committed alongside the season
     // boundary they belong to.
     recordFanSentimentMany([...seasonResultSentimentRows, ...awardSentimentRows]),
@@ -2124,7 +2124,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     skipDuplicates: true,
   });
 
-  // Fans Page Redesign (Phase 3) - Fan Culture, recomputed wholesale for
+  // Fan Culture, recomputed wholesale for
   // every team right after this season's snapshot lands, so the window it
   // recomputes from already includes the season that just finished.
   const teamCultureContexts = league.teams.map((lt) => ({
@@ -2137,7 +2137,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
   const { traitsByTeam: cultureTraitsByTeam, inputsByTeam: cultureInputsByTeam } =
     await recomputeFanCultures(leagueId, season, teamCultureContexts);
 
-  // Fans Page Redesign (Phase 4) - What the City Wants, computed right after
+  // What the City Wants, computed right after
   // Fan Culture since the mandate depends on this same pass's Patience/
   // Expectation Ceiling. Reuses the culture history inputs already fetched
   // above and franchisePopularity already computed in fanHappinessUpdates,
@@ -2156,7 +2156,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     cultureInputsByTeam,
   );
 
-  // Fans Page Redesign (Phase 5) - trajectory narratives (Rebuild Progress
+  // trajectory narratives (Rebuild Progress
   // Watch, Championship Window Watch), opened/updated/closed only here at
   // the season boundary since both depend on the mandate just recomputed
   // above. Event-driven narratives (icon-departure fallout) already opened
@@ -2256,7 +2256,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     });
   }
 
-  // Finances as a Gameplay Pillar (Phase 3) - the negotiation cards land in
+  // the negotiation cards land in
   // the same Front Office Inbox every other BusinessDecision uses, dated to
   // the very start of the new season.
   if (userLeagueTeamId && negotiationDecisions.length > 0) {

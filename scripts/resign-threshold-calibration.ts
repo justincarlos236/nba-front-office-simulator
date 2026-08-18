@@ -182,7 +182,9 @@ for (const t of [0.35, 0.5, 1, 1.5, 2, 2.5, 3, 4, best.threshold]) {
   const oldRetained = olds.filter((c) => c.score >= t * c.thresholdMultiplier).length;
   console.log(
     `${t.toFixed(3).padStart(11)}${(retentionAt(t) * 100).toFixed(1).padStart(11)}%${
-      olds.length ? `${((oldRetained / olds.length) * 100).toFixed(1)}%`.padStart(14) : "n/a".padStart(14)
+      olds.length
+        ? `${((oldRetained / olds.length) * 100).toFixed(1)}%`.padStart(14)
+        : "n/a".padStart(14)
     }`,
   );
 }

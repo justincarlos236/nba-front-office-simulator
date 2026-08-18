@@ -150,7 +150,7 @@ function gaussian(rng: () => number): number {
 export function computeHomeWinProbability(
   homeStrength: number,
   awayStrength: number,
-  // Head Coach effect (Phase 15a) - a small additive nudge alongside
+  // a small additive nudge alongside
   // HOME_COURT_ADVANTAGE, deliberately kept out of the strength numbers
   // themselves since those are reused elsewhere as a pure-player signal.
   homeCoachBonus: number = 0,

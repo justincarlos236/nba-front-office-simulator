@@ -104,7 +104,7 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
     };
   }
 
-  // Finances as a Gameplay Pillar (Phase 1) - a BREAKING business decision
+  // a BREAKING business decision
   // already sits PENDING in the user's Front Office Inbox from a prior
   // call. Same "must resolve before continuing" shape as the All-Star-
   // weekend gate above; every other severity queues without blocking.
@@ -201,14 +201,14 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
           id: true,
           currentStreak: true,
           fanHappiness: true,
-          // Finances as a Gameplay Pillar (Phase 4) - Coaching Support.
+          // Coaching Support.
           coachingSupportLevel: true,
-          // Fans Page Redesign (Phase 3).
+          // Fans Page Redesign.
           fanCulture: { select: { patience: true, loyalty: true } },
           team: { select: { city: true, name: true, logoUrl: true } },
         },
       }),
-      // Head Coach effects (Phase 15a) - a team with no coach hired yet
+      // a team with no coach hired yet
       // behaves exactly as it did before this phase existed (see
       // computeCoachWinBonus/computeCoachBoxScoreModifier's null handling).
       prisma.staff.findMany({
@@ -219,14 +219,14 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
 
     const teamLabelById = new Map(teamInfo.map((t) => [t.id, `${t.team.city} ${t.team.name}`]));
     const teamLogoById = new Map(teamInfo.map((t) => [t.id, t.team.logoUrl]));
-    // Finances as a Gameplay Pillar (Phase 4) - Coaching Support.
+    // Coaching Support.
     const coachingSupportByTeam = new Map(teamInfo.map((t) => [t.id, t.coachingSupportLevel]));
     const streakByTeam = new Map(teamInfo.map((t) => [t.id, t.currentStreak]));
-    // Fan Engagement Deepening (Phase 1) - accumulated across the whole
+    // accumulated across the whole
     // batch and flushed once alongside the other per-team updates below,
     // the same pattern winIncrements/lossIncrements/streakByTeam already use.
     const fanHappinessByTeam = new Map(teamInfo.map((t) => [t.id, t.fanHappiness]));
-    // Fans Page Redesign (Phase 3).
+    // Fans Page Redesign.
     const fanCultureByTeam = new Map(teamInfo.map((t) => [t.id, t.fanCulture]));
     const fanHappinessDeltaByTeam = new Map<string, number>();
     const streakSentimentRows: SentimentRecord[] = [];
@@ -259,7 +259,7 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
       const awayStrength = strengthByTeam.get(game.awayLeagueTeamId) ?? 0;
       const homeCoach = headCoachByTeam.get(game.homeLeagueTeamId) ?? null;
       const awayCoach = headCoachByTeam.get(game.awayLeagueTeamId) ?? null;
-      // Finances as a Gameplay Pillar (Phase 4) - Coaching Support amplifies
+      // Coaching Support amplifies
       // whichever Head Coach a team has already hired; a team with no coach
       // stays exactly at "no effect," same as effectiveStaffQuality's null
       // handling.
@@ -305,7 +305,7 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
       winIncrements.set(winnerId, (winIncrements.get(winnerId) ?? 0) + 1);
       lossIncrements.set(loserId, (lossIncrements.get(loserId) ?? 0) + 1);
 
-      // Real, box-score/standings-driven news (Phase 14d) - generated from
+      // Real, box-score/standings-driven news - generated from
       // this exact game's actual outcome, not invented. Streaks are tracked
       // per game within the batch (not just the batch's final total) so a
       // team blowing past 10 straight to 15 without stopping still gets both
@@ -329,14 +329,14 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
           dayIndex: game.dayIndex,
         });
         const rawWinnerDelta = computeStreakSentimentDelta(winnerStreakEvent.importance, 1);
-        // Fans Page Redesign (Phase 3).
+        // Fans Page Redesign.
         const streakDelta = applyScaledFanHappinessDelta(
           fanHappinessByTeam.get(winnerId) ?? 65,
           rawWinnerDelta,
           fanCultureByTeam.get(winnerId) ?? null,
         ).scaledDelta;
         addFanHappinessDelta(winnerId, streakDelta);
-        // Fans Page Redesign (Phase 1) - a real dayIndex here is what lets
+        // a real dayIndex here is what lets
         // the page draw an in-season sentiment trend, which the once-a-season
         // FanHappinessSnapshot never could.
         streakSentimentRows.push({
@@ -358,7 +358,7 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
           dayIndex: game.dayIndex,
         });
         const rawLoserDelta = computeStreakSentimentDelta(loserStreakEvent.importance, -1);
-        // Fans Page Redesign (Phase 3).
+        // Fans Page Redesign.
         const streakDelta = applyScaledFanHappinessDelta(
           fanHappinessByTeam.get(loserId) ?? 65,
           rawLoserDelta,
@@ -490,7 +490,7 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
       ...[...streakByTeam.entries()].map(([teamId, currentStreak]) =>
         prisma.leagueTeam.update({ where: { id: teamId }, data: { currentStreak } }),
       ),
-      // Fan Engagement Deepening (Phase 1) - one update per affected team,
+      // one update per affected team,
       // folded into this same batch flush rather than a separate query.
       ...[...fanHappinessDeltaByTeam.entries()].map(([teamId, delta]) =>
         prisma.leagueTeam.update({
@@ -500,7 +500,7 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
           },
         }),
       ),
-      // Fans Page Redesign (Phase 1) - the streak deltas above, recorded with
+      // the streak deltas above, recorded with
       // the day they happened.
       ...fanSentimentCreateOps(streakSentimentRows),
       prisma.playerGameStat.createMany({
@@ -545,7 +545,7 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
       unplayedGames[unplayedGames.length - 1]?.dayIndex ?? null,
     );
 
-    // Finances as a Gameplay Pillar (Phase 1) - rolls/expires this batch's
+    // rolls/expires this batch's
     // business decisions. lastDayIndex anchors both the new deadline and
     // the expiry check to this batch's actual place in the season.
     const businessDecisionResult = league.userControlledTeamId
@@ -613,7 +613,7 @@ export async function simulateGamesAction(leagueId: string, target: SimulateTarg
       break;
     }
 
-    // Finances as a Gameplay Pillar (Phase 1) - a BREAKING decision just
+    // a BREAKING decision just
     // landed in the inbox. Stop before pulling the next chunk so the user
     // sees and resolves it rather than the season quietly rolling past it;
     // the All-Star checkpoint above still takes priority if both land in

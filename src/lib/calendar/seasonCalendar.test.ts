@@ -153,13 +153,17 @@ describe("seasonStartDate", () => {
 describe("fixed calendar points", () => {
   it("puts All-Star Sunday on a Sunday, every season", () => {
     for (let season = 2020; season <= 2050; season++) {
-      expect(weekdayForDayIndex(season, allStarSundayDayIndex(season)), `season ${season}`).toBe(SUNDAY);
+      expect(weekdayForDayIndex(season, allStarSundayDayIndex(season)), `season ${season}`).toBe(
+        SUNDAY,
+      );
     }
   });
 
   it("puts the trade deadline on a Thursday, every season", () => {
     for (let season = 2020; season <= 2050; season++) {
-      expect(weekdayForDayIndex(season, tradeDeadlineDayIndex(season)), `season ${season}`).toBe(THURSDAY);
+      expect(weekdayForDayIndex(season, tradeDeadlineDayIndex(season)), `season ${season}`).toBe(
+        THURSDAY,
+      );
     }
   });
 
@@ -171,9 +175,15 @@ describe("fixed calendar points", () => {
 
   it("reproduces real trade deadlines", () => {
     // Each is exactly ten days before that season's All-Star Sunday.
-    expect(dayIndexToDate(2023, tradeDeadlineDayIndex(2023)).toDateString()).toBe("Thu Feb 08 2024");
-    expect(dayIndexToDate(2024, tradeDeadlineDayIndex(2024)).toDateString()).toBe("Thu Feb 06 2025");
-    expect(dayIndexToDate(2026, tradeDeadlineDayIndex(2026)).toDateString()).toBe("Thu Feb 11 2027");
+    expect(dayIndexToDate(2023, tradeDeadlineDayIndex(2023)).toDateString()).toBe(
+      "Thu Feb 08 2024",
+    );
+    expect(dayIndexToDate(2024, tradeDeadlineDayIndex(2024)).toDateString()).toBe(
+      "Thu Feb 06 2025",
+    );
+    expect(dayIndexToDate(2026, tradeDeadlineDayIndex(2026)).toDateString()).toBe(
+      "Thu Feb 11 2027",
+    );
   });
 
   it("does not use a fixed day offset - the gap to February moves with the season", () => {
@@ -241,18 +251,12 @@ describe("trade window", () => {
   });
 
   it("closes trading mid-season once the deadline has passed", () => {
-    const midSeason = [
-      game(DEADLINE, true),
-      game(DEADLINE + 1, false),
-    ];
+    const midSeason = [game(DEADLINE, true), game(DEADLINE + 1, false)];
     expect(tradesAreClosed(SEASON, midSeason)).toBe(true);
   });
 
   it("keeps trading open the day before the deadline", () => {
-    const before = [
-      game(DEADLINE - 1, false),
-      game(DEADLINE + 5, false),
-    ];
+    const before = [game(DEADLINE - 1, false), game(DEADLINE + 5, false)];
     expect(tradesAreClosed(SEASON, before)).toBe(false);
   });
 });

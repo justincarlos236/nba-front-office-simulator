@@ -37,7 +37,7 @@ async function requireOwnedLeagueTeam(leagueId: string) {
 const LOAN_TIERS: LoanTier[] = ["SMALL", "MEDIUM", "LARGE"];
 
 /**
- * Finances as a Gameplay Pillar (Phase 5) - System 3, "Financing." Adds to
+ * System 3, "Financing." Adds to
  * the team's single revolving debt balance - interest-only, charged every
  * season boundary on the outstanding total (see advanceSeasonAction).
  */
@@ -89,7 +89,7 @@ export async function repayDebtAction(leagueId: string, amountCents: number): Pr
 const CAPITAL_CALL_TIERS: CapitalCallTier[] = ["SMALL", "MEDIUM", "LARGE"];
 
 /**
- * Finances as a Gameplay Pillar (Phase 5) - "the cleanest trade-off in the
+ * "the cleanest trade-off in the
  * design": free money, priced entirely in owner confidence. Never touches
  * debt at all.
  */
@@ -122,7 +122,7 @@ export async function requestOwnerCapitalAction(
 }
 
 /**
- * Finances as a Gameplay Pillar (Phase 5) - "terms bad enough that taking
+ * "terms bad enough that taking
  * it is an admission." Only available once cash is genuinely, deeply
  * negative; priced through an immediate, real reputational cost rather
  * than a separately-tracked worse interest rate.
@@ -144,7 +144,7 @@ export async function takeDistressedFinancingAction(leagueId: string): Promise<v
   }
 
   const amountCents = distressedFinancingAmountCents();
-  // Fans Page Redesign (Phase 3).
+  // Fans Page Redesign.
   const { newFanHappiness, scaledDelta } = applyScaledFanHappinessDelta(
     team.fanHappiness,
     -DISTRESSED_FINANCING_FAN_HAPPINESS_COST,
@@ -179,7 +179,7 @@ export async function takeDistressedFinancingAction(leagueId: string): Promise<v
         teamIds: [userControlledTeamId],
       },
     }),
-    // Fans Page Redesign (Phase 1).
+    // Fans Page Redesign.
     ...fanSentimentCreateOps([
       {
         leagueId,

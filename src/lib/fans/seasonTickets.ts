@@ -1,7 +1,7 @@
 import type { TicketPricingPosture } from "@/generated/prisma/client";
 
 /**
- * Finances as a Gameplay Pillar (Phase 4), System 5 - "Season Tickets."
+ * Finances as a Gameplay Pillar, System 5 - "Season Tickets."
  * A sticky 0-100 index (LeagueTeam.seasonTicketBase) that forms a floor
  * under the existing computeAttendancePct model (src/lib/fans/
  * fanHappiness.ts) - never replaces it. The asymmetry is the whole

@@ -1,7 +1,7 @@
 import type { CapitalProjectKind } from "@/generated/prisma/client";
 
 /**
- * Finances as a Gameplay Pillar (Phase 5) - the shared "pay now, benefit
+ * the shared "pay now, benefit
  * later, multi-season" plumbing behind both the Arena (System 2) and
  * Business Expansion (System 8). Same underlying mechanic (see
  * CapitalProject in prisma/schema.prisma), different flavor and effects

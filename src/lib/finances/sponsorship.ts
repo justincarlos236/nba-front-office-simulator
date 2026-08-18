@@ -2,7 +2,7 @@ import type { MarketSize } from "@/generated/prisma/client";
 import type { PlayerValueTier } from "@/lib/valuation/playerValueTier";
 
 /**
- * Finances as a Gameplay Pillar (Phase 2), System 1 "Sponsorship &
+ * Finances as a Gameplay Pillar, System 1 "Sponsorship &
  * Commercial Deals" - pure helpers around `SponsorshipDeal`. The deals
  * themselves are only ever generated/signed for the user's team (via
  * `businessDecisions.ts`'s sponsorship cards); this module covers the two

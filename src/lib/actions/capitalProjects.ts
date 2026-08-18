@@ -29,7 +29,7 @@ async function requireOwnedLeagueTeam(leagueId: string) {
 }
 
 /**
- * Finances as a Gameplay Pillar (Phase 5) - System 2, "The Arena." Starts a
+ * System 2, "The Arena." Starts a
  * renovation directly (no negotiation needed - you're not asking the city
  * for anything). Cost is paid up front, in full, right now - the "multi-
  * season commitment" is that the quality bonus doesn't land until
@@ -77,7 +77,7 @@ export async function startArenaRenovationAction(leagueId: string): Promise<void
 }
 
 /**
- * Finances as a Gameplay Pillar (Phase 5) - starts the ARENA_FUNDING
+ * starts the ARENA_FUNDING
  * Negotiation (a new build "almost always requires financing and a public-
  * funding negotiation with the city" - see docs/FINANCES_PILLAR_DESIGN.md).
  * Nothing is spent or committed yet - the negotiation itself, delivered
@@ -179,7 +179,7 @@ export async function startArenaNewBuildNegotiationAction(leagueId: string): Pro
 const EXPANSION_KIND_SET = new Set(BUSINESS_EXPANSION_PROJECT_KINDS);
 
 /**
- * Finances as a Gameplay Pillar (Phase 5) - System 8, "Business Expansion."
+ * System 8, "Business Expansion."
  * Starts one of the 4 organizational-growth projects. At most one
  * expansion project can be in progress at a time (a real, felt
  * commitment), independent of any arena project underway.

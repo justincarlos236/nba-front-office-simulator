@@ -80,9 +80,7 @@ export function isSupermaxEligible(input: {
 
   const mostRecent = input.currentSeason - 1;
   const earliest = mostRecent - (SUPERMAX_LOOKBACK_SEASONS - 1);
-  const inWindow = input.awards.filter(
-    (a) => a.season >= earliest && a.season <= mostRecent,
-  );
+  const inWindow = input.awards.filter((a) => a.season >= earliest && a.season <= mostRecent);
 
   // MVP in any of the three prior seasons.
   if (inWindow.some((a) => a.category === "MVP")) return true;

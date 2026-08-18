@@ -23,14 +23,14 @@ export interface DraftProspectInfo {
   collegeOrTeam: string | null;
   isInternational: boolean;
   nationality: string | null;
-  /** Scouting Pillar Redesign (Phase 4) - how this prospect entered the draft. */
+  /** Scouting Pillar Redesign - how this prospect entered the draft. */
   pathway: ProspectPathway | null;
   comparisonPlayerName: string | null;
-  /** Scouting Pillar Redesign (Phase 2) - 0 (Unknown) to 3 (Known). */
+  /** Scouting Pillar Redesign - 0 (Unknown) to 3 (Known). */
   scoutingDepth: number;
-  /** Scouting Pillar Redesign (Phase 4) - which hidden-trait axes a Private Workout has resolved outright. */
+  /** Scouting Pillar Redesign - which hidden-trait axes a Private Workout has resolved outright. */
   resolvedHiddenTraits: string[];
-  /** Scouting Pillar Redesign (Phase 4) - this class's rolled character, identical across every prospect in the same league+season. */
+  /** Scouting Pillar Redesign - this class's rolled character, identical across every prospect in the same league+season. */
   classCharacter: ClassCharacter;
 }
 

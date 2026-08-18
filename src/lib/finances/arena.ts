@@ -2,7 +2,7 @@ import type { FinancialStanding } from "@/lib/finances/ownershipFinance";
 import type { MarketSize, NegotiationKind, OwnerArchetype } from "@/generated/prisma/client";
 
 /**
- * Finances as a Gameplay Pillar (Phase 5), System 2 - "The Arena," plus the
+ * Finances as a Gameplay Pillar, System 2 - "The Arena," plus the
  * relocation last resort. Two things live here:
  *
  * 1. Arena quality/age/attendance math - small, bounded, neutral-anchored,

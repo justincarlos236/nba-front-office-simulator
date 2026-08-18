@@ -2,7 +2,7 @@ import { getPlayerValueTier } from "../valuation/playerValueTier";
 
 /**
  * Dynamically-recognized roster needs, reused by the trade-AI evaluation
- * engine (Phase 11c) to give extra value to players/picks that actually
+ * engine to give extra value to players/picks that actually
  * fill a gap. Deliberately narrower than the design brief's full list
  * ("star scorer, rim protector, point guard, wing defender, shooting,
  * bench depth") - "shooting" specifically has no real signal anywhere in

@@ -9,7 +9,7 @@ import {
 } from "@/lib/fans/sentimentLedger";
 
 /**
- * Fans Page Redesign (Phase 1), Section 3 - "Why They Feel This Way." The
+ * Fans Page Redesign, Section 3 - "Why They Feel This Way." The
  * direct fix for docs/FANS_PAGE_REDESIGN.md's core finding: the engine
  * always knew why the fanbase felt a certain way, it just never showed its
  * work. This section is a pure render over the sentiment ledger - no logic

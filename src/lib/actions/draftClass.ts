@@ -5,7 +5,7 @@ import { createSeededRandom } from "@/lib/contracts/seededRandom";
 import { generateDraftClass } from "@/lib/draft/generateDraftClass";
 
 /**
- * Scouting Pillar Redesign (Phase 1) - generates this season's draft class
+ * generates this season's draft class
  * if it doesn't exist yet, a no-op otherwise. Same idempotent "ensure*"
  * pattern as `ensureStaffGenerated` (self-heals a save that reaches the
  * pre-draft window without this having run yet, and makes it safe to call

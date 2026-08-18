@@ -3,7 +3,7 @@ import type { TradeOfferReasonCode } from "./evaluateTradeOffer";
 
 /**
  * Plain-English presentation layer over `evaluateTradeOffer`'s structured
- * reason codes (Phase 11d) - mirrors how `capStatusLabel.ts` wraps the real
+ * reason codes - mirrors how `capStatusLabel.ts` wraps the real
  * cap engine's output without changing the underlying decision logic.
  * Several variants per code so the same rejection reason doesn't read as an
  * identical canned sentence every time a user tries a similar trade.

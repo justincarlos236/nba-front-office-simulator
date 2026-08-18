@@ -1,7 +1,7 @@
 import type { FanMandateKind } from "@/lib/fans/fanMandate";
 
 /**
- * Fans Page Redesign (Phase 5) - "The Conversation," media narratives
+ * "The Conversation," media narratives
  * (docs/FANS_PAGE_REDESIGN.md Part 3.4). Persistent, multi-week storylines,
  * not one-off blurbs - the clearest separation from the News feed: News
  * reports events, this interprets them into an ongoing story.

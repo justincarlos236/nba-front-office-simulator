@@ -92,9 +92,7 @@ export interface PlayerTradeValueParts {
   contractSurplusCents: bigint;
 }
 
-export function computePlayerTradeValueParts(
-  input: PlayerTradeValueInput,
-): PlayerTradeValueParts {
+export function computePlayerTradeValueParts(input: PlayerTradeValueInput): PlayerTradeValueParts {
   const score = talentScore(input.overallRating, input.potentialRating, UPSIDE_WEIGHT);
 
   // Age discounts the MONEY, never the score. Multiplying it into the score
@@ -112,8 +110,7 @@ export function computePlayerTradeValueParts(
   // Injury risk discounts the *asset*, not the contract - applying it to the
   // combined figure would make an injured albatross a smaller liability than
   // a healthy one.
-  const riskMultiplier =
-    INJURY_STATUS_MULTIPLIER[input.injuryStatus] * (1 - careerInjuryDiscount);
+  const riskMultiplier = INJURY_STATUS_MULTIPLIER[input.injuryStatus] * (1 - careerInjuryDiscount);
 
   // What the market would actually pay him today: current production only, no
   // upside credit. `ageAdjustedMarketValueCents` is the salary-scale model and
@@ -165,8 +162,7 @@ export function computePlayerTradeValueParts(
 export function computePlayerTradeValue(input: PlayerTradeValueInput): bigint {
   const { talentValueCents, contractSurplusCents } = computePlayerTradeValueParts(input);
   return (
-    talentValueCents +
-    BigInt(Math.round(Number(contractSurplusCents) * CONTRACT_SURPLUS_WEIGHT))
+    talentValueCents + BigInt(Math.round(Number(contractSurplusCents) * CONTRACT_SURPLUS_WEIGHT))
   );
 }
 

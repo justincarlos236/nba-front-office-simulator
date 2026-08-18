@@ -150,7 +150,7 @@ function weightedAverage(entries: [number, number][]): number {
 export function computePublicEvaluationFactors(
   prospect: BigBoardProspect,
   tournamentRevealed: boolean,
-  /** Class-character variance (Scouting Pillar Redesign, Phase 4) - widens/narrows the noise-driven factors below. 1 for a BALANCED class. */
+  /** Class-character variance - widens/narrows the noise-driven factors below. 1 for a BALANCED class. */
   noiseMultiplier = 1,
 ): PublicEvaluationFactors {
   const rng = createSeededRandom(`${prospect.id}-big-board`);

@@ -256,8 +256,7 @@ export function evaluateTradeOffer(input: EvaluateTradeOfferInput): EvaluateTrad
         : contractSurplusCents;
 
     return (
-      adjustedTalentValue(asset) +
-      BigInt(Math.round(Number(surplus) * CONTRACT_SURPLUS_WEIGHT))
+      adjustedTalentValue(asset) + BigInt(Math.round(Number(surplus) * CONTRACT_SURPLUS_WEIGHT))
     );
   };
 
