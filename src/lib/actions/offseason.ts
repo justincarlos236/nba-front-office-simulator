@@ -1444,7 +1444,14 @@ export async function advanceSeasonAction(leagueId: string) {
   }));
 
   if (awardRows.length > 0) {
-    await prisma.seasonAward.createMany({ data: awardRows });
+    // `skipDuplicates` is what keeps a half-finished advance recoverable.
+    // Nothing in `advanceSeasonAction` is atomic - 30 writes commit
+    // individually - so a failure partway leaves the league advanced in part,
+    // and the retry re-runs from the top over rows that already exist.
+    // `SeasonAward` is uniquely keyed on (leagueId, season, category), so a
+    // plain createMany throws here on every retry and the league can never be
+    // advanced again. See docs/OFFSEASON_INTEGRITY_AUDIT.md, O-P1-1.
+    await prisma.seasonAward.createMany({ data: awardRows, skipDuplicates: true });
   }
 
   // Real news, not a new source of truth - announces the exact SeasonAward
@@ -1512,14 +1519,21 @@ export async function advanceSeasonAction(leagueId: string) {
   // why), so it gets its own createMany + news block parallel to the player
   // award ones above rather than reusing awardRows/awardNewsRows.
   if (coachOfTheYear) {
-    await prisma.staffAward.create({
-      data: {
-        leagueId,
-        season,
-        category: "COACH_OF_THE_YEAR",
-        staffId: coachOfTheYear.staffId,
-        value: coachOfTheYear.value,
-      },
+    // createMany rather than create, purely for `skipDuplicates` - StaffAward
+    // carries the same (leagueId, season, category) uniqueness as SeasonAward
+    // above and would brick a retry the same way. The return value was never
+    // used. See docs/OFFSEASON_INTEGRITY_AUDIT.md, O-P1-1.
+    await prisma.staffAward.createMany({
+      data: [
+        {
+          leagueId,
+          season,
+          category: "COACH_OF_THE_YEAR",
+          staffId: coachOfTheYear.staffId,
+          value: coachOfTheYear.value,
+        },
+      ],
+      skipDuplicates: true,
     });
 
     const staffById = new Map(allStaff.map((s) => [s.id, s]));

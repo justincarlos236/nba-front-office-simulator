@@ -91,7 +91,35 @@ the idempotency route as the recommended one.
 
 | ID | Severity | Outcome |
 | --- | --- | --- |
-| O-P1-1 | P1 | **Open.** `advanceSeasonAction` is non-atomic across 30 writes; both failure windows leave a permanently unadvanceable league. Recommended fix: make the path idempotent, then move the guard onto `league.currentSeason`. |
+| O-P1-1 | P1 | **Partially fixed.** Window 1 no longer bricks the save; window 2 is unchanged. See below. |
+
+## Partial fix — the awards no longer make window 1 permanent
+
+The two award writes were the *only* thing making window 1 unrecoverable. Both
+are now idempotent:
+
+- `seasonAward.createMany` takes `skipDuplicates: true`
+- `staffAward.create` becomes `createMany` with `skipDuplicates: true` - the
+  return value was never used
+
+**What this changes.** A failure before L1577 used to leave a league that could
+never be advanced: every retry reached the award write and threw on the unique
+constraint. The retry now gets past the awards and completes the advance. The
+save survives and stays playable.
+
+**What it does not change.** A retry still re-runs the work that already
+committed before the failure, so it can double-apply a season of player
+development, write duplicate `leagueTransaction` news rows, and re-run CPU
+re-signings. Those degrade a save; they do not end it. The trade is
+deliberate - a blemished league the player can keep playing beats a pristine
+one they cannot open.
+
+**Window 2 is untouched.** Closing it needs the guard moved onto
+`league.currentSeason`, which in turn needs schedule creation to be idempotent -
+and `Game` carries no unique constraint (only `@@index([leagueId, season])`), so
+`skipDuplicates` cannot do it. That needs either a migration or a delete-then-
+create, and allowing more retries is only safe once the non-idempotent steps
+above are fixed. Left for the deliberate pass.
 
 ## Reproducing
 
