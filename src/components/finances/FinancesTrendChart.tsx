@@ -1,5 +1,6 @@
+"use client";
+
 import { seasonLabel } from "@/lib/data-sources/datasetSeasons";
-("use client");
 
 import {
   CartesianGrid,
