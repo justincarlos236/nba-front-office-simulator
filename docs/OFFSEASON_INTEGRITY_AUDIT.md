@@ -158,3 +158,49 @@ covered under the accepted trade above.
 The write map is derived by scanning the function for `prisma.<model>.<write>`
 between L197 and L2264 and partitioning on the `$transaction` at L2224. The two
 windows follow from the sentinel at L1577 against the marker at L2120.
+
+## The remaining residual — double-applied development
+
+Both failure windows now recover, but a retry still re-runs work that already
+committed. The largest of those side effects, and the only one a player would
+actually notice, is **player development running twice in one offseason**.
+
+`developPlayerRating` is applied to every active player at L1170 and the result
+written straight to `overallRating`. On a retry it runs again from the
+already-developed rating, so a league recovered from a mid-advance failure has
+had one season of growth applied twice. That is not cosmetic like a duplicate
+news row - it is the league's talent distribution being wrong from then on.
+
+### Why it cannot be fixed the way the others were
+
+Every other recovery in this document keyed off something already in the
+schema - a unique constraint, or a row whose existence proved a step had run.
+Development has neither:
+
+- `overallRating` is mutated in place, so the new value is indistinguishable
+  from a legitimately high one
+- age is derived from `birthDate` at read time, not stored, so no aging marker
+  exists either
+- the first write in the whole function *is* the development write, so there is
+  no earlier row whose presence could mark it
+
+`SeasonAward` rows for `season` do prove development already ran, since awards
+are written at L1481 and development at L1170 - but only for a failure that got
+past the awards. A crash in between is unmarked, which is most of the window.
+
+### The fix
+
+A per-player marker is needed:
+
+1. `developedThroughSeason Int?` on `LeaguePlayer`, migration alongside
+2. set it to `newSeason` in the same L1170 update that writes `overallRating`
+3. skip development for any player already at `newSeason`, carrying the current
+   values into `playerUpdates` unchanged
+
+Nullable so existing rows read as "unknown" and develop once normally; from then
+on the marker is authoritative. The same column would let a future pass make the
+advance genuinely resumable rather than merely re-runnable.
+
+| ID | Severity | Outcome |
+| --- | --- | --- |
+| O-P2-1 | P2 | **Open.** A recovered save can carry a doubly-developed season. Needs the schema change above - it cannot be keyed off anything currently stored. |
