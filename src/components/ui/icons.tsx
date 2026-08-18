@@ -292,6 +292,44 @@ export function IconTrophy(props: IconProps) {
   );
 }
 
+/* ---------------------------------------------------------------------------
+   NAVIGATION - the four sections that carry a glyph
+--------------------------------------------------------------------------- */
+
+/**
+ * A jersey, for the roster.
+ *
+ * A generic pair of silhouetted people would have said "users" the way every
+ * admin dashboard does. The set already speaks basketball (`IconBall`,
+ * `IconHoop`), and a jersey is the one garment that means *squad* rather than
+ * *people* - which is what a roster is.
+ */
+export function IconJersey(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M6 2h4l3 2-1 2-1-1v9H5V5L4 6 3 4l3-2Z" />
+      <path d="M6.5 2 8 3.5 9.5 2" />
+    </Icon>
+  );
+}
+
+/**
+ * Ranked bars descending, for the standings.
+ *
+ * Deliberately not `IconThreshold`, which is also bars but carries a dashed
+ * line across them - that dash means a *cap* threshold and would be a lie
+ * here. These descend monotonically, which is the shape of a table sorted by
+ * record rather than a chart with a limit drawn on it.
+ */
+export function IconStandings(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M2 14h12" />
+      <path d="M4.5 14V4M8 14V7M11.5 14v-3" />
+    </Icon>
+  );
+}
+
 /** A calendar/phase marker - where the season is. */
 export function IconSeason(props: IconProps) {
   return (
