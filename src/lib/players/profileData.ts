@@ -1,3 +1,4 @@
+import { REFERENCE_STAT_SEASON } from "@/lib/data-sources/datasetSeasons";
 import { prisma } from "@/lib/prisma";
 import { computePerformanceScore } from "@/lib/valuation/playerValue";
 import { contractQualityScore, priceContractCents } from "@/lib/contracts/priceContract";
@@ -183,8 +184,16 @@ export interface PlayerProfileData {
   } | null;
 }
 
-/** The fixed real-world season every real player's seeded stat baseline comes from. */
-export const PROFILE_SEASON = 2023;
+/**
+ * The real-world season every real player's seeded stat baseline comes from.
+ *
+ * Was the literal `2023`, left behind when the dataset moved to 2026-27
+ * rosters. The old import's rows were never deleted, so this kept returning
+ * stats rather than none - three seasons out of date, and quietly feeding both
+ * this profile's market value and every simulated box score. See
+ * `datasetSeasons.ts`.
+ */
+export const PROFILE_SEASON = REFERENCE_STAT_SEASON;
 
 /**
  * A player's estimated market value, priced by the same function that writes

@@ -1,5 +1,6 @@
 "use client";
 
+import { REFERENCE_STAT_SEASON, seasonLabel } from "@/lib/data-sources/datasetSeasons";
 import { useState } from "react";
 import { formatCentsCompact } from "@/lib/money";
 import { getPlayerValueTier, PLAYER_VALUE_TIER_LABEL } from "@/lib/valuation/playerValueTier";
@@ -333,7 +334,7 @@ export function PlayerProfileContent({ data }: { data: PlayerProfileData }) {
                 )}
 
                 <p className="border-t border-rule pt-3 text-xs tracking-wide text-ink-muted uppercase">
-                  Real-world baseline (2023-24)
+                  Real-world baseline ({seasonLabel(REFERENCE_STAT_SEASON)})
                 </p>
               </div>
             )}

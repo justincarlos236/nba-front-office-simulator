@@ -1,5 +1,6 @@
 "use server";
 
+import { DATASET_ROSTER_SEASON } from "@/lib/data-sources/datasetSeasons";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
@@ -41,7 +42,9 @@ import {
 // is a season AHEAD of the stats the ratings came from, which is intended:
 // `import-dataset.ts` builds 2026-27 rosters from 2025-26 production because
 // the upcoming season has not been played.
-const SEASON = 2026;
+// The season the seeded rosters represent, so a new save opens on the data
+// it was built from rather than a literal that has to be remembered.
+const SEASON = DATASET_ROSTER_SEASON;
 
 /**
  * Bootstraps a brand-new League from the current imported NBA dataset: clones

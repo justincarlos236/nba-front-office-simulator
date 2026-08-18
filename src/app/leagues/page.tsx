@@ -1,3 +1,8 @@
+import {
+  DATASET_ROSTER_SEASON,
+  REFERENCE_STAT_SEASON,
+  seasonLabel,
+} from "@/lib/data-sources/datasetSeasons";
 import { TeamLogo } from "@/components/teams/TeamLogo";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -144,7 +149,8 @@ export default async function DashboardPage() {
           >
             <h3 className="font-semibold text-ink">Browse NBA Teams</h3>
             <p className="mt-1 text-sm text-ink-muted">
-              Real 2023-24 rosters, ratings, and stats for all 30 teams - the same reference data
+              Real {seasonLabel(DATASET_ROSTER_SEASON)} rosters with{" "}
+              {seasonLabel(REFERENCE_STAT_SEASON)} stats, for all 30 teams - the same reference data
               every franchise is cloned from.
             </p>
           </Link>

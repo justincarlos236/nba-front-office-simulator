@@ -1,3 +1,4 @@
+import { REFERENCE_STAT_SEASON } from "@/lib/data-sources/datasetSeasons";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -16,7 +17,9 @@ import { deriveOverallRating } from "@/lib/league/ratingFromStats";
  * which also puts these pages in the same era as the rosters a new save
  * starts from.
  */
-const ROSTER_STATS_SEASON = 2025;
+// The most recent completed real season. Was 2023, which pre-dated the
+// dataset re-import and rendered 582 blank rows.
+const ROSTER_STATS_SEASON = REFERENCE_STAT_SEASON;
 import { RosterScatterChart } from "@/components/teams/RosterScatterChart";
 import { PlayerChip } from "@/components/players/PlayerChip";
 

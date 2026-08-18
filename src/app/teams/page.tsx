@@ -1,3 +1,4 @@
+import { REFERENCE_STAT_SEASON, seasonLabel } from "@/lib/data-sources/datasetSeasons";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
@@ -20,8 +21,8 @@ export default async function TeamsPage() {
     <main className="mx-auto max-w-6xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
       <h1 className="text-3xl font-bold tracking-tight text-ink">The League</h1>
       <p className="mt-2 text-ink-muted">
-        All 30 real NBA teams, seeded from reference data. Pick one to see its real roster and
-        2025-26 season stats.
+        All 30 real NBA teams, seeded from reference data. Pick one to see its real roster and{" "}
+        {seasonLabel(REFERENCE_STAT_SEASON)} season stats.
       </p>
 
       {(["EAST", "WEST"] as const).map((conference) => (

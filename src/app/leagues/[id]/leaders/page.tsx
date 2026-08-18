@@ -1,3 +1,4 @@
+import { REFERENCE_STAT_SEASON, seasonLabel } from "@/lib/data-sources/datasetSeasons";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -109,8 +110,8 @@ export default async function LeadersPage({ params }: PageProps) {
         {league.currentSeason}-{(league.currentSeason + 1).toString().slice(-2)} League Leaders
       </h1>
       <p className="mt-2 max-w-2xl text-ink-muted">
-        Live leaders from this league&apos;s own simulated games - not the real 2023-24 season.
-        Updates as more games are simulated.
+        Live leaders from this league&apos;s own simulated games - not the real{" "}
+        {seasonLabel(REFERENCE_STAT_SEASON)} season. Updates as more games are simulated.
       </p>
 
       <h2 className="mt-8 text-lg font-semibold text-ink">
