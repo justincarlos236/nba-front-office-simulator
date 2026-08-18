@@ -564,3 +564,46 @@ describe("injury exposure follows minutes, not rating", () => {
     expect(shareOfHits([heavy, benched], "benched")).toBeGreaterThan(0.05);
   });
 });
+
+describe("injury frequency rises with load and with the season", () => {
+  const roster: InjuryCandidate[] = [
+    { leaguePlayerId: "heavy", playerName: "Heavy", minutesPerGame: 40 },
+    { leaguePlayerId: "mid", playerName: "Mid", minutesPerGame: 24 },
+  ];
+  const light: InjuryCandidate[] = [
+    { leaguePlayerId: "a", playerName: "A", minutesPerGame: 30 },
+    { leaguePlayerId: "b", playerName: "B", minutesPerGame: 30 },
+  ];
+
+  function rate(pool: InjuryCandidate[], progress: number | null, seed = 77): number {
+    let s = seed >>> 0;
+    const rng = () => {
+      s = (s * 1664525 + 1013904223) >>> 0;
+      return s / 4294967296;
+    };
+    let hits = 0;
+    const N = 60000;
+    for (let i = 0; i < N; i++) if (rollForTeamInjury(pool, rng, 0.02, null, 0, progress)) hits += 1;
+    return hits / N;
+  }
+
+  it("injures more often late in the season than early", () => {
+    expect(rate(light, 0.95)).toBeGreaterThan(rate(light, 0.05) * 1.25);
+  });
+
+  it("injures a heavily-loaded team more often than an evenly-spread one", () => {
+    // Same 240 team-minutes either way; only the concentration differs.
+    expect(rate(roster, 0.5)).toBeGreaterThan(rate(light, 0.5));
+  });
+
+  it("applies the season effect to everyone, not only the heaviest man", () => {
+    // A team with no one above the baseline still wears down.
+    expect(rate(light, 0.95)).toBeGreaterThan(rate(light, 0.05));
+  });
+
+  it("leaves the rate unchanged when no season progress is supplied", () => {
+    const noProgress = rate(light, null);
+    expect(noProgress).toBeGreaterThan(0.015);
+    expect(noProgress).toBeLessThan(0.025);
+  });
+});

@@ -100,6 +100,35 @@ const SPORTS_SCIENCE_FREQUENCY_PER_POINT = 0.018;
 const MINUTES_EXPOSURE_FLOOR = 8;
 
 /**
+ * Heavy usage makes a team more injured, not differently injured.
+ *
+ * Weighting the victim by minutes fixed who gets hurt, but left the team's
+ * rate fixed at `chance` - so leaning on one man only moved risk off his
+ * team-mates and onto him. Total exposure never rose, which made playing
+ * someone 44 minutes nearly free and would have made any raised rotation
+ * ceiling a setting with one correct value.
+ *
+ * Anchored at 34 minutes, a normal starter's load, and read off the heaviest
+ * assignment on the roster rather than an average - it is the man being run
+ * into the ground who breaks, and averaging hides him behind eleven reserves.
+ */
+const LOAD_BASELINE_MINUTES = 34;
+const LOAD_RISK_PER_MINUTE_OVER = 0.02;
+
+/**
+ * Bodies accumulate a season. Injury rates are not flat from October to April
+ * - they climb as games, travel and minutes pile up, which is why the real
+ * league sees more soft-tissue injuries late and why load management exists at
+ * all. A flat rate made March identical to November.
+ *
+ * The band is deliberately modest and centres near 1, so a full season carries
+ * roughly the same total injuries as before while redistributing them toward
+ * its back half.
+ */
+const FATIGUE_AT_SEASON_START = 0.85;
+const FATIGUE_AT_SEASON_END = 1.25;
+
+/**
  * How likely this player is to be the one hurt, relative to his team-mates.
  *
  * **Exposure is minutes, not quality.** The roll stays rating-blind for the
@@ -131,6 +160,8 @@ export function rollForTeamInjury(
   chance = 0.02,
   medicalStaffQuality: number | null = null,
   sportsScienceDelta = 0,
+  /** 0 at tip-off of game one, 1 at the end of the regular season. */
+  seasonProgress: number | null = null,
 ): InjuryRollResult | null {
   if (healthyRoster.length === 0) return null;
 
@@ -147,7 +178,26 @@ export function rollForTeamInjury(
     0.65,
     1.3,
   );
-  const frequencyFactor = staffFrequencyFactor * departmentFrequencyFactor;
+  // The heaviest assignment on the roster, ignoring anyone left to the
+  // automatic rotation - a team that sets no minutes carries no load penalty.
+  const heaviestMinutes = healthyRoster.reduce(
+    (most, c) => Math.max(most, c.minutesPerGame ?? 0),
+    0,
+  );
+  const loadFactor = clamp(
+    1 + Math.max(0, heaviestMinutes - LOAD_BASELINE_MINUTES) * LOAD_RISK_PER_MINUTE_OVER,
+    1,
+    1.4,
+  );
+
+  const fatigueFactor =
+    seasonProgress === null
+      ? 1
+      : FATIGUE_AT_SEASON_START +
+        clamp(seasonProgress, 0, 1) * (FATIGUE_AT_SEASON_END - FATIGUE_AT_SEASON_START);
+
+  const frequencyFactor =
+    staffFrequencyFactor * departmentFrequencyFactor * loadFactor * fatigueFactor;
   if (rng() >= chance * frequencyFactor) return null;
 
   const durationFactor =

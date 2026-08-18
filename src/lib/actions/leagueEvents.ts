@@ -73,6 +73,8 @@ import {
 import type { NewsImportance } from "@/generated/prisma/client";
 
 const INJURY_CHANCE_PER_TEAM_GAME = 0.02;
+/** Games in a regular season, for the injury model's season-progress term. */
+const REGULAR_SEASON_GAMES = 82;
 // Tuned to land near 15 completed CPU trades a league-season. The real NBA runs
 // closer to 40, but many of those are minor salary filler; 15 meaningful ones
 // reads as an active market without burying the news feed.
@@ -326,6 +328,10 @@ export async function applyLeagueEvents(
         INJURY_CHANCE_PER_TEAM_GAME,
         medicalStaffQualityByTeam.get(teamId) ?? null,
         sportsScienceDeltaByTeam.get(teamId) ?? 0,
+        // Bodies accumulate a season, so April is not November. Read from the
+        // team's own games played rather than the calendar, which keeps it
+        // right for a league mid-way through its first season.
+        Math.min(1, (gamesPlayedByTeam.get(teamId) ?? 0) / REGULAR_SEASON_GAMES),
       );
       if (!result) continue;
 
