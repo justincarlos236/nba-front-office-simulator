@@ -17,61 +17,58 @@ import { RANK_MINUTE_WEIGHTS, WEIGHT_PER_MINUTE } from "./autoRotation";
  * outside it, whatever the saved slot list says.
  */
 /**
- * Minutes a rotation is expected to give its frontcourt.
+ * The two roles a lineup cannot do without.
  *
- * Two of the five men on the floor are a power forward and a centre, so a
- * balanced rotation spends about 40% of its minutes there. Basketball is
- * played in three dimensions and this model only knew about ratings: twelve
- * point guards and no centre rated *identically* to a balanced roster, to the
- * decimal, so a lineup that could not rebound or protect the rim won just as
- * often as one that could.
+ * Basketball is played in three dimensions and this model only knew about
+ * ratings: twelve point guards and no centre rated identically to a balanced
+ * roster, to the decimal.
  *
- * These are floors, not targets, and the difference matters. Measured against
- * an ideal 40% share, an ordinary rotation whose bigs happen to sit lower in
- * the order paid a penalty for being slightly small - which punishes small-ball
- * rather than a broken lineup, and small-ball is a real and sometimes correct
- * choice. Nothing is charged until a group falls below the floor here, so a
- * normal rotation anywhere from small to big pays nothing at all, and only a
- * genuinely unplayable shape is charged.
+ * **Not every position is equally replaceable, and an earlier version of this
+ * missed that.** Grouping PG with the wings meant a rotation with no point
+ * guard but plenty of SG/SF paid nothing, and lumping C with PF meant a team
+ * with no true centre paid nothing either. Those are the two hardest jobs to
+ * cover: somebody has to create off the dribble, and somebody has to defend
+ * the rim. A shooting guard and a small forward trade places all night; a
+ * centre cannot bring the ball up.
+ *
+ * So the floors are on **creation** and **the rim**, and each accepts partial
+ * cover from its neighbour - a shooting guard can run some point, a power
+ * forward can play some centre, neither as well as the real thing.
  */
-const FRONTCOURT_MINUTES_FLOOR = 0.25;
-const PERIMETER_MINUTES_FLOOR = 0.45;
+const CREATION_FLOOR = 0.18;
+const RIM_FLOOR = 0.18;
+
+/** How much a neighbouring position counts toward a role it is not. */
+const SUBSTITUTE_CREDIT = 0.35;
 
 /**
- * Rating points lost when a group is missing outright.
+ * Rating points lost when a role is uncovered outright.
  *
- * Deliberately meaningful without being fatal: six points is the difference
- * between a contender and a play-in team, which is about what starting nobody
- * over 6'6" should cost. It is not a cliff - the penalty scales with how far
- * short the group falls, so most rosters never notice it.
+ * Six points is roughly a contender becoming a play-in team, which is about
+ * what having nobody who can run an offence - or nobody who can protect the
+ * rim - should cost. Capped in total so a lineup that is broken twice over is
+ * severely punished without becoming absurd.
  */
-const MAX_IMBALANCE_PENALTY = 6;
+const MAX_ROLE_PENALTY = 6;
+const MAX_TOTAL_PENALTY = 9;
 
-const FRONTCOURT: ReadonlySet<string> = new Set(["PF", "C"]);
-
-/** How far short of its expected minutes each group falls, 0 when covered. */
-function imbalancePenalty(
-  rotation: { player: { position: string }; weight: number }[],
+/** Minutes covering each role, counting neighbours at partial credit. */
+function rolePenalty(
+  rotation: { position: string; weight: number }[],
   totalWeight: number,
 ): number {
   if (totalWeight <= 0) return 0;
-  const frontcourtWeight = rotation
-    .filter((e) => FRONTCOURT.has(e.player.position))
-    .reduce((sum, e) => sum + e.weight, 0);
+  const minutesAt = (positions: string[]) =>
+    rotation.filter((e) => positions.includes(e.position)).reduce((sum, e) => sum + e.weight, 0);
 
-  const frontcourtShare = frontcourtWeight / totalWeight;
-  const perimeterShare = 1 - frontcourtShare;
+  const creation = (minutesAt(["PG"]) + SUBSTITUTE_CREDIT * minutesAt(["SG"])) / totalWeight;
+  const rim = (minutesAt(["C"]) + SUBSTITUTE_CREDIT * minutesAt(["PF"])) / totalWeight;
 
-  const frontcourtShortfall = Math.max(
-    0,
-    (FRONTCOURT_MINUTES_FLOOR - frontcourtShare) / FRONTCOURT_MINUTES_FLOOR,
-  );
-  const perimeterShortfall = Math.max(
-    0,
-    (PERIMETER_MINUTES_FLOOR - perimeterShare) / PERIMETER_MINUTES_FLOOR,
-  );
-
-  return MAX_IMBALANCE_PENALTY * Math.max(frontcourtShortfall, perimeterShortfall);
+  const shortfall = (share: number, floor: number) => Math.max(0, (floor - share) / floor);
+  const total =
+    MAX_ROLE_PENALTY * shortfall(creation, CREATION_FLOOR) +
+    MAX_ROLE_PENALTY * shortfall(rim, RIM_FLOOR);
+  return Math.min(MAX_TOTAL_PENALTY, total);
 }
 
 export function computeRotationAdjustedStrength(roster: RosterPlayerForSimulation[]): number {
@@ -95,7 +92,7 @@ export function computeRotationAdjustedStrength(roster: RosterPlayerForSimulatio
   const rotation = resolveRotation(roster);
   let weightedSum = 0;
   let weightTotal = 0;
-  const weighted: { player: { position: string }; weight: number }[] = [];
+  const weighted: { position: string; weight: number }[] = [];
 
   for (const { player, rank, targetMinutes } of rotation) {
     // `targetMinutes` is absolute minutes (8-40); RANK_MINUTE_WEIGHTS is a
@@ -107,9 +104,9 @@ export function computeRotationAdjustedStrength(roster: RosterPlayerForSimulatio
       targetMinutes !== null ? targetMinutes * WEIGHT_PER_MINUTE : (RANK_MINUTE_WEIGHTS[rank] ?? 0);
     weightedSum += player.overallRating * weight;
     weightTotal += weight;
-    weighted.push({ player: { position: player.position }, weight });
+    weighted.push({ position: player.position, weight });
   }
 
   if (weightTotal <= 0) return 0;
-  return weightedSum / weightTotal - imbalancePenalty(weighted, weightTotal);
+  return weightedSum / weightTotal - rolePenalty(weighted, weightTotal);
 }

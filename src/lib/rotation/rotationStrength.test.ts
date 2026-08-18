@@ -114,6 +114,30 @@ describe("positional balance", () => {
   const allGuards: Pos[] = Array(12).fill("PG");
   const allCentres: Pos[] = Array(12).fill("C");
 
+  const noPointGuard: Pos[] = ["SG","SG","SF","PF","C","SF","SG","SF","PF","C","SF","C"];
+  const noCentre: Pos[] = ["PG","SG","SF","PF","PF","PG","SG","SF","PF","PF","SF","PF"];
+
+  it("charges a rotation with nobody to create off the dribble", () => {
+    // Wings can run some point, so this is a real cost rather than the full
+    // penalty - but it is no longer free, which it was when PG sat inside a
+    // single broad perimeter group.
+    expect(strength(balanced) - strength(noPointGuard)).toBeGreaterThan(1);
+  });
+
+  it("charges a rotation with nobody to protect the rim", () => {
+    expect(strength(balanced) - strength(noCentre)).toBeGreaterThan(1);
+  });
+
+  it("charges more for missing both than for missing either alone", () => {
+    const both: Pos[] = ["SG","SG","SF","PF","PF","SF","SG","SF","PF","PF","SF","SF"];
+    expect(strength(balanced) - strength(both)).toBeGreaterThan(
+      strength(balanced) - strength(noPointGuard),
+    );
+    expect(strength(balanced) - strength(both)).toBeGreaterThan(
+      strength(balanced) - strength(noCentre),
+    );
+  });
+
   it("charges a rotation with no frontcourt at all", () => {
     expect(strength(balanced) - strength(allGuards)).toBeGreaterThan(5);
   });
