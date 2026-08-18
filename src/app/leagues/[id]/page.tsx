@@ -11,6 +11,7 @@ import {
 import { getSeasonCapRules } from "@/lib/cap/constants";
 import { computeMultiYearProjection } from "@/lib/cap/multiYearProjection";
 import { computeFinancialFlexibilityGrade } from "@/lib/cap/financialFlexibilityGrade";
+import { currentSeasonSalaryCents } from "@/lib/contracts/currentSeasonSalary";
 import { formatCentsCompact } from "@/lib/money";
 import {
   computeFinancialHealth,
@@ -85,7 +86,6 @@ import {
  * analyzable (Next.js reads it at build time, so no imported constant).
  */
 export const maxDuration = 60;
-
 
 const PROJECTION_YEARS_AHEAD = 4;
 
@@ -251,7 +251,7 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
       .filter((lp) => lp.contract?.years[0])
       .map((lp) => ({
         playerId: lp.playerId,
-        salaryCents: lp.contract!.years[0].salaryCents,
+        salaryCents: currentSeasonSalaryCents(lp.contract, season),
       })),
   });
 
@@ -351,7 +351,7 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
     leaguePlayers
       .filter((lp) => lp.contract?.years[0])
       .map((lp) => ({
-        currentSalaryCents: lp.contract!.years[0].salaryCents,
+        currentSalaryCents: currentSeasonSalaryCents(lp.contract, season),
         yearsRemaining: lp.contract!.endSeason - season + 1,
       })),
     getSeasonCapRules(season).salaryCapCents,
@@ -838,7 +838,7 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
                     </Td>
                     <Td numeric>
                       {lp.contract?.years[0]
-                        ? formatCentsCompact(lp.contract.years[0].salaryCents)
+                        ? formatCentsCompact(currentSeasonSalaryCents(lp.contract, season))
                         : "-"}
                     </Td>
                     <Td numeric className="text-ink-muted">

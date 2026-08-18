@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
 import { ApronLevel } from "@/lib/cap/apron";
+import { currentSeasonSalaryCents } from "@/lib/contracts/currentSeasonSalary";
 import { prisma } from "@/lib/prisma";
 import { TradeBuilder } from "@/components/trades/TradeBuilder";
 import {
@@ -68,7 +69,10 @@ async function loadRoster(leagueTeamId: string, season: number) {
     season,
     contracts: leaguePlayers
       .filter((lp) => lp.contract?.years[0])
-      .map((lp) => ({ playerId: lp.playerId, salaryCents: lp.contract!.years[0].salaryCents })),
+      .map((lp) => ({
+        playerId: lp.playerId,
+        salaryCents: currentSeasonSalaryCents(lp.contract, season),
+      })),
   });
 
   const players = leaguePlayers
@@ -81,7 +85,7 @@ async function loadRoster(leagueTeamId: string, season: number) {
       overallRating: lp.overallRating,
       potentialRating: lp.potentialRating,
       age: resolvePlayerAge(lp.player, season),
-      salaryCents: lp.contract!.years[0].salaryCents.toString(),
+      salaryCents: currentSeasonSalaryCents(lp.contract, season).toString(),
       noTradeClause: lp.contract!.noTradeClause,
       injuryStatus: lp.injuryStatus,
       careerGamesMissedToInjury: lp.careerGamesMissedToInjury,
@@ -195,7 +199,7 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
           .filter((lp) => lp.contract?.years[0])
           .map((lp) => ({
             playerId: lp.playerId,
-            salaryCents: lp.contract!.years[0].salaryCents,
+            salaryCents: currentSeasonSalaryCents(lp.contract, league.currentSeason),
           })),
       });
       return {
@@ -391,8 +395,8 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
         <div className="mt-8 rounded-[2px] border border-caution/40 bg-caution/5 p-4">
           <p className="text-sm font-semibold text-ink">The trade deadline has passed.</p>
           <p className="mt-1 text-sm text-ink-muted">
-            It was {deadlineDate}. Nothing can be traded until the regular season ends - simulate
-            to the playoffs and the market reopens.
+            It was {deadlineDate}. Nothing can be traded until the regular season ends - simulate to
+            the playoffs and the market reopens.
           </p>
         </div>
       )}

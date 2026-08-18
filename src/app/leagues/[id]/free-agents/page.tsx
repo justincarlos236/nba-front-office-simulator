@@ -5,6 +5,7 @@ import { formatCentsCompact } from "@/lib/money";
 import { computePerformanceScore } from "@/lib/valuation/playerValue";
 import { loadInSimPerformance } from "@/lib/valuation/inSimPerformance";
 import { contractQualityScore, priceContractCents } from "@/lib/contracts/priceContract";
+import { currentSeasonSalaryCents } from "@/lib/contracts/currentSeasonSalary";
 import { resolvePlayerAge, resolvePlayerExperience } from "@/lib/players/age";
 import { getPlayerValueTier, PLAYER_VALUE_TIER_LABEL } from "@/lib/valuation/playerValueTier";
 import { computeCapSheet } from "@/lib/cap/capSheet";
@@ -72,7 +73,9 @@ export default async function FreeAgentsPage({ params }: PageProps) {
         playerId: true,
         overallRating: true,
         player: { select: { position: true } },
-        contract: { select: { years: { where: { season }, select: { salaryCents: true } } } },
+        contract: {
+          select: { years: { where: { season }, select: { season: true, salaryCents: true } } },
+        },
       },
     }),
     prisma.leagueTeam.findMany({
@@ -81,14 +84,13 @@ export default async function FreeAgentsPage({ params }: PageProps) {
     }),
   ]);
 
-
   const capSheet = computeCapSheet({
     season,
     contracts: ownRoster
       .filter((lp) => lp.contract?.years[0])
       .map((lp) => ({
         playerId: lp.playerId,
-        salaryCents: lp.contract!.years[0].salaryCents,
+        salaryCents: currentSeasonSalaryCents(lp.contract, season),
       })),
   });
 
@@ -131,7 +133,7 @@ export default async function FreeAgentsPage({ params }: PageProps) {
         .filter((lp) => lp.contract?.years[0])
         .map((lp) => ({
           playerId: lp.playerId,
-          salaryCents: lp.contract!.years[0].salaryCents,
+          salaryCents: currentSeasonSalaryCents(lp.contract, season),
         })),
     }).capSpaceCents,
     needs: computeTeamNeeds(

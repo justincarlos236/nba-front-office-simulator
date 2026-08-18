@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
+import { currentSeasonSalaryCents } from "@/lib/contracts/currentSeasonSalary";
 import { prisma } from "@/lib/prisma";
 import { computeReSigningMaxOfferCents } from "@/lib/freeagency/reSigningRights";
 import { resolveFreeAgentMarket } from "@/lib/freeagency/freeAgentMarket";
@@ -56,7 +57,10 @@ export default async function SignFreeAgentPage({ params }: PageProps) {
     season: league.currentSeason,
     contracts: myPlayers
       .filter((lp) => lp.contract?.years[0])
-      .map((lp) => ({ playerId: lp.playerId, salaryCents: lp.contract!.years[0].salaryCents })),
+      .map((lp) => ({
+        playerId: lp.playerId,
+        salaryCents: currentSeasonSalaryCents(lp.contract, league.currentSeason),
+      })),
   });
 
   const hasReSigningRights = freeAgent.reSigningTeamId === myLeagueTeam.id;

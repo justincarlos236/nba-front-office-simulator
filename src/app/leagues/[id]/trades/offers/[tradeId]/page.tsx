@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { currentSeasonSalaryCents } from "@/lib/contracts/currentSeasonSalary";
 import { formatCentsCompact } from "@/lib/money";
 import { resolvePlayerAge } from "@/lib/players/age";
 import { Artifact, ArtifactHead } from "@/components/ui/Artifact";
@@ -63,7 +64,7 @@ export default async function TradeOfferPage({ params }: PageProps) {
   const describe = (asset: (typeof trade.assets)[number]) => {
     const lp = asset.leaguePlayer;
     if (!lp) return null;
-    const salary = lp.contract?.years[0]?.salaryCents;
+    const salary = currentSeasonSalaryCents(lp.contract, league.currentSeason);
     return {
       key: asset.id,
       name: lp.player.fullName,

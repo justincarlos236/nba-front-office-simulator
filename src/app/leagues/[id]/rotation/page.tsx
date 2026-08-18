@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveRotation } from "@/lib/rotation/resolveRotation";
 import { RotationBoard, type RotationPlayer } from "@/components/rotation/RotationBoard";
+import { currentSeasonSalaryCents } from "@/lib/contracts/currentSeasonSalary";
 import { formatCentsCompact } from "@/lib/money";
 
 export const dynamic = "force-dynamic";
@@ -62,7 +63,9 @@ export default async function RotationPage({ params }: PageProps) {
     morale: lp.morale,
     tradeRequestActive: lp.tradeRequestActive,
     potentialRating: lp.potentialRating,
-    salary: lp.contract?.years[0] ? formatCentsCompact(lp.contract.years[0].salaryCents) : null,
+    salary: lp.contract?.years[0]
+      ? formatCentsCompact(currentSeasonSalaryCents(lp.contract, league.currentSeason))
+      : null,
     contractEndSeason: lp.contract?.endSeason ?? null,
   }));
 
