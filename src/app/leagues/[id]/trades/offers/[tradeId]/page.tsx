@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { formatCentsCompact } from "@/lib/money";
-import { estimateAge } from "@/lib/players/age";
+import { resolvePlayerAge } from "@/lib/players/age";
 import { Artifact, ArtifactHead } from "@/components/ui/Artifact";
 import { Label } from "@/components/ui/primitives";
 import { OfferDecision } from "@/components/trades/OfferDecision";
@@ -69,7 +69,7 @@ export default async function TradeOfferPage({ params }: PageProps) {
       name: lp.player.fullName,
       position: lp.player.position,
       rating: lp.overallRating,
-      age: estimateAge(lp.player.draftYear, league.currentSeason),
+      age: resolvePlayerAge(lp.player, league.currentSeason),
       salary: salary ? formatCentsCompact(salary) : null,
     };
   };

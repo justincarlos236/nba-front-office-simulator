@@ -43,7 +43,7 @@ import {
   ACTION_CENTER_DISPLAY_LIMIT,
   type ActionCenterRosterPlayer,
 } from "@/lib/gm/actionCenter";
-import { estimateAge } from "@/lib/players/age";
+import { resolvePlayerAge } from "@/lib/players/age";
 import { PlayerChip } from "@/components/players/PlayerChip";
 import { ActionCenter } from "@/components/dashboard/ActionCenter";
 import { SinceYouLeft } from "@/components/dashboard/SinceYouLeft";
@@ -228,7 +228,7 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
 
   const avgRosterAge =
     leaguePlayers.length > 0
-      ? leaguePlayers.reduce((sum, lp) => sum + estimateAge(lp.player.draftYear, season), 0) /
+      ? leaguePlayers.reduce((sum, lp) => sum + resolvePlayerAge(lp.player, season), 0) /
         leaguePlayers.length
       : 27;
 

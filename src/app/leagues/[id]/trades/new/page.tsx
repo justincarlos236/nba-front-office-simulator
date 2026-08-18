@@ -16,7 +16,7 @@ import { computeTeamIdentity } from "@/lib/gm/teamIdentity";
 import { computeTeamNeeds, TEAM_NEED_LABEL } from "@/lib/gm/teamNeeds";
 import { formatCentsCompact } from "@/lib/money";
 import { DataTable, Label, Td, Th } from "@/components/ui/primitives";
-import { estimateAge } from "@/lib/players/age";
+import { resolvePlayerAge } from "@/lib/players/age";
 
 /** Short enough for a table cell; the full phrasing lives on the cap page. */
 const APRON_LABEL: Record<ApronLevel, string> = {
@@ -80,7 +80,7 @@ async function loadRoster(leagueTeamId: string, season: number) {
       position: lp.player.position,
       overallRating: lp.overallRating,
       potentialRating: lp.potentialRating,
-      age: estimateAge(lp.player.draftYear, season),
+      age: resolvePlayerAge(lp.player, season),
       salaryCents: lp.contract!.years[0].salaryCents.toString(),
       noTradeClause: lp.contract!.noTradeClause,
       injuryStatus: lp.injuryStatus,
@@ -93,7 +93,7 @@ async function loadRoster(leagueTeamId: string, season: number) {
   const activeRoster = leaguePlayers.filter((lp) => lp.isActive);
   const avgAge =
     activeRoster.length > 0
-      ? activeRoster.reduce((sum, lp) => sum + estimateAge(lp.player.draftYear, season), 0) /
+      ? activeRoster.reduce((sum, lp) => sum + resolvePlayerAge(lp.player, season), 0) /
         activeRoster.length
       : 27;
   const needs = computeTeamNeeds(

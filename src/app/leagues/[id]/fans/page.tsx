@@ -28,7 +28,7 @@ import {
 } from "@/lib/fans/fanMandate";
 import { computeFranchiseIconScore } from "@/lib/finances/franchiseIcon";
 import { computeTeamStrength } from "@/lib/simulation/teamStrength";
-import { ageFromBirthDate, estimateAge } from "@/lib/players/age";
+import { ageFromBirthDate, resolvePlayerAge } from "@/lib/players/age";
 import { buildFanCultureHistoryInputs } from "@/lib/actions/fanCulture";
 
 export const dynamic = "force-dynamic";
@@ -213,7 +213,7 @@ export default async function FansPage({ params }: PageProps) {
   const ages = roster.map(
     (p) =>
       ageFromBirthDate(p.player.birthDate, league.currentSeason) ??
-      estimateAge(p.player.draftYear, league.currentSeason),
+      resolvePlayerAge(p.player, league.currentSeason),
   );
   const averageRosterAge = ages.length > 0 ? ages.reduce((s, a) => s + a, 0) / ages.length : 26;
   const mandateFacts = myLeagueTeam.fanMandate
