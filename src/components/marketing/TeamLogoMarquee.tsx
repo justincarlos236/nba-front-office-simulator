@@ -1,7 +1,18 @@
 import { TeamLogo } from "@/components/teams/TeamLogo";
 import { prisma } from "@/lib/prisma";
 
-/** A quiet, continuously-scrolling strip of every real team's crest - texture/identity behind the hero, not a functional carousel (see the /teams page for actually browsing teams). */
+/**
+ * Every club's crest, scrolling once through and repeating.
+ *
+ * Not a carousel - the /teams page is where clubs are actually browsed. This
+ * exists to make "thirty jobs" concrete, which is why it now sits under that
+ * claim rather than under the hero.
+ *
+ * It used to draw at 40px, half opacity and fully desaturated, which left most
+ * of the league as unreadable grey smudges - the Spurs wordmark and the Jazz
+ * mark in particular. Drawn larger and in their own colours they are legible,
+ * and a wall of real franchises says more than any sentence about scope could.
+ */
 export async function TeamLogoMarquee() {
   const teams = await prisma.team.findMany({
     orderBy: [{ conference: "asc" }, { city: "asc" }],
@@ -16,7 +27,7 @@ export async function TeamLogoMarquee() {
 
   return (
     <div
-      className="relative mt-14 overflow-hidden"
+      className="relative mt-12 overflow-hidden"
       style={{
         maskImage: "linear-gradient(to right, transparent, black 10%, black 90%, transparent)",
         WebkitMaskImage:
@@ -28,8 +39,8 @@ export async function TeamLogoMarquee() {
           <TeamLogo
             key={`${team.id}-${i}`}
             logoUrl={team.logoUrl}
-            size={40}
-            className="opacity-50 grayscale transition hover:opacity-90 hover:grayscale-0"
+            size={44}
+            className="opacity-80 transition hover:opacity-100"
           />
         ))}
       </div>
