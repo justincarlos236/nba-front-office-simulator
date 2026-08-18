@@ -288,7 +288,7 @@ function TeamLine({
       <div className="flex min-w-0 items-center gap-1">
         {team.logoUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={team.logoUrl} alt="" width={13} height={13} className="shrink-0" />
+          <img src={team.logoUrl} alt="" width={13} height={13} className="shrink-0 object-contain" />
         )}
         <span
           className={`truncate ${
