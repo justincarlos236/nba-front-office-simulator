@@ -5,7 +5,7 @@ import { computeExpectationLevel, EXPECTATION_LEVEL_ORDER } from "./expectationL
  * These are TEAM-STRENGTH values, not player ratings, and the two live on
  * different scales - a team strength is a weighted roster average and clusters
  * far more tightly than any one player's rating. The league runs roughly
- * 75.5-85.0 (see docs/TEAM_STRENGTH_AUDIT.md), so "elite" is about 82.6 and
+ * 75.5-85.0 (see docs/audits/TEAM_STRENGTH_AUDIT.md), so "elite" is about 82.6 and
  * "weak" about 78.7.
  *
  * The old fixtures used 60/72/82/85, which read as player ratings and are what

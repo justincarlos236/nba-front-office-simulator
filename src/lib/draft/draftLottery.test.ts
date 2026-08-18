@@ -68,7 +68,7 @@ describe("runLottery", () => {
 
 describe("expectedLotterySlotForSeed", () => {
   /**
-   * The regression this exists for. docs/DRAFT_AUDIT.md D-P1-1: the pick
+   * The regression this exists for. docs/audits/DRAFT_AUDIT.md D-P1-1: the pick
    * projection assumed the worst team receives pick 1, a certainty the
    * post-2019 lottery explicitly removed, overvaluing a bottom team's future
    * first by 47%.

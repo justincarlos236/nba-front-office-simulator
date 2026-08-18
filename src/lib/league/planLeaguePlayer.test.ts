@@ -91,7 +91,7 @@ describe("planLeaguePlayer", () => {
    * The rating shown and the rating paid must be the same number. They used to
    * be resolved in two places - the seed rating in the caller, the contract
    * price off `computePerformanceScore` here - so a player could be displayed
-   * as a 79 and paid like an 88. See docs/CONTRACT_AUDIT.md, C-P0-4.
+   * as a 79 and paid like an 88. See docs/audits/CONTRACT_AUDIT.md, C-P0-4.
    */
   it("prices the contract off the seed rating when the dataset carries one", () => {
     const scouted = planLeaguePlayer({
@@ -153,7 +153,7 @@ describe("planLeaguePlayer", () => {
 /**
  * Seeding real contracts is what makes year one look like the real league
  * rather than like the valuation model's opinion of it. See
- * docs/CONTRACT_AUDIT.md - a real backup centre was starting on $29M because
+ * docs/audits/CONTRACT_AUDIT.md - a real backup centre was starting on $29M because
  * the model rated him a top-50 veteran.
  */
 describe("planLeaguePlayer - seeded real contracts", () => {

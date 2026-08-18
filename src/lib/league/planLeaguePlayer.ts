@@ -46,7 +46,7 @@ export interface LeaguePlayerPlan {
  * to resolve the seed rating in the caller and the contract price here, off
  * `computePerformanceScore` instead - so a league player could be shown as a 79
  * and paid like an 88. Resolving both in one place is what keeps those from
- * drifting apart again; see docs/CONTRACT_AUDIT.md, C-P0-4.
+ * drifting apart again; see docs/audits/CONTRACT_AUDIT.md, C-P0-4.
  */
 export function planLeaguePlayer(input: PlanLeaguePlayerInput): LeaguePlayerPlan {
   const performanceScore = computePerformanceScore(input.stats);

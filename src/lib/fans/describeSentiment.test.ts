@@ -9,7 +9,7 @@ describe("describeTradeSentiment", () => {
   // The exact regression this module exists to fix: fanReactions.ts's old
   // "Fans are buzzing" fired identically for every trade regardless of
   // whether it was lopsided in either direction - see
-  // docs/FANS_PAGE_REDESIGN.md Part 2.3.
+  // docs/design/FANS_PAGE_REDESIGN.md Part 2.3.
   it("reads distinctly different for a lopsided win vs. a lopsided loss", () => {
     const won = describeTradeSentiment({ delta: 6, sentNames: ["A"], acquiredNames: ["B"] });
     const lost = describeTradeSentiment({ delta: -6, sentNames: ["A"], acquiredNames: ["B"] });

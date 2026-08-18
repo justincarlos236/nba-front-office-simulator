@@ -95,7 +95,7 @@ const REGULAR_SEASON_GAMES = 82;
 // `pickTradeTarget` shortlisted each club's three best men. With that fixed
 // (see TOP_CANDIDATE_POOL_SIZE and STAR_RATING_FLOOR), volume and star
 // movement are decoupled: measured across every frequency tried, star moves
-// hold near one a season. See docs/TRADE_EXPLOIT_AUDIT.md T-P1-4.
+// hold near one a season. See docs/audits/TRADE_EXPLOIT_AUDIT.md T-P1-4.
 const TRADE_CHANCE_PER_GAME = 0.03;
 /** Deliberately below the CPU-CPU rate - see the note at the call site. */
 const OFFER_TO_USER_CHANCE_PER_GAME = 0.004;
@@ -488,7 +488,7 @@ async function maybeExecuteCpuTrade(
               include: {
                 // Every remaining season - CPU teams must price contract
                 // length the same way the user's trades do, or the two
-                // sides of the same market disagree. See docs/TRADE_AUDIT.md.
+                // sides of the same market disagree. See docs/audits/TRADE_AUDIT.md.
                 years: { where: { season: { gte: season } }, orderBy: { season: "asc" } },
               },
             },
@@ -505,7 +505,7 @@ async function maybeExecuteCpuTrade(
   const percentileByTeam = await computeCompetitivenessPercentiles(allTeamsWinLoss);
 
   // Unselected picks in future drafts. CPU trades can now attach one as a
-  // sweetener (docs/TRADE_AUDIT.md subsystem #8), which means pick ownership
+  // sweetener (docs/audits/TRADE_AUDIT.md subsystem #8), which means pick ownership
   // genuinely matters here - it is also the Stepien-rule input.
   const futurePicks = await prisma.draftPick.findMany({
     where: { leagueId, season: { gt: season }, selectedProspectId: null },
@@ -869,7 +869,7 @@ async function maybeExecuteCpuSigning(
   // legal regardless of a CPU team's cap situation (see validateSigning),
   // and realistically the bulk of in-season free-agent activity anyway.
   // This player's own service-year minimum, not the empty-roster cap hold that
-  // used to stand in for it (docs/CONTRACT_AUDIT.md C-P2-1).
+  // used to stand in for it (docs/audits/CONTRACT_AUDIT.md C-P2-1).
   const offerSalaryCents = veteranMinimumCents(
     season,
     resolvePlayerExperience(freeAgent.player, season),
@@ -1197,7 +1197,7 @@ export async function applyPlayerMoraleEvents(
 // Finances as a Gameplay Pillar, System 7 "Business Events" - the
 // per-game chance of a new business decision landing in the user's Front
 // Office Inbox. Tuned toward the design target of ~6-10 decisions across an
-// 82-game season (see docs/FINANCES_PILLAR_DESIGN.md), same "chance per game
+// 82-game season (see docs/design/FINANCES_PILLAR_DESIGN.md), same "chance per game
 // in the batch" convention as TRADE_CHANCE_PER_GAME/SIGNING_CHANCE_PER_GAME
 // above - an approximation of "per user game," not an exact one, consistent
 // with how those existing rolls already work.
@@ -1251,7 +1251,7 @@ export function applyBusinessDecisionOption(
  * Finances as a Gameplay Pillar, System 7 "Business Events" - the
  * Front Office Inbox's live feed. Business decisions are a user-facing
  * mechanic only (never rolled for CPU teams - see
- * docs/FINANCES_PILLAR_DESIGN.md's Tier 2 CPU abstraction), so this always
+ * docs/design/FINANCES_PILLAR_DESIGN.md's Tier 2 CPU abstraction), so this always
  * targets `userControlledTeamId`.
  *
  * Does two things in one pass: (1) auto-resolves any PENDING decision whose
@@ -1580,7 +1580,7 @@ async function maybeProposeCpuTradeToUser(
               include: {
                 // Every remaining season - CPU teams must price contract
                 // length the same way the user's trades do, or the two
-                // sides of the same market disagree. See docs/TRADE_AUDIT.md.
+                // sides of the same market disagree. See docs/audits/TRADE_AUDIT.md.
                 years: { where: { season: { gte: season } }, orderBy: { season: "asc" } },
               },
             },
@@ -1596,7 +1596,7 @@ async function maybeProposeCpuTradeToUser(
   const percentileByTeam = await computeCompetitivenessPercentiles(allTeamsWinLoss);
 
   // Unselected picks in future drafts. CPU trades can now attach one as a
-  // sweetener (docs/TRADE_AUDIT.md subsystem #8), which means pick ownership
+  // sweetener (docs/audits/TRADE_AUDIT.md subsystem #8), which means pick ownership
   // genuinely matters here - it is also the Stepien-rule input.
   const futurePicks = await prisma.draftPick.findMany({
     where: { leagueId, season: { gt: season }, selectedProspectId: null },

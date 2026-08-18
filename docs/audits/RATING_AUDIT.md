@@ -1,6 +1,6 @@
 # Seed Rating Audit
 
-**Opened** 2026-08-12, after `docs/CONTRACT_AUDIT.md` traced two "wrong salary" reports back to the rating rather than the pricing. Neemias Queta is rated **79** — the 83rd-best player of 537, top 15% — which makes a top-50-veteran salary the _correct_ output of a correct pricing model. The contract work fixed pricing; it could not fix the input.
+**Opened** 2026-08-12, after `docs/audits/CONTRACT_AUDIT.md` traced two "wrong salary" reports back to the rating rather than the pricing. Neemias Queta is rated **79** — the 83rd-best player of 537, top 15% — which makes a top-50-veteran salary the _correct_ output of a correct pricing model. The contract work fixed pricing; it could not fix the input.
 
 **Method.** `scripts/rating-audit.ts`, read-only, over the committed 537-player dataset.
 
@@ -151,7 +151,7 @@ Measured as the gap between a player's rating rank and his pay rank among 213 ve
 | PF    | 30  | 74.6        | $22.2M        | **−10.9**  |
 | **C** | 39  | 74.4        | $16.9M        | **+9.8**   |
 
-**Centres are rated ~10 rank places above what the league pays them; forwards ~11 below.** The model rewards rebounds (0.5/each) and blocks (1.5/each), which are structurally available to bigs, and has no term for the wing skills — shot creation, spacing, perimeter defence — that the market pays for. This is the same tilt `docs/CONTRACT_AUDIT.md` found in the valuation model (C-P1-1), in the _other_ rating system, from the same cause.
+**Centres are rated ~10 rank places above what the league pays them; forwards ~11 below.** The model rewards rebounds (0.5/each) and blocks (1.5/each), which are structurally available to bigs, and has no term for the wing skills — shot creation, spacing, perimeter defence — that the market pays for. This is the same tilt `docs/audits/CONTRACT_AUDIT.md` found in the valuation model (C-P1-1), in the _other_ rating system, from the same cause.
 
 ---
 

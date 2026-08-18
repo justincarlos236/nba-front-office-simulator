@@ -4,7 +4,7 @@
  *
  * `scoreToCapFraction` saturates because *salaries* have a CBA maximum. Trade
  * value does not, and reusing that curve compresses the whole league into a
- * 6.2x range (docs/TRADE_AUDIT.md, T-P0-3).
+ * 6.2x range (docs/audits/TRADE_AUDIT.md, T-P0-3).
  *
  * A single exponential cannot serve both ends: fitted to the pick chart it
  * needs k=0.203, which then makes a 99 worth 360x a 70. The required steepness

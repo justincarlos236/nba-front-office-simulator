@@ -1,6 +1,6 @@
 /**
  * Fans Page Redesign, Section 4 (media narratives half) -
- * "The Conversation" (docs/FANS_PAGE_REDESIGN.md Part 3.4). Persistent,
+ * "The Conversation" (docs/design/FANS_PAGE_REDESIGN.md Part 3.4). Persistent,
  * multi-week storylines - distinct from ReactionFeedSection,
  * which is one-off reactions to individual events. This is the ongoing
  * interpretation layer: News reports events, this section is the story.

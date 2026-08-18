@@ -5,7 +5,7 @@
  * written by `advanceSeasonAction` — CPU re-signings and CPU free-agent
  * signings alike — paid the identical figure every season, while
  * `generateContract` and `signFreeAgentAction` applied a flat 5% regardless of
- * which mechanism was used. See docs/CONTRACT_AUDIT.md C-P2-3.
+ * which mechanism was used. See docs/audits/CONTRACT_AUDIT.md C-P2-3.
  *
  * That matters beyond cosmetics: a club's payroll in year three of a deal is
  * what decides whether it is over the apron, which decides which exceptions it

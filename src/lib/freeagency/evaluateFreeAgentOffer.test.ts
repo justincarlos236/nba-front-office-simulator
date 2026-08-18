@@ -20,7 +20,7 @@ const offer = (params: {
 
 describe("evaluateFreeAgentOffer", () => {
   /**
-   * The regression this file exists for. docs/FREE_AGENCY_AUDIT.md FA-P0-1:
+   * The regression this file exists for. docs/audits/FREE_AGENCY_AUDIT.md FA-P0-1:
    * every free agent in the game could be signed for the veteran minimum,
    * measured at up to a 35x discount to market. If this test ever passes a
    * minimum offer for a star, the exploit is back.

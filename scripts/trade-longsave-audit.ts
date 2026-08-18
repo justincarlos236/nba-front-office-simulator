@@ -1,7 +1,7 @@
 /**
  * Does the trade market stay believable over a long save?
  *
- * The last dimension `docs/TRADE_EXPLOIT_AUDIT.md` left unscored. The CPU
+ * The last dimension `docs/audits/TRADE_EXPLOIT_AUDIT.md` left unscored. The CPU
  * realism harness measured trade *frequency* across ten seasons but rebuilt the
  * league each time, so it could not see drift within one continuous save.
  *

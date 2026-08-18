@@ -124,7 +124,7 @@ describe("computeSeasonExpenses", () => {
   });
 
   /**
-   * docs/FINANCE_AUDIT.md P1-5. The CBA's own penalty: a team under the minimum
+   * docs/audits/FINANCE_AUDIT.md P1-5. The CBA's own penalty: a team under the minimum
    * team salary pays the shortfall to its players anyway, so being cheap does
    * not actually save the money. Before this, Houston fielded a $104.5M roster
    * against a $139.2M floor and posted the best net income in the league.
@@ -291,7 +291,7 @@ describe("computeFranchiseValue", () => {
   });
 
   /**
-   * docs/FINANCE_AUDIT.md P0-3: the cash term was `cash * 0.5` on an unbounded
+   * docs/audits/FINANCE_AUDIT.md P0-3: the cash term was `cash * 0.5` on an unbounded
    * quantity. Correct at the scale it was written for and badly wrong once cash
    * compounded - a team that reached $3.68B in the bank had $1.84B of its
    * franchise value coming from the balance sheet alone, swamping market,
@@ -343,7 +343,7 @@ describe("computeFranchiseValue", () => {
 });
 
 /**
- * docs/FINANCE_AUDIT.md P0-2 - the finance pillar's failure state. Before this,
+ * docs/audits/FINANCE_AUDIT.md P0-2 - the finance pillar's failure state. Before this,
  * insolvency was free: teams reached −$3.4B in cash over 15 seasons and kept
  * playing exactly as before.
  */

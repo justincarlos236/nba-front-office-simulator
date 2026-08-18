@@ -9,14 +9,14 @@
  * number in the simulation.** Across 15 players the best man was 12.3% of a
  * team and the bottom six were 21.1%, which meant acquiring a superstar was
  * worth about what gutting six bench spots cost. Measured (see
- * docs/TEAM_STRENGTH_AUDIT.md):
+ * docs/audits/TEAM_STRENGTH_AUDIT.md):
  *
  *   - talent SD 6.4 wins against a real ~11.1
  *   - the league spanned 26 to 53 wins; a real one spans roughly 17 to 63
  *   - 56% of the standings were luck, against about 14% in reality
  *
  * That last figure is the one that mattered. A seven-game series averages luck
- * away and leaves only talent, which is why `docs/PLAYOFF_AUDIT.md` found a 1v8
+ * away and leaves only talent, which is why `docs/audits/PLAYOFF_AUDIT.md` found a 1v8
  * series at 83.5% against a real 93% - the bracket was right and the league
  * underneath it was too flat. Two earlier audits went looking for this in the
  * rating distribution and could not find it, because it was never there.
@@ -35,7 +35,7 @@
  *
  * This closes most of the gap, not all of it: talent SD lands at 9.5 against
  * the real 11.1, and the top-share bound is what binds. The residual belongs to
- * the rating distribution - `docs/RATING_AUDIT.md` has the 80+ population at
+ * the rating distribution - `docs/audits/RATING_AUDIT.md` has the 80+ population at
  * ~115 against a real 82 - and cannot be fixed here without making one player
  * an implausible share of his team.
  */

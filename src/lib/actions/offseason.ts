@@ -243,7 +243,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
   // held a schedule it could not use and refused every retry. Recovery instead
   // - the orphaned schedule is discarded here so the rebuild below writes a
   // clean one. Those games are unplayed by definition, because the season they
-  // belong to has not started. See docs/OFFSEASON_INTEGRITY_AUDIT.md, O-P1-1.
+  // belong to has not started. See docs/audits/OFFSEASON_INTEGRITY_AUDIT.md, O-P1-1.
   const orphanedSchedule = await prisma.game.count({ where: { leagueId, season: newSeason } });
   if (orphanedSchedule > 0) {
     await prisma.game.deleteMany({ where: { leagueId, season: newSeason } });
@@ -839,7 +839,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
             // Term is the player's own: quality buys years, age takes them
             // back. Every CPU deal used to be a flat two years, so a single
             // offseason erased the variety the bootstrap created - see
-            // docs/CONTRACT_AUDIT.md, C-P1-5.
+            // docs/audits/CONTRACT_AUDIT.md, C-P1-5.
             years: offerYears,
           });
         } else {
@@ -1288,7 +1288,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
           // 8% raises: this is a Bird-rights re-signing, which is exactly the
           // deal the higher ceiling exists for. These were flat, so a CPU club's
           // payroll never grew across a contract and its future apron position
-          // was quietly too healthy. See docs/CONTRACT_AUDIT.md C-P2-3.
+          // was quietly too healthy. See docs/audits/CONTRACT_AUDIT.md C-P2-3.
           await prisma.contractYear.createMany({
             data: contractYearSalaries(r.offerSalaryCents, r.years, "BIRD_RIGHTS").map(
               (salaryCents, i) => ({
@@ -1509,7 +1509,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     // and the retry re-runs from the top over rows that already exist.
     // `SeasonAward` is uniquely keyed on (leagueId, season, category), so a
     // plain createMany throws here on every retry and the league can never be
-    // advanced again. See docs/OFFSEASON_INTEGRITY_AUDIT.md, O-P1-1.
+    // advanced again. See docs/audits/OFFSEASON_INTEGRITY_AUDIT.md, O-P1-1.
     await prisma.seasonAward.createMany({ data: awardRows, skipDuplicates: true });
   }
 
@@ -1581,7 +1581,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     // createMany rather than create, purely for `skipDuplicates` - StaffAward
     // carries the same (leagueId, season, category) uniqueness as SeasonAward
     // above and would brick a retry the same way. The return value was never
-    // used. See docs/OFFSEASON_INTEGRITY_AUDIT.md, O-P1-1.
+    // used. See docs/audits/OFFSEASON_INTEGRITY_AUDIT.md, O-P1-1.
     await prisma.staffAward.createMany({
       data: [
         {
@@ -2194,7 +2194,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     completingThisPassByTeam,
   });
 
-  // docs/FINANCE_AUDIT.md P0-2 - an owner who had to cover the season's
+  // docs/audits/FINANCE_AUDIT.md P0-2 - an owner who had to cover the season's
   // shortfall thinks less of the manager who caused it. Applied here rather
   // than inside the finance pass so confidence stays owned by one function,
   // which is also what makes repeated bailouts compound into the existing

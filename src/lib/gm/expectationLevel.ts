@@ -53,7 +53,7 @@ const BASE_INDEX_BY_TIER: Record<PayrollTier, number> = {
 // ever weak, and this function silently returned the payroll tier's base index
 // for all 30 teams in every save.
 //
-// Re-weighting `computeTeamStrength` (docs/TEAM_STRENGTH_AUDIT.md) moved the
+// Re-weighting `computeTeamStrength` (docs/audits/TEAM_STRENGTH_AUDIT.md) moved the
 // range to 75.5-85.0 and turned a dead threshold into an over-firing one: 22 of
 // 30 teams cleared 80. Both are now set from the measured distribution - elite
 // is roughly the top five rosters, weak roughly the bottom five.

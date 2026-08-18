@@ -11,7 +11,7 @@ import { contractQualityScore, priceContractCents } from "@/lib/contracts/priceC
  * Before this, `seasonStats` was seeded real-world data queried at
  * `league.currentSeason`, which is empty for every player from a save's second
  * season onward - so a 30-point-per-game scorer and a benchwarmer of the same
- * rating were priced identically. See docs/CONTRACT_AUDIT.md C-P1-2.
+ * rating were priced identically. See docs/audits/CONTRACT_AUDIT.md C-P1-2.
  */
 
 const line = (overrides: Partial<Parameters<typeof computePerformanceScore>[0]> = {}) => ({

@@ -79,7 +79,7 @@ export async function startArenaRenovationAction(leagueId: string): Promise<void
 /**
  * starts the ARENA_FUNDING
  * Negotiation (a new build "almost always requires financing and a public-
- * funding negotiation with the city" - see docs/FINANCES_PILLAR_DESIGN.md).
+ * funding negotiation with the city" - see docs/design/FINANCES_PILLAR_DESIGN.md).
  * Nothing is spent or committed yet - the negotiation itself, delivered
  * through the Front Office Inbox, decides whether the project happens at
  * all and on what terms (see resolveBusinessDecisionAction's negotiation

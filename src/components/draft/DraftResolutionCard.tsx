@@ -8,7 +8,7 @@ const AXIS_LABEL: Record<"WORK_ETHIC" | "INJURY_OUTLOOK", string> = {
 
 /**
  * Post-Draft Resolution (Scouting Pillar Redesign, Phase 5 -
- * docs/SCOUTING_PILLAR_DESIGN.md Part 3.5). Shown once, right when the
+ * docs/design/SCOUTING_PILLAR_DESIGN.md Part 3.5). Shown once, right when the
  * user's own pick resolves in `PickRevealStage`. Deliberately a receipt
  * for what you knew, never a grade on whether the pick was right -
  * potentialRating and any bust/steal verdict are absent by design. Whether

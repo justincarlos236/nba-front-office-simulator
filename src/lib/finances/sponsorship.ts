@@ -8,7 +8,7 @@ import type { PlayerValueTier } from "@/lib/valuation/playerValueTier";
  * `businessDecisions.ts`'s sponsorship cards); this module covers the two
  * things that stay pure math: (1) the CPU teams' formula-computed
  * sponsorship baseline (Tier 2 abstraction - CPU never "shops" for a deal,
- * see docs/FINANCES_PILLAR_DESIGN.md), and (2) the buyout penalty for
+ * see docs/design/FINANCES_PILLAR_DESIGN.md), and (2) the buyout penalty for
  * voiding a user deal's "star clause" mid-trade.
  */
 

@@ -1,7 +1,7 @@
 /**
  * Does the league drift toward parity over a long save?
  *
- * docs/SIMULATION_AUDIT.md P1-8 observed team-strength spread falling from 11.6
+ * docs/audits/SIMULATION_AUDIT.md P1-8 observed team-strength spread falling from 11.6
  * to 4.5 across six seasons of a real save, with best/worst converging on 51/30
  * wins. It is the one finding keeping that audit's long-term stability at 6/10,
  * and it predates the team-strength re-weighting - which fixed the spread a

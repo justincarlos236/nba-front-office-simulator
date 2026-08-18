@@ -337,7 +337,7 @@ export interface CpuTradeResult {
    * the league's own market structurally simpler than the user's: no CPU team
    * could ever pay a pick for an upgrade, so none of them ever acted on the
    * rebuild-through-capital identity the model says they have. See
-   * docs/TRADE_AUDIT.md subsystem #8.
+   * docs/audits/TRADE_AUDIT.md subsystem #8.
    */
   pickFromTeamA?: CpuTradeablePick;
   // The mutual-accept evaluateTradeOffer scores already computed to decide
@@ -379,7 +379,7 @@ const TOP_CANDIDATE_POOL_SIZE = 4;
  * **The shortlist was "the three best men on that roster", and that is not how
  * a trade market works.** `pickTradeTarget` sorts by rating descending and
  * takes the top few, so every CPU enquiry started with a club's best player.
- * Measured in docs/TRADE_EXPLOIT_AUDIT.md T-P1-4, that put 85+ players at
+ * Measured in docs/audits/TRADE_EXPLOIT_AUDIT.md T-P1-4, that put 85+ players at
  * 12-20% of all traded players at every volume setting, against a real ~4%.
  *
  * At the shipped trade frequency that ratio is invisible - 18% of thirteen

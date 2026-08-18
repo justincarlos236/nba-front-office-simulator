@@ -38,7 +38,7 @@ const MIN_OT_SCORE = 4;
 // simulateLiveGame.test.ts's calibration check for the regression net.
 //
 // Re-calibrated from 0.11 when simulateGame moved to a margin-first model
-// (docs/SIMULATION_AUDIT.md, P1-5): the single-game curve got substantially
+// (docs/audits/SIMULATION_AUDIT.md, P1-5): the single-game curve got substantially
 // steeper, and a live playoff game must not use a different win model from
 // the one the rest of the engine and every win-probability display report.
 // Naively reusing a per-game-scale sensitivity here would over-amplify

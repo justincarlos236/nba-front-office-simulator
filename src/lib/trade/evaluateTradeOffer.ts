@@ -205,7 +205,7 @@ export function evaluateTradeOffer(input: EvaluateTradeOfferInput): EvaluateTrad
    * a philosophy, it is an arbitrage: sweeping 5,300 mirror trades found 160
    * where both teams accepted the same swap in opposite directions, 60 of them
    * caused purely by this. A GM who loves youth should ask more for his own
-   * young players too. See docs/TRADE_AUDIT.md, T-P0-4.
+   * young players too. See docs/audits/TRADE_AUDIT.md, T-P0-4.
    */
   const talentMultiplier = (asset: TradePlayerAsset): number => {
     let multiplier = 1;

@@ -5,7 +5,7 @@ import { FAN_SENTIMENT_KIND_LABEL, type LedgerEvent } from "@/lib/fans/sentiment
  * "Fan Reactions," rebuilt. Replaces the old
  * fanReactions.ts lookup table (`TRADE -> "Fans are buzzing"`, fired
  * identically for a lopsided win or a lopsided loss - the sharpest
- * complaint in docs/FANS_PAGE_REDESIGN.md Part 2.3) with the real,
+ * complaint in docs/design/FANS_PAGE_REDESIGN.md Part 2.3) with the real,
  * delta-aware descriptions already written into the sentiment ledger at the
  * moment each event happened (src/lib/fans/describeSentiment.ts).
  *

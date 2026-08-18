@@ -23,7 +23,7 @@ const PEAK_AGE = 27;
  * 5% the moment a player turned 32 and stayed flat on either side. Value fell
  * 2% at 31 and 5.6% at 33 - a cliff at one specific birthday, in a model that
  * every trade, contract and re-signing decision multiplies through. See
- * docs/CONTRACT_AUDIT.md C-P2-4.
+ * docs/audits/CONTRACT_AUDIT.md C-P2-4.
  *
  * Real decline accelerates; it does not switch gears. These coefficients are
  * solved to pass through the old curve's two defensible anchors - 0.90 at age

@@ -47,7 +47,7 @@ export const REAL_TEAM_PAYROLL_SHAPE = {
  * contracts the dataset now carries (`scripts/import-contracts.ts`), the true
  * counts are 14 / 26 / 59 - two to three times higher across every band.
  *
- * docs/CONTRACT_AUDIT.md judged the generated distribution against the old
+ * docs/audits/CONTRACT_AUDIT.md judged the generated distribution against the old
  * numbers and concluded it was too fat through $30-40M. Against the real ones
  * it is the opposite: the generator is too *thin* at the top, producing one
  * player above $50M where the league has fourteen. Any future calibration

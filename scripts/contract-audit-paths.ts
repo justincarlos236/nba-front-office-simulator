@@ -2,7 +2,7 @@
  * Contract audit harness, part 2 - the questions part 1 cannot answer from a
  * single league snapshot: how the four pricing paths disagree with each other,
  * what happens to prices over a ten-season save, and where the exploit surface
- * is. Companion to scripts/contract-audit.ts; see docs/CONTRACT_AUDIT.md.
+ * is. Companion to scripts/contract-audit.ts; see docs/audits/CONTRACT_AUDIT.md.
  *
  * Reads only. Run: npx tsx scripts/contract-audit-paths.ts
  */

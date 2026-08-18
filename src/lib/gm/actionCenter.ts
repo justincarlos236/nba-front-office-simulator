@@ -25,7 +25,7 @@ export interface ActionCenterItem {
   href: string;
   /**
    * "Why is this recommended?" (Onboarding Philosophy Phase 2 - see
-   * docs/ONBOARDING_DESIGN.md Part 4B.2). The state this rule actually
+   * docs/design/ONBOARDING_DESIGN.md Part 4B.2). The state this rule actually
    * tested, in plain English - never a new signal, just the reasoning
    * behind the one that already fired. Optional only because a handful of
    * items (e.g. a pending playoff game) are self-explanatory enough that
@@ -118,7 +118,7 @@ export function computeActionCenterItems(input: ActionCenterInput): ActionCenter
   const items: ActionCenterItem[] = [];
   const base = `/leagues/${input.leagueId}`;
 
-  // Onboarding Philosophy Phase 2 (docs/ONBOARDING_DESIGN.md Beat 2) - the
+  // Onboarding Philosophy Phase 2 (docs/design/ONBOARDING_DESIGN.md Beat 2) - the
   // audit's sharpest finding: `simulateGamesAction` was only ever reachable
   // from Standings/Schedule, so a brand-new GM's dashboard never said how to
   // actually play. This fires exactly once per league (regular season
@@ -178,7 +178,7 @@ export function computeActionCenterItems(input: ActionCenterInput): ActionCenter
 
   if (input.pendingDraftLottery) {
     // the draft class is revealed
-    // before the lottery runs on purpose (docs/SCOUTING_PILLAR_DESIGN.md
+    // before the lottery runs on purpose (docs/design/SCOUTING_PILLAR_DESIGN.md
     // Part 3.0): scouting without knowing where you'll pick is the whole
     // point. Points at the Draft page (where scouting now lives) rather
     // than straight at the lottery, so this doesn't nudge the player past

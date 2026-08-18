@@ -5,7 +5,7 @@
  * seeded real-world data, and every free-agency path queries it with
  * `season = league.currentSeason`. Leagues start at 2026 and the dataset
  * carries mostly 2025, so 21% of players have stats in a save's first season
- * and **none at all from its second onward** - see docs/CONTRACT_AUDIT.md
+ * and **none at all from its second onward** - see docs/audits/CONTRACT_AUDIT.md
  * C-P1-2. A player who averages thirty points for five in-sim seasons was
  * priced identically to a benchwarmer of the same rating, and an in-sim drafted
  * rookie had no statistics at all, which is why `cpuFreeAgentMarket` used to

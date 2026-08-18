@@ -12,7 +12,7 @@ import { SUPERMAX_FRACTION_OF_CAP, SUPERMAX_MIN_YEARS } from "./supermax";
  * multiplied by up to +15% negotiation noise. A team with $67.9M of room could
  * legally hand one player all of it, and any future change to the valuation
  * curve would have run straight past the ceiling unchecked. See
- * docs/CONTRACT_AUDIT.md, C-P0-3.
+ * docs/audits/CONTRACT_AUDIT.md, C-P0-3.
  *
  * **Keyed off years of service, which is the real rule, falling back to age.**
  * The CBA sets the tiers by service: 25% of the cap for 0-6 years, 30% for 7-9,

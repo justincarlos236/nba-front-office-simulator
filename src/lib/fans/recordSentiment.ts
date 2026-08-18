@@ -8,7 +8,7 @@ import type { Prisma } from "@/generated/prisma/client";
  * fan-happiness delta don't each hand-roll the same insert.
  *
  * Every call site already had the delta; this only persists what was
- * previously discarded (see docs/FANS_PAGE_REDESIGN.md Part 1.2). Nothing
+ * previously discarded (see docs/design/FANS_PAGE_REDESIGN.md Part 1.2). Nothing
  * here computes or judges sentiment - src/lib/fans/sentimentEvents.ts stays
  * the sole owner of "how much does this move the fanbase."
  */

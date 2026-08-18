@@ -3,7 +3,7 @@ import type { ResolvableHiddenAxis } from "@/lib/draft/scoutingProfile";
 
 /**
  * Post-Draft Resolution (Scouting Pillar Redesign, Phase 5 -
- * docs/SCOUTING_PILLAR_DESIGN.md Part 3.5). Shown once, right when the
+ * docs/design/SCOUTING_PILLAR_DESIGN.md Part 3.5). Shown once, right when the
  * user makes a pick - deliberately shows only what the player already
  * earned the right to know, never `potentialRating`, never a "steal"/
  * "bust" verdict. Whether the pick was actually right emerges over real

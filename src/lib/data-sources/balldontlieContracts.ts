@@ -2,7 +2,7 @@
  * Real NBA contracts, from balldontlie's `/contracts/teams` endpoint.
  *
  * **Why this exists.** Every contract in a new save was generated - the seeded
- * dataset carried no salary field at all (docs/CONTRACT_AUDIT.md §9). That is
+ * dataset carried no salary field at all (docs/audits/CONTRACT_AUDIT.md §9). That is
  * defensible for contracts the simulator writes itself, but it meant the
  * opening league never resembled the real one: a backup centre could start on
  * $29M because the pricing model rated him a top-50 veteran. Seeding the real

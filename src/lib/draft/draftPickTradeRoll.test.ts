@@ -49,7 +49,7 @@ describe("rollForDraftPickTrade", () => {
   it("fires when a trade-down package clears both sides' acceptance bar", () => {
     // #11 alone no longer covers #10. Under the old flat value curve adjacent
     // first-rounders sat ~2% apart, so a bare one-for-one cleared; the curve is
-    // now fitted to real pick-value charts (docs/TRADE_AUDIT.md, T-P0-3), where
+    // now fitted to real pick-value charts (docs/audits/TRADE_AUDIT.md, T-P0-3), where
     // #1 is worth 8x #30 and each slot costs ~6.5%. Moving down one pick for a
     // second-round sweetener is what that market actually looks like.
     const result = rollForDraftPickTrade(
@@ -91,7 +91,7 @@ describe("rollForDraftPickTrade", () => {
   });
 });
 
-// docs/TRADE_AUDIT.md subsystem #11: future picks were out of scope in v1, so a
+// docs/audits/TRADE_AUDIT.md subsystem #11: future picks were out of scope in v1, so a
 // team could only move up when it happened to hold a second pick in this same
 // draft - and a future first is the archetypal draft-night sweetener.
 describe("rollForDraftPickTrade - future picks", () => {
@@ -120,7 +120,7 @@ describe("rollForDraftPickTrade - future picks", () => {
               // coverage is not what decides either of these tests.
               //
               // Re-anchored again when TOP_TIER_PICKS gave the first three
-              // picks a shared 97 ceiling (docs/DEVELOPMENT_AUDIT.md attempt
+              // picks a shared 97 ceiling (docs/audits/DEVELOPMENT_AUDIT.md attempt
               // 7), which lifts every early-round valuation. The fixture's
               // intent is a near-even swap; the numbers behind it move whenever
               // the draft curve does, and chasing them here is cheaper than
@@ -128,7 +128,7 @@ describe("rollForDraftPickTrade - future picks", () => {
               // something.
               //
               // Re-anchored when the projection became lottery-aware
-              // (docs/DRAFT_AUDIT.md D-P1-1). A 0.25-percentile team is lottery
+              // (docs/audits/DRAFT_AUDIT.md D-P1-1). A 0.25-percentile team is lottery
               // seed 8, whose EXPECTED slot is 7.04 rather than 8 - mid-lottery
               // seeds gain slightly, because winning the draw moves a team up
               // further than other teams winning pushes it down. That lifted

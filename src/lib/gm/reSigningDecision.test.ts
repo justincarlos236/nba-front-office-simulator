@@ -64,7 +64,7 @@ describe("evaluateReSigningDecision", () => {
             personality,
             rosterSizeBeforeThisDecision: 10,
           },
-          // Was 68/35. The trade-value rescale (docs/TRADE_AUDIT.md) stopped
+          // Was 68/35. The trade-value rescale (docs/audits/TRADE_AUDIT.md) stopped
           // pricing ageing players at ~zero - a 68-rated centre at his $4.2M
           // re-signing price is now a bargain any club would take, which is the
           // correct answer, not a regression. A player who is genuinely finished
@@ -111,7 +111,7 @@ describe("evaluateReSigningDecision", () => {
 
   /**
    * The veteran here was a 78 until the re-signing ceiling gained its age
-   * discount (docs/CONTRACT_AUDIT.md C-P1-3). A 31-year-old 78 used to be
+   * discount (docs/audits/CONTRACT_AUDIT.md C-P1-3). A 31-year-old 78 used to be
    * quoted at a 27-year-old's price, which made him an overpay every club
    * refused; priced correctly he is a bargain a rebuilding team would also take,
    * so he stopped being the marginal case this test is about. 72 is where the
@@ -126,11 +126,11 @@ describe("evaluateReSigningDecision", () => {
     // clears the bar for every identity. The window where team context alone
     // decides has narrowed to near-minimum players. The assertion - that
     // context, not personality, is what splits it - is unchanged and still
-    // holds; see docs/TRADE_AUDIT.md for why this margin is worth revisiting
+    // holds; see docs/audits/TRADE_AUDIT.md for why this margin is worth revisiting
     // when the re-signing model itself is next audited.
     // Re-anchored twice: once when the veteran minimum became real
-    // (docs/CONTRACT_AUDIT.md C-P2-1), and again at 66 when the pricing curve
-    // was refit (docs/SALARY_SYSTEM_AUDIT.md P0-1). Both moved what a marginal
+    // (docs/audits/CONTRACT_AUDIT.md C-P2-1), and again at 66 when the pricing curve
+    // was refit (docs/audits/SALARY_SYSTEM_AUDIT.md P0-1). Both moved what a marginal
     // veteran costs, and this test is about the margin.
     const player = {
       position: "PF" as const,
@@ -191,7 +191,7 @@ describe("evaluateReSigningDecision", () => {
   it("raises the bar once a team is already at the soft roster ceiling, tipping stingier personalities to let a marginal bench player walk", () => {
     // Moved 64 -> 70 -> 67 as the salary scale changed underneath it. The
     // ceiling only decides where a retention is genuinely marginal, and after
-    // the pricing refit (docs/SALARY_SYSTEM_AUDIT.md P0-1) that band sits at
+    // the pricing refit (docs/audits/SALARY_SYSTEM_AUDIT.md P0-1) that band sits at
     // 67 for a SALARY_CONSCIOUS club. Above it the player is worth keeping
     // even with a full roster; below it he is not worth keeping at all.
     const player = {
@@ -269,7 +269,7 @@ describe("evaluateReSigningDecision", () => {
   it("Player Morale & Personality System: a standing trade request tips a marginal retention to LET_WALK", () => {
     const player = {
       position: "SF" as const,
-      // 74 -> 68 after the pricing refit (docs/SALARY_SYSTEM_AUDIT.md P0-1).
+      // 74 -> 68 after the pricing refit (docs/audits/SALARY_SYSTEM_AUDIT.md P0-1).
       // A 74-rated player is now worth keeping even having asked out, so he
       // cannot show the request CHANGING anything; below 66 he is not worth
       // keeping either way. 68 is where the retention is genuinely marginal.

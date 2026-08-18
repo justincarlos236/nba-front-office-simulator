@@ -202,7 +202,7 @@ export const PROFILE_SEASON = REFERENCE_STAT_SEASON;
  * **The profile used to run a raw performance score straight through
  * `scoreToCapFraction`** - no rating anchor, no sample-size weighting, no age
  * term, no positional factor. That is the second of the two unreconciled
- * rating systems in docs/CONTRACT_AUDIT.md C-P0-4, and it was the last one
+ * rating systems in docs/audits/CONTRACT_AUDIT.md C-P0-4, and it was the last one
  * left: the free-agent board was corrected on 2026-08-15, this was not.
  *
  * Measured across 355 players with stats, the number shown here differed from

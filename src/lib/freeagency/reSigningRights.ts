@@ -11,7 +11,7 @@ import { priceContractCents } from "../contracts/priceContract";
  * be `cap × scoreToCapFraction(rating)` with no age term at all, which meant
  * age risk was priced when a player was bootstrapped and free when he was
  * re-signed: measured, a 39-year-old at quality 85 re-signed for 82% more than
- * the same man would have cost at bootstrap. See docs/CONTRACT_AUDIT.md,
+ * the same man would have cost at bootstrap. See docs/audits/CONTRACT_AUDIT.md,
  * C-P1-3.
  *
  * No negotiation noise: this is a quoted ceiling, not a struck deal, and a

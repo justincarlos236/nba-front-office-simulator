@@ -1,19 +1,17 @@
 # NBA Front Office Simulator
 
 Run an NBA franchise as its general manager — build a roster, negotiate
-trades against the real 2023 CBA salary-cap rules, scout a draft class, and
+trades against the real CBA salary-cap rules, scout a draft class, and
 simulate seasons forward from a real snapshot of the league.
 
 **[Live demo →](https://nba-front-office-simulator-8s2o.vercel.app)**
 
-Solo-built. Next.js 16 · TypeScript · PostgreSQL · **1,240 unit tests across
-139 files**, plus 10 end-to-end specs, all run in CI on every push.
-
-<!-- SCREENSHOTS: see docs/PHOTO_SOURCING_BRIEF.md; hero should be the trade builder -->
+Solo-built. Next.js 16 · TypeScript · PostgreSQL · **1,709 unit tests across
+165 files**, plus 10 end-to-end specs, all run in CI on every push.
 
 ## What it is
 
-Every save starts from a real snapshot of the NBA — 30 teams, 497 real
+Every save starts from a real snapshot of the NBA — 30 teams, 585 real
 players with real season averages — and diverges independently from there,
 the same way a franchise mode separates static roster data from your save
 file. Trade in your league and nothing changes in anyone else's.
@@ -64,7 +62,7 @@ Full rationale: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | Layer      | Choice                                                            |
 | ---------- | ----------------------------------------------------------------- |
 | Frontend   | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS       |
-| Database   | PostgreSQL, Prisma 7 ORM — 49 models, 51 migrations               |
+| Database   | PostgreSQL, Prisma 7 ORM — 52 models, 58 migrations               |
 | Auth       | Auth.js (NextAuth v5), multi-tenant per-user franchise saves      |
 | Testing    | Vitest (unit) + Playwright (e2e)                                  |
 | CI/CD      | GitHub Actions — migrate, seed, lint, typecheck, test, build, e2e |
@@ -84,7 +82,7 @@ Then:
 npm install
 cp .env.example .env       # set DATABASE_URL and AUTH_SECRET (npx auth secret generates one)
 npm run db:migrate         # applies the Prisma schema
-npm run db:seed            # seeds 30 real teams + 497 real players from bundled fixtures
+npm run db:seed            # seeds 30 real teams + 585 real players from bundled fixtures
 npm run dev
 ```
 

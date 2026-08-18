@@ -26,7 +26,7 @@ const SEVERITY_LABEL: Record<ActionCenterItem["severity"], string> = {
 
 /**
  * "Why is this recommended?" (Onboarding Philosophy Phase 2 - see
- * docs/ONBOARDING_DESIGN.md Part 4B.2/4B.3). A collapsed-by-default
+ * docs/design/ONBOARDING_DESIGN.md Part 4B.2/4B.3). A collapsed-by-default
  * disclosure per item: the label still navigates on click, this only ever
  * reveals text. Nothing here fires without the player asking for it.
  */
@@ -82,7 +82,7 @@ export function ActionCenter({
   hiddenCount = 0,
 }: {
   items: ActionCenterItem[];
-  /** Onboarding Philosophy Phase 2 (docs/ONBOARDING_DESIGN.md Part 4B.5) - only ever passed when `items` is empty, so it never competes with a real recommendation. */
+  /** Onboarding Philosophy Phase 2 (docs/design/ONBOARDING_DESIGN.md Part 4B.5) - only ever passed when `items` is empty, so it never competes with a real recommendation. */
   didYouKnowTip?: DidYouKnowTip | null;
   /**
    * How many recommendations were ranked below the display cap. Sixteen rules

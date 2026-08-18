@@ -62,7 +62,7 @@ const YEARS_AWAY_DISCOUNT_PER_YEAR = 0.85;
  * actually lands at pick 1 about one year in seven; its expected slot is 3.66,
  * not 1. Pricing off the best possible outcome overvalued a bottom team's
  * future first by 47%, which a user could sell at that price with tanking as
- * the way to acquire one. See docs/DRAFT_AUDIT.md, D-P1-1.
+ * the way to acquire one. See docs/audits/DRAFT_AUDIT.md, D-P1-1.
  *
  * `expectedLotterySlotForSeed` computes that expectation exactly from the same
  * odds table `runLottery` draws against, so the valuation and the draw cannot
@@ -133,7 +133,7 @@ function valueForSlot(pickNumber: number, input: DraftPickTradeValueInput): bigi
   // Same shape as a player: talent (current + discounted upside) prices the
   // asset, and age applies to the resulting money rather than to the score.
   // Feeding an age-scaled score into the curve compounds the two - see
-  // `tradeValueCurve.ts` and docs/TRADE_AUDIT.md, T-P0-1.
+  // `tradeValueCurve.ts` and docs/audits/TRADE_AUDIT.md, T-P0-1.
   const score = talentScore(expectedOverall, expectedPotential, UPSIDE_WEIGHT);
   let valueCents = BigInt(
     Math.round(tradeValueCents(score, input.pickSeason) * ageValueMultiplier(ASSUMED_ROOKIE_AGE)),

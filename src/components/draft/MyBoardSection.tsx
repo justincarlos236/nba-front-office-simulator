@@ -24,7 +24,7 @@ import type { DraftPickInfo, DraftProspectInfo } from "./types";
 
 /**
  * "My Board" - the player's own ranked list (Scouting Pillar Redesign,
- * Phase 3 - docs/SCOUTING_PILLAR_DESIGN.md Part 3.4), built from
+ * Phase 3 - docs/design/SCOUTING_PILLAR_DESIGN.md Part 3.4), built from
  * bookmarked prospects in bookmark order. Distinct from the Big Board
  * (that's public consensus; this is the player's own call) and from the
  * pre-existing "Draft Board" component (`DraftBoard.tsx`, the live

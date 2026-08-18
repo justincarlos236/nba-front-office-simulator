@@ -672,7 +672,7 @@ cap space against, `computeRivalInterest` was skipped entirely.
 
 **From season two onward the free-agent board showed no price and no interest
 for anybody.** That also silently undercut the acceptance check added the same
-day in `docs/FREE_AGENCY_AUDIT.md`: a player would refuse an offer and name a
+day in `docs/audits/FREE_AGENCY_AUDIT.md`: a player would refuse an offer and name a
 price the board had never displayed.
 
 ## Fixed
@@ -1082,6 +1082,6 @@ same function that writes every contract in the game.
 | --- | ---: | ---: | --- |
 | **Exploit Resistance** | **6/10** | **8/10** | All four P0s closed. C-P0-1 is a dead data issue (pre-`decd646` saves, none of which still exist); C-P0-2 and C-P0-3 were closed by sample weighting and the maximum; C-P0-4 closes here. |
 
-Not a 9 or 10: `docs/FREE_AGENCY_AUDIT.md` and `docs/DRAFT_AUDIT.md` each closed
+Not a 9 or 10: `docs/audits/FREE_AGENCY_AUDIT.md` and `docs/audits/DRAFT_AUDIT.md` each closed
 a live exploit within the last two days, which is recent enough that "no known
 exploit" should not yet read as "hard to exploit".

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { computeMoodLabel, trendDirection } from "./moodLabel";
 
 describe("computeMoodLabel", () => {
-  // The core design point (docs/FANS_PAGE_REDESIGN.md Part 3.1): the same
+  // The core design point (docs/design/FANS_PAGE_REDESIGN.md Part 3.1): the same
   // level reads differently depending on direction. Verify level alone
   // never determines the label.
   it("reads high happiness that's falling differently than high happiness that's flat", () => {

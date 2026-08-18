@@ -71,7 +71,7 @@ describe("tour shape", () => {
 /**
  * The anti-rot test, and the reason this tour is defensible at all.
  *
- * `docs/ONBOARDING_DESIGN.md` rejected coach-mark tours partly because they go
+ * `docs/design/ONBOARDING_DESIGN.md` rejected coach-mark tours partly because they go
  * stale silently: someone renames an element months later and a step quietly
  * starts pointing at nothing. This asserts every anchor the tour needs is
  * really present in the source, so that rename fails in CI instead of in front

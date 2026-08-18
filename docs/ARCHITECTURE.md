@@ -218,7 +218,7 @@ every seeded player was permanently 27 years old, so nobody aged, declined,
 or retired, and a six-season save had recorded zero retirements. The unit
 tests for the development and retirement models all passed — they were
 correct functions being fed a constant. See
-[`ROSTER_PROGRESSION_AUDIT.md`](./ROSTER_PROGRESSION_AUDIT.md).
+[`ROSTER_PROGRESSION_AUDIT.md`](./audits/ROSTER_PROGRESSION_AUDIT.md).
 
 ---
 
@@ -227,11 +227,11 @@ correct functions being fed a constant. See
 Three empirical audits of the running system, kept because the findings are
 more informative than the architecture:
 
-- [`SIMULATION_AUDIT.md`](./SIMULATION_AUDIT.md) — the game engine and season
+- [`SIMULATION_AUDIT.md`](./audits/SIMULATION_AUDIT.md) — the game engine and season
   results, measured over 246,000 simulated games
-- [`ROSTER_PROGRESSION_AUDIT.md`](./ROSTER_PROGRESSION_AUDIT.md) — ageing,
+- [`ROSTER_PROGRESSION_AUDIT.md`](./audits/ROSTER_PROGRESSION_AUDIT.md) — ageing,
   development and retirement, measured against 13 live saves
-- [`SECOND_PASS_AUDIT.md`](./SECOND_PASS_AUDIT.md) — a whole-simulator
+- [`SECOND_PASS_AUDIT.md`](./audits/SECOND_PASS_AUDIT.md) — a whole-simulator
   re-audit that re-verified every prior finding against the code
 
 They score the system harshly and in places contradict earlier claims made in

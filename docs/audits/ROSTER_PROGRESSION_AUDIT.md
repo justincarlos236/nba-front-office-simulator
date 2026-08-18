@@ -4,7 +4,7 @@
 saves, including one six seasons deep.
 
 Second audit in the refinement phase. Follows the Simulation Engine audit
-(`docs/SIMULATION_AUDIT.md`), which surfaced the talent-concentration question
+(`docs/audits/SIMULATION_AUDIT.md`), which surfaced the talent-concentration question
 this one inherits.
 
 ---

@@ -131,10 +131,10 @@ describe("evaluateTradeOffer", () => {
         // decide it. Both players are *underpaid*, deliberately: an incoming
         // overpay would also engage `badContractSensitivityMultiplier`, which
         // differs between these two personalities, and this test is about the
-        // acceptance bar alone. (Before docs/TRADE_AUDIT.md T-P2-3 that field
+        // acceptance bar alone. (Before docs/audits/TRADE_AUDIT.md T-P2-3 that field
         // was never read in trades, so the old fixture could use any salary.)
         // 74 -> 75 incoming after the pricing curve was refit
-        // (docs/SALARY_SYSTEM_AUDIT.md P0-1). Contract surplus is priced from
+        // (docs/audits/SALARY_SYSTEM_AUDIT.md P0-1). Contract surplus is priced from
         // `ageAdjustedMarketValueCents`, which shares `scoreToCapFraction`, so
         // moving the curve moved where "slightly below dead-even" sits. At 74
         // both personalities now decline; at 76 both accept.
@@ -179,7 +179,7 @@ describe("evaluateTradeOffer", () => {
   });
 });
 
-// The properties below are the regression net for docs/TRADE_AUDIT.md. Each
+// The properties below are the regression net for docs/audits/TRADE_AUDIT.md. Each
 // one fails on the pre-audit model.
 describe("evaluateTradeOffer - audit regressions", () => {
   const NEUTRAL_BAD_CONTRACT = ALL_GM_PERSONALITIES.filter(

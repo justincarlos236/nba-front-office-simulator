@@ -69,7 +69,7 @@ describe("suggestCounterOffer", () => {
 
   it("suggests adding a real available asset that actually flips the decision to ACCEPT", () => {
     // 68 -> 70: the trade-value curve is no longer capped at 0.35 of the cap
-    // (docs/TRADE_AUDIT.md, T-P0-3), so the gap between a 68 and a 75 widened
+    // (docs/audits/TRADE_AUDIT.md, T-P0-3), so the gap between a 68 and a 75 widened
     // past what a single first-rounder can bridge - and a fixture where nothing
     // on offer is sufficient tests the NONE path, not this one.
     const incoming = [asset("p1", "Below-Value Player", player({ overallRating: 70, age: 27 }))];

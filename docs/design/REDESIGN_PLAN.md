@@ -56,7 +56,7 @@ across Phases A–E; 8 backlog; 2 rejected.
 | **E** | Scouting report as Artifact, draft board as a wall                                      | **done** (`779ee86`)                                              |
 
 Phase D's authored layer is complete; the photography slots are specified in
-`docs/PHOTO_SOURCING_BRIEF.md` and are waiting on image selection. Only four
+this record and are waiting on image selection. Only four
 surfaces take photography at all — the dashboard header uses the authored
 office window instead, since a stock arena photo would show the same building
 for all 30 franchises.

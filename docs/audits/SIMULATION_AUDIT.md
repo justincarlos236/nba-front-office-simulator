@@ -453,7 +453,7 @@ seasons, with best/worst converging on 51/30 wins. It is the sole reason
 **long-term stability** sat at 6/10, and the audit's own verdict called it "the
 one substantive gap left".
 
-It predates `docs/TEAM_STRENGTH_AUDIT.md`, which re-weighted
+It predates `docs/audits/TEAM_STRENGTH_AUDIT.md`, which re-weighted
 `computeTeamStrength` — a change that fixed the spread a league *starts* with
 and said nothing about whether it holds. Nothing had checked.
 

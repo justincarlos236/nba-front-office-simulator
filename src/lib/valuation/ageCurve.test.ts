@@ -30,7 +30,7 @@ describe("ageValueMultiplier", () => {
 });
 
 /**
- * docs/CONTRACT_AUDIT.md C-P2-4. The discount used to be a hinge - 2% a year
+ * docs/audits/CONTRACT_AUDIT.md C-P2-4. The discount used to be a hinge - 2% a year
  * until 32, then 5% a year - so one birthday cost nearly three times what its
  * neighbours did, in a curve every trade, contract and re-signing multiplies
  * through.

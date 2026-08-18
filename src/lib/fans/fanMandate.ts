@@ -3,7 +3,7 @@ import type { SeasonOutcome } from "@/lib/fans/fanCulture";
 
 /**
  * "What the City Wants"
- * (docs/FANS_PAGE_REDESIGN.md Part 3.2). What the FANBASE currently wants,
+ * (docs/design/FANS_PAGE_REDESIGN.md Part 3.2). What the FANBASE currently wants,
  * derived from real state - deliberately distinct from ExpectationLevel
  * (ownership's payroll-driven bar, src/lib/gm/expectationLevel.ts). The
  * tension between the two is the point: an owner wanting payroll cut while

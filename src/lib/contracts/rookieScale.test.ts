@@ -64,7 +64,7 @@ describe("rookie contracts as generated", () => {
     });
 
   /**
-   * The regression this exists for. docs/SALARY_SYSTEM_AUDIT.md P1-2: every
+   * The regression this exists for. docs/audits/SALARY_SYSTEM_AUDIT.md P1-2: every
    * rookie took the same service-year discount, so the first pick earned 4.0%
    * of the cap against a real 8.1% and slot was nearly irrelevant.
    */

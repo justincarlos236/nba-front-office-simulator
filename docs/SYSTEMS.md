@@ -2399,7 +2399,7 @@ trade-AI valuation) reads or recalibrates against.
   3-and-D wing with modest per-36 counting stats) still land near the
   floor, a limitation no amount of weight-tuning on this input set can
   fully resolve without real advanced metrics.
-- **Efficiency-without-volume fix** (found by `docs/FINANCE_AUDIT.md`
+- **Efficiency-without-volume fix** (found by `docs/audits/FINANCE_AUDIT.md`
   P0-1, 2026-08-11): the minutes-normalization fix above corrected one
   bias and left two behind, both of which pushed the _same_ archetype -
   the low-minute, high-percentage backup big - to the top of the scale.

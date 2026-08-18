@@ -1,7 +1,7 @@
 /**
  * Fits `computeTeamStrength`'s rotation weights.
  *
- * The audit (docs/TEAM_STRENGTH_AUDIT.md) showed the shipped weights are nearly
+ * The audit (docs/audits/TEAM_STRENGTH_AUDIT.md) showed the shipped weights are nearly
  * flat across 15 players - the best man is 12.3% of a team, the bottom six are
  * 21.1% - which leaves talent SD at 6.4 wins against a real ~11.1 and makes 56%
  * of the standings luck. Re-weighting alone recovers it, so the constants are

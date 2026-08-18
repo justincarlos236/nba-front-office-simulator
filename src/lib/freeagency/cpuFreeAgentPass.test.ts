@@ -169,7 +169,7 @@ describe("CPU free-agent pass", () => {
 });
 
 /**
- * docs/CONTRACT_AUDIT.md C-P1-4: demand used to decide who signed a player but
+ * docs/audits/CONTRACT_AUDIT.md C-P1-4: demand used to decide who signed a player but
  * never what he cost, so a user could outbid by a dollar and win every time.
  */
 describe("demandAdjustedPriceCents", () => {

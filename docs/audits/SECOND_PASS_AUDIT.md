@@ -86,7 +86,7 @@ Checked against code and database, not diffs.
 
 ### LEDGER ACCURACY — a finding in itself
 
-`docs/REDESIGN_PLAN.md` listed **five** items as open that are demonstrably
+`docs/design/REDESIGN_PLAN.md` listed **five** items as open that are demonstrably
 fixed, and contradicted itself on Steps 3 and 5 (marked done in the sequence
 table, open in the body). It had already drifted once and been re-verified;
 it drifted again. **A ledger nobody trusts is worse than no ledger** — the last
@@ -127,7 +127,7 @@ largely absent.** This should be protected, not re-architected.
 
 ### P0-1 — Nobody ages, declines, or retires · _Bug_ · **FIXED** (`ffec212`)
 
-Carried from `docs/ROSTER_PROGRESSION_AUDIT.md`, unfixed in code.
+Carried from `docs/audits/ROSTER_PROGRESSION_AUDIT.md`, unfixed in code.
 
 `estimateAge` returns a hardcoded `27` when `draftYear` is null, and **all 537
 seeded players have null `draftYear`** — while all 537 have a usable

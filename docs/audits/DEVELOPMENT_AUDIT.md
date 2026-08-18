@@ -86,7 +86,7 @@ This is also why D-P0-2's `Max` and `Top-10` columns stay flat while everything 
 
 ## Downstream
 
-Rating drives `computeReSigningMaxOfferCents`, so **rating inflation is payroll inflation**. A player at 80 prices near 17.5% of the cap. With 194 players at 80+ by season 10 — against 82 today — CPU re-signing costs rise across the league with no corresponding revenue, on top of `docs/CONTRACT_AUDIT.md` C-P1-2, which already lets a declined star be signed at his frozen 2025-26 price.
+Rating drives `computeReSigningMaxOfferCents`, so **rating inflation is payroll inflation**. A player at 80 prices near 17.5% of the cap. With 194 players at 80+ by season 10 — against 82 today — CPU re-signing costs rise across the league with no corresponding revenue, on top of `docs/audits/CONTRACT_AUDIT.md` C-P1-2, which already lets a declined star be signed at his frozen 2025-26 price.
 
 It also flattens the game: when half the league is 80+, "good player" stops meaning anything, trade value compresses, and roster-building decisions lose their teeth.
 
@@ -288,7 +288,7 @@ because the two ends can finally be measured separately.
 ## The remaining defect, stated precisely
 
 Each class yields **13.6 future 80+ players against a real 5-8** — roughly
-double. Combined with `docs/DRAFT_AUDIT.md` D-P2-1 (42.8% of prospects carry
+double. Combined with `docs/audits/DRAFT_AUDIT.md` D-P2-1 (42.8% of prospects carry
 80+ ceilings against a league at 28.2%), the picture is consistent: too many
 prospects arrive with high scouted potential, and the ones who do are too
 certain to reach it.
@@ -335,7 +335,7 @@ from 13.6 toward 8) and a harness that can now see both.
 
 **The 80+ residual should be attacked from the draft side, not here.** If 42.8%
 of prospects carry 80+ ceilings against a league at 28.2%, no realisation rate
-fixes that without breaking the top. That is `docs/DRAFT_AUDIT.md` D-P2-1, and
+fixes that without breaking the top. That is `docs/audits/DRAFT_AUDIT.md` D-P2-1, and
 it now has a measurement path it did not have when it was filed.
 
 ## Reproducing
@@ -399,7 +399,7 @@ league exactly (11 / 48 / 124, verified). The mechanism is left in place rather
 than deleted so the harness keeps measuring the shipped function and attempt 5
 inherits a working sweep. No behaviour changed.
 
-**Where attempt 5 should look: not here.** `docs/DRAFT_AUDIT.md` D-P2-1 —
+**Where attempt 5 should look: not here.** `docs/audits/DRAFT_AUDIT.md` D-P2-1 —
 classes carry 80+ ceilings at 42.8% against a league at 28.2%. Fewer
 high-potential prospects, with the survivors hitting harder, is the only shape
 that can deliver busts and stars simultaneously. That is a draft-generation
@@ -413,7 +413,7 @@ Attempt 4 concluded the fix belonged in draft generation rather than
 development. It does not. Recording that here, with the measurement, because it
 is the attempt the previous entry explicitly recommends.
 
-**The idea.** `docs/DRAFT_AUDIT.md` D-P2-1: classes carry 80+ ceilings at 42.8%
+**The idea.** `docs/audits/DRAFT_AUDIT.md` D-P2-1: classes carry 80+ ceilings at 42.8%
 against a league at 28.2%. A steeper `POTENTIAL_FALLOFF_EXPONENT` leaves genuine
 star ceilings at the very top of a class and a long tail behind them, which is
 what a real draft looks like. `scripts/draft-class-calibration.ts` sweeps it
@@ -460,7 +460,7 @@ attempts has tried a multi-parameter fit, and the evidence now says a
 single-parameter one cannot work in either system.
 
 **Shipped unchanged.** `POTENTIAL_FALLOFF_EXPONENT` stays at 0.50. Only the
-calibration seam was added, so no behaviour changed; `docs/DRAFT_AUDIT.md`'s
+calibration seam was added, so no behaviour changed; `docs/audits/DRAFT_AUDIT.md`'s
 8.03x pick-value anchor is unaffected and was re-verified.
 
 

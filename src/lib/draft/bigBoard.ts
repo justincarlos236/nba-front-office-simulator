@@ -2,7 +2,7 @@ import { createSeededRandom, randomInRange } from "@/lib/contracts/seededRandom"
 
 /**
  * The Big Board (Scouting Pillar Redesign, Phase 3 -
- * docs/SCOUTING_PILLAR_DESIGN.md Part 3.1). A league-wide public ranking of
+ * docs/design/SCOUTING_PILLAR_DESIGN.md Part 3.1). A league-wide public ranking of
  * the draft class, generated independently of true `overallRating` -
  * replaces `computeProjectedDraftRange`, which ranked by truth and was
  * therefore never actually wrong (see Part 5's overlap review: "Delete,

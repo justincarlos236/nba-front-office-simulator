@@ -65,7 +65,7 @@ export function generateContract(input: GenerateContractInput): GeneratedContrac
 
   // A first-round pick is paid by the scale, not by the market. This is the
   // whole reason a high pick is an asset: he is worth more than he costs, by a
-  // margin the slot decides. See docs/SALARY_SYSTEM_AUDIT.md P1-2.
+  // margin the slot decides. See docs/audits/SALARY_SYSTEM_AUDIT.md P1-2.
   const scaleSalaryCents =
     input.overallPickNumber == null
       ? null

@@ -169,7 +169,7 @@ export function scoreToCapFraction(score: number): number {
   // cap, left 1 of 30 clubs under it and 20 of 30 over the SECOND apron - which
   // starves free agency, because `computeRivalInterest` gates suitors on having
   // room. It also drove the curve into the individual-maximum clamp at ~86 OVR,
-  // so an 85-rated player was a max player. See docs/SALARY_SYSTEM_AUDIT.md
+  // so an 85-rated player was a max player. See docs/audits/SALARY_SYSTEM_AUDIT.md
   // P0-1 and P1-1.
   //
   // Fitted in `scripts/pricing-curve-calibration.ts` against the real payroll

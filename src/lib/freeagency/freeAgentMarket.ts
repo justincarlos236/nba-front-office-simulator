@@ -103,7 +103,7 @@ export async function resolveFreeAgentMarket(input: {
 
   // In-sim production first, seeded real-world stats only as a fallback -
   // seasonStats never advances, so from a save's second season it is empty for
-  // everyone. See docs/CONTRACT_AUDIT.md C-P1-2.
+  // everyone. See docs/audits/CONTRACT_AUDIT.md C-P1-2.
   const inSimStat = inSim.get(freeAgent.id);
   const seededStat = freeAgent.player.seasonStats[0];
   const stat = inSimStat ?? seededStat;

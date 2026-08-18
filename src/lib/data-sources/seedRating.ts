@@ -62,7 +62,7 @@ const FULL_TRUST_MINUTES = 22;
  * toward a flat 67 is right for a rookie who has never played and wrong for an
  * All-NBA player who missed half a season - and the model could not tell them
  * apart, because it had no memory of either. Measured on the seeded roster
- * (docs/RATING_AUDIT.md, R-P0-1), that put Anthony Davis on a max contract at
+ * (docs/audits/RATING_AUDIT.md, R-P0-1), that put Anthony Davis on a max contract at
  * 76, Trae Young at 72 and Ja Morant at 73, and forced a hand-written override
  * list to rescue fifteen stars one at a time - a list that still missed all
  * three of them.

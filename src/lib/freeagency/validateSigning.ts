@@ -65,7 +65,7 @@ export function validateSigning(input: ValidateSigningInput): SigningValidationR
   // A minimum-salary deal is always legal regardless of apron - the one
   // exception the CBA never restricts. The figure is this player's own
   // service-year minimum, not the empty-roster cap hold that used to stand in
-  // for it (docs/CONTRACT_AUDIT.md C-P2-1).
+  // for it (docs/audits/CONTRACT_AUDIT.md C-P2-1).
   const minimumCents = veteranMinimumCents(input.season, input.yearsOfExperience ?? 0);
   if (offerSalaryCents <= minimumCents) {
     return {

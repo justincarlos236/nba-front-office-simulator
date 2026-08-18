@@ -753,7 +753,7 @@ async function runToggleDraftProspectBookmarkAction(leagueId: string, prospectId
   }
 
   // joins the bottom of the player's
-  // own Draft Board (docs/SCOUTING_PILLAR_DESIGN.md Part 3.4), one rank
+  // own Draft Board (docs/design/SCOUTING_PILLAR_DESIGN.md Part 3.4), one rank
   // past whatever's currently lowest. Starts at 1 for an empty board.
   const lowestRanked = await prisma.draftProspectBookmark.findFirst({
     where: { leagueId, season },

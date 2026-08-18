@@ -25,7 +25,7 @@ import type { GmPersonality } from "../gm/gmPersonality";
  * one elsewhere). See `draftNightNarrative.ts` for how that emergent
  * outcome gets narrated into news, never scripted independently of it.
  *
- * Scouting Pillar Redesign (Phase 3, docs/SCOUTING_PILLAR_DESIGN.md Part
+ * Scouting Pillar Redesign (Phase 3, docs/design/SCOUTING_PILLAR_DESIGN.md Part
  * 3.1) mentions the Big Board could "give CPU teams something honest to
  * draft from" - deliberately not done here. CPU selection still scores off
  * true `overallRating`/`potentialRating`, unchanged. Rewiring an

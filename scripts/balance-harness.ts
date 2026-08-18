@@ -2,7 +2,7 @@
  * Phase 6, "CPU Selective Depth, Balance & Docs" (2026-08-06) - a 20-season
  * balance harness for the finance model, run entirely in-memory against the
  * pure functions in src/lib/finances (no database, no Next.js request
- * context, no auth). See docs/FINANCES_PILLAR_DESIGN.md Part 8.5 for why:
+ * context, no auth). See docs/design/FINANCES_PILLAR_DESIGN.md Part 8.5 for why:
  * advanceSeasonAction is auth-gated and its ~2000 lines of orchestration
  * (real playoffs, awards, retirements) aren't worth replicating just to
  * validate the finance model's long-run shape - this harness drives the

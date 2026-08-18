@@ -29,7 +29,7 @@ export function computeMarketingSponsorshipMultiplier(level: DepartmentLevel): n
  * shell" shape as src/lib/gm/actionCenter.ts.
  *
  * Every card is a genuine trade-off: at least two options, no option ever
- * free, no option strictly dominant (see docs/FINANCES_PILLAR_DESIGN.md,
+ * free, no option strictly dominant (see docs/design/FINANCES_PILLAR_DESIGN.md,
  * System 7's design review criterion). A card's generated content is frozen
  * into the BusinessDecision row's `options` JSON at creation time, so a
  * later edit to this catalog never rewrites a decision a save has already
@@ -134,7 +134,7 @@ interface CatalogEntry {
 const FAN_HAPPINESS_STRUGGLING_THRESHOLD = 55;
 
 // Business Decision catalog expansion (2026-08-06) - thresholds shared
-// across the team-performance cards below. See docs/FINANCES_PILLAR_DESIGN.md
+// across the team-performance cards below. See docs/design/FINANCES_PILLAR_DESIGN.md
 // Part 7.
 const STREAK_CARD_THRESHOLD = 4;
 const BLOWOUT_MARGIN_THRESHOLD = 25;
@@ -564,7 +564,7 @@ const CATALOG: CatalogEntry[] = [
   // Business Decision catalog expansion (2026-08-06) - team-performance-
   // driven variety, so the inbox reacts to how your season is actually
   // going rather than drawing from one flat pool regardless of context.
-  // See docs/FINANCES_PILLAR_DESIGN.md Part 7.
+  // See docs/design/FINANCES_PILLAR_DESIGN.md Part 7.
   // -------------------------------------------------------------------
 
   // --- Win streak (currentStreak >= STREAK_CARD_THRESHOLD) ---

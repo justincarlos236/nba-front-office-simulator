@@ -7,7 +7,7 @@
  * simulation - a simplification documented in docs/SYSTEMS.md, chosen so
  * the engine is fast, deterministic given a seed, and easy to reason about.
  *
- * WHY MARGIN-FIRST (see docs/SIMULATION_AUDIT.md, P1-5/P1-6)
+ * WHY MARGIN-FIRST (see docs/audits/SIMULATION_AUDIT.md, P1-5/P1-6)
  *
  * The previous model drew the winner from a logistic curve and then drew the
  * margin from a bounded uniform [3, 22] that never looked at team strength. It
@@ -43,7 +43,7 @@ const HOME_COURT_ADVANTAGE = 1.1;
  * variance, same everything. Measured across 20,000 playoff games, home teams
  * won 58.2% - the top of the engine's own regular-season band rather than above
  * it. Real home teams win about 54% of regular-season games and 60% of playoff
- * games. See docs/PLAYOFF_AUDIT.md, PO-P2-1.
+ * games. See docs/audits/PLAYOFF_AUDIT.md, PO-P2-1.
  *
  * Louder crowds, tighter rotations and referees under more pressure are the
  * usual explanations; the effect is well documented whatever the mechanism.

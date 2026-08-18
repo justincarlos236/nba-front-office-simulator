@@ -24,7 +24,7 @@ describe("computeReSigningMaxOfferCents", () => {
   });
 
   /**
-   * The regression test for docs/CONTRACT_AUDIT.md C-P1-3. This function used
+   * The regression test for docs/audits/CONTRACT_AUDIT.md C-P1-3. This function used
    * to have no age term at all, so a 39-year-old re-signed for 82% more than
    * the same man would have cost at bootstrap - age risk was priced on one
    * path and free on three.

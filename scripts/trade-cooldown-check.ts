@@ -1,7 +1,7 @@
 /**
  * Does the recent-acquisition cooldown close P0-1?
  *
- * docs/TRADE_EXPLOIT_AUDIT.md P0-1 measured +25.7% asset value across eight
+ * docs/audits/TRADE_EXPLOIT_AUDIT.md P0-1 measured +25.7% asset value across eight
  * greedy trades — but the harness that produced it assumed arbitrary players
  * available from any club on demand, no salary matching, no roster limits and
  * no asset ownership. That figure is an upper bound, not a measurement, and the

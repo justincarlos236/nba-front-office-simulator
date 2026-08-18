@@ -3,7 +3,7 @@
  * the committed 537-player dataset and prints the payroll distribution it
  * produces, next to the real 2025-26 NBA distribution it should resemble.
  *
- * Written for docs/FINANCE_AUDIT.md P0-1, which found generated payrolls high
+ * Written for docs/audits/FINANCE_AUDIT.md P0-1, which found generated payrolls high
  * enough to leave 17 of 30 teams unprofitable in season one. Kept as a script
  * rather than a test because the target is a distribution *shape* that has to
  * be read and judged; the unit tests in src/lib/valuation guard the individual

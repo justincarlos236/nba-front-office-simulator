@@ -7,7 +7,7 @@
  * capped at 0.35 of the salary cap, so a 90-rated player is worth ~$130M rather
  * than ~$69M, and a bad contract is now negative rather than clamped at zero.
  * The ratio therefore lives on a different scale, and 0.35 no longer means what
- * it meant. See docs/TRADE_AUDIT.md.
+ * it meant. See docs/audits/TRADE_AUDIT.md.
  *
  * The target is not a prettier number - it is the league-wide retention rate
  * the previous calibration produced (84.1%), so this change moves the trade

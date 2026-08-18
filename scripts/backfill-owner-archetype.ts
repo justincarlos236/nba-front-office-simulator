@@ -2,7 +2,7 @@
  * One-time backfill for Phase 6, "CPU Selective Depth" (2026-08-06):
  * `OwnerArchetype` moved from `League` (one per save, the user's own owner
  * only) to `LeagueTeam` (one per team, including CPU) - see
- * docs/FINANCES_PILLAR_DESIGN.md Part 8.4. The migration itself
+ * docs/design/FINANCES_PILLAR_DESIGN.md Part 8.4. The migration itself
  * (`20260805201936_owner_archetype_per_team`) already copied each league's
  * prior `League.ownerArchetype` onto its `userControlledTeamId` row; this
  * script rolls a fresh archetype for every *other* team - the 29 CPU teams

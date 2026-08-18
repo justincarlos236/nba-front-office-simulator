@@ -21,7 +21,7 @@ const MAX_RATING = 99;
  * slot, the bust rate was 0% at every slot - a pick-30 prospect became an 82
  * with certainty, and every class delivered around thirty future 80+ players
  * against a real five to eight. That is the engine that inflated the league to
- * 221 players at 80+ by season twenty. See docs/DEVELOPMENT_AUDIT.md, D-P0-1.
+ * 221 players at 80+ by season twenty. See docs/audits/DEVELOPMENT_AUDIT.md, D-P0-1.
  *
  * A rate of 0 is a genuine bust: he never closes the gap to his ceiling.
  */
@@ -33,7 +33,7 @@ const MAX_RATING = 99;
  * report. Draft classes arrive with a mean potential near 83 into a league whose
  * median is 71, which meant intake was better than the population every single
  * year - and the league drifted to 221 players at 80+ by season twenty against a
- * real 82. See docs/DEVELOPMENT_AUDIT.md, D-P0-2.
+ * real 82. See docs/audits/DEVELOPMENT_AUDIT.md, D-P0-2.
  *
  * The lever is the ceiling, not the growth rate. An earlier attempt slowed
  * growth instead and doubled the inflation, because the players with the most
@@ -59,7 +59,7 @@ const MAX_RATING = 99;
  * is a genuine coin-flip. Making reliability scale with the report itself keeps
  * the star pipeline intact while letting the middle of the draft actually fail -
  * which is both truer to real drafts and the only way found to move the two
- * bands independently. See docs/DEVELOPMENT_AUDIT.md, D-P0-1.
+ * bands independently. See docs/audits/DEVELOPMENT_AUDIT.md, D-P0-1.
  */
 const RELIABILITY_AT_LOW_POTENTIAL = 0.35;
 const RELIABILITY_AT_HIGH_POTENTIAL = 0.85;
@@ -77,7 +77,7 @@ const MAX_CEILING_REALIZATION = 1.0;
  * **This is the shape nobody had tried.** Attempts 1-5 all moved the ramp's
  * ENDPOINTS or bolted a miss band onto it, and every one of them moved the 80+,
  * 85+ and 90+ populations together - the failure recorded five times over in
- * docs/DEVELOPMENT_AUDIT.md. The diagnosis that followed was that the league's
+ * docs/audits/DEVELOPMENT_AUDIT.md. The diagnosis that followed was that the league's
  * SHAPE is wrong, not its scale: 80+:90+ sits at 8.5:1 against a real 5.9:1,
  * and no scale parameter can change a ratio.
  *
@@ -112,7 +112,7 @@ const RELIABILITY_CURVE_EXPONENT = 2.25;
  * number-one pick reached 80+ 97% of the time and busted *never*. Not because
  * growth could not fail, but because `RELIABILITY_AT_HIGH_POTENTIAL` floors a
  * 97-potential prospect's ceiling at 91: there was nothing left to fail at. See
- * docs/DEVELOPMENT_AUDIT.md, D-P1-2.
+ * docs/audits/DEVELOPMENT_AUDIT.md, D-P1-2.
  *
  * Real number-one picks bust. The league has Anthony Bennett and Markelle Fultz
  * in living memory, and a model in which consensus is never wrong is not
@@ -158,7 +158,7 @@ const RELIABILITY_CURVE_EXPONENT = 2.25;
  * population that becomes the 90+ tier six years later.
  *
  * That points the next attempt away from development entirely, at
- * docs/DRAFT_AUDIT.md D-P2-1: classes carry 80+ ceilings at 42.8% against a
+ * docs/audits/DRAFT_AUDIT.md D-P2-1: classes carry 80+ ceilings at 42.8% against a
  * league at 28.2%. Fewer high-potential prospects, with the survivors hitting
  * harder, is the only shape that can deliver busts and stars at once.
  *

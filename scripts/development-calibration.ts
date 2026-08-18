@@ -1,7 +1,7 @@
 /**
  * Fits `SCOUTING_MISS_RATE`.
  *
- * docs/DEVELOPMENT_AUDIT.md records three failed attempts at this, all of which
+ * docs/audits/DEVELOPMENT_AUDIT.md records three failed attempts at this, all of which
  * moved every talent band together. The middle of the draft is now correct and
  * the target is narrow: make the TOP of the draft able to fail without
  * disturbing anything that already works.

@@ -13,7 +13,7 @@ const acquired = (dayIndex: number | null, season: number | null = SEASON) => ({
 
 describe("isWithinTradeCooldown", () => {
   /**
-   * The regression this exists for. docs/TRADE_EXPLOIT_AUDIT.md P0-1: a greedy
+   * The regression this exists for. docs/audits/TRADE_EXPLOIT_AUDIT.md P0-1: a greedy
    * ladder compounded 21.5% of book value by upgrading the same roster slot
    * over and over, each trade sending away the player acquired in the previous
    * one. This rule is what breaks the ladder.

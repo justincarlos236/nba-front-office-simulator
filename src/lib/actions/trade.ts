@@ -150,7 +150,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
       include: {
         player: true,
         // Every remaining season, not just this one: contract length is a real
-        // trade input (docs/TRADE_AUDIT.md) - an expiring deal and a five-year
+        // trade input (docs/audits/TRADE_AUDIT.md) - an expiring deal and a five-year
         // albatross at the same salary are not the same asset. `years[0]` is
         // still the current season, so existing salary-matching reads are
         // unaffected.
@@ -170,7 +170,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
       include: {
         player: true,
         // Every remaining season, not just this one: contract length is a real
-        // trade input (docs/TRADE_AUDIT.md) - an expiring deal and a five-year
+        // trade input (docs/audits/TRADE_AUDIT.md) - an expiring deal and a five-year
         // albatross at the same salary are not the same asset. `years[0]` is
         // still the current season, so existing salary-matching reads are
         // unaffected.
@@ -298,7 +298,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
   const tradeDayIndex = currentRegularSeasonDayIndex(seasonGames);
 
   // A player acquired in a trade cannot be flipped again immediately. This is
-  // the fix for docs/TRADE_EXPLOIT_AUDIT.md P0-1: a greedy ladder of
+  // the fix for docs/audits/TRADE_EXPLOIT_AUDIT.md P0-1: a greedy ladder of
   // individually-reasonable trades compounded 21.5% of book value by upgrading
   // the same roster slot over and over. Two other fixes were measured and
   // eliminated first - a per-club trade budget (the user just rotates
@@ -538,7 +538,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
   // deal's condition player voids the deal: a real, understood cost for
   // the roster flexibility the clause was pricing in the first place. Cap/
   // CBA legality is untouched - this only ever adds a cash penalty, never
-  // blocks the move (see docs/FINANCES_PILLAR_DESIGN.md's trade-builder
+  // blocks the move (see docs/design/FINANCES_PILLAR_DESIGN.md's trade-builder
   // warning finding).
   const sponsorshipVoids = voidCandidateDeals.map((deal) => ({
     deal,

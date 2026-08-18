@@ -58,3 +58,6 @@ CLAUDE.md
 .github/skills/
 /notes/
 prisma/data/.contracts-cache.json
+
+# Agent/product context, not part of the shipped project
+PRODUCT.md

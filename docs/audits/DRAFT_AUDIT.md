@@ -1,7 +1,7 @@
 # Draft Audit
 
 **Opened** 2026-08-14. The third way a roster changes, after
-`docs/TRADE_AUDIT.md` and `docs/FREE_AGENCY_AUDIT.md`. It matters beyond the
+`docs/audits/TRADE_AUDIT.md` and `docs/audits/FREE_AGENCY_AUDIT.md`. It matters beyond the
 draft itself because `computeDraftPickTradeValue` prices picks for every trade
 — a wrong pick curve is inherited by the whole trade system.
 
@@ -46,7 +46,7 @@ that is the property the whole anti-tanking design rests on.
 
 ## D-2 — Intake still out-ceilings the league it joins
 
-`docs/DEVELOPMENT_AUDIT.md` D-P0-2 found a linear potential curve made every
+`docs/audits/DEVELOPMENT_AUDIT.md` D-P0-2 found a linear potential curve made every
 class better than the population, drifting the league to 221 players at 80+.
 `POTENTIAL_FALLOFF_EXPONENT = 0.5` was the fix. Measured over 12,000 prospects
 against the 450-player league:
@@ -86,7 +86,7 @@ Once a pick's slot is known, valuation is sound:
 | 30 | $6.5M | 1.00x | 67.1 | 78.1 |
 | 60 | $1.6M | 0.24x | 62.0 | 70.0 |
 
-`docs/TRADE_AUDIT.md` calibrated the value curve to a market anchor of **#1
+`docs/audits/TRADE_AUDIT.md` calibrated the value curve to a market anchor of **#1
 pick = 8x #30**. Measured: **8.03x**. The two systems agree to within a third
 of a percent, which is what sharing `expectedRatingForPick` between the class
 generator and the pick valuer was supposed to buy.
@@ -123,7 +123,7 @@ your own future firsts the overpriced asset. Sell them at the inflated price,
 and the discount compounds with `YEARS_AWAY_DISCOUNT_PER_YEAR` favouring
 nearer picks that are more certainly bad.
 
-This lands harder after `docs/TEAM_STRENGTH_AUDIT.md`: the bottom of the league
+This lands harder after `docs/audits/TEAM_STRENGTH_AUDIT.md`: the bottom of the league
 is now genuinely 17-win bad rather than 26-win bad, so more teams sit near
 percentile 0 where the error is largest.
 
@@ -262,7 +262,7 @@ depends on realisation rates, which live in the development system.
 That caveat turned out to be the whole finding. **The scouted share is
 unchanged and is no longer the right diagnostic.**
 
-`docs/DEVELOPMENT_AUDIT.md` attempt 6 bent the scouting reliability ramp, so the
+`docs/audits/DEVELOPMENT_AUDIT.md` attempt 6 bent the scouting reliability ramp, so the
 80-91 report band now realises far less of its ceiling while a 97 report is
 untouched. The same scouted distribution therefore produces a different league:
 

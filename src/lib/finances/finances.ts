@@ -174,7 +174,7 @@ const LUXURY_TAX_MULTIPLIER = 1.5;
  * payroll is the cap-sheet figure and must keep matching the cap engine; this
  * is money leaving the franchise that was never a cap charge.
  *
- * docs/FINANCE_AUDIT.md P1-5: without this, Houston fielded a $104.5M roster
+ * docs/audits/FINANCE_AUDIT.md P1-5: without this, Houston fielded a $104.5M roster
  * against a $139.2M floor and was rewarded with the best net income in the
  * league. Fielding a cheap team was the most profitable strategy available and
  * nothing resisted it.
@@ -335,7 +335,7 @@ const CASH_VALUE_WEIGHT = 0.5;
  * comment above was only true at the scale it was written for: $120M of
  * starting cash adds $60M against a $3.5B baseline, which is exactly the
  * intended "small". It stopped being true once cash compounded. Measured over
- * 15 seasons (docs/FINANCE_AUDIT.md P0-3), Houston reached $3.68B in the bank
+ * 15 seasons (docs/audits/FINANCE_AUDIT.md P0-3), Houston reached $3.68B in the bank
  * and that term alone added **$1.84B** - franchise value had become a readout
  * of the bank balance rather than of market, winning and popularity.
  *
@@ -448,7 +448,7 @@ export interface OwnerBailout {
  * money, and what that costs.
  *
  * **This is the finance pillar's failure state.** Before it existed, insolvency
- * was free: `docs/FINANCE_AUDIT.md` P0-2 measured teams reaching −$3.4B in cash
+ * was free: `docs/audits/FINANCE_AUDIT.md` P0-2 measured teams reaching −$3.4B in cash
  * over 15 seasons and continuing to play exactly as before, which is what
  * drained the money game of stakes. Debt could not absorb it either - CPU teams
  * borrow $15M at a time against nine-figure annual losses.

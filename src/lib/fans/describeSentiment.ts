@@ -5,7 +5,7 @@
  * occurs and shouldn't change if the world moves on around it).
  *
  * The point of this module is the fix for the redesign's sharpest criticism
- * (docs/FANS_PAGE_REDESIGN.md Part 2.3): the old fanReactions.ts emitted
+ * (docs/design/FANS_PAGE_REDESIGN.md Part 2.3): the old fanReactions.ts emitted
  * "Fans are buzzing" for *every* trade, whether you fleeced a rival or
  * gutted the roster - even though the delta that says which already existed.
  * Everything here reads the real delta and says what the fanbase actually

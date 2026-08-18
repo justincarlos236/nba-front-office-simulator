@@ -6,7 +6,7 @@
  * that is correct as far as it goes. What it misses is the mechanism the real
  * league uses to let a club pay *its own* franchise player above his tier: a
  * player with 7-9 years of service who has earned one of a specific set of
- * honours may be given 35% instead of 30%. `docs/SALARY_SYSTEM_AUDIT.md` S-P2-6.
+ * honours may be given 35% instead of 30%. `docs/audits/SALARY_SYSTEM_AUDIT.md` S-P2-6.
  *
  * Two properties of the real rule matter here, and both are modelled:
  *

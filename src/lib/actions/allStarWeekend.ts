@@ -532,7 +532,7 @@ export async function generateAllStarWeekend(
   }
 
   // the long-tail payoff
-  // (docs/SCOUTING_PILLAR_DESIGN.md Part 3.5, "years later, via existing
+  // (docs/design/SCOUTING_PILLAR_DESIGN.md Part 3.5, "years later, via existing
   // systems"). Only ever checked for a first-time selectee (the loop below
   // already filters to that), and only ever queried for the handful of
   // first-timers rather than the whole roster - this stays cheap even in a

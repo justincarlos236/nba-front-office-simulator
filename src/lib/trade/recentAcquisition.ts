@@ -2,7 +2,7 @@
  * A player just acquired in a trade cannot be flipped again immediately.
  *
  * **This exists because the acceptance band cannot tell repetition from a
- * single deal.** `docs/TRADE_EXPLOIT_AUDIT.md` P0-1: a greedy chain of
+ * single deal.** `docs/audits/TRADE_EXPLOIT_AUDIT.md` P0-1: a greedy chain of
  * individually-reasonable trades raised a club's book value 21.5% under full
  * salary-matching and roster constraints, by upgrading the *same roster slot*
  * over and over — Porter Jr. → Young → Davis → Mobley → Brunson → Şengün →

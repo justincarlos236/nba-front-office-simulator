@@ -6,7 +6,7 @@ import { auth } from "@/auth";
  *
  * **Every export of a `"use server"` module is a callable POST endpoint**, with
  * no automatic authentication and no middleware gate in front of it, so each
- * one has to prove ownership itself. `docs/SERVER_ACTION_AUTH_AUDIT.md` A-P2-2:
+ * one has to prove ownership itself. `docs/audits/SERVER_ACTION_AUTH_AUDIT.md` A-P2-2:
  * that check was written out longhand in seven separate action files. All seven
  * agreed when measured, so this is not a repair - it removes the condition
  * under which the eighth copy drifts, and A-P1-1 in that same audit is what

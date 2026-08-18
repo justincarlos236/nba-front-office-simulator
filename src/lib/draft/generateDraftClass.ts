@@ -54,7 +54,7 @@ function randomIntInclusive(rng: () => number, min: number, max: number): number
  * Linear interpolation from 97 to 70 puts the mean potential of a 60-man class
  * at 83.5, against a league median of 71 - so intake beat the population every
  * year, forever, and the league drifted to 221 players at 80+ against a real 82
- * (docs/DEVELOPMENT_AUDIT.md, D-P0-2). Real classes are far more top-heavy: a
+ * (docs/audits/DEVELOPMENT_AUDIT.md, D-P0-2). Real classes are far more top-heavy: a
  * couple of players with genuine star ceilings and a long tail of rotation
  * talent.
  *
@@ -72,7 +72,7 @@ const POTENTIAL_FALLOFF_EXPONENT = 0.5;
  * report per class.
  *
  * **That is what coupled "top picks can bust" to "the league has stars".**
- * docs/DEVELOPMENT_AUDIT.md attempt 4 added a scouting miss band and drained
+ * docs/audits/DEVELOPMENT_AUDIT.md attempt 4 added a scouting miss band and drained
  * the 90+ population, because the prospects it removed were the only ones who
  * could ever reach 90. With a plateau there are several candidates a class, so
  * a miss band can fail some of them and the star tier still fills.
@@ -124,7 +124,7 @@ export interface GeneratedDraftClass {
  * as a real draft.
  *
  * Class-Character Variance (Scouting Pillar Redesign, Phase 4 -
- * docs/SCOUTING_PILLAR_DESIGN.md Part 3.6) - the very first roll off `rng`
+ * docs/design/SCOUTING_PILLAR_DESIGN.md Part 3.6) - the very first roll off `rng`
  * picks this class's character, which perturbs the rating curve and
  * international rate for every prospect generated after it. Consuming
  * this roll first (rather than per-prospect) is deliberate: the character

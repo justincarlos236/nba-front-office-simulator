@@ -2,7 +2,7 @@ import { GUIDE_TOPICS } from "@/lib/guide/registry";
 
 /**
  * The quiet-state guide pointer (Onboarding Philosophy Phase 2 - see
- * docs/ONBOARDING_DESIGN.md Part 4B.5). Shown only when the Action Center
+ * docs/design/ONBOARDING_DESIGN.md Part 4B.5). Shown only when the Action Center
  * has nothing urgent to say - "Nothing urgent right now" is exactly the
  * moment a new player is most likely to feel adrift, so it's the one
  * non-intrusive place left to point at the Guide without ever competing

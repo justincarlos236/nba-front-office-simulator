@@ -14,7 +14,7 @@ import { scoreToCapFraction } from "../valuation/playerValue";
  * quality input; and the draft applied a different subset again. Measured, a
  * 39-year-old at quality 85 re-signed for 82% more than the same man would have
  * been bootstrapped at - age risk was priced on one path and free on the other
- * three. See docs/CONTRACT_AUDIT.md, C-P1-3.
+ * three. See docs/audits/CONTRACT_AUDIT.md, C-P1-3.
  */
 
 /**
@@ -61,7 +61,7 @@ const PERFORMANCE_TILT = 0.3;
  * `scoreToCapFraction` was calibrated against production scores. Anchoring the
  * price on the rating without translating it first fed that curve a scale it
  * was not built for and cost 10% of league payroll, which would have quietly
- * undone the calibration docs/FINANCE_AUDIT.md P0-1 established.
+ * undone the calibration docs/audits/FINANCE_AUDIT.md P0-1 established.
  *
  * **1.8, not the 1.13 the means differ by.** Measured across 450 rostered
  * players, a production score runs 1.13 points above the scouted rating for the
@@ -129,7 +129,7 @@ export function rookieScaleDiscount(yearsOfExperience: number): number {
  * alone predicts.
  *
  * **Quality and price are different things, and this is where they separate.**
- * docs/RATING_AUDIT.md R-P1-1 found centres rated about ten rank places above
+ * docs/audits/RATING_AUDIT.md R-P1-1 found centres rated about ten rank places above
  * what the market pays them and forwards about eleven below, and it could not
  * tell whether the rating model was wrong or the league simply values positions
  * differently. The follow-up settled it: within each position the model's
@@ -206,7 +206,7 @@ export function priceContractCents(input: PriceContractInput): number {
   // Floored at this player's OWN minimum, which scales with service. It used
   // to floor at `emptyRosterChargeCents` - the cap hold for an empty roster
   // spot, a different rule entirely, and about a third of a ten-year veteran's
-  // real minimum. See docs/CONTRACT_AUDIT.md C-P2-1.
+  // real minimum. See docs/audits/CONTRACT_AUDIT.md C-P2-1.
   const floored = Math.max(
     value,
     Number(veteranMinimumCents(input.season, input.yearsOfExperience)),

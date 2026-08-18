@@ -10,7 +10,7 @@
  * `priceContractCents`. Two unrelated rules sharing one number, and the number
  * belonged to the other one.
  *
- * It was also just too low. `docs/CONTRACT_AUDIT.md` C-P2-1 measured 39 players
+ * It was also just too low. `docs/audits/CONTRACT_AUDIT.md` C-P2-1 measured 39 players
  * pinned to a $1.3M minimum against a real scale of roughly $2.1M to $3.6M.
  *
  * **Real minimums are a service-year scale, not a single figure.** A rookie

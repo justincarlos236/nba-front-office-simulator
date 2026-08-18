@@ -2,7 +2,7 @@ import { SCOUTING_DEPTH_LABEL } from "@/lib/draft/scoutingAssignments";
 
 /**
  * The Long-Tail Payoff (Scouting Pillar Redesign, Phase 5 -
- * docs/SCOUTING_PILLAR_DESIGN.md Part 3.5, "years later, via existing
+ * docs/design/SCOUTING_PILLAR_DESIGN.md Part 3.5, "years later, via existing
  * systems"). Fires whenever a player becomes an All-Star, checked against
  * the Scouting Depth the user actually reached on him back at draft time -
  * "we ignored this player all year... was that a mistake?" is unanswerable

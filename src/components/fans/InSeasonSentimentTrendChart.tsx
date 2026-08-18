@@ -43,7 +43,7 @@ function ChartTooltip({
  * the in-season counterpart to
  * FanHappinessTrendChart's once-a-season history, reconstructed from the
  * sentiment ledger (see buildInSeasonTrend in sentimentLedger.ts). This is
- * what fixes docs/FANS_PAGE_REDESIGN.md Part 2.6: FanHappinessSnapshot alone
+ * what fixes docs/design/FANS_PAGE_REDESIGN.md Part 2.6: FanHappinessSnapshot alone
  * could never show an in-season collapse or hot streak, only the final number.
  */
 export function InSeasonSentimentTrendChart({ points }: { points: SentimentTrendPoint[] }) {

@@ -63,7 +63,7 @@ describe("contractYearSalaries", () => {
    * The regression this exists for. CPU re-signings and CPU free-agent
    * signings wrote the same figure into every year, so a CPU club's payroll
    * never grew across a deal and its future apron position was too healthy.
-   * See docs/CONTRACT_AUDIT.md C-P2-3.
+   * See docs/audits/CONTRACT_AUDIT.md C-P2-3.
    */
   it("never produces a flat schedule for a multi-year deal", () => {
     for (const mechanism of ["BIRD_RIGHTS", "NONE", "VETERAN_MINIMUM"] as const) {

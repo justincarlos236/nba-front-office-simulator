@@ -1,5 +1,5 @@
 /**
- * Fits CPU trade frequency. Was: CPU-to-CPU trade realism — the dimension `docs/TRADE_EXPLOIT_AUDIT.md` left
+ * Fits CPU trade frequency. Was: CPU-to-CPU trade realism — the dimension `docs/audits/TRADE_EXPLOIT_AUDIT.md` left
  * unscored because it needed simulation rather than a single evaluation.
  *
  * Two failure modes to avoid, and they are opposite:

@@ -13,7 +13,7 @@ import { prisma } from "@/lib/prisma";
  * Called for both "Done" and "Skip" - deliberately the same outcome. A tour you
  * have to escape twice is worse than no tour, and treating a skip as anything
  * less than completion is how onboarding becomes a thing players resent
- * (`docs/ONBOARDING_DESIGN.md`, principle 5).
+ * (`docs/design/ONBOARDING_DESIGN.md`, principle 5).
  *
  * Idempotent: re-running it on an already-completed league is a harmless no-op
  * write, so a double-click or a replay ending cannot fail.

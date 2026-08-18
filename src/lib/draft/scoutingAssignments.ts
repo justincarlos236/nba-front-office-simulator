@@ -6,7 +6,7 @@ import { createSeededRandom } from "@/lib/contracts/seededRandom";
 /**
  * the core loop. The player has a
  * limited number of scouting assignments for the whole pre-draft window
- * (docs/SCOUTING_PILLAR_DESIGN.md Part 3.2), determined by their Scouting
+ * (docs/design/SCOUTING_PILLAR_DESIGN.md Part 3.2), determined by their Scouting
  * department level. Each Focused Look spends one assignment to raise one
  * prospect's Scouting Depth by 1, up to MAX_SCOUTING_DEPTH. No weekly
  * refill - see the design doc's Phase 2 refinement: one capacity pool for
@@ -119,7 +119,7 @@ export function checkPrivateWorkout(
   return { allowed: true, reason: null };
 }
 
-// A Sweep "finds nobody deeply" (docs/SCOUTING_PILLAR_DESIGN.md Part 3.3) -
+// A Sweep "finds nobody deeply" (docs/design/SCOUTING_PILLAR_DESIGN.md Part 3.3) -
 // it only ever touches prospects still at Unknown, and only ever raises
 // them to Seen. Confirming or deepening a name it surfaced is what
 // Focused Look is for.
@@ -139,7 +139,7 @@ export interface SweepResult {
 }
 
 /**
- * A Regional Sweep (docs/SCOUTING_PILLAR_DESIGN.md Part 3.3) - 1
+ * A Regional Sweep (docs/design/SCOUTING_PILLAR_DESIGN.md Part 3.3) - 1
  * assignment, shallow Depth on several prospects sharing a pathway. This
  * is where "hidden gem" becomes reachable: a Sweep on an under-scouted
  * pathway (International Professional, Development Pathway) surfaces
@@ -196,7 +196,7 @@ export interface ScoutableForRecommendation {
 }
 
 /**
- * Recommend mode (docs/SCOUTING_PILLAR_DESIGN.md Part 3.5b) - staff propose
+ * Recommend mode (docs/design/SCOUTING_PILLAR_DESIGN.md Part 3.5b) - staff propose
  * where to spend the *entire remaining* budget in one pass, weighted toward
  * team needs and the best available talent, so a casual player gets a
  * genuinely useful board in one click rather than a random spread. Deferred

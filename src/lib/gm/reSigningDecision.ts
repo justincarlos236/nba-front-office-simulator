@@ -55,7 +55,7 @@ export interface ReSigningDecisionResult {
 // while a clearly declined/redundant one doesn't clear it for any.
 //
 // **Deliberately unchanged when the ceiling gained its age discount**
-// (docs/CONTRACT_AUDIT.md C-P1-3). Cheaper veterans do score higher, and two
+// (docs/audits/CONTRACT_AUDIT.md C-P1-3). Cheaper veterans do score higher, and two
 // fixtures moved as a result - but measured across all 537 seeded players x 5
 // team identities x 7 personalities, league-wide retention moved 84.1% -> 84.7%
 // and the 33-and-over band stayed at 0%. The concern that CPU clubs would begin

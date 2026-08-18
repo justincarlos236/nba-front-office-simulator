@@ -1,7 +1,7 @@
 /**
  * The first-session tour: six steps, two screens, about two and a half minutes.
  *
- * **This reverses a documented decision, deliberately.** `docs/ONBOARDING_DESIGN.md`
+ * **This reverses a documented decision, deliberately.** `docs/design/ONBOARDING_DESIGN.md`
  * rejected coach-mark tours twice, on the grounds that they help session one
  * only, get skipped, and rot. That reasoning is still correct and this module
  * is built to answer it rather than ignore it:

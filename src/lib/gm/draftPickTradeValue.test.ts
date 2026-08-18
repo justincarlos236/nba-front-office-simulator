@@ -62,7 +62,7 @@ describe("computeDraftPickTradeValue", () => {
 });
 
 /**
- * docs/DRAFT_AUDIT.md D-P1-1. The projection used to hand the worst team pick
+ * docs/audits/DRAFT_AUDIT.md D-P1-1. The projection used to hand the worst team pick
  * 1 outright, a certainty the post-2019 lottery removed, overvaluing its
  * future first by 47% - an asset a user could sell at that price, with tanking
  * as the way to acquire one.
@@ -88,7 +88,7 @@ describe("future first-rounders are priced through the lottery", () => {
 
   it("does not price the worst team's future first as pick 1", () => {
     // Threshold loosened from 0.85 when TOP_TIER_PICKS gave the first three
-    // picks a shared ceiling (docs/DEVELOPMENT_AUDIT.md attempt 7). The gap
+    // picks a shared ceiling (docs/audits/DEVELOPMENT_AUDIT.md attempt 7). The gap
     // narrowed to ~86% for a real reason rather than a regression: when picks
     // 1-4 are near-equivalent, landing at 3 instead of 1 costs little, so the
     // lottery-averaged value SHOULD sit closer to pick 1's. What the test

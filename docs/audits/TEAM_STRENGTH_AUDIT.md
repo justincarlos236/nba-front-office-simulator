@@ -2,9 +2,9 @@
 
 **Opened** 2026-08-13. Three audits now point here from different directions:
 
-- `docs/SIMULATION_AUDIT.md` left **"talent concentration"** open
-- `docs/DEVELOPMENT_AUDIT.md`'s **D-P0-1** is still open after two failed attempts
-- `docs/PLAYOFF_AUDIT.md`'s **PO-P1-1** traced a too-competitive 1v8 series to a
+- `docs/audits/SIMULATION_AUDIT.md` left **"talent concentration"** open
+- `docs/audits/DEVELOPMENT_AUDIT.md`'s **D-P0-1** is still open after two failed attempts
+- `docs/audits/PLAYOFF_AUDIT.md`'s **PO-P1-1** traced a too-competitive 1v8 series to a
   league where the 1 seed implies 53-29 rather than 60-22
 
 `computeTeamStrength` is the number all three depend on, and it is 15 lines: a
@@ -43,7 +43,7 @@ over half the standings are luck, against about one seventh in reality.
 That is why a seven-game series behaves oddly: it strips the luck out and
 exposes a talent gap that was never big enough.
 
-> **A correction to `docs/SIMULATION_AUDIT.md`.** That audit reports a realised
+> **A correction to `docs/audits/SIMULATION_AUDIT.md`.** That audit reports a realised
 > win SD of 10.7 in a fresh league and 14.1 in a developed one, calibrated
 > against the NBA's ~12. Measured here on the current dataset with exactly 82
 > games per team, it is **8.5**. Some of the difference is the 2026-27 re-seed
@@ -224,7 +224,7 @@ the bench to 0.7%, which says a team's last six men are worth nothing at all.
 **Claiming more than it fixed.** Talent SD lands at 9.6 against a real 11.1, and
 the top-share bound is what binds. The residual is not recoverable here without
 making one player an implausible share of his team; it belongs to the rating
-distribution, which `docs/RATING_AUDIT.md` has at ~115 players rated 80+ against
+distribution, which `docs/audits/RATING_AUDIT.md` has at ~115 players rated 80+ against
 a real 82.
 
 ## The knock-on this exposed

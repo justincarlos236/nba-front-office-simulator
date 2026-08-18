@@ -75,7 +75,7 @@ interface MarketInput {
    * What each player actually did in this save, by `leaguePlayerId` - see
    * `loadInSimPerformance`. Preferred over `seasonStats`, which is seeded
    * real-world data that never advances and is empty for everyone from a
-   * save's second season onward (docs/CONTRACT_AUDIT.md C-P1-2). Omitted
+   * save's second season onward (docs/audits/CONTRACT_AUDIT.md C-P1-2). Omitted
    * behaves exactly as before this parameter existed.
    */
   inSimPerformance?: Map<string, PlayerValuationStats & { gamesPlayed: number }>;
@@ -212,7 +212,7 @@ export async function runCpuFreeAgentMarket(input: MarketInput): Promise<CpuSign
     // other path, so what the user was quoted is what a rival pays. This used
     // to run a raw performance score through the cap curve with no age term and
     // no rating anchor, which is how a player could be shown as a 79 and
-    // pursued as an 88 - see docs/CONTRACT_AUDIT.md, C-P1-3 and C-P0-4.
+    // pursued as an 88 - see docs/audits/CONTRACT_AUDIT.md, C-P1-3 and C-P0-4.
     //
     // A player with no season on record is priced off his rating alone rather
     // than skipped: an in-sim drafted rookie has no `seasonStats` at all, and

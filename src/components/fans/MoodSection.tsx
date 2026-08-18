@@ -10,7 +10,7 @@ import { ScaleBar } from "@/components/dashboard/ScaleBar";
  * Fans Page Redesign, Section 1 - "The Mood." Replaces the old
  * 2-card + 3-card stat block. Attendance/Merchandise/Season Tickets are
  * deliberately gone - all three were the same popularity-tier number
- * relabeled (docs/FANS_PAGE_REDESIGN.md Part 1.1/2.1), and Attendance/
+ * relabeled (docs/design/FANS_PAGE_REDESIGN.md Part 1.1/2.1), and Attendance/
  * Merchandise/Season Tickets already have a real home on /finances. What's
  * left is one honest headline (Fan Happiness, with real direction) plus
  * Franchise Popularity as a genuinely distinct secondary signal.

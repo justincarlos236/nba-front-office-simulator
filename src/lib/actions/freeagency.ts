@@ -135,7 +135,7 @@ export async function signFreeAgentAction(input: SignFreeAgentInput): Promise<Si
   // else on this path checked either, so a user could sign free agents past the
   // 15-man limit indefinitely. CPU signings have always been guarded (see the
   // `withRoom` filter in `leagueEvents.ts`), and the trade path gained the same
-  // check with docs/TRADE_AUDIT.md; this closes the last way past it.
+  // check with docs/audits/TRADE_AUDIT.md; this closes the last way past it.
   const activeRosterCount = myPlayers.filter((lp) => lp.isActive).length;
   if (activeRosterCount >= DEFAULT_MAX_ROSTER_SIZE) {
     return fail({
@@ -172,7 +172,7 @@ export async function signFreeAgentAction(input: SignFreeAgentInput): Promise<Si
     );
   }
 
-  // Would he actually take it? docs/FREE_AGENCY_AUDIT.md FA-P0-1: nothing on
+  // Would he actually take it? docs/audits/FREE_AGENCY_AUDIT.md FA-P0-1: nothing on
   // this path asked, and a minimum offer is always cap-legal, so every free
   // agent in the game signed for $1.4M. `validateSigning` above is right - it
   // answers whether the money is legal - but that is a different question from

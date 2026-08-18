@@ -262,7 +262,7 @@ async function main() {
   // unproven player toward a flat 67. With real salaries in hand a veteran's
   // market price is a far better prior, so ratings are recomputed here rather
   // than there - which also keeps the free roster refresh independent of this
-  // paid one. See seedRating.ts `seedPriorFromSalary` and docs/RATING_AUDIT.md.
+  // paid one. See seedRating.ts `seedPriorFromSalary` and docs/audits/RATING_AUDIT.md.
   const rules = getSeasonCapRules(SEASON);
   const cap = Number(rules.salaryCapCents);
   let reRated = 0;

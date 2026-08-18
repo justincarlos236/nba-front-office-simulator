@@ -86,7 +86,7 @@ const ROSTER_LIMIT = 15;
  * **Demand used to decide who signed a player but never what he cost.** Every
  * free agent had one deterministic price: one interested club, five, or the
  * whole league produced the same number, so a user could outbid by a dollar and
- * win every time, forever, with no escalation. See docs/CONTRACT_AUDIT.md,
+ * win every time, forever, with no escalation. See docs/audits/CONTRACT_AUDIT.md,
  * C-P1-4.
  *
  * The premium is bounded because an unbounded auction is the other failure -

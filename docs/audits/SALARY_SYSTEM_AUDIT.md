@@ -8,7 +8,7 @@ had been observed in play and a surface review was not wanted.
 outlier detector) and `scripts/salary-market-audit.ts` (demand, cap space,
 CPU bidding, payroll, multi-season drift). Every number below reproduces.
 
-**Relationship to `docs/CONTRACT_AUDIT.md`.** That file is the running history
+**Relationship to `docs/audits/CONTRACT_AUDIT.md`.** That file is the running history
 and is largely closed — C-P0-1 through C-P0-4, C-P1-2/3/5, C-P2-1/3/4 are all
 resolved, several within the last two days. This audit is a fresh adversarial
 pass that assumes none of it and measures the system as it stands today.
@@ -164,7 +164,7 @@ at the ceiling twelve rating points too early.
 - The trade system cannot express that a 98 is worth more than an 86 *in
   salary* — it only shows up in trade value, so a swap of the two looks like a
   clean salary match.
-- `docs/FREE_AGENCY_AUDIT.md` FA-P2-1 is a direct symptom: the demand premium
+- `docs/audits/FREE_AGENCY_AUDIT.md` FA-P2-1 is a direct symptom: the demand premium
   is absorbed entirely for any player at the max, so competition for the best
   players moves nothing.
 - Star acquisition is under-costed relative to its on-court effect, which is
@@ -218,7 +218,7 @@ pick-dependent — the first pick earns roughly five times the thirtieth.
 
 **Consequence.** The top of the draft is *too cheap* and the bottom is about
 right, which makes a high pick an even better asset than it should be — on top
-of `docs/DRAFT_AUDIT.md`'s pick valuation. Late firsts are correspondingly
+of `docs/audits/DRAFT_AUDIT.md`'s pick valuation. Late firsts are correspondingly
 under-rewarded.
 
 Marked INTENTIONAL SIMPLIFICATION because the docstring says so, but the
@@ -589,7 +589,7 @@ Checking the derivation rather than the size: **these factors are measured**,
 not chosen. `POSITIONAL_MARKET_FACTOR` is actual pay over rating-predicted pay
 across 213 veterans on real contracts, normalised so league payroll is
 unchanged — it moves money between positions without creating any. The follow-up
-to `docs/RATING_AUDIT.md` R-P1-1 established that the rating model measures
+to `docs/audits/RATING_AUDIT.md` R-P1-1 established that the rating model measures
 quality correctly and the league simply pays centres less.
 
 A 29% gap between a small forward and a centre of equal rating is what the real

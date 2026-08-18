@@ -1,7 +1,7 @@
 # Free Agency Audit
 
 **Opened** 2026-08-14. Free agency is the other way a roster changes, and the
-only major system without an audit doc. `docs/TRADE_AUDIT.md` opened with the
+only major system without an audit doc. `docs/audits/TRADE_AUDIT.md` opened with the
 premise that a broken trade system means users can simply exploit the game.
 The same premise applies here, and this system is worse.
 

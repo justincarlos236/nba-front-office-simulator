@@ -1,7 +1,7 @@
 /**
  * D-P2-1, the 85+ half - a joint sweep against four targets at once.
  *
- * `docs/DEVELOPMENT_AUDIT.md` left one tier thin: 85+ stock measures 34.8
+ * `docs/audits/DEVELOPMENT_AUDIT.md` left one tier thin: 85+ stock measures 34.8
  * against a real 44, while 80+ and 90+ both sit where they should. That shape
  * is the constraint. A fix has to add mass in 85-89 **without** disturbing the
  * two tiers either side of it, and without breaking D-P1-2's pick-one bust

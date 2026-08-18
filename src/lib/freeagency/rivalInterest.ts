@@ -119,7 +119,7 @@ export function computeRivalInterest(
     // gap fell entirely on expensive players: a club that could comfortably pay
     // 27% below asking was not counted, so a star's suitor count came back at
     // one and he concluded nobody wanted him. Measured, that handed any club
-    // with room a 27% discount on every star. See docs/SALARY_SYSTEM_AUDIT.md
+    // with room a 27% discount on every star. See docs/audits/SALARY_SYSTEM_AUDIT.md
     // S-P1-4.
     //
     // Counting a club that can only reach the floor is deliberate: it can

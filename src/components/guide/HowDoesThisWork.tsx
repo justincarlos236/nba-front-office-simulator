@@ -4,7 +4,7 @@ import { GUIDE_TOPICS } from "@/lib/guide/registry";
 
 /**
  * The one link component every "explain this mechanic" moment in the app
- * should use (Onboarding Philosophy Phase 1 - docs/ONBOARDING_DESIGN.md
+ * should use (Onboarding Philosophy Phase 1 - docs/design/ONBOARDING_DESIGN.md
  * Part 4.1). Takes a registered topic id, not a raw href, so a renamed or
  * removed guide anchor is a type error at the call site instead of a dead
  * link discovered by a confused player.

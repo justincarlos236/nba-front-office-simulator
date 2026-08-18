@@ -188,7 +188,7 @@ describe("developPlayerRating", () => {
 });
 
 /**
- * docs/DEVELOPMENT_AUDIT.md D-P1-1: decline used to be absolute, so a 99 and a
+ * docs/audits/DEVELOPMENT_AUDIT.md D-P1-1: decline used to be absolute, so a 99 and a
  * 70 lost the same 1-3 points at 30 and no player could be elite past 34 -
  * while the seeded league opens with LeBron at 40, Durant and Curry at 37 and
  * Kawhi at 34.
@@ -244,7 +244,7 @@ describe("decline scales with quality", () => {
 });
 
 /**
- * docs/DEVELOPMENT_AUDIT.md D-P0-2: potential used to be a certainty, so every
+ * docs/audits/DEVELOPMENT_AUDIT.md D-P0-2: potential used to be a certainty, so every
  * prospect reached the number on his scouting report and the league drifted to
  * 221 players at 80+ against a real 82.
  */

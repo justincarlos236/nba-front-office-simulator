@@ -6,11 +6,11 @@
  * the identical 0.35 multiplier and slot mattered only through the small rating
  * difference the draft curve produces. Measured, that put the first pick on
  * $6.5M — 4.0% of the cap against a real 8.1% — while the sixtieth was about
- * right. See docs/SALARY_SYSTEM_AUDIT.md P1-2.
+ * right. See docs/audits/SALARY_SYSTEM_AUDIT.md P1-2.
  *
  * The real scale is steeply slot-dependent: the first pick earns roughly 4.6x
  * the thirtieth. Flattening it made the top of the draft cheaper than it should
- * be, which compounds with `docs/DRAFT_AUDIT.md`'s pick valuation — a high pick
+ * be, which compounds with `docs/audits/DRAFT_AUDIT.md`'s pick valuation — a high pick
  * was already the best asset in the game and this made it better.
  *
  * **First round only.** Real second-round picks have no scale at all; they

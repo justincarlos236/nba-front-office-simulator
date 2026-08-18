@@ -7,7 +7,7 @@
  * the minimum genuinely is the one exception no apron restricts. So any free
  * agent in the game signed for the veteran minimum, from a second-apron team
  * with zero cap space, at up to a 35x discount to market. See
- * docs/FREE_AGENCY_AUDIT.md, FA-P0-1.
+ * docs/audits/FREE_AGENCY_AUDIT.md, FA-P0-1.
  *
  * Deliberately separate from `validateSigning`. That function answers a cap
  * question and answers it well; this is a different question and belongs

@@ -16,7 +16,7 @@ const price = (quality: number, age = 27, experience = 6) =>
   priceContractCents({ season: SEASON, quality, age, yearsOfExperience: experience });
 
 /**
- * Every test here guards a finding in docs/CONTRACT_AUDIT.md. The audit's
+ * Every test here guards a finding in docs/audits/CONTRACT_AUDIT.md. The audit's
  * criticism of the previous test suite was that it checked the generator was
  * deterministic and bounded but never that a better player earns more than a
  * worse one - so a backup centre could outearn a franchise wing with the whole
@@ -150,7 +150,7 @@ describe("priceContractCents - a better player earns more", () => {
     // the bounds tests above cover.
     //
     // The range starts at 74 rather than 62: after the pricing curve was refit
-    // (docs/SALARY_SYSTEM_AUDIT.md P0-1), an 11-year veteran below ~70 quality
+    // (docs/audits/SALARY_SYSTEM_AUDIT.md P0-1), an 11-year veteran below ~70 quality
     // prices at the veteran minimum, and two players both on the minimum
     // correctly earn the same. That floor is covered by its own test below.
     const qualities = [74, 80, 86, 92, 98];
@@ -218,7 +218,7 @@ describe("pickContractLength (C-P1-5)", () => {
 });
 
 /**
- * docs/RATING_AUDIT.md R-P1-1. The rating model measures quality correctly -
+ * docs/audits/RATING_AUDIT.md R-P1-1. The rating model measures quality correctly -
  * within each position its correlation with real salary is 0.73-0.88, and
  * centres and power forwards rank best of all five. What differs is what the
  * league *pays* a position, so the correction lives in the price.

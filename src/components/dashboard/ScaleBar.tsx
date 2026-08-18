@@ -1,6 +1,6 @@
 /**
  * A small 0-100 baseline indicator (Onboarding Philosophy Phase 3 - see
- * docs/ONBOARDING_DESIGN.md Part 4.5, "numbers without baselines"). Marks
+ * docs/design/ONBOARDING_DESIGN.md Part 4.5, "numbers without baselines"). Marks
  * where a value actually sits between 0 and 100, so a bare number like
  * Fan Happiness or Franchise Popularity reads at a glance without needing
  * to already know the scale.

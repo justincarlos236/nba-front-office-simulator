@@ -88,7 +88,7 @@ right answer — a 7-game series is simply not that decisive between a 53-win te
 and a 41-win team. Fixing the 1v8 rate means widening the league, not touching
 the bracket.
 
-This is the same root cause `docs/SIMULATION_AUDIT.md` left open as "talent
+This is the same root cause `docs/audits/SIMULATION_AUDIT.md` left open as "talent
 concentration still open", surfacing in a second place. It also explains the
 play-in: with everyone bunched, those games are near coin flips, so structural
 advantage dominates and the 8 seed advances 75% of the time against a real ~63%.
@@ -96,7 +96,7 @@ advantage dominates and the 8 seed advances 75% of the time against a real ~63%.
 **Where it comes from.** `computeTeamStrength` is a weighted average of a
 15-man roster, so it regresses hard toward the middle: one superstar moves a
 team a fraction of a rating point, and the 90+ population is capped by
-`docs/DEVELOPMENT_AUDIT.md`'s still-open D-P0-1. A real title team is carried by
+`docs/audits/DEVELOPMENT_AUDIT.md`'s still-open D-P0-1. A real title team is carried by
 its top three; a weighted average of fifteen cannot express that.
 
 ---

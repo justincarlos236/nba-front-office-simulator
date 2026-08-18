@@ -1,6 +1,6 @@
 /**
  * Class-Character Variance (Scouting Pillar Redesign, Phase 4 -
- * docs/SCOUTING_PILLAR_DESIGN.md Part 3.6, "the 25-year requirement"). One
+ * docs/design/SCOUTING_PILLAR_DESIGN.md Part 3.6, "the 25-year requirement"). One
  * character per class, deterministic from the same seed the class itself
  * is generated from - perturbs `generateDraftClass`'s existing rating-curve
  * constants and the international rate, rather than a second generation

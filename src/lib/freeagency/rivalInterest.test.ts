@@ -118,7 +118,7 @@ describe("rival interest", () => {
   });
 
   it("requires cap space to cover what the player would actually sign for", () => {
-    // This asserted the FULL ask, which is what docs/SALARY_SYSTEM_AUDIT.md
+    // This asserted the FULL ask, which is what docs/audits/SALARY_SYSTEM_AUDIT.md
     // S-P1-4 was about: `evaluateFreeAgentOffer` lets a player sign for as
     // little as NO_DEMAND_FLOOR of his ask, so gating interest on the full
     // figure meant a club that could comfortably sign him was not counted as

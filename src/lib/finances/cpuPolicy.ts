@@ -4,7 +4,7 @@ import type { OwnerArchetype } from "@/generated/prisma/client";
  * Phase 6, "CPU Selective Depth" (2026-08-06) - the formula-driven policy
  * that gives CPU teams real capital-project and financing behavior without
  * replicating the user's interactive owner-confidence/mandate apparatus
- * (see docs/FINANCES_PILLAR_DESIGN.md Part 8.2 for why: none of that is
+ * (see docs/design/FINANCES_PILLAR_DESIGN.md Part 8.2 for why: none of that is
  * player-facing for a CPU team, so a parallel confidence system would be
  * substantial invisible machinery for effects nobody experiences directly).
  *

@@ -138,7 +138,7 @@ describe("computeSeedPotentialRating", () => {
 });
 
 /**
- * The salary prior, added after docs/RATING_AUDIT.md found the regression had
+ * The salary prior, added after docs/audits/RATING_AUDIT.md found the regression had
  * none: every unproven line was pulled toward a flat 67, which rated Anthony
  * Davis 76 on a max contract and needed a hand-written override list to rescue
  * fifteen stars one at a time.

@@ -95,6 +95,6 @@ skips rows that already have the data.
 
 | Script                       | Purpose                                                                                                                                           |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `balance-harness.ts`         | Runs many headless seasons against a real database and reports the distributions used to calibrate the simulation. See `docs/SIMULATION_AUDIT.md` |
+| `balance-harness.ts`         | Runs many headless seasons against a real database and reports the distributions used to calibrate the simulation. See `docs/audits/SIMULATION_AUDIT.md` |
 | `e2e-fast-forward-season.ts` | Advances a league to a target phase so Playwright specs don't have to sim their way there                                                         |
 | `resolve-player-photos.ts`   | Resolves and caches player headshot URLs                                                                                                          |

@@ -81,7 +81,7 @@ const TOP_PICKS_DRAWN = 4;
  * pick 1. The lottery denies exactly that: post-2019 reform the three worst
  * records share a flat 14% and the worst team lands at pick 1 only about one
  * year in seven. Pricing off the best possible outcome overvalued a bottom
- * team's future first by 47% (docs/DRAFT_AUDIT.md, D-P1-1) - an asset a user
+ * team's future first by 47% (docs/audits/DRAFT_AUDIT.md, D-P1-1) - an asset a user
  * could then sell at that price, with tanking as the way to acquire one.
  *
  * **Exact, not simulated.** The draw is four teams without replacement, so the

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 /**
  * Shared shell for every /guide article (Onboarding Philosophy Phase 1 -
- * see docs/ONBOARDING_DESIGN.md Part 4.1). One canonical home per concept:
+ * see docs/design/ONBOARDING_DESIGN.md Part 4.1). One canonical home per concept:
  * this is what every `HowDoesThisWork` link and Action Center `reasoning`
  * ultimately resolves to.
  */

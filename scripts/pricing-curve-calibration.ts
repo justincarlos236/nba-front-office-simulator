@@ -1,7 +1,7 @@
 /**
  * Fits `scoreToCapFraction`'s MIDPOINT and STEEPNESS.
  *
- * docs/SALARY_SYSTEM_AUDIT.md P0-1 and P0-2 are one mis-calibration seen from
+ * docs/audits/SALARY_SYSTEM_AUDIT.md P0-1 and P0-2 are one mis-calibration seen from
  * two ends. The curve's midpoint of 80 means a player rated 80 - an ordinary
  * starter on this scale - earns half the maximum. That pays the middle of the
  * league like the top of it, which:

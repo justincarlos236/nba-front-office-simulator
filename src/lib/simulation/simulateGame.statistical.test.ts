@@ -4,7 +4,7 @@ import { simulateGame, computeHomeWinProbability } from "./simulateGame";
 /**
  * Statistical safeguards for the game model.
  *
- * The simulation audit (docs/SIMULATION_AUDIT.md) found that every P0 and P1
+ * The simulation audit (docs/audits/SIMULATION_AUDIT.md) found that every P0 and P1
  * defect it identified passed the existing unit suite, because nothing tested
  * *emergent* behaviour - only that functions returned plausible-looking values.
  * A model can be individually correct at every call site and still produce a

@@ -195,7 +195,7 @@ describe("rollForCpuTrade", () => {
       },
     );
     // The PG was a 78. With the trade-value curve fitted to a real market
-    // (docs/TRADE_AUDIT.md, T-P0-3) an eight-point rating gap is far too large
+    // (docs/audits/TRADE_AUDIT.md, T-P0-3) an eight-point rating gap is far too large
     // for team B to agree to, so the swap never happened and this test could no
     // longer observe *which* player was targeted. At equal ratings the
     // need-fit bonus is exactly what tips it - which is the thing under test.
@@ -220,7 +220,7 @@ describe("rollForCpuTrade", () => {
         { rating: 85, age: 29 },
         { rating: 80, age: 30 },
         // 64 -> 65 after the pricing curve was refit
-        // (docs/SALARY_SYSTEM_AUDIT.md P0-1). Contract surplus is priced
+        // (docs/audits/SALARY_SYSTEM_AUDIT.md P0-1). Contract surplus is priced
         // through `ageAdjustedMarketValueCents`, which shares
         // `scoreToCapFraction`, so the refit moved what B would take for its
         // 34-year-old. The seeker still has to have something B actually

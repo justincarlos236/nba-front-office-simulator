@@ -313,7 +313,7 @@ export async function runSeasonFinances(ctx: SeasonFinanceContext) {
       wonChampionship: finals.winnerTeamId === lt.id,
     });
     const priorCash = Number(priorLeagueTeamById.get(lt.id)?.cashReserveCents ?? 0n);
-    // docs/FINANCE_AUDIT.md P0-2 - the finance pillar's failure state. Without
+    // docs/audits/FINANCE_AUDIT.md P0-2 - the finance pillar's failure state. Without
     // this, cash ran to -$3.4B over 15 seasons and nothing happened. Applied
     // before franchise value is computed, so a rescued team is valued on the
     // balance sheet it actually has.
@@ -540,7 +540,7 @@ export async function runSeasonFinances(ctx: SeasonFinanceContext) {
 
   // Phase 6 - CPU capital-project + financing policy (formula-driven, not a
   // parallel confidence/negotiation system - see
-  // docs/FINANCES_PILLAR_DESIGN.md Part 8.2). Runs once per CPU team per
+  // docs/design/FINANCES_PILLAR_DESIGN.md Part 8.2). Runs once per CPU team per
   // season boundary, seeded so re-running an unrelated part of the offseason
   // pass never reshuffles which CPU teams renovate/borrow this season.
   const cpuPolicyRng = createSeededRandom(`${leagueId}-${newSeason}-cpuPolicy`);
@@ -644,7 +644,7 @@ export async function runSeasonFinances(ctx: SeasonFinanceContext) {
   // to negotiate with. Same near-unreachable rarity target as the user's
   // own gate (isCpuRelocationEligible substitutes CPU-available signals for
   // the two gates that depend on interactive owner confidence - see
-  // docs/FINANCES_PILLAR_DESIGN.md Part 8.2), checked once per CPU team per
+  // docs/design/FINANCES_PILLAR_DESIGN.md Part 8.2), checked once per CPU team per
   // season boundary, after the capital-project/financing policy above so a
   // team that just took on debt or renovated is judged on its actual
   // resulting state, not a stale snapshot.

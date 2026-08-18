@@ -1,7 +1,7 @@
 /**
  * Seed rating audit harness.
  *
- * Opened after docs/CONTRACT_AUDIT.md traced two "wrong salary" reports back to
+ * Opened after docs/audits/CONTRACT_AUDIT.md traced two "wrong salary" reports back to
  * the rating rather than the pricing: a real backup centre is rated 79, which
  * makes a top-50-veteran salary the *correct* output of a correct pricing model.
  *

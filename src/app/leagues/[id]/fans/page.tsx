@@ -44,7 +44,7 @@ const MARKET_SIZE_LABEL: Record<string, string> = {
 };
 
 // Merchandise and Season Tickets cards were
-// deleted (docs/FANS_PAGE_REDESIGN.md Part 2.1/5): both were the same
+// deleted (docs/design/FANS_PAGE_REDESIGN.md Part 2.1/5): both were the same
 // popularity-tier number relabeled, not independent signals, and Season
 // Tickets already has a real home on /finances/operations. Popularity's own
 // buzz label survives as the one genuinely distinct secondary metric.

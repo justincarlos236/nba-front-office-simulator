@@ -243,7 +243,7 @@ TANKING        SALARY_CONSCIOUS -> ACCEPT  (score 1)
 ```
 
 This voids the entire cap system as a constraint on the user. Every difficult
-contract in `docs/CONTRACT_AUDIT.md` — every overpay, every declining veteran on
+contract in `docs/audits/CONTRACT_AUDIT.md` — every overpay, every declining veteran on
 a frozen price — can be handed to a CPU team for free, at any time, in unlimited
 quantity.
 
@@ -532,7 +532,7 @@ Nine properties, each verified to fail on the pre-audit model:
   hang one on. Games-played is the natural clock.
 - The re-signing scale mismatch described above.
 - Trade value uses the *scouting report* `potentialRating`, not the real
-  `effectiveCeiling` from `docs/DEVELOPMENT_AUDIT.md`. Defensible — nobody knows
+  `effectiveCeiling` from `docs/audits/DEVELOPMENT_AUDIT.md`. Defensible — nobody knows
   a prospect's true ceiling — but it means high-potential/low-trait players are
   systematically overvalued, which is exploitable by a user who knows the model.
 
@@ -583,7 +583,7 @@ history both discount, bounded.
 Holding it back: `UPSIDE_WEIGHT = 0.4` and the injury multipliers are hand-picked
 and have never been calibrated against anything. Trade value reads the scouting
 `potentialRating`, not the real `effectiveCeiling` from
-`docs/DEVELOPMENT_AUDIT.md` — defensible, since nobody knows a prospect's true
+`docs/audits/DEVELOPMENT_AUDIT.md` — defensible, since nobody knows a prospect's true
 ceiling, but it systematically overvalues high-potential/low-trait players and a
 user who knows the model can farm it. Positional scarcity now prices contracts
 (`POSITIONAL_MARKET_FACTOR`) but not trade value.

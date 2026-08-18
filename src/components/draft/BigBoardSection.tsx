@@ -9,7 +9,7 @@ const DISPLAY_LIMIT = 20;
 
 /**
  * the public consensus, ranked by
- * `publicEvaluation`, never by true rating (docs/SCOUTING_PILLAR_DESIGN.md
+ * `publicEvaluation`, never by true rating (docs/design/SCOUTING_PILLAR_DESIGN.md
  * Part 3.1). Shown next to each prospect's own overallRating so the
  * disagreement is visible at a glance - "everyone else has him ranked too
  * low" only lands if the player can actually see the gap.

@@ -1,6 +1,6 @@
 /**
  * The single canonical registry of every /guide article and topic anchor
- * (Onboarding Philosophy Phase 1 - docs/ONBOARDING_DESIGN.md Part 4.1/4B.3,
+ * (Onboarding Philosophy Phase 1 - docs/design/ONBOARDING_DESIGN.md Part 4.1/4B.3,
  * "one concept, one home, one link"). Both the `/guide` index page and the
  * `HowDoesThisWork` link primitive read from this - a topic id that isn't
  * registered here is a compile error at every call site, not a silent

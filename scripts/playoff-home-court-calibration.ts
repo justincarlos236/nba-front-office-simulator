@@ -1,7 +1,7 @@
 /**
  * Fits `PLAYOFF_HOME_COURT_ADVANTAGE`.
  *
- * docs/PLAYOFF_AUDIT.md PO-P2-1: the postseason used the regular season's home
+ * docs/audits/PLAYOFF_AUDIT.md PO-P2-1: the postseason used the regular season's home
  * advantage, so playoff home teams won 58.2% - the top of the engine's own
  * regular-season band rather than above it. Real home teams win about 54% of
  * regular-season games and 60% of playoff games.

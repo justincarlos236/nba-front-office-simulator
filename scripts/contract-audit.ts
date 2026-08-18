@@ -1,7 +1,7 @@
 /**
  * Contract & salary audit harness - distribution, anomalies, sensitivity.
  *
- * Written for docs/CONTRACT_AUDIT.md, which was opened after a playtest turned
+ * Written for docs/audits/CONTRACT_AUDIT.md, which was opened after a playtest turned
  * up a backup centre earning more than a franchise wing. Kept as a script
  * rather than a test because what it produces is a distribution shape that has
  * to be read and judged; the unit tests guard the individual invariants.

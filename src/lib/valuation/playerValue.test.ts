@@ -135,7 +135,7 @@ describe("computePerformanceScore", () => {
 });
 
 /**
- * The defect these exist for, found by docs/FINANCE_AUDIT.md P0-1 and measured
+ * The defect these exist for, found by docs/audits/FINANCE_AUDIT.md P0-1 and measured
  * over the seeded roster: the efficiency term carried full weight regardless of
  * shot volume, and per-36 rates were extrapolated without limit. Together they
  * scored rim-running backup centres at a clamped 99.0 - level with Jokić and

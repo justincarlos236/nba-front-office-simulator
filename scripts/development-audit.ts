@@ -1,10 +1,10 @@
 /**
  * Development audit. Reads only; touches no database.
  *
- * The system three other audits point at. `docs/DEVELOPMENT_AUDIT.md` has
+ * The system three other audits point at. `docs/audits/DEVELOPMENT_AUDIT.md` has
  * D-P0-1 (young players cannot bust) recorded as open after three attempts;
- * `docs/TEAM_STRENGTH_AUDIT.md` named the rating distribution as the residual
- * blocking talent SD from reaching the real 11.1; `docs/DRAFT_AUDIT.md` could
+ * `docs/audits/TEAM_STRENGTH_AUDIT.md` named the rating distribution as the residual
+ * blocking talent SD from reaching the real 11.1; `docs/audits/DRAFT_AUDIT.md` could
  * not settle whether class ceilings inflate the league because realisation
  * rates live here.
  *
@@ -31,7 +31,7 @@ import {
 const SEASONS = 20;
 const LEAGUE_SIZE_TARGET = 450;
 
-/** Real NBA reference points, from docs/RATING_AUDIT.md and the seeded league. */
+/** Real NBA reference points, from docs/audits/RATING_AUDIT.md and the seeded league. */
 const REAL_90_PLUS = 14;
 const REAL_85_PLUS = 44;
 const REAL_80_PLUS = 82;
@@ -249,7 +249,7 @@ for (const slot of [1, 5, 10, 20, 30, 45, 60]) {
 // tier for roughly nine seasons, so a steady state needs about 82/9 = 9.1
 // arriving every year. A class yielding 5-8 would drain the league. The band
 // below is derived from the stock this same script already checks against,
-// rather than guessed independently of it - see docs/DEVELOPMENT_AUDIT.md.
+// rather than guessed independently of it - see docs/audits/DEVELOPMENT_AUDIT.md.
 const classRng = makeRng(4242);
 const CLASS_TRIALS = 300;
 let starTotal = 0;

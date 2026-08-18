@@ -51,7 +51,7 @@ describe("computePlayerTradeValue", () => {
     expect(Number(injuryProne) / Number(noHistory)).toBeGreaterThanOrEqual(0.7);
   });
 
-  // The four properties below are the regression net for docs/TRADE_AUDIT.md.
+  // The four properties below are the regression net for docs/audits/TRADE_AUDIT.md.
   // Each one fails on the pre-audit model.
 
   it("prices a genuine albatross as a real liability, bounded by his salary", () => {

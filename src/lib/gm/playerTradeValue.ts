@@ -28,7 +28,7 @@ export interface PlayerTradeValueInput {
    * albatross and a one-year expiring deal at the same salary price
    * identically - so the entire expiring-contract dimension of real trades
    * could not be expressed, and "take on two bad years to get a pick" was not a
-   * decision the game could represent. See docs/TRADE_AUDIT.md.
+   * decision the game could represent. See docs/audits/TRADE_AUDIT.md.
    *
    * Optional so callers that genuinely only know this season's number (a
    * hypothetical offer being priced, a projected rookie) keep the old
@@ -99,7 +99,7 @@ export function computePlayerTradeValueParts(input: PlayerTradeValueInput): Play
   // and then pushing that through a logistic compounds the two: a documented
   // 35% discount for a 37-year-old became a 96% one, and Curry, Durant,
   // LeBron, Kawhi, Harden, Butler, Lillard, George, Gobert and DeRozan were
-  // all worth exactly zero in trade. See docs/TRADE_AUDIT.md, T-P0-1, and the
+  // all worth exactly zero in trade. See docs/audits/TRADE_AUDIT.md, T-P0-1, and the
   // same correction already made for salaries in `playerValue.ts`.
   const grossValueCents = tradeValueCents(score, input.season) * ageValueMultiplier(input.age);
 

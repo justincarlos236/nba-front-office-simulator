@@ -171,7 +171,7 @@ export interface SentimentTrendPoint {
  * Reconstructs an in-season fan-happiness trend line from the ledger.
  *
  * FanHappinessSnapshot is written once per season, so it can't show an
- * in-season collapse (docs/FANS_PAGE_REDESIGN.md Part 2.6). Since
+ * in-season collapse (docs/design/FANS_PAGE_REDESIGN.md Part 2.6). Since
  * LeagueTeam.fanHappiness is authoritative *now* and every delta that got it
  * there is recorded, the honest reconstruction is to walk backward from the
  * current value rather than forward from a guessed starting point.

@@ -162,7 +162,7 @@ export default async function FreeAgentsPage({ params }: PageProps) {
     // save's SECOND season onward that was every free agent in the league. The
     // board showed no price and, because rival interest needs a price to
     // compare cap space against, no interest either. See
-    // docs/CONTRACT_AUDIT.md C-P1-2 and C-P1-3.
+    // docs/audits/CONTRACT_AUDIT.md C-P1-2 and C-P1-3.
     //
     // `contractQualityScore` is anchored to `overallRating`, so a missing
     // performance score costs accuracy rather than producing nothing.

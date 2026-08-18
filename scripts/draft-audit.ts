@@ -201,7 +201,7 @@ for (const pick of [1, 3, 5, 10, 14, 20, 30, 40, 50, 60]) {
       `${expectedPotentialForPick(pick, POTENTIAL_AT_PICK_1, POTENTIAL_AT_PICK_60).toFixed(1).padStart(10)}`,
   );
 }
-console.log(`\n  docs/TRADE_AUDIT.md calibrated the value curve to a market anchor of`);
+console.log(`\n  docs/audits/TRADE_AUDIT.md calibrated the value curve to a market anchor of`);
 console.log(`  #1 pick = 8x #30. Measured here: ${(Number(valueAt(1)) / v30).toFixed(2)}x.`);
 
 // ---------------------------------------------------------------------------

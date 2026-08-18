@@ -10,7 +10,7 @@ import {
 
 /**
  * Fans Page Redesign, Section 3 - "Why They Feel This Way." The
- * direct fix for docs/FANS_PAGE_REDESIGN.md's core finding: the engine
+ * direct fix for docs/design/FANS_PAGE_REDESIGN.md's core finding: the engine
  * always knew why the fanbase felt a certain way, it just never showed its
  * work. This section is a pure render over the sentiment ledger - no logic
  * beyond formatting lives here.

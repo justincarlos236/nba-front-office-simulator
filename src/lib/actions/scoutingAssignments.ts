@@ -149,7 +149,7 @@ export async function getScoutingBudgetSummary(
 }
 
 /**
- * Recommend mode (docs/SCOUTING_PILLAR_DESIGN.md Part 3.5b) - spends the
+ * Recommend mode (docs/design/SCOUTING_PILLAR_DESIGN.md Part 3.5b) - spends the
  * player's *entire remaining* budget in one call, per
  * `recommendScoutingAssignments`'s deterministic plan (Focused Looks only -
  * Recommend mode doesn't plan Sweeps/Workouts on the player's behalf).
@@ -233,7 +233,7 @@ export async function acceptScoutingRecommendationAction(
 
 /**
  * Regional Sweep (Scouting Pillar Redesign, Phase 4 -
- * docs/SCOUTING_PILLAR_DESIGN.md Part 3.3) - spends 1 assignment for
+ * docs/design/SCOUTING_PILLAR_DESIGN.md Part 3.3) - spends 1 assignment for
  * shallow Depth on several Unknown prospects sharing a pathway. Counts
  * this league+season+pathway's prior sweeps from the ledger itself (real
  * rows, not a heuristic over Depth) so `planSweep`'s seed varies correctly

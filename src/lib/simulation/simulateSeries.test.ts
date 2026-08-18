@@ -91,7 +91,7 @@ describe("simulateSeriesToCompletion", () => {
 });
 
 /**
- * docs/PLAYOFF_AUDIT.md PO-P2-1. The postseason used to call `simulateGame`
+ * docs/audits/PLAYOFF_AUDIT.md PO-P2-1. The postseason used to call `simulateGame`
  * with the regular season's home advantage, so a playoff game differed from a
  * February one by nothing at all - home teams won 58.2%, the top of the
  * engine's own regular-season band rather than above it.

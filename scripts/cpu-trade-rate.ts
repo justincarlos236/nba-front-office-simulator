@@ -5,7 +5,7 @@
  *
  * The quantity that matters is trades per season (~15), not the roll-success
  * rate - the rate is only an intermediate. Making the trade model symmetric
- * (docs/TRADE_AUDIT.md, T-P0-4) raised the rate from 42.6% to 75.5%, because
+ * (docs/audits/TRADE_AUDIT.md, T-P0-4) raised the rate from 42.6% to 75.5%, because
  * two teams now agree when they genuinely want different things rather than
  * when a one-sided bonus made a swap look good to both. The fix belongs in
  * `TRADE_CHANCE_PER_GAME`, not in `ACCEPT_THRESHOLD`: raising the acceptance
@@ -101,7 +101,7 @@ function buildTeams(seed: number): CpuTeam[] {
       } satisfies CpuTeam["capState"],
       // Its own picks for the next four drafts, which is what a team that has
       // made no pick trades actually holds. Without these the sweetener path
-      // added for docs/TRADE_AUDIT.md subsystem #8 is never exercised and the
+      // added for docs/audits/TRADE_AUDIT.md subsystem #8 is never exercised and the
       // measured rate silently reflects the old player-for-player-only market.
       tradeablePicks: [1, 2, 3, 4].flatMap((offset) =>
         ([1, 2] as const).map((round) => ({

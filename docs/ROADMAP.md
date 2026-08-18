@@ -86,7 +86,7 @@ what follows is organised by system rather than by milestone.
 ## Design
 
 A full visual overhaul, documented in `DESIGN.md` and tracked in
-`docs/REDESIGN_PLAN.md`. The design language is **The Wire** — a front-office
+`docs/design/REDESIGN_PLAN.md`. The design language is **The Wire** — a front-office
 document system, with six page archetypes and a documentary baseline so a
 small number of moments can break the frame.
 
@@ -96,7 +96,7 @@ history as objects, an environmental layer (30 authored city skylines,
 phase-aware light, material texture), and the scouting/draft surfaces.
 
 - [ ] **Photography** — four surfaces are specified in
-      `docs/PHOTO_SOURCING_BRIEF.md` and await image selection. Every one
+      the design record and await image selection. Every one
       degrades to the authored treatment already shipped, so none is blocking.
 
 ---
@@ -110,7 +110,7 @@ Recorded honestly rather than implied. See `PRODUCT.md`.
       dependency has been removed. Do not describe this as a feature.
 - [ ] GitHub OAuth (credentials-only)
 - [ ] Observability / error tracking
-- [ ] Photography for the four surfaces in `docs/PHOTO_SOURCING_BRIEF.md`
+- [ ] Photography for the four surfaces that reserve space for it
       (see Design above) — each degrades to the treatment already shipped
 - [ ] Restore static generation for public pages. A session-aware `NavBar` in
       the root layout made every page dynamic, since `auth()` reads cookies.

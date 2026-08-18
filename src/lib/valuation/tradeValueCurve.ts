@@ -10,7 +10,7 @@ import { getSeasonCapRules } from "../cap/constants";
  * compressed the entire 70-99 rating range into a 6.2x spread, so a rating
  * point was worth 5.5x less at the top than in the middle, and the reigning
  * MVP priced at 0.94x a 78-rated 21-year-old. Two rotation players bought a
- * superstar. See docs/TRADE_AUDIT.md, T-P0-3.
+ * superstar. See docs/audits/TRADE_AUDIT.md, T-P0-3.
  *
  * `scoreToCapFraction` is left untouched. It is shared with contract pricing,
  * and moving it once before compressed an 85-rated player from 16.1x to 11.9x

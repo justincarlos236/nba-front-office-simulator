@@ -2,9 +2,9 @@
  * Team-strength audit.
  *
  * Three audits now point here from different directions:
- *   - docs/SIMULATION_AUDIT.md left "talent concentration" open
- *   - docs/DEVELOPMENT_AUDIT.md's D-P0-1 is still open
- *   - docs/PLAYOFF_AUDIT.md's PO-P1-1 traced a too-competitive 1v8 series to a
+ *   - docs/audits/SIMULATION_AUDIT.md left "talent concentration" open
+ *   - docs/audits/DEVELOPMENT_AUDIT.md's D-P0-1 is still open
+ *   - docs/audits/PLAYOFF_AUDIT.md's PO-P1-1 traced a too-competitive 1v8 series to a
  *     league where the 1 seed implies 53-29 rather than 60-22
  *
  * `computeTeamStrength` is the number every one of those depends on: a weighted
@@ -258,7 +258,7 @@ console.log("\n" + line());
 console.log("S6  WOULD A STEEPER CURVE FIX THE PLAYOFF FINDING?");
 console.log(line());
 console.log(
-  "  docs/PLAYOFF_AUDIT.md traced a too-competitive 1v8 series to a 12-game\n" +
+  "  docs/audits/PLAYOFF_AUDIT.md traced a too-competitive 1v8 series to a 12-game\n" +
     "  talent gap where the real one is 22. If re-weighting is the right lever,\n" +
     "  that gap and the series rate should both move without touching the bracket.\n",
 );
