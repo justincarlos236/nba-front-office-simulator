@@ -29,6 +29,11 @@ import type { TeamNeed } from "@/lib/gm/teamNeeds";
 export interface InjuryCandidate {
   leaguePlayerId: string;
   playerName: string;
+  /**
+   * Minutes this player is set to play, from `targetMinutesPerGame`. Null on
+   * anyone left to the automatic rotation, which is most of the league.
+   */
+  minutesPerGame?: number | null;
 }
 
 export interface InjuryRollResult {
@@ -88,10 +93,37 @@ const MEDICAL_DURATION_FACTOR_PER_POINT = 0.006;
 const SPORTS_SCIENCE_FREQUENCY_PER_POINT = 0.018;
 
 /**
- * Rolled once per team per simulated game (2% default chance). On a hit,
- * one player is chosen uniformly from that team's currently-healthy active
- * roster - real injuries aren't concentrated on stars or bench alike, so no
- * rating-based weighting.
+ * Exposure floor, in minutes, for a player who is on the active roster but
+ * barely plays. He is at the arena and in practice, so his risk is small
+ * rather than zero - without this a 0-minute player would be untouchable.
+ */
+const MINUTES_EXPOSURE_FLOOR = 8;
+
+/**
+ * How likely this player is to be the one hurt, relative to his team-mates.
+ *
+ * **Exposure is minutes, not quality.** The roll stays rating-blind for the
+ * reason the doc below gives - injuries do not seek out stars. But they do
+ * find whoever is on the floor, and treating a 38-minute starter and a
+ * 10-minute reserve as equally likely was the one clearly wrong thing in this
+ * model. It also meant minutes carried no risk at all, so any future decision
+ * to over-play a player would have been free.
+ */
+function minutesExposure(candidate: InjuryCandidate): number {
+  const minutes = candidate.minutesPerGame;
+  if (minutes === null || minutes === undefined) return MINUTES_EXPOSURE_FLOOR;
+  return Math.max(MINUTES_EXPOSURE_FLOOR, minutes);
+}
+
+/**
+ * Rolled once per team per simulated game (2% default chance). On a hit, one
+ * player is chosen from that team's currently-healthy active roster, weighted
+ * by minutes - real injuries aren't concentrated on stars or bench alike, so
+ * there is still no rating-based weighting, but they do fall on whoever is
+ * actually playing.
+ *
+ * A roster where nobody has an explicit minutes target weights everyone the
+ * same, which is exactly the uniform behaviour this replaced.
  */
 export function rollForTeamInjury(
   healthyRoster: InjuryCandidate[],
@@ -127,7 +159,7 @@ export function rollForTeamInjury(
           1.15,
         );
 
-  const injured = pick(healthyRoster, rng);
+  const injured = pickWeighted(healthyRoster, minutesExposure, rng) ?? healthyRoster[0];
   const tierRoll = rng();
 
   if (tierRoll < 0.6) {

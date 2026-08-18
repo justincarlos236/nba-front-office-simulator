@@ -10,6 +10,7 @@ import {
   rollForCpuTrade,
   rollForCpuOfferToUser,
   rollForTeamInjury,
+  type InjuryCandidate,
   shouldTriggerEvent,
   type CpuTeam,
 } from "@/lib/simulation/leagueEvents";
@@ -303,11 +304,15 @@ export async function applyLeagueEvents(
     });
   }
 
-  const healthyByTeam = new Map<string, { leaguePlayerId: string; playerName: string }[]>();
+  const healthyByTeam = new Map<string, InjuryCandidate[]>();
   for (const lp of healthyPlayers) {
     if (!lp.leagueTeamId) continue;
     const list = healthyByTeam.get(lp.leagueTeamId) ?? [];
-    list.push({ leaguePlayerId: lp.id, playerName: lp.player.fullName });
+    list.push({
+      leaguePlayerId: lp.id,
+      playerName: lp.player.fullName,
+      minutesPerGame: lp.targetMinutesPerGame,
+    });
     healthyByTeam.set(lp.leagueTeamId, list);
   }
 

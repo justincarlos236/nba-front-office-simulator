@@ -5,6 +5,7 @@ import {
   rollEventCount,
   rollForCpuOfferToUser,
   rollForTeamInjury,
+  type InjuryCandidate,
   shouldTriggerEvent,
   type CpuTeam,
 } from "./leagueEvents";
@@ -515,5 +516,51 @@ describe("rollEventCount", () => {
   it("returns zero for a degenerate batch", () => {
     expect(rollEventCount(0, 0.5, seeded(1))).toBe(0);
     expect(rollEventCount(100, 0, seeded(1))).toBe(0);
+  });
+});
+
+describe("injury exposure follows minutes, not rating", () => {
+  const heavy = { leaguePlayerId: "heavy", playerName: "Heavy", minutesPerGame: 38 };
+  const light = { leaguePlayerId: "light", playerName: "Light", minutesPerGame: 4 };
+
+  function shareOfHits(roster: InjuryCandidate[], id: string, seed = 4242): number {
+    let s = seed >>> 0;
+    const rng = () => {
+      s = (s * 1664525 + 1013904223) >>> 0;
+      return s / 4294967296;
+    };
+    let hits = 0;
+    let total = 0;
+    for (let i = 0; i < 20000; i++) {
+      const r = rollForTeamInjury(roster, rng, 1);
+      if (!r) continue;
+      total += 1;
+      if (r.leaguePlayerId === id) hits += 1;
+    }
+    return hits / total;
+  }
+
+  it("hurts the heavy-minutes player more often than the deep reserve", () => {
+    const heavyShare = shareOfHits([heavy, light], "heavy");
+    expect(heavyShare).toBeGreaterThan(0.7);
+  });
+
+  it("still injures the reserve sometimes - being on the roster is exposure", () => {
+    expect(shareOfHits([heavy, light], "light")).toBeGreaterThan(0.05);
+  });
+
+  it("weights everyone the same when no minutes are set", () => {
+    // The whole league runs on the automatic rotation by default, so this is
+    // the common case and it must stay uniform, exactly as it was before.
+    const a = { leaguePlayerId: "a", playerName: "A" };
+    const b = { leaguePlayerId: "b", playerName: "B" };
+    const share = shareOfHits([a, b], "a");
+    expect(share).toBeGreaterThan(0.45);
+    expect(share).toBeLessThan(0.55);
+  });
+
+  it("does not let a zero-minute player become untouchable", () => {
+    const benched = { leaguePlayerId: "benched", playerName: "Benched", minutesPerGame: 0 };
+    expect(shareOfHits([heavy, benched], "benched")).toBeGreaterThan(0.05);
   });
 });
