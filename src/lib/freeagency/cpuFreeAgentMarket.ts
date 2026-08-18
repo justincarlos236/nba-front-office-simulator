@@ -32,11 +32,6 @@ import type { GmPersonality } from "@/lib/gm/gmPersonality";
 interface MarketInput {
   leagueId: string;
   newSeason: number;
-  /** The season that just finished - the one the loaded contract-year salaries
-   *  belong to. Cap sheets here are labelled `newSeason`, but the salary figure
-   *  is the finishing-season salary, since contracts have not rolled forward at
-   *  this point in the advance. */
-  season: number;
   userTeamId: string | null;
   /** Every active player, as loaded at the top of the season advance. */
   leaguePlayers: {
@@ -58,6 +53,12 @@ interface MarketInput {
     };
     contract: { years: { season: number; salaryCents: bigint }[] } | null;
   }[];
+  /**
+   * Re-signings agreed earlier in this same advance but not yet written to the
+   * database. Their salaries are already committed for `newSeason`, so a club's
+   * room has to count them or it will spend the same money twice.
+   */
+  reSignings?: { leaguePlayerId: string; offerSalaryCents: bigint }[];
   /** The development pass's pending updates - the source of truth for who is
    *  where *after* retirements and the re-signing pass, which have already run. */
   playerUpdates: {
@@ -89,7 +90,7 @@ function asPosition(position: string): ValidPosition | null {
 }
 
 export async function runCpuFreeAgentMarket(input: MarketInput): Promise<CpuSigning[]> {
-  const { newSeason, season, userTeamId, leaguePlayers, playerUpdates, teamById } = input;
+  const { newSeason, userTeamId, leaguePlayers, playerUpdates, teamById } = input;
   const inSimPerformance = input.inSimPerformance ?? new Map();
 
   // Post-re-signing state: who is on which roster once retirements and the
@@ -97,6 +98,11 @@ export async function runCpuFreeAgentMarket(input: MarketInput): Promise<CpuSign
   // database is what makes this see the market as it actually stands.
   const updateById = new Map(playerUpdates.map((u) => [u.id, u]));
   const playerById = new Map(leaguePlayers.map((lp) => [lp.id, lp]));
+  // Salaries committed by the re-signing pass that have not reached the
+  // database yet, keyed the same way the roster is.
+  const reSignedSalaryById = new Map(
+    (input.reSignings ?? []).map((r) => [r.leaguePlayerId, r.offerSalaryCents]),
+  );
 
   const rosterByTeam = new Map<string, typeof leaguePlayers>();
   const freeAgentIds: string[] = [];
@@ -131,15 +137,25 @@ export async function runCpuFreeAgentMarket(input: MarketInput): Promise<CpuSign
     const ratingOf = (lp: (typeof leaguePlayers)[number]) =>
       updateById.get(lp.id)?.overallRating ?? lp.overallRating;
 
-    const capSheet = computeCapSheet({
-      season: newSeason,
-      contracts: roster
-        .filter((lp) => lp.contract?.years[0])
-        .map((lp) => ({
-          playerId: lp.playerId,
-          salaryCents: currentSeasonSalaryCents(lp.contract, season),
-        })),
-    });
+    // Room for the season being bid on, priced at that season's salaries.
+    //
+    // This read the *finishing* season's figure, which was wrong three ways at
+    // once: a deal expiring this summer still counted against the new cap, a
+    // raise taking effect in `newSeason` did not, and a contract that starts in
+    // `newSeason` was invisible. Clubs therefore mis-read their own room in the
+    // one place it decides whether they bid at all.
+    //
+    // A player with no salary in `newSeason` is skipped rather than counted at
+    // zero: `computeCapSheet` derives its empty-roster charge from the number
+    // of contracts, so a zero entry is not the same as no entry.
+    const contracts: { playerId: string; salaryCents: bigint }[] = [];
+    for (const lp of roster) {
+      const pending = reSignedSalaryById.get(lp.id);
+      const salaryCents = pending ?? currentSeasonSalaryCents(lp.contract, newSeason);
+      if (salaryCents <= 0n) continue;
+      contracts.push({ playerId: lp.playerId, salaryCents });
+    }
+    const capSheet = computeCapSheet({ season: newSeason, contracts });
     const avgAge =
       roster.length > 0
         ? roster.reduce((sum, lp) => sum + resolvePlayerAge(lp.player, newSeason), 0) /

@@ -257,7 +257,12 @@ async function runAdvanceSeasonAction(leagueId: string) {
       // Without it the market would price nobody and silently sign nobody -
       // a no-op that typechecks perfectly, since the field is optional.
       player: { include: { seasonStats: { where: { season } } } },
-      contract: { include: { years: { where: { season } } } },
+      // Both the completed season and the one starting. The morale and
+      // finance passes below want the completed season; the CPU free-agent
+      // market prices each club's room *for the new season* and was being
+      // handed the old one - see the cap-sheet note in cpuFreeAgentMarket.ts.
+      // Every consumer names the season it means.
+      contract: { include: { years: { where: { season: { in: [season, newSeason] } } } } },
       personalityProfile: true,
     },
   });
@@ -871,12 +876,15 @@ async function runAdvanceSeasonAction(leagueId: string) {
   const cpuFreeAgentSignings = await runCpuFreeAgentMarket({
     leagueId,
     newSeason,
-    season,
     userTeamId: league.userControlledTeamId,
     leaguePlayers,
     playerUpdates,
     teamById,
     inSimPerformance,
+    // Agreed moments ago in the re-signing pass, but not written until further
+    // down this function. Without them a club that had just re-signed its own
+    // stars would read as though that money were still free.
+    reSignings: cpuReSignings,
   });
   // Mutate the player's existing update rather than pushing a second one:
   // every active player already has an entry from the development pass, and a
