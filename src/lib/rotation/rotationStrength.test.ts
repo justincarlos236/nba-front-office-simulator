@@ -91,3 +91,50 @@ describe("computeRotationAdjustedStrength", () => {
     expect(benched).toBeLessThan(starting);
   });
 });
+
+describe("positional balance", () => {
+  const ratings = [93, 85, 82, 79, 76, 74, 72, 70, 68, 66, 64, 62];
+  const mins = [36, 34, 32, 30, 28, 24, 20, 16, 10, 6, 2, 2];
+  type Pos = "PG" | "SG" | "SF" | "PF" | "C";
+
+  const strength = (positions: Pos[]) =>
+    computeRotationAdjustedStrength(
+      ratings.map((overallRating, i) => ({
+        leaguePlayerId: `p${i}`,
+        overallRating,
+        position: positions[i],
+        rotationSlot: i,
+        targetMinutesPerGame: mins[i],
+        injuryStatus: "HEALTHY" as const,
+      })) as never,
+    );
+
+  const balanced: Pos[] = ["PG", "SG", "SF", "PF", "C", "PG", "SG", "SF", "PF", "C", "SF", "C"];
+  const bigHeavy: Pos[] = ["C", "PF", "SF", "SG", "PG", "C", "PF", "SF", "SG", "PG", "SF", "C"];
+  const allGuards: Pos[] = Array(12).fill("PG");
+  const allCentres: Pos[] = Array(12).fill("C");
+
+  it("charges a rotation with no frontcourt at all", () => {
+    expect(strength(balanced) - strength(allGuards)).toBeGreaterThan(5);
+  });
+
+  it("charges a rotation that cannot handle the ball just the same", () => {
+    expect(strength(balanced) - strength(allCentres)).toBeGreaterThan(5);
+  });
+
+  it("leaves an ordinary balanced rotation alone", () => {
+    // Floors, not targets. A rotation whose bigs sit lower in the order is
+    // still a real rotation and must not be taxed for it.
+    expect(strength(balanced)).toBeCloseTo(79.27, 1);
+  });
+
+  it("leaves a big-heavy rotation alone too", () => {
+    expect(strength(bigHeavy)).toBeCloseTo(strength(balanced), 5);
+  });
+
+  it("never rates a broken shape above a balanced one", () => {
+    for (const shape of [allGuards, allCentres]) {
+      expect(strength(shape)).toBeLessThan(strength(balanced));
+    }
+  });
+});
