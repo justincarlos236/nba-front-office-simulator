@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { currentSeasonSalaryCents } from "@/lib/contracts/currentSeasonSalary";
 
 /**
  * Sums this team's already-committed first-year salary from signings made
@@ -20,5 +21,5 @@ export async function getSigningExceptionUsage(
     },
     include: { years: { where: { season } } },
   });
-  return contracts.reduce((sum, c) => sum + (c.years[0]?.salaryCents ?? 0n), 0n);
+  return contracts.reduce((sum, c) => sum + currentSeasonSalaryCents(c, season), 0n);
 }

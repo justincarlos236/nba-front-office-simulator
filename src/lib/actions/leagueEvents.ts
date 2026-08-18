@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { computeCapSheet } from "@/lib/cap/capSheet";
+import { currentSeasonSalaryCents } from "@/lib/contracts/currentSeasonSalary";
 import { getSeasonCapRules } from "@/lib/cap/constants";
 import { veteranMinimumCents } from "@/lib/cap/veteranMinimum";
 import { resolvePlayerExperience } from "@/lib/players/age";
@@ -552,7 +553,7 @@ async function maybeExecuteCpuTrade(
           potentialRating: p.potentialRating,
           age: resolvePlayerAge(p.player, season),
           position: p.player.position,
-          salaryCents: p.contract!.years[0].salaryCents,
+          salaryCents: currentSeasonSalaryCents(p.contract, season),
           futureSalaryCents: p.contract!.years.slice(1).map((y) => y.salaryCents),
           noTradeClause: p.contract!.noTradeClause,
           injuryStatus: p.injuryStatus,
@@ -573,7 +574,7 @@ async function maybeExecuteCpuTrade(
               .filter((p) => p.contract?.years[0])
               .map((p) => ({
                 playerId: p.playerId,
-                salaryCents: p.contract!.years[0].salaryCents,
+                salaryCents: currentSeasonSalaryCents(p.contract, season),
               })),
           });
           return {
@@ -1625,7 +1626,7 @@ async function maybeProposeCpuTradeToUser(
           potentialRating: p.potentialRating,
           age: resolvePlayerAge(p.player, season),
           position: p.player.position,
-          salaryCents: p.contract!.years[0].salaryCents,
+          salaryCents: currentSeasonSalaryCents(p.contract, season),
           futureSalaryCents: p.contract!.years.slice(1).map((y) => y.salaryCents),
           noTradeClause: p.contract!.noTradeClause,
           injuryStatus: p.injuryStatus,
@@ -1638,7 +1639,10 @@ async function maybeProposeCpuTradeToUser(
         season,
         contracts: lt.players
           .filter((p) => p.contract?.years[0])
-          .map((p) => ({ playerId: p.playerId, salaryCents: p.contract!.years[0].salaryCents })),
+          .map((p) => ({
+            playerId: p.playerId,
+            salaryCents: currentSeasonSalaryCents(p.contract, season),
+          })),
       });
       return {
         leagueTeamId: lt.id,

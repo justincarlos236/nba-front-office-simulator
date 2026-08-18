@@ -10,6 +10,7 @@ import {
   priceContractCents,
 } from "@/lib/contracts/priceContract";
 import { createSeededRandom } from "@/lib/contracts/seededRandom";
+import { currentSeasonSalaryCents } from "@/lib/contracts/currentSeasonSalary";
 import { resolvePlayerAge, resolvePlayerExperience } from "@/lib/players/age";
 import { computeRivalInterest, type RivalTeam } from "./rivalInterest";
 import { runCpuFreeAgentPass, type CpuSigning, type PursuableFreeAgent } from "./cpuFreeAgentPass";
@@ -31,6 +32,11 @@ import type { GmPersonality } from "@/lib/gm/gmPersonality";
 interface MarketInput {
   leagueId: string;
   newSeason: number;
+  /** The season that just finished - the one the loaded contract-year salaries
+   *  belong to. Cap sheets here are labelled `newSeason`, but the salary figure
+   *  is the finishing-season salary, since contracts have not rolled forward at
+   *  this point in the advance. */
+  season: number;
   userTeamId: string | null;
   /** Every active player, as loaded at the top of the season advance. */
   leaguePlayers: {
@@ -50,7 +56,7 @@ interface MarketInput {
         gamesPlayed: number;
       })[];
     };
-    contract: { years: { salaryCents: bigint }[] } | null;
+    contract: { years: { season: number; salaryCents: bigint }[] } | null;
   }[];
   /** The development pass's pending updates - the source of truth for who is
    *  where *after* retirements and the re-signing pass, which have already run. */
@@ -83,7 +89,7 @@ function asPosition(position: string): ValidPosition | null {
 }
 
 export async function runCpuFreeAgentMarket(input: MarketInput): Promise<CpuSigning[]> {
-  const { newSeason, userTeamId, leaguePlayers, playerUpdates, teamById } = input;
+  const { newSeason, season, userTeamId, leaguePlayers, playerUpdates, teamById } = input;
   const inSimPerformance = input.inSimPerformance ?? new Map();
 
   // Post-re-signing state: who is on which roster once retirements and the
@@ -129,7 +135,10 @@ export async function runCpuFreeAgentMarket(input: MarketInput): Promise<CpuSign
       season: newSeason,
       contracts: roster
         .filter((lp) => lp.contract?.years[0])
-        .map((lp) => ({ playerId: lp.playerId, salaryCents: lp.contract!.years[0].salaryCents })),
+        .map((lp) => ({
+          playerId: lp.playerId,
+          salaryCents: currentSeasonSalaryCents(lp.contract, season),
+        })),
     });
     const avgAge =
       roster.length > 0

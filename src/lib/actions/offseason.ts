@@ -34,6 +34,7 @@ import {
 import { importanceForRating } from "@/lib/transactions/newsImportance";
 import type { NewsImportance } from "@/generated/prisma/client";
 import { computeCapSheet } from "@/lib/cap/capSheet";
+import { currentSeasonSalaryCents } from "@/lib/contracts/currentSeasonSalary";
 import { getSeasonCapRules, salaryFloorCents } from "@/lib/cap/constants";
 import { financialSpendingResistance, TICKET_POSTURE_FAN_DELTA } from "@/lib/finances/finances";
 import { computeCpuSponsorshipRevenueCents } from "@/lib/finances/sponsorship";
@@ -568,12 +569,11 @@ async function runAdvanceSeasonAction(leagueId: string) {
     let moraleUpdate: { morale: number; tradeRequestActive: boolean } | null = null;
     if (!leftTeam && lp.leagueTeamId && lp.personalityProfile) {
       const decayedMorale = decayMoraleTowardBaseline(lp.morale, lp.personalityProfile.loyalty);
-      const currentSeasonSalaryCents = lp.contract?.years[0]?.salaryCents ?? 0n;
       const seasonsRemaining = lp.contract ? Math.max(1, lp.contract.endSeason - season) : 1;
       const contractDelta = lp.contract
         ? computeContractSituationMoraleDelta({
             personality: lp.personalityProfile,
-            currentSeasonSalaryCents,
+            currentSeasonSalaryCents: currentSeasonSalaryCents(lp.contract, season),
             marketValueCents: computeReSigningMaxOfferCents(
               finalRating,
               newSeason,
@@ -871,6 +871,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
   const cpuFreeAgentSignings = await runCpuFreeAgentMarket({
     leagueId,
     newSeason,
+    season,
     userTeamId: league.userControlledTeamId,
     leaguePlayers,
     playerUpdates,
@@ -1134,8 +1135,12 @@ async function runAdvanceSeasonAction(leagueId: string) {
   const financeContractsByTeam = new Map<string, { playerId: string; salaryCents: bigint }[]>();
   for (const lp of leaguePlayers) {
     if (!lp.leagueTeamId) continue;
-    const salaryCents = lp.contract?.years[0]?.salaryCents;
-    if (salaryCents === undefined) continue;
+    // Read by season, but keep the absence check: a player with no current-
+    // season contract year must be skipped, not counted at 0, because
+    // computeCapSheet derives the empty-roster charge from the contract count.
+    const currentYear = lp.contract?.years.find((y) => y.season === season);
+    if (!currentYear) continue;
+    const salaryCents = currentYear.salaryCents;
     const list = financeContractsByTeam.get(lp.leagueTeamId) ?? [];
     list.push({ playerId: lp.id, salaryCents });
     financeContractsByTeam.set(lp.leagueTeamId, list);
