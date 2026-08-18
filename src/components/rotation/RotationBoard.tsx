@@ -12,9 +12,8 @@ import {
 } from "@dnd-kit/core";
 import {
   SortableContext,
-  arrayMove,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
+  rectSwappingStrategy,
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -266,7 +265,20 @@ export function RotationBoard({
     setOrder((current) => {
       const oldIndex = current.indexOf(String(active.id));
       const newIndex = current.indexOf(String(over.id));
-      const next = arrayMove(current, oldIndex, newIndex);
+      // Swap, not insert-and-shift.
+      //
+      // `arrayMove` slid every player between the two positions along by one,
+      // so dropping a sixth man into the starting five rearranged four other
+      // players and pushed whoever held slot five onto the bench. One
+      // deliberate change produced four accidental ones, and the centre
+      // quietly left the starting lineup.
+      //
+      // A depth chart is read as "this man plays where that man played", so a
+      // drag now exchanges exactly the two rows involved and leaves everyone
+      // else alone. `rectSwappingStrategy` on the SortableContext below makes
+      // the drag preview show the same thing.
+      const next = [...current];
+      [next[oldIndex], next[newIndex]] = [next[newIndex], next[oldIndex]];
       // A player dragged into/out of the top 12 needs a fresh minutes
       // default at their new position - explicit overrides elsewhere are
       // left alone.
@@ -376,7 +388,7 @@ export function RotationBoard({
       </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={order} strategy={verticalListSortingStrategy}>
+        <SortableContext items={order} strategy={rectSwappingStrategy}>
           <div className="space-y-1">
             {order.flatMap((id, i) => {
               const player = playerById.get(id);
