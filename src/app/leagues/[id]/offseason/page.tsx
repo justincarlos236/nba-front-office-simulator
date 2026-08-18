@@ -28,7 +28,6 @@ import { PlayerAvatar } from "@/components/players/PlayerAvatar";
  */
 export const maxDuration = 60;
 
-
 export const dynamic = "force-dynamic";
 
 interface PageProps {
@@ -101,9 +100,13 @@ export default async function OffseasonPage({ params }: PageProps) {
 
       <p className="mt-2 max-w-2xl text-ink-muted">
         Players age, develop or decline, and sometimes retire between seasons; contracts that
-        expired become free agents; the salary cap grows. See docs/SYSTEMS.md for exactly how each
-        of these is modeled.
+        expired become free agents; the salary cap grows.
       </p>
+      {/* The in-product guide, not a file in the repository. */}
+      <HowDoesThisWork
+        topic="offseason"
+        className="mt-1 inline-block text-xs text-ink-muted underline hover:text-ink"
+      />
 
       {phase === "ready" && (
         <div className="mt-4 rounded-[2px] border border-rule bg-field px-4 py-3 text-sm text-ink">

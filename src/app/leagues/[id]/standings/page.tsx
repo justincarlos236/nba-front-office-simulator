@@ -18,7 +18,6 @@ import { SimulateControls } from "@/components/simulation/SimulateControls";
  */
 export const maxDuration = 60;
 
-
 export const dynamic = "force-dynamic";
 
 interface PageProps {
@@ -164,10 +163,15 @@ export default async function StandingsPage({ params }: PageProps) {
       <h1 className="text-3xl font-bold tracking-tight text-ink">
         {league.currentSeason}-{(league.currentSeason + 1).toString().slice(-2)} Standings
       </h1>
+      {/* Written for the person playing, not the person who built it. This
+          used to describe the implementation ("a simplified, strength-based
+          simulation, not possession-by-possession") and send the reader to a
+          file in the repository. What a user needs from this line is which of
+          his own decisions move the table. */}
       <p className="mt-2 max-w-2xl text-ink-muted">
-        A simplified, strength-based simulation (not possession-by-possession) - each team&apos;s
-        rotation ratings determine a win probability per game, with a small home-court edge. See
-        docs/SYSTEMS.md for the exact model.
+        Games are decided by how strong each side&apos;s rotation is on the night, with a small edge
+        to the home team. Who you play, and how many minutes they get, is what moves you up this
+        table.
       </p>
 
       <div className="mt-8">

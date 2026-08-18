@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { PlayoffControls } from "@/components/playoffs/PlayoffControls";
 import { PlayoffBracket, type BracketSeries } from "@/components/playoffs/PlayoffBracket";
 import { ChampionBanner } from "@/components/playoffs/ChampionBanner";
+import { HowDoesThisWork } from "@/components/guide/HowDoesThisWork";
 
 /**
  * Playoff rounds simulate whole series at a time.
@@ -18,7 +19,6 @@ import { ChampionBanner } from "@/components/playoffs/ChampionBanner";
  * analyzable (Next.js reads it at build time, so no imported constant).
  */
 export const maxDuration = 60;
-
 
 export const dynamic = "force-dynamic";
 
@@ -139,9 +139,14 @@ export default async function PlayoffsPage({ params }: PageProps) {
 
       <p className="mt-2 max-w-2xl text-ink-muted">
         Top 6 seeds per conference qualify directly; seeds 7-10 play into the final two spots via
-        the play-in tournament. From there it&apos;s a fixed best-of-7 bracket, same as the real NBA
-        - see docs/SYSTEMS.md.
+        the play-in tournament. From there it&apos;s a fixed best-of-7 bracket, same as the real
+        NBA.
       </p>
+      {/* The in-product guide, not a file in the repository. */}
+      <HowDoesThisWork
+        topic="playoffs"
+        className="mt-1 inline-block text-xs text-ink-muted underline hover:text-ink"
+      />
 
       {userStatus && (
         <div className="mt-4 max-w-2xl rounded-[2px] border border-rule bg-field px-4 py-3 text-sm text-ink">
