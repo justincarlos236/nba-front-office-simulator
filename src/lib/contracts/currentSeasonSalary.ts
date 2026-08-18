@@ -30,3 +30,29 @@ export function currentSeasonSalaryCents(
   const year = contract?.years.find((y) => y.season === season);
   return year?.salaryCents ?? 0n;
 }
+
+/**
+ * What a player is still owed *after* `season`, earliest year first.
+ *
+ * The companion to `currentSeasonSalaryCents`, and it exists for the same
+ * reason. Callers used `contract.years.slice(1)`, which is only the future
+ * years when the query that loaded them happened to filter to
+ * `season >= current` *and* order ascending. That was true at all three call
+ * sites - but it made a valuation input depend on a `where` clause written
+ * hundreds of lines away, in a file that does not mention trade value. The
+ * offseason roster query filters to a single season, and the same expression
+ * there would silently yield an empty future.
+ *
+ * Resolving by season removes the coupling: the same contract yields the same
+ * remaining years however it was loaded, ordered or filtered. A contract whose
+ * first year starts *after* `season` keeps that year, which `slice(1)` dropped.
+ */
+export function futureSalaryCents(
+  contract: ContractLike | null | undefined,
+  season: number,
+): bigint[] {
+  return (contract?.years ?? [])
+    .filter((y) => y.season > season)
+    .sort((a, b) => a.season - b.season)
+    .map((y) => y.salaryCents);
+}

@@ -4,7 +4,7 @@ import { reportFailures } from "@/lib/errors/actionResult";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { computeCapSheet } from "@/lib/cap/capSheet";
-import { currentSeasonSalaryCents } from "@/lib/contracts/currentSeasonSalary";
+import { currentSeasonSalaryCents, futureSalaryCents } from "@/lib/contracts/currentSeasonSalary";
 import { prisma } from "@/lib/prisma";
 import { isWithinTradeCooldown, daysUntilTradeable } from "@/lib/trade/recentAcquisition";
 import { validateTrade, type TradeAssetInput } from "@/lib/trade/validateTrade";
@@ -405,7 +405,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
     age: resolvePlayerAge(lp.player, league.currentSeason),
     position: lp.player.position,
     currentSalaryCents: currentSeasonSalaryCents(lp.contract, league.currentSeason),
-    futureSalaryCents: lp.contract!.years.slice(1).map((y) => y.salaryCents),
+    futureSalaryCents: futureSalaryCents(lp.contract, league.currentSeason),
     injuryStatus: lp.injuryStatus,
     careerGamesMissedToInjury: lp.careerGamesMissedToInjury,
   });

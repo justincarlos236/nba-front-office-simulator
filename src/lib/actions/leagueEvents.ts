@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { computeCapSheet } from "@/lib/cap/capSheet";
-import { currentSeasonSalaryCents } from "@/lib/contracts/currentSeasonSalary";
+import { currentSeasonSalaryCents, futureSalaryCents } from "@/lib/contracts/currentSeasonSalary";
 import { getSeasonCapRules } from "@/lib/cap/constants";
 import { veteranMinimumCents } from "@/lib/cap/veteranMinimum";
 import { resolvePlayerExperience } from "@/lib/players/age";
@@ -554,7 +554,7 @@ async function maybeExecuteCpuTrade(
           age: resolvePlayerAge(p.player, season),
           position: p.player.position,
           salaryCents: currentSeasonSalaryCents(p.contract, season),
-          futureSalaryCents: p.contract!.years.slice(1).map((y) => y.salaryCents),
+          futureSalaryCents: futureSalaryCents(p.contract, season),
           noTradeClause: p.contract!.noTradeClause,
           injuryStatus: p.injuryStatus,
           careerGamesMissedToInjury: p.careerGamesMissedToInjury,
@@ -1627,7 +1627,7 @@ async function maybeProposeCpuTradeToUser(
           age: resolvePlayerAge(p.player, season),
           position: p.player.position,
           salaryCents: currentSeasonSalaryCents(p.contract, season),
-          futureSalaryCents: p.contract!.years.slice(1).map((y) => y.salaryCents),
+          futureSalaryCents: futureSalaryCents(p.contract, season),
           noTradeClause: p.contract!.noTradeClause,
           injuryStatus: p.injuryStatus,
           careerGamesMissedToInjury: p.careerGamesMissedToInjury,
