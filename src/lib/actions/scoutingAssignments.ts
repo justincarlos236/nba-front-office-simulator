@@ -1,8 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import {
   scoutingAssignmentCapacity,
@@ -16,15 +14,13 @@ import {
 import { type ResolvableHiddenAxis } from "@/lib/draft/scoutingProfile";
 import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
 import type { DepartmentLevel, ProspectPathway } from "@/generated/prisma/client";
+import { requireSessionUserId, assertLeagueOwned } from "@/lib/auth/requireOwnedLeague";
 
 async function requireOwnedLeagueTeam(leagueId: string) {
-  const session = await auth();
-  if (!session?.user) redirect("/sign-in");
+  const userId = await requireSessionUserId();
 
   const league = await prisma.league.findUnique({ where: { id: leagueId } });
-  if (!league || league.ownerId !== session.user.id) {
-    throw new Error("League not found");
-  }
+  assertLeagueOwned(league, userId);
   if (!league.userControlledTeamId) {
     throw new Error("No controlled team for this league");
   }

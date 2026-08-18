@@ -1,8 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createSeededRandom } from "@/lib/contracts/seededRandom";
 import {
@@ -47,6 +45,7 @@ import {
   type DraftHindsightType,
 } from "@/lib/draft/draftHindsight";
 import type { NewsImportance } from "@/generated/prisma/client";
+import { requireSessionUserId, assertLeagueOwned } from "@/lib/auth/requireOwnedLeague";
 
 // A real sample by the break - same floor selection.ts uses for All-Star
 // eligibility, reused here for the two contests too so a player who's
@@ -126,11 +125,10 @@ export interface AllStarPerformancePool {
  * `tradeOffers.ts` - a non-owner must not learn that a league exists.
  */
 async function requireOwnedLeague(leagueId: string) {
-  const session = await auth();
-  if (!session?.user) redirect("/sign-in");
+  const userId = await requireSessionUserId();
 
   const league = await prisma.league.findUnique({ where: { id: leagueId } });
-  if (!league || league.ownerId !== session.user.id) throw new Error("League not found");
+  assertLeagueOwned(league, userId);
   return league;
 }
 
@@ -740,13 +738,10 @@ export async function generateAllStarWeekend(
 
 /** The one action that unblocks simulateGamesAction again once the user has viewed (or skipped) the weekend. */
 export async function resolveAllStarWeekendAction(leagueId: string): Promise<void> {
-  const session = await auth();
-  if (!session?.user) redirect("/sign-in");
+  const userId = await requireSessionUserId();
 
   const league = await prisma.league.findUnique({ where: { id: leagueId } });
-  if (!league || league.ownerId !== session.user.id) {
-    throw new Error("League not found");
-  }
+  assertLeagueOwned(league, userId);
 
   await prisma.allStarWeekend.updateMany({
     where: { leagueId, season: league.currentSeason, status: "PENDING" },

@@ -1,8 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import {
   loanAmountCents,
@@ -17,6 +15,7 @@ import {
 } from "@/lib/finances/financing";
 import { applyScaledFanHappinessDelta } from "@/lib/fans/sentimentEvents";
 import { fanSentimentCreateOps } from "@/lib/fans/recordSentiment";
+import { requireSessionUserId, assertLeagueOwned } from "@/lib/auth/requireOwnedLeague";
 
 const MIN_OWNER_CONFIDENCE = 0;
 const MAX_OWNER_CONFIDENCE = 100;
@@ -25,13 +24,10 @@ function clampConfidence(value: number): number {
 }
 
 async function requireOwnedLeagueTeam(leagueId: string) {
-  const session = await auth();
-  if (!session?.user) redirect("/sign-in");
+  const userId = await requireSessionUserId();
 
   const league = await prisma.league.findUnique({ where: { id: leagueId } });
-  if (!league || league.ownerId !== session.user.id) {
-    throw new Error("League not found");
-  }
+  assertLeagueOwned(league, userId);
   if (!league.userControlledTeamId) {
     throw new Error("No team to manage");
   }

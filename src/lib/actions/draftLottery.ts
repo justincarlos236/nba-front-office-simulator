@@ -1,8 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ensureDraftClassGenerated } from "@/lib/actions/draftClass";
 import { computeDraftOrder, getSeededLotteryTeams } from "@/lib/draft/draftOrder";
@@ -20,6 +18,7 @@ import {
 import { recordFanSentimentMany } from "@/lib/fans/recordSentiment";
 import { describeLotterySentiment } from "@/lib/fans/describeSentiment";
 import { Prisma, type NewsImportance } from "@/generated/prisma/client";
+import { requireSessionUserId, assertLeagueOwned } from "@/lib/auth/requireOwnedLeague";
 
 const LOTTERY_LEAGUE_INCLUDE = {
   // Fans Page Redesign (Phase 3).
@@ -29,16 +28,13 @@ const LOTTERY_LEAGUE_INCLUDE = {
 export type LotteryLeague = Prisma.LeagueGetPayload<{ include: typeof LOTTERY_LEAGUE_INCLUDE }>;
 
 async function requireOwnedLeague(leagueId: string): Promise<LotteryLeague> {
-  const session = await auth();
-  if (!session?.user) redirect("/sign-in");
+  const userId = await requireSessionUserId();
 
   const league = await prisma.league.findUnique({
     where: { id: leagueId },
     include: LOTTERY_LEAGUE_INCLUDE,
   });
-  if (!league || league.ownerId !== session.user.id) {
-    throw new Error("League not found");
-  }
+  assertLeagueOwned(league, userId);
   return league;
 }
 

@@ -1,8 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { computeLeagueTeamStrengths } from "@/lib/actions/leagueTeamStrength";
 import {
@@ -25,6 +23,7 @@ import { generateBoxScore, type PlayerBoxScoreLine } from "@/lib/simulation/boxS
 import { computeCoachBoxScoreModifier, computeCoachWinBonus } from "@/lib/staff/coachModifiers";
 import { describeGameResult, describeMilestoneGame } from "@/lib/transactions/describeGameEvents";
 import { Prisma } from "@/generated/prisma/client";
+import { requireSessionUserId, assertLeagueOwned } from "@/lib/auth/requireOwnedLeague";
 
 type ConferenceName = "EAST" | "WEST";
 
@@ -33,16 +32,13 @@ const PLAYOFFS_LEAGUE_INCLUDE = { teams: { include: { team: true } } } as const;
 export type PlayoffsLeague = Prisma.LeagueGetPayload<{ include: typeof PLAYOFFS_LEAGUE_INCLUDE }>;
 
 async function requireOwnedLeague(leagueId: string): Promise<PlayoffsLeague> {
-  const session = await auth();
-  if (!session?.user) redirect("/sign-in");
+  const userId = await requireSessionUserId();
 
   const league = await prisma.league.findUnique({
     where: { id: leagueId },
     include: PLAYOFFS_LEAGUE_INCLUDE,
   });
-  if (!league || league.ownerId !== session.user.id) {
-    throw new Error("League not found");
-  }
+  assertLeagueOwned(league, userId);
   return league;
 }
 

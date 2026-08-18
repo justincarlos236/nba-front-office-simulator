@@ -1,8 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import {
   runSeasonFinances,
@@ -138,6 +136,7 @@ import { applyMoraleChange } from "@/lib/morale/moraleLevel";
 import { rollupCompletedSeasons } from "@/lib/stats/rollupSeasonStats";
 import { loadInSimPerformance } from "@/lib/valuation/inSimPerformance";
 import { contractYearSalaries, averageAnnualValueCents } from "@/lib/contracts/contractRaises";
+import { requireSessionUserId, assertLeagueOwned } from "@/lib/auth/requireOwnedLeague";
 
 // Local, server-side copy of the award-category label (small duplication
 // of the UI's own AWARD_LABELS constants, same established pattern as
@@ -173,8 +172,7 @@ const HEAD_COACH_REPUTATION_DRIFT_PER_WIN_PCT = 20;
 const CPU_AUTO_HIRE_CONTRACT_YEARS = 2;
 
 async function requireOwnedLeague(leagueId: string) {
-  const session = await auth();
-  if (!session?.user) redirect("/sign-in");
+  const userId = await requireSessionUserId();
 
   const league = await prisma.league.findUnique({
     where: { id: leagueId },
@@ -184,9 +182,7 @@ async function requireOwnedLeague(leagueId: string) {
     // number this same pass is about to overwrite.
     include: { teams: { include: { team: true, fanCulture: true } } },
   });
-  if (!league || league.ownerId !== session.user.id) {
-    throw new Error("League not found");
-  }
+  assertLeagueOwned(league, userId);
   return league;
 }
 

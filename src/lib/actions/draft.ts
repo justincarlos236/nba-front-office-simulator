@@ -1,8 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { generateContract } from "@/lib/contracts/generateContract";
 import { DRAFT_ROOKIE_ASSUMED_AGE } from "@/lib/gm/draftPickTradeValue";
@@ -29,22 +27,20 @@ import {
   type DraftResolutionSummary,
 } from "@/lib/draft/draftResolution";
 import { Prisma, type NewsImportance, type ProspectPathway } from "@/generated/prisma/client";
+import { requireSessionUserId, assertLeagueOwned } from "@/lib/auth/requireOwnedLeague";
 
 const DRAFT_LEAGUE_INCLUDE = { teams: { include: { team: true } } } as const;
 
 export type DraftLeague = Prisma.LeagueGetPayload<{ include: typeof DRAFT_LEAGUE_INCLUDE }>;
 
 async function requireOwnedLeague(leagueId: string): Promise<DraftLeague> {
-  const session = await auth();
-  if (!session?.user) redirect("/sign-in");
+  const userId = await requireSessionUserId();
 
   const league = await prisma.league.findUnique({
     where: { id: leagueId },
     include: DRAFT_LEAGUE_INCLUDE,
   });
-  if (!league || league.ownerId !== session.user.id) {
-    throw new Error("League not found");
-  }
+  assertLeagueOwned(league, userId);
   return league;
 }
 
