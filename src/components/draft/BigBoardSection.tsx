@@ -77,16 +77,26 @@ export function BigBoardSection({
               <span className="w-20 shrink-0 text-right text-xs text-ink-muted">
                 {SCOUTING_DEPTH_LABEL[prospect.scoutingDepth] ?? "Unknown"}
               </span>
-              {Math.abs(gap) >= 5 && (
-                <span
-                  className={`w-32 shrink-0 text-right text-xs font-semibold ${
-                    gap > 0 ? "text-positive" : "text-negative"
-                  }`}
-                  title={`Rating ${prospect.overallRating} would rank him #${trueRank}`}
-                >
-                  {gap > 0 ? `Rating says #${trueRank}` : `Board favors him`}
-                </span>
-              )}
+              {/* Always rendered, empty when there is no verdict. Hiding the
+                  span let the columns either side slide right to fill on rows
+                  without one, so a prospect with no gap sat visibly out of
+                  line with every prospect that had one. */}
+              <span
+                className={`w-32 shrink-0 text-right text-xs font-semibold ${
+                  gap > 0 ? "text-positive" : "text-negative"
+                }`}
+                title={
+                  Math.abs(gap) >= 5
+                    ? `Rating ${prospect.overallRating} would rank him #${trueRank}`
+                    : undefined
+                }
+              >
+                {Math.abs(gap) >= 5
+                  ? gap > 0
+                    ? `Rating says #${trueRank}`
+                    : `Board favors him`
+                  : null}
+              </span>
             </button>
           );
         })}

@@ -133,21 +133,6 @@ export default async function DraftPage({ params }: PageProps) {
       )}
       {gatePhase === "active" && draftPicks.length === 0 && (
         <>
-          <div className="mt-8 rounded-[2px] border border-team-accent/30 bg-gradient-to-b from-team-accent/10 to-transparent p-6 text-center">
-            <p className="text-xs font-semibold tracking-widest text-team-accent uppercase">
-              Draft Lottery
-            </p>
-            <p className="mt-2 text-ink">
-              The draft order isn&apos;t set yet - scout the class now, then run the lottery when
-              you&apos;re ready.
-            </p>
-            <Link
-              href={`/leagues/${league.id}/draft/lottery`}
-              className="mt-4 inline-block rounded-[2px] bg-team-accent px-6 py-3 text-base font-bold text-team-accent-ink transition hover:opacity-90"
-            >
-              Go to the Draft Lottery
-            </Link>
-          </div>
           <PreDraftScoutingView
             leagueId={league.id}
             teamsById={teamsById}
@@ -156,6 +141,31 @@ export default async function DraftPage({ params }: PageProps) {
             scoutingCapacity={scoutingBudget.capacity}
             initialScoutingAssignmentsRemaining={scoutingBudget.remaining}
           />
+
+          {/* Below the scouting it ends, not above it.
+              Running the lottery flips the phase to `draft-incomplete`, at
+              which point this page renders `DraftExperience` instead of
+              `PreDraftScoutingView` - the whole scouting window closes and any
+              unspent assignments are gone. That made it the one irreversible
+              action on the page, and it was also the loudest thing on it,
+              sitting above everything it would skip. The copy already said
+              "scout the class now, then run the lottery when you're ready";
+              the order now says the same. */}
+          <div className="mt-8 rounded-[2px] border border-team-accent/30 bg-gradient-to-b from-team-accent/10 to-transparent p-6 text-center">
+            <p className="text-xs font-semibold tracking-widest text-team-accent uppercase">
+              Draft Lottery
+            </p>
+            <p className="mt-2 text-ink">
+              Done scouting? Running the lottery sets the draft order and closes this
+              window - any assignments you have left are forfeited.
+            </p>
+            <Link
+              href={`/leagues/${league.id}/draft/lottery`}
+              className="mt-4 inline-block rounded-[2px] bg-team-accent px-6 py-3 text-base font-bold text-team-accent-ink transition hover:opacity-90"
+            >
+              Go to the Draft Lottery
+            </Link>
+          </div>
         </>
       )}
       {gatePhase === "active" && draftPicks.length > 0 && (
