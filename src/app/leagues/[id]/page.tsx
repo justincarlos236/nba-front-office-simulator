@@ -483,6 +483,29 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
         <div className="mt-8 grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_300px]">
           {/* DECISION COLUMN */}
           <div className="space-y-8">
+            {/* Above the two panels that resize, not below them.
+                `Next 10` is the one control a user presses over and over, and
+                it used to sit under `SinceYouLeft` - which returns null
+                entirely when there is no news - and the action centre, which
+                swings between zero and three items. Both change on every
+                simulated block, so the button moved under the cursor between
+                consecutive presses and had to be re-aimed each time.
+
+                Everything above it now is fixed height for the length of a
+                season: the header, the phase indicator and the ribbon. Reading
+                order becomes act, then read what happened, which is also the
+                right order for the loop this page exists to run. */}
+            {dashboardGamesRemaining > 0 && (
+              <div data-tour="simulate-controls">
+                <SimulateControls
+                  leagueId={league.id}
+                  gamesRemaining={dashboardGamesRemaining}
+                  allStarWeekendPending={dashboardWeekend?.status === "PENDING"}
+                  businessDecisionPending={!!dashboardBreakingDecision}
+                />
+              </div>
+            )}
+
             <SinceYouLeft continuity={continuity} leagueId={league.id} />
 
             {/* data-tour: spotlight target for the first-session tour
@@ -496,17 +519,6 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
                 hiddenCount={allActionCenterItems.length - actionCenterItems.length}
               />
             </div>
-
-            {dashboardGamesRemaining > 0 && (
-              <div data-tour="simulate-controls">
-                <SimulateControls
-                  leagueId={league.id}
-                  gamesRemaining={dashboardGamesRemaining}
-                  allStarWeekendPending={dashboardWeekend?.status === "PENDING"}
-                  businessDecisionPending={!!dashboardBreakingDecision}
-                />
-              </div>
-            )}
 
             <FormLine
               leagueId={league.id}
