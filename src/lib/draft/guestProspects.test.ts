@@ -32,13 +32,43 @@ describe("guest prospects", () => {
     expect(before).toHaveLength(CLASS_SIZE);
   });
 
-  it("changes nothing but the name", () => {
+  it("changes nothing that decides how good they are", () => {
     // The whole point: they are average because they inherit an average slot,
-    // not because a rating was chosen for them.
+    // not because a rating was chosen for them. Name and origin are set by
+    // hand; every number is not.
     const before = classOf("c");
     const after = applyGuestProspects(before, GUEST_PROSPECT_SEASON);
-    const strip = (p: { fullName: string }) => ({ ...p, fullName: "" });
-    expect(after.map(strip)).toEqual(before.map(strip));
+    const scouted = (p: (typeof before)[number]) => ({
+      position: p.position,
+      age: p.age,
+      overallRating: p.overallRating,
+      potentialRating: p.potentialRating,
+      heightInches: p.heightInches,
+      weightLbs: p.weightLbs,
+      comparisonPlayerName: p.comparisonPlayerName,
+    });
+    expect(after.map(scouted)).toEqual(before.map(scouted));
+  });
+
+  it("gives each guest the origin they were given", () => {
+    const after = applyGuestProspects(classOf("f"), GUEST_PROSPECT_SEASON);
+    const origin = (name: string) => {
+      const p = after.find((x) => x.fullName === name);
+      expect(p, `${name} missing`).toBeDefined();
+      return { school: p!.collegeOrTeam, nationality: p!.nationality, intl: p!.isInternational };
+    };
+    expect(origin("Jake Herrera")).toEqual({
+      school: "Philippines",
+      nationality: "Philippines",
+      intl: true,
+    });
+    expect(origin("Dhiren Rishi")).toEqual({
+      school: "SIM",
+      nationality: "Singapore",
+      intl: true,
+    });
+    expect(origin("Adrian Tan")).toEqual({ school: "SMU", nationality: "Singapore", intl: true });
+    expect(origin("Gabriel Tay")).toEqual({ school: "NUS", nationality: "Singapore", intl: true });
   });
 
   it("leaves them genuinely ordinary", () => {

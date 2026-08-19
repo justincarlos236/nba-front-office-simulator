@@ -11,10 +11,15 @@ import type { GeneratedProspect } from "./generateDraftClass";
  * audits measure - ratings by pick, potential falloff, positional mix - is
  * untouched.
  *
- * Only the name changes. Rating, potential, position, height, college and
- * comparison all stay as generated for that slot, which is what keeps them
- * genuinely average instead of secretly good, and stops a hand-written height
- * from landing on a hand-written position and reading as a mistake.
+ * Only the name and where they came from change. Rating, potential, position,
+ * height, weight and comparison all stay as generated for that slot, which is
+ * what keeps them genuinely average instead of secretly good, and stops a
+ * hand-written height from landing on a hand-written position.
+ *
+ * All five are marked international, because all five are: two from the
+ * Philippines and three from Singapore universities. Leaving the generated
+ * nationality in place would have printed a Singapore school beside a US
+ * nationality, which reads as a data bug rather than a joke.
  *
  * The slots are spread across the middle of the board on purpose. Grouping
  * them would be conspicuous, and putting them at the top would hand whoever
@@ -24,13 +29,23 @@ import type { GeneratedProspect } from "./generateDraftClass";
 /** The class these appear in - the second draft a save reaches. */
 export const GUEST_PROSPECT_SEASON = DATASET_ROSTER_SEASON + 1;
 
-export const GUEST_PROSPECT_NAMES = [
-  "Jake Herrera",
-  "Jacob Tuglo",
-  "Dhiren Rishi",
-  "Adrian Tan",
-  "Gabriel Tay",
-] as const;
+interface GuestProspect {
+  fullName: string;
+  /** Shown as "Club:" on the prospect profile, since all five come from
+   *  outside the US college system. */
+  collegeOrTeam: string;
+  nationality: string;
+}
+
+const GUESTS: GuestProspect[] = [
+  { fullName: "Jake Herrera", collegeOrTeam: "Philippines", nationality: "Philippines" },
+  { fullName: "Jacob Tuglo", collegeOrTeam: "Philippines", nationality: "Philippines" },
+  { fullName: "Dhiren Rishi", collegeOrTeam: "SIM", nationality: "Singapore" },
+  { fullName: "Adrian Tan", collegeOrTeam: "SMU", nationality: "Singapore" },
+  { fullName: "Gabriel Tay", collegeOrTeam: "NUS", nationality: "Singapore" },
+];
+
+export const GUEST_PROSPECT_NAMES = GUESTS.map((g) => g.fullName);
 
 /**
  * Which board positions they occupy, as pick numbers.
@@ -61,7 +76,15 @@ export function applyGuestProspects(
     const slot = out[index];
     // A short class would otherwise write past the end of the board.
     if (!slot) return;
-    out[index] = { ...slot, fullName: GUEST_PROSPECT_NAMES[i] };
+    const guest = GUESTS[i];
+    out[index] = {
+      ...slot,
+      fullName: guest.fullName,
+      collegeOrTeam: guest.collegeOrTeam,
+      nationality: guest.nationality,
+      isInternational: true,
+      pathway: "INTERNATIONAL_PROFESSIONAL",
+    };
   });
   return out;
 }
