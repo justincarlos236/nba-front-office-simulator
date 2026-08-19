@@ -34,6 +34,7 @@ import {
   computeJobOffer,
   JOB_SITUATION_LABEL,
 } from "@/lib/gm/jobMarket";
+import { reportFailures } from "@/lib/errors/actionResult";
 
 // The season a new league starts in - the season the imported NBA dataset
 // describes (2026 => the 2026-27 season). See src/lib/data-sources/.
@@ -386,20 +387,29 @@ export async function createLeagueAction(formData: FormData) {
  * once those four are gone.
  */
 export async function deleteLeagueAction(leagueId: string) {
-  const session = await auth();
-  if (!session?.user) redirect("/sign-in");
+  return reportFailures(async () => {
+    const session = await auth();
+    if (!session?.user) redirect("/sign-in");
 
-  const league = await prisma.league.findUnique({ where: { id: leagueId } });
-  if (!league || league.ownerId !== session.user.id) {
-    throw new Error("League not found");
-  }
+    const league = await prisma.league.findUnique({ where: { id: leagueId } });
+    if (!league || league.ownerId !== session.user.id) {
+      return {
+        ok: false as const,
+        error: {
+          summary: "That save couldn't be found.",
+          remedy: "It may already have been deleted. Reload your leagues.",
+        },
+      };
+    }
 
-  await prisma.tradeAsset.deleteMany({ where: { trade: { leagueId } } });
-  await prisma.contract.deleteMany({ where: { leagueTeam: { leagueId } } });
-  await prisma.staffContract.deleteMany({ where: { leagueTeam: { leagueId } } });
-  await prisma.draftPick.deleteMany({ where: { leagueId } });
-  await prisma.tradeException.deleteMany({ where: { leagueId } });
-  await prisma.league.delete({ where: { id: leagueId } });
+    await prisma.tradeAsset.deleteMany({ where: { trade: { leagueId } } });
+    await prisma.contract.deleteMany({ where: { leagueTeam: { leagueId } } });
+    await prisma.staffContract.deleteMany({ where: { leagueTeam: { leagueId } } });
+    await prisma.draftPick.deleteMany({ where: { leagueId } });
+    await prisma.tradeException.deleteMany({ where: { leagueId } });
+    await prisma.league.delete({ where: { id: leagueId } });
 
-  revalidatePath("/leagues");
+    revalidatePath("/leagues");
+    return { ok: true as const };
+  });
 }
