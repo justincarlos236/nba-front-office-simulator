@@ -121,6 +121,20 @@ export default async function DashboardPage() {
                               {(league.currentSeason + 1).toString().slice(-2)} season
                               {userTeam ? ` · ${userTeam.wins}-${userTeam.losses}` : ""}
                             </p>
+                            {/* Two saves of the same club in the same season
+                                with the same record were indistinguishable, so
+                                a user could open the wrong one and think their
+                                progress had been lost. Running several saves of
+                                one franchise is supported; telling them apart
+                                has to be too. */}
+                            <p className="text-xs text-rule">
+                              Started{" "}
+                              {league.createdAt.toLocaleDateString(undefined, {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </p>
                           </div>
                         </div>
                       </div>

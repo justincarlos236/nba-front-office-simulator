@@ -48,6 +48,13 @@ import { reportFailures } from "@/lib/errors/actionResult";
 const SEASON = DATASET_ROSTER_SEASON;
 
 /**
+ * How long a repeat click on the same job counts as the same intent rather
+ * than a second franchise. Long enough to cover a slow bootstrap, short enough
+ * that nobody deliberately starting two saves of one club is ever caught.
+ */
+const DUPLICATE_CREATE_WINDOW_MS = 60_000;
+
+/**
  * Bootstraps a brand-new League from the current imported NBA dataset: clones
  * all 30 teams and every player in the dataset onto their real current roster
  * (trimmed to a legal 15-man roster, surplus to free agency), with each
@@ -73,6 +80,38 @@ export async function createLeagueAction(formData: FormData) {
   });
   if (existingCount >= MAX_LEAGUES_PER_USER) {
     throw new Error(`You've reached the ${MAX_LEAGUES_PER_USER}-franchise limit.`);
+  }
+
+  // A second click on the same job lands in the league the first one made,
+  // rather than making another.
+  //
+  // Bootstrapping a league writes ~1,700 rows and takes seconds, and the form
+  // gave no sign it was working - so a new user clicks again. Two accounts did
+  // exactly that on their first visit and ended up with five identical saves,
+  // two seconds apart, indistinguishable on the leagues page. Nothing was
+  // corrupted; they simply could not tell which one they had been playing.
+  //
+  // The rate limit below is no defence: it allows ten an hour, and this was
+  // five in ten seconds. A window this short only ever spans one impatient
+  // person, so treating the repeat as "show me the one I just made" is both
+  // the safe reading and the one they wanted.
+  const recent = await prisma.leagueTeam.findFirst({
+    where: {
+      teamId,
+      league: {
+        ownerId: session.user.id,
+        endedAt: null,
+        createdAt: { gte: new Date(Date.now() - DUPLICATE_CREATE_WINDOW_MS) },
+      },
+    },
+    orderBy: { league: { createdAt: "desc" } },
+    select: { id: true, leagueId: true, league: { select: { userControlledTeamId: true } } },
+  });
+  // Only when that club is the one they were actually running - every league
+  // contains all thirty, so matching on `teamId` alone would fire on any
+  // recent save at all.
+  if (recent && recent.league.userControlledTeamId === recent.id) {
+    redirect(`/leagues/${recent.leagueId}`);
   }
 
   // The cap above bounds how many leagues one account HOLDS; this bounds how

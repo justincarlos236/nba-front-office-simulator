@@ -15,6 +15,7 @@ import {
 } from "@/lib/gm/jobMarket";
 import { computeCareerTitle, CAREER_TITLE_LABEL } from "@/lib/gm/careerRecord";
 import { ScaleBar } from "@/components/dashboard/ScaleBar";
+import { TakeJobButton } from "@/components/leagues/TakeJobButton";
 
 /**
  * League creation clones the full dataset into a new league: 30 teams, ~450
@@ -215,9 +216,7 @@ function JobConference({ title, teams }: { title: string; teams: JobTeam[] }) {
           return (
             <form key={team.id} action={createLeagueAction} className="contents">
               <input type="hidden" name="teamId" value={team.id} />
-              <button type="submit" className="w-full text-left">
-                {card}
-              </button>
+              <TakeJobButton>{card}</TakeJobButton>
             </form>
           );
         })}
