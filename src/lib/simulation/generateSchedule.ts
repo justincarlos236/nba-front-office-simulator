@@ -58,7 +58,37 @@ const SEASON_LENGTH_DAYS_TARGET = REGULAR_SEASON_TARGET_DAYS;
 // So the choice is made per night instead, off the seeded stream: on most
 // nights the calendar protects rest, on the rest it does not, and the real
 // figure of ~14 falls out of the mix. Deterministic given the seed.
-const REST_PRIORITY_NIGHTS = 0.6;
+//
+// Raised from 0.6 to 0.7 when MIN_REMATCH_GAP_DAYS arrived. Separating a
+// pair's meetings shrinks the pool of eligible matchups each night, so the
+// loop more often has to take a pair where somebody played yesterday, and
+// back-to-backs drifted from 13.5 to 15.5. Re-measured against the same real
+// figure rather than left: 0.7 gives 14.3.
+const REST_PRIORITY_NIGHTS = 0.7;
+
+/**
+ * Days a pair must wait before meeting again.
+ *
+ * Nothing used to separate a pair's meetings at all. The nightly sort ranks
+ * pairs by how far behind their teams are on remaining games, and playing a
+ * game barely moves a team relative to everyone else - so a pair that ranked
+ * highly last night ranks highly again tonight. The only rule pushing back was
+ * the eligibility check, and that forbids a *team* playing three days running,
+ * not a *matchup* repeating.
+ *
+ * Measured over three seasons: 36% of all games were against the same opponent
+ * as the team's previous game, the median gap between a pair's meetings was two
+ * days, and there were 816 cases of a team facing one opponent three games
+ * running. A real season spreads a pair's three or four meetings across six
+ * months.
+ *
+ * Applied as a filter with a fallback rather than a hard rule: nights are
+ * filled from pairs that have waited, and only if a night cannot be filled does
+ * the rest of the board become eligible. That keeps the occasional home-and-home
+ * a real calendar does have, without letting it become the shape of the season,
+ * and it cannot make the schedule unsatisfiable.
+ */
+const MIN_REMATCH_GAP_DAYS = 14;
 
 function shuffledIndices(n: number, rng: () => number): number[] {
   const arr = Array.from({ length: n }, (_, i) => i);
@@ -212,6 +242,8 @@ function assignDays(games: UnscheduledGame[], rng: () => number, season: number)
 
   const lastPlayedDay = new Map<string, number>();
   const consecutiveStreak = new Map<string, number>();
+  /** The day a given matchup was last played, keyed by `pairKey`. */
+  const lastMetDay = new Map<string, number>();
 
   function isEligible(teamId: string, day: number): boolean {
     const last = lastPlayedDay.get(teamId);
@@ -274,29 +306,43 @@ function assignDays(games: UnscheduledGame[], rng: () => number, season: number)
         return minB - restedness(gB) - (minA - restedness(gA));
       });
 
-    for (const list of candidates) {
-      if (scheduledToday >= targetGamesPerDay) break;
-      const game = list[0];
-      const { homeLeagueTeamId, awayLeagueTeamId } = game;
-      if (usedToday.has(homeLeagueTeamId) || usedToday.has(awayLeagueTeamId)) continue;
-      if (!isEligible(homeLeagueTeamId, day) || !isEligible(awayLeagueTeamId, day)) continue;
+    // Two passes: pairs that have served the rematch gap first, then - only if
+    // the night is still short - everything else. The fallback is what stops a
+    // separation rule from ever making the board unsatisfiable.
+    const rested = (g: UnscheduledGame): boolean => {
+      const met = lastMetDay.get(pairKey(g.homeLeagueTeamId, g.awayLeagueTeamId));
+      return met === undefined || day - met >= MIN_REMATCH_GAP_DAYS;
+    };
 
-      list.shift();
-      usedToday.add(homeLeagueTeamId);
-      usedToday.add(awayLeagueTeamId);
-      scheduled.push({ ...game, dayIndex: day, gameNumber: 0 });
-      remainingCount -= 1;
-      scheduledToday += 1;
-      gamesRemainingByTeam.set(
-        homeLeagueTeamId,
-        (gamesRemainingByTeam.get(homeLeagueTeamId) ?? 1) - 1,
-      );
-      gamesRemainingByTeam.set(
-        awayLeagueTeamId,
-        (gamesRemainingByTeam.get(awayLeagueTeamId) ?? 1) - 1,
-      );
-      markPlayed(homeLeagueTeamId, day);
-      markPlayed(awayLeagueTeamId, day);
+    for (const pass of [0, 1]) {
+      for (const list of candidates) {
+        if (scheduledToday >= targetGamesPerDay) break;
+        const game = list[0];
+        if (!game) continue;
+        if (pass === 0 && !rested(game)) continue;
+        const { homeLeagueTeamId, awayLeagueTeamId } = game;
+        if (usedToday.has(homeLeagueTeamId) || usedToday.has(awayLeagueTeamId)) continue;
+        if (!isEligible(homeLeagueTeamId, day) || !isEligible(awayLeagueTeamId, day)) continue;
+
+        list.shift();
+        usedToday.add(homeLeagueTeamId);
+        usedToday.add(awayLeagueTeamId);
+        scheduled.push({ ...game, dayIndex: day, gameNumber: 0 });
+        remainingCount -= 1;
+        scheduledToday += 1;
+        gamesRemainingByTeam.set(
+          homeLeagueTeamId,
+          (gamesRemainingByTeam.get(homeLeagueTeamId) ?? 1) - 1,
+        );
+        gamesRemainingByTeam.set(
+          awayLeagueTeamId,
+          (gamesRemainingByTeam.get(awayLeagueTeamId) ?? 1) - 1,
+        );
+        markPlayed(homeLeagueTeamId, day);
+        markPlayed(awayLeagueTeamId, day);
+        lastMetDay.set(pairKey(homeLeagueTeamId, awayLeagueTeamId), day);
+      }
+      if (scheduledToday >= targetGamesPerDay) break;
     }
   }
 

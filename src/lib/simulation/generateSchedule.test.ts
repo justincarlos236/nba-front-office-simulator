@@ -154,3 +154,80 @@ describe("generateRoundRobinSchedule", () => {
     expect(a).not.toEqual(b);
   });
 });
+
+/**
+ * A pair's meetings are spread across the season.
+ *
+ * The nightly sort ranks matchups by how far behind their teams are on
+ * remaining games, and playing barely moves a team relative to everyone else -
+ * so a pair that ranked highly last night ranked highly again tonight. The only
+ * rule pushing back forbade a *team* playing three days running; nothing at all
+ * stopped a *matchup* repeating.
+ *
+ * Measured over three seasons before the fix: 36% of all games were against the
+ * same opponent as the team's previous game, the median gap between a pair's
+ * meetings was two days, and 816 times a team faced one opponent three games
+ * running. Reported from a save as "playing the same team twice, thrice,
+ * sometimes even 4 times in a row".
+ */
+describe("a pair's meetings are spread out", () => {
+  const schedule = generateRoundRobinSchedule(TEAMS, "separation-seed", 2026);
+
+  /** Every team's games in day order, with the opponent faced. */
+  function gamesByTeam(): Map<string, { day: number; opponent: string }[]> {
+    const byTeam = new Map<string, { day: number; opponent: string }[]>();
+    for (const g of schedule) {
+      for (const [team, opponent] of [
+        [g.homeLeagueTeamId, g.awayLeagueTeamId],
+        [g.awayLeagueTeamId, g.homeLeagueTeamId],
+      ] as const) {
+        const list = byTeam.get(team) ?? [];
+        list.push({ day: g.dayIndex, opponent });
+        byTeam.set(team, list);
+      }
+    }
+    for (const list of byTeam.values()) list.sort((a, b) => a.day - b.day);
+    return byTeam;
+  }
+
+  it("rarely sends a team straight back into the same opponent", () => {
+    let consecutive = 0;
+    let total = 0;
+    for (const list of gamesByTeam().values()) {
+      for (let i = 1; i < list.length; i++) {
+        total += 1;
+        if (list[i].opponent === list[i - 1].opponent) consecutive += 1;
+      }
+    }
+    // Was 36%. A real calendar has the occasional home-and-home, so this is a
+    // ceiling rather than zero.
+    expect(consecutive / total).toBeLessThan(0.05);
+  });
+
+  it("never sends a team into the same opponent three games running", () => {
+    for (const list of gamesByTeam().values()) {
+      for (let i = 2; i < list.length; i++) {
+        const three = [list[i - 2], list[i - 1], list[i]].map((g) => g.opponent);
+        expect(new Set(three).size).toBeGreaterThan(1);
+      }
+    }
+  });
+
+  it("leaves real distance between a pair's meetings", () => {
+    const byPair = new Map<string, number[]>();
+    for (const g of schedule) {
+      const key = [g.homeLeagueTeamId, g.awayLeagueTeamId].sort().join("|");
+      const list = byPair.get(key) ?? [];
+      list.push(g.dayIndex);
+      byPair.set(key, list);
+    }
+    const gaps: number[] = [];
+    for (const days of byPair.values()) {
+      days.sort((a, b) => a - b);
+      for (let i = 1; i < days.length; i++) gaps.push(days[i] - days[i - 1]);
+    }
+    gaps.sort((a, b) => a - b);
+    // Was two days.
+    expect(gaps[Math.floor(gaps.length / 2)]).toBeGreaterThan(10);
+  });
+});
