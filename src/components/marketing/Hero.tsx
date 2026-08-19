@@ -23,6 +23,12 @@ export async function Hero() {
         }}
       />
       <div className="relative mx-auto flex max-w-5xl flex-col items-center px-6 py-24 text-center sm:py-32">
+        {/* Attribution sits at the top rather than buried in the footer:
+            whoever built a thing is the first useful fact about it. */}
+        <p className="mb-4 text-sm text-ink-muted">
+          A project by <span className="font-semibold text-team-accent">Justin Carlos</span>
+        </p>
+
         <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-rule bg-field px-4 py-1.5 text-xs font-medium tracking-wide text-ink-muted uppercase">
           General Manager Mode
         </span>

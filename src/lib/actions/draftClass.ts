@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { createSeededRandom } from "@/lib/contracts/seededRandom";
 import { generateDraftClass } from "@/lib/draft/generateDraftClass";
+import { applyGuestProspects } from "@/lib/draft/guestProspects";
 
 /**
  * generates this season's draft class
@@ -31,7 +32,8 @@ export async function ensureDraftClassGenerated(leagueId: string, season: number
   if (existingCount > 0) return;
 
   const rng = createSeededRandom(`${leagueId}-${season}-draft-class`);
-  const { character, prospects } = generateDraftClass(rng);
+  const { character, prospects: generated } = generateDraftClass(rng);
+  const prospects = applyGuestProspects(generated, season);
 
   await prisma.draftProspect.createMany({
     data: prospects.map((p) => ({
