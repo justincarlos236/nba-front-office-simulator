@@ -24,6 +24,7 @@ import { contractYearSalaries } from "@/lib/contracts/contractRaises";
 import { formatCentsCompact } from "@/lib/money";
 import { toUserFacingError, type UserFacingError } from "@/lib/errors/userFacing";
 import type { ActionFailure } from "@/lib/errors/actionResult";
+import { loadDeadMoneyCents } from "@/lib/cap/deadMoney";
 
 export interface SignFreeAgentInput {
   leagueId: string;
@@ -120,7 +121,9 @@ export async function signFreeAgentAction(input: SignFreeAgentInput): Promise<Si
     prisma.leagueTeam.findUniqueOrThrow({ where: { id: myLeagueTeamId }, include: { team: true } }),
     getSigningExceptionUsage(myLeagueTeamId, league.currentSeason),
   ]);
+  const deadMoneyCents = await loadDeadMoneyCents(myLeagueTeamId, league.currentSeason);
   const capSheet = computeCapSheet({
+    deadMoneyCents: deadMoneyCents,
     season: league.currentSeason,
     contracts: myPlayers
       .filter((lp) => lp.contract?.years[0])

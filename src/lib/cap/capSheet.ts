@@ -9,8 +9,16 @@ export interface CapSheetContract {
 export interface CapSheetInput {
   season: number;
   contracts: CapSheetContract[];
-  /** Guaranteed money owed to players no longer on the roster (waived/stretched). */
-  deadMoneyCents?: bigint;
+  /**
+   * Guaranteed money owed to players no longer on the roster.
+   *
+   * Required, not optional. A cap sheet that omits it under-reports the club's
+   * payroll, and once a player can be released that is not a display bug: a
+   * release whose charge never reaches the sheet is a way to erase any contract
+   * for free. Making it required turns every missed call site into a compile
+   * error instead of a silent discount. Pass `0n` where none can exist.
+   */
+  deadMoneyCents: bigint;
   /** Salary being sent out that this team must still pay after a trade (rare, cash-in-trade cases). */
   retainedSalaryCents?: bigint;
 }
@@ -41,7 +49,7 @@ export function computeCapSheet(input: CapSheetInput): CapSheet {
     (sum, contract) => sum + contract.salaryCents,
     0n,
   );
-  const deadMoneyCents = input.deadMoneyCents ?? 0n;
+  const deadMoneyCents = input.deadMoneyCents;
   const retainedSalaryCents = input.retainedSalaryCents ?? 0n;
 
   const emptyRosterSpots = Math.max(0, MIN_ROSTER_SIZE_FOR_CAP_PURPOSES - input.contracts.length);

@@ -84,6 +84,8 @@ export interface TeamFinanceDeps {
   completedEffectsByTeam: Map<string, ReturnType<typeof sumCompletedProjectEffects>>;
   stillInProgressKindsByTeam: Map<string, CapitalProjectRow["kind"][]>;
   financeContractsByTeam: Map<string, { playerId: string; salaryCents: bigint }[]>;
+  /** Dead money each club owes this season, keyed by leagueTeamId. */
+  deadMoneyByTeam: Map<string, bigint>;
   sponsorshipRevenueByTeam: Map<string, number>;
   otherIncomeByTeam: Map<string, number>;
   otherExpenseByTeam: Map<string, number>;
@@ -175,6 +177,7 @@ export function computeTeamSeasonFinances(
   );
   const capSheet = computeCapSheet({
     season,
+    deadMoneyCents: deps.deadMoneyByTeam.get(args.leagueTeamId) ?? 0n,
     contracts: financeContractsByTeam.get(args.leagueTeamId) ?? [],
   });
   // the user's team draws on

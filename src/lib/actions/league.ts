@@ -350,6 +350,7 @@ export async function createLeagueAction(formData: FormData) {
   const userLeagueTeamId = teamIdToLeagueTeamId.get(teamId)!;
   const userRosteredPlans = rosteredPlans.filter((p) => p.leagueTeamId === userLeagueTeamId);
   const userCapSheet = computeCapSheet({
+    deadMoneyCents: 0n, // a league being created has no released players yet
     season: SEASON,
     contracts: userRosteredPlans.map((p) => ({
       playerId: p.player.id,

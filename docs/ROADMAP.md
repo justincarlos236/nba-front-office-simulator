@@ -108,6 +108,14 @@ Recorded honestly rather than implied. See `PRODUCT.md`.
 - [ ] **AI GM assistant.** Only the `AssistantThread` / `AssistantMessage`
       schema exists. No chat UI, no tool-use wiring, and the unused SDK
       dependency has been removed. Do not describe this as a feature.
+- [ ] **Stretch provision on a release.** Waiving charges the full remaining
+      guarantee to the seasons it was owed for. The real CBA lets a club spread
+      it over twice the remaining years plus one, lowering the annual hit and
+      lengthening the tail. That is a second decision layered on the release and
+      is not modelled - see `src/lib/cap/waive.ts`.
+- [ ] **Waiver claims.** A released player becomes a free agent immediately. In
+      the real league he sits on waivers for 48 hours first, where a rival can
+      claim him and assume the contract outright.
 - [ ] GitHub OAuth (credentials-only)
 - [ ] Observability / error tracking
 - [ ] Photography for the four surfaces that reserve space for it

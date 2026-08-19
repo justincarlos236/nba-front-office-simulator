@@ -71,6 +71,7 @@ import {
   Th,
   type StatusTone,
 } from "@/components/ui/primitives";
+import { loadDeadMoneyCents } from "@/lib/cap/deadMoney";
 
 /**
  * Hosts the sim controls; simulating a stretch of games writes a box score
@@ -245,7 +246,9 @@ export default async function LeagueDashboardPage({ params }: PageProps) {
     select: { season: true, salaryCents: true },
   });
 
+  const deadMoneyCents = await loadDeadMoneyCents(userLeagueTeam.id, league.currentSeason);
   const capSheet = computeCapSheet({
+    deadMoneyCents: deadMoneyCents,
     season: league.currentSeason,
     contracts: leaguePlayers
       .filter((lp) => lp.contract?.years[0])

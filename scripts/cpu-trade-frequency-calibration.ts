@@ -117,6 +117,7 @@ function buildTeams(): CpuTeam[] {
     const pct = i / (strengthOrder.length - 1);
     const avgAge = roster.reduce((s, p) => s + p.age, 0) / roster.length;
     const capSheet = computeCapSheet({
+      deadMoneyCents: 0n, // synthetic rosters; nothing has been released
       season: S,
       contracts: roster.map((p) => ({ playerId: p.leaguePlayerId, salaryCents: p.salaryCents })),
     });

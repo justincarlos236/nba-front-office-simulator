@@ -139,6 +139,8 @@ import { rollupCompletedSeasons } from "@/lib/stats/rollupSeasonStats";
 import { loadInSimPerformance } from "@/lib/valuation/inSimPerformance";
 import { contractYearSalaries, averageAnnualValueCents } from "@/lib/contracts/contractRaises";
 import { requireSessionUserId, assertLeagueOwned } from "@/lib/auth/requireOwnedLeague";
+import { loadDeadMoneyCents } from "@/lib/cap/deadMoney";
+import { loadDeadMoneyByTeam } from "@/lib/cap/deadMoney";
 
 // Local, server-side copy of the award-category label (small duplication
 // of the UI's own AWARD_LABELS constants, same established pattern as
@@ -885,6 +887,9 @@ async function runAdvanceSeasonAction(leagueId: string) {
     // down this function. Without them a club that had just re-signed its own
     // stars would read as though that money were still free.
     reSignings: cpuReSignings,
+    // Charges already on the books for the season being bid on, so a club
+    // carrying a released contract does not read as though it had the room.
+    deadMoneyByTeam: await loadDeadMoneyByTeam(leagueId, newSeason),
   });
   // Mutate the player's existing update rather than pushing a second one:
   // every active player already has an entry from the development pass, and a
@@ -1163,6 +1168,7 @@ async function runAdvanceSeasonAction(leagueId: string) {
     completedEffectsByTeam,
     stillInProgressKindsByTeam,
     financeContractsByTeam,
+    deadMoneyByTeam: await loadDeadMoneyByTeam(leagueId, season),
     sponsorshipRevenueByTeam,
     otherIncomeByTeam,
     otherExpenseByTeam,
@@ -1756,7 +1762,9 @@ async function runAdvanceSeasonAction(leagueId: string) {
     const actualOutcome = computeActualOutcome(userLeagueTeamId, !!playInGame, series);
     const verdict = evaluateSeason(priorExpectation.expectationLevel, actualOutcome);
 
+    const oldDeadMoneyCents = await loadDeadMoneyCents(userLeagueTeamId, season);
     const oldCapSheet = computeCapSheet({
+      deadMoneyCents: oldDeadMoneyCents,
       season,
       contracts: oldSeasonContractYears.map((cy) => ({
         playerId: cy.contract.leaguePlayerId,
@@ -1909,7 +1917,9 @@ async function runAdvanceSeasonAction(leagueId: string) {
     const newSeasonRoster = playerUpdates.filter(
       (u) => u.leagueTeamId === userLeagueTeamId && u.retiredSeason === null,
     );
+    const deadMoneyCents = await loadDeadMoneyCents(userLeagueTeamId, newSeason);
     const newCapSheet = computeCapSheet({
+      deadMoneyCents: deadMoneyCents,
       season: newSeason,
       contracts: newSeasonContractYears.map((cy) => ({
         playerId: cy.contract.leaguePlayerId,

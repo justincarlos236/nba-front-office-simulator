@@ -59,6 +59,11 @@ interface MarketInput {
    * room has to count them or it will spend the same money twice.
    */
   reSignings?: { leaguePlayerId: string; offerSalaryCents: bigint }[];
+  /**
+   * Dead money each club already owes for `newSeason`, keyed by leagueTeamId.
+   * Passed in rather than queried so this stays a function of its inputs.
+   */
+  deadMoneyByTeam?: Map<string, bigint>;
   /** The development pass's pending updates - the source of truth for who is
    *  where *after* retirements and the re-signing pass, which have already run. */
   playerUpdates: {
@@ -155,7 +160,11 @@ export async function runCpuFreeAgentMarket(input: MarketInput): Promise<CpuSign
       if (salaryCents <= 0n) continue;
       contracts.push({ playerId: lp.playerId, salaryCents });
     }
-    const capSheet = computeCapSheet({ season: newSeason, contracts });
+    const capSheet = computeCapSheet({
+      deadMoneyCents: input.deadMoneyByTeam?.get(teamId) ?? 0n,
+      season: newSeason,
+      contracts,
+    });
     const avgAge =
       roster.length > 0
         ? roster.reduce((sum, lp) => sum + resolvePlayerAge(lp.player, newSeason), 0) /

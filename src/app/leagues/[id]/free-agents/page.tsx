@@ -14,6 +14,8 @@ import { computeTeamNeeds } from "@/lib/gm/teamNeeds";
 import { computeRivalInterest, type RivalTeam } from "@/lib/freeagency/rivalInterest";
 import { FreeAgentBoard, type FreeAgentRow } from "@/components/freeagency/FreeAgentBoard";
 import { Label, StatCell, Status } from "@/components/ui/primitives";
+import { loadDeadMoneyCents } from "@/lib/cap/deadMoney";
+import { loadDeadMoneyByTeam } from "@/lib/cap/deadMoney";
 
 export const dynamic = "force-dynamic";
 
@@ -84,7 +86,9 @@ export default async function FreeAgentsPage({ params }: PageProps) {
     }),
   ]);
 
+  const deadMoneyCents = await loadDeadMoneyCents(league.userControlledTeamId ?? "", season);
   const capSheet = computeCapSheet({
+    deadMoneyCents: deadMoneyCents,
     season,
     contracts: ownRoster
       .filter((lp) => lp.contract?.years[0])
@@ -124,10 +128,12 @@ export default async function FreeAgentsPage({ params }: PageProps) {
     rosterByTeamId.set(lp.leagueTeamId, list);
   }
 
+  const deadMoneyByTeam = await loadDeadMoneyByTeam(league.id, season);
   const rivals: RivalTeam[] = [...rosterByTeamId.entries()].map(([teamId, roster]) => ({
     leagueTeamId: teamId,
     abbreviation: abbreviationByTeamId.get(teamId) ?? "???",
     capSpaceCents: computeCapSheet({
+      deadMoneyCents: deadMoneyByTeam.get(teamId) ?? 0n,
       season,
       contracts: roster
         .filter((lp) => lp.contract?.years[0])

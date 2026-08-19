@@ -35,6 +35,7 @@ import {
   loadProjectionInputs,
   loadBestPlayer,
 } from "@/lib/finances/financesPageData";
+import { loadDeadMoneyCents } from "@/lib/cap/deadMoney";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -133,7 +134,9 @@ export default async function FinancesReportPage({ params }: PageProps) {
     netIncome: Number(s.netIncomeCents) / 100,
   }));
 
+  const deadMoneyCents = await loadDeadMoneyCents(myLeagueTeam.id, league.currentSeason);
   const projCapSheet = computeCapSheet({
+    deadMoneyCents: deadMoneyCents,
     season: league.currentSeason,
     contracts: currentContractYears.map((cy) => ({
       playerId: cy.contract.leaguePlayerId,

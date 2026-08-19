@@ -5,6 +5,11 @@ import { resolveRotation } from "@/lib/rotation/resolveRotation";
 import { RotationBoard, type RotationPlayer } from "@/components/rotation/RotationBoard";
 import { currentSeasonSalaryCents } from "@/lib/contracts/currentSeasonSalary";
 import { formatCentsCompact } from "@/lib/money";
+import { computeWaiveCost } from "@/lib/cap/waive";
+import {
+  ReleasePlayerPanel,
+  type ReleasableTeamPlayer,
+} from "@/components/roster/ReleasePlayerPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +38,11 @@ export default async function RotationPage({ params }: PageProps) {
       // Contract terms belong here too: this is the one surface that answers
       // "tell me about my team", and a player's role is inseparable from what
       // he costs and how long he is signed for.
-      contract: { include: { years: { where: { season: league.currentSeason } } } },
+      // Every remaining season, not just this one: releasing charges the whole
+      // remaining guarantee, so the cost cannot be computed from one year.
+      contract: {
+        include: { years: { where: { season: { gte: league.currentSeason } } } },
+      },
     },
     orderBy: { overallRating: "desc" },
   });
@@ -69,6 +78,22 @@ export default async function RotationPage({ params }: PageProps) {
     contractEndSeason: lp.contract?.endSeason ?? null,
   }));
 
+  const releasable: ReleasableTeamPlayer[] = roster.map((lp) => {
+    const cost = computeWaiveCost({
+      years: lp.contract?.years ?? [],
+      fromSeason: league.currentSeason,
+    });
+    return {
+      leaguePlayerId: lp.id,
+      fullName: lp.player.fullName,
+      position: lp.player.position,
+      overallRating: lp.overallRating,
+      deadMoneyLabel: formatCentsCompact(cost.totalCents),
+      futureSeasons: cost.futureSeasons,
+      free: cost.totalCents === 0n,
+    };
+  });
+
   return (
     <main className="mx-auto max-w-4xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
       <h1 className="text-3xl font-bold tracking-tight text-ink">Roster</h1>
@@ -87,6 +112,7 @@ export default async function RotationPage({ params }: PageProps) {
           players={players}
         />
       </div>
+      <ReleasePlayerPanel leagueId={league.id} players={releasable} />
     </main>
   );
 }

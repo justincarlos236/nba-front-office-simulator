@@ -40,6 +40,7 @@ import { computeSponsorshipVoidPenaltyCents } from "@/lib/finances/sponsorship";
 import { formatCentsCompact } from "@/lib/money";
 import { DEFAULT_MAX_ROSTER_SIZE } from "@/lib/data-sources/rosterConstruction";
 import { tradesAreClosed, currentRegularSeasonDayIndex } from "@/lib/calendar/seasonCalendar";
+import { loadDeadMoneyCents } from "@/lib/cap/deadMoney";
 
 // The real floor is 14 with a short grace period at 13; 13 is the number the
 // dataset validator already holds every seeded roster to, so a trade must not
@@ -94,8 +95,11 @@ async function loadCapState(leagueTeamId: string, season: number) {
       playerId: lp.playerId,
       salaryCents: currentSeasonSalaryCents(lp.contract, season),
     }));
-  const capSheet = computeCapSheet({ season, contracts });
-  return { capSheet, contracts };
+  const deadMoneyCents = await loadDeadMoneyCents(leagueTeamId, season);
+  const capSheet = computeCapSheet({ season, contracts, deadMoneyCents });
+  // Returned so the trade's "after" sheet reuses the same charge rather than
+  // re-querying a figure the trade itself cannot change.
+  return { capSheet, contracts, deadMoneyCents };
 }
 
 /**
@@ -564,6 +568,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
       myCapState.capSheet,
       computeCapSheet({
         season: tradeSeason,
+        deadMoneyCents: myCapState.deadMoneyCents,
         contracts: [
           ...myCapState.contracts.filter((c) => !input.myPlayerIds.includes(c.leaguePlayerId)),
           ...theirPlayers.map((lp) => ({
@@ -580,6 +585,7 @@ async function runExecuteTradeAction(input: ExecuteTradeInput) {
       theirCapState.capSheet,
       computeCapSheet({
         season: tradeSeason,
+        deadMoneyCents: theirCapState.deadMoneyCents,
         contracts: [
           ...theirCapState.contracts.filter(
             (c) => !input.theirPlayerIds.includes(c.leaguePlayerId),

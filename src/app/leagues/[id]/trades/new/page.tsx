@@ -18,6 +18,8 @@ import { computeTeamNeeds, TEAM_NEED_LABEL } from "@/lib/gm/teamNeeds";
 import { formatCentsCompact } from "@/lib/money";
 import { DataTable, Label, Td, Th } from "@/components/ui/primitives";
 import { resolvePlayerAge } from "@/lib/players/age";
+import { loadDeadMoneyCents } from "@/lib/cap/deadMoney";
+import { loadDeadMoneyByTeam } from "@/lib/cap/deadMoney";
 
 /** Short enough for a table cell; the full phrasing lives on the cap page. */
 const APRON_LABEL: Record<ApronLevel, string> = {
@@ -65,7 +67,9 @@ async function loadRoster(leagueTeamId: string, season: number) {
   ]);
   const clausePlayerIds = new Set(sponsorshipClausePlayers.map((d) => d.conditionLeaguePlayerId));
 
+  const deadMoneyCents = await loadDeadMoneyCents(leagueTeamId, season);
   const capSheet = computeCapSheet({
+    deadMoneyCents: deadMoneyCents,
     season,
     contracts: leaguePlayers
       .filter((lp) => lp.contract?.years[0])
@@ -191,9 +195,11 @@ export default async function NewTradePage({ params, searchParams }: PageProps) 
       byTeam.set(lp.leagueTeamId, list);
     }
 
+    const deadMoneyByTeam = await loadDeadMoneyByTeam(league.id, league.currentSeason);
     const partners = otherTeams.map((lt) => {
       const roster = byTeam.get(lt.id) ?? [];
       const capSheet = computeCapSheet({
+        deadMoneyCents: deadMoneyByTeam.get(lt.id) ?? 0n,
         season: league.currentSeason,
         contracts: roster
           .filter((lp) => lp.contract?.years[0])

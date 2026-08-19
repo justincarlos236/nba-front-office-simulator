@@ -72,6 +72,7 @@ import {
   type BusinessDecisionOption,
 } from "@/lib/finances/businessDecisions";
 import type { NewsImportance } from "@/generated/prisma/client";
+import { loadDeadMoneyByTeam } from "@/lib/cap/deadMoney";
 
 const INJURY_CHANCE_PER_TEAM_GAME = 0.02;
 /** Games in a regular season, for the injury model's season-progress term. */
@@ -475,6 +476,9 @@ async function maybeExecuteCpuTrade(
   // win/loss, not just the CPU subset, for a correct relative ranking
   // (consistent with every other computeCompetitivenessPercentiles caller).
   // Cheap alongside the roster query - a handful of rows, two columns.
+  // Loaded once here because the cap sheets below are built inside
+  // synchronous callbacks that cannot await.
+  const deadMoneyByTeam = await loadDeadMoneyByTeam(leagueId, season);
   const [cpuLeagueTeams, allTeamsWinLoss] = await Promise.all([
     prisma.leagueTeam.findMany({
       where: { leagueId, ...(userControlledTeamId ? { id: { not: userControlledTeamId } } : {}) },
@@ -569,6 +573,7 @@ async function maybeExecuteCpuTrade(
         roster,
         capState: (() => {
           const capSheet = computeCapSheet({
+            deadMoneyCents: deadMoneyByTeam.get(lt.id) ?? 0n,
             season,
             contracts: lt.players
               .filter((p) => p.contract?.years[0])
@@ -1567,6 +1572,9 @@ async function maybeProposeCpuTradeToUser(
   });
   if (existing > 0) return;
 
+  // Loaded once here because the cap sheets below are built inside
+  // synchronous callbacks that cannot await.
+  const deadMoneyByTeam = await loadDeadMoneyByTeam(leagueId, season);
   const [leagueTeams, allTeamsWinLoss] = await Promise.all([
     prisma.leagueTeam.findMany({
       where: { leagueId },
@@ -1636,6 +1644,7 @@ async function maybeProposeCpuTradeToUser(
       const avgAge =
         roster.length > 0 ? roster.reduce((sum, p) => sum + p.age, 0) / roster.length : 27;
       const capSheet = computeCapSheet({
+        deadMoneyCents: deadMoneyByTeam.get(lt.id) ?? 0n,
         season,
         contracts: lt.players
           .filter((p) => p.contract?.years[0])

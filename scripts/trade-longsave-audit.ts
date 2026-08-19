@@ -189,6 +189,7 @@ function run(tradingOn: boolean, seed: number): Snapshot[] {
               getSeasonCapRules(season),
             ),
             capSpaceCents: computeCapSheet({
+              deadMoneyCents: 0n, // synthetic rosters; nothing has been released
               season,
               contracts: roster.map((p) => ({
                 playerId: p.leaguePlayerId,

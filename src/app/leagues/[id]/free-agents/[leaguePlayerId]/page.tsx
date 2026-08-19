@@ -10,6 +10,7 @@ import { resolvePlayerAge, resolvePlayerExperience } from "@/lib/players/age";
 import { getSigningExceptionUsage } from "@/lib/actions/signingException";
 import { SignOfferForm } from "@/components/freeagency/SignOfferForm";
 import { PlayerAvatar } from "@/components/players/PlayerAvatar";
+import { loadDeadMoneyCents } from "@/lib/cap/deadMoney";
 
 export const dynamic = "force-dynamic";
 
@@ -53,7 +54,9 @@ export default async function SignFreeAgentPage({ params }: PageProps) {
     }),
     getSigningExceptionUsage(myLeagueTeam.id, league.currentSeason),
   ]);
+  const deadMoneyCents = await loadDeadMoneyCents(myLeagueTeam.id, league.currentSeason);
   const capSheet = computeCapSheet({
+    deadMoneyCents: deadMoneyCents,
     season: league.currentSeason,
     contracts: myPlayers
       .filter((lp) => lp.contract?.years[0])

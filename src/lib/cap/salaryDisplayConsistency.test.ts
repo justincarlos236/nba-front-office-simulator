@@ -41,6 +41,7 @@ describe("salary display and cap math read the same field", () => {
 
   it("summed committed salary equals the sum of each player's displayed figure", () => {
     const capSheet = computeCapSheet({
+      deadMoneyCents: 0n,
       season: SEASON,
       contracts: roster.map((p) => ({
         playerId: p.playerId,
@@ -60,6 +61,7 @@ describe("salary display and cap math read the same field", () => {
     // The array-position shortcut reads next season's salary here, so a cap
     // sheet built from years[0] disagrees with one built from the season lookup.
     const byArrayPosition = computeCapSheet({
+      deadMoneyCents: 0n,
       season: SEASON,
       contracts: roster.map((p) => ({
         playerId: p.playerId,
@@ -67,6 +69,7 @@ describe("salary display and cap math read the same field", () => {
       })),
     });
     const bySeason = computeCapSheet({
+      deadMoneyCents: 0n,
       season: SEASON,
       contracts: roster.map((p) => ({
         playerId: p.playerId,

@@ -11,6 +11,7 @@ import { getPlayerValueTier } from "@/lib/valuation/playerValueTier";
 import { computeRivalInterest, type RivalTeam } from "./rivalInterest";
 import { demandAdjustedPriceCents } from "./cpuFreeAgentPass";
 import { evaluateFreeAgentOffer } from "./evaluateFreeAgentOffer";
+import { loadDeadMoneyByTeam } from "@/lib/cap/deadMoney";
 
 /**
  * What a free agent costs, and the least he will sign for.
@@ -85,7 +86,7 @@ export async function resolveFreeAgentMarket(input: {
 }): Promise<FreeAgentMarket> {
   const { leagueId, season, userLeagueTeamId, freeAgent } = input;
 
-  const [rosterRows, inSim] = await Promise.all([
+  const [rosterRows, inSim, deadMoneyByTeam] = await Promise.all([
     prisma.leaguePlayer.findMany({
       where: { leagueId, leagueTeamId: { not: null }, isActive: true },
       select: {
@@ -99,6 +100,7 @@ export async function resolveFreeAgentMarket(input: {
       },
     }),
     loadInSimPerformance(leagueId, season),
+    loadDeadMoneyByTeam(leagueId, season),
   ]);
 
   // In-sim production first, seeded real-world stats only as a fallback -
@@ -148,6 +150,7 @@ export async function resolveFreeAgentMarket(input: {
     // Never rendered from here; boards compute their own labels.
     abbreviation: teamId,
     capSpaceCents: computeCapSheet({
+      deadMoneyCents: deadMoneyByTeam.get(teamId) ?? 0n,
       season,
       contracts: roster
         .filter((lp) => lp.contract?.years[0])

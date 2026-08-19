@@ -328,6 +328,7 @@ model LeagueTeam {
   ownerArchetype               OwnerArchetype         @default(PATIENT_BUILDER)
   ownerArchetypeSince          Int                    @default(0)
   businessDecisions            BusinessDecision[]
+  deadMoney                    DeadMoney[]
   businessLedgerEntries        BusinessLedgerEntry[]
   capitalProjects              CapitalProject[]
   contracts                    Contract[]
@@ -439,14 +440,12 @@ model PlayerGameStat {
 
 /**
  * One row per rate-limited action, holding only what a sliding window needs.
- *
  * Postgres rather than Redis so the stack stays at two services. The cost is
  * one small indexed query per limited action; that is acceptable only because
  * the limited endpoints (signup, sign-in, league creation) are rare and
  * already make several database calls each. Do not extend this to hot paths
  * like simulation - see src/lib/rateLimit/policy.ts for why those are
  * deliberately unlimited.
- *
  * `key` is "<policy>:<identifier>", where the identifier is an IP for
  * unauthenticated actions and a user id for authenticated ones. Rows are
  * swept opportunistically once past their window (src/lib/rateLimit/rateLimit.ts),
@@ -465,7 +464,6 @@ model RateLimitHit {
 /**
  * One row per player per completed season, replacing that season's ~82
  * `PlayerGameStat` rows once the season is over.
- *
  * Box scores are the dominant consumer of database size - a simulated season
  * writes roughly 24,000 of them, about 20 MB, and nothing in the simulation
  * ever reads a *past* season's. Every logic reader (All-Star selection,
@@ -473,12 +471,10 @@ model RateLimitHit {
  * its query to the season being played. The single cross-season read is career
  * highs, which are per-category maxima, so `high*` below preserves them
  * exactly rather than approximately.
- *
  * Sums rather than averages so a rollup stays exactly re-derivable: any average
  * is sum/gamesPlayed, and summing across gameTypes stays correct. Team is
  * deliberately absent - a midseason trade would otherwise split a player's
  * season across rows, and nothing reads team from a past season.
- *
  * See `src/lib/stats/rollupSeasonStats.ts` for the rollup, which is idempotent.
  */
 model LeaguePlayerSeasonStat {
@@ -1221,6 +1217,7 @@ enum TransactionType {
   FINANCIAL_REPORT
   FRANCHISE_MILESTONE
   BUSINESS_DECISION
+  PLAYER_RELEASE
 }
 
 enum NewsImportance {
@@ -1518,4 +1515,25 @@ enum TicketPricingPosture {
   FAN_FRIENDLY
   STANDARD
   PREMIUM
+}
+
+/// Guaranteed money still owed to a player who is no longer on the roster.
+/// One row per season a release keeps charging for, so the cap sheet can read
+/// a club's dead money for any single season without unpacking contracts that
+/// no longer exist.
+model DeadMoney {
+  id           String     @id @default(cuid())
+  leagueId     String
+  leagueTeamId String
+  season       Int
+  amountCents  BigInt
+  /// Kept for the cap sheet's own explanation - a dead-money line that cannot
+  /// name who it is for is unreadable to the person paying it.
+  playerName   String
+  waivedSeason Int
+  leagueTeam   LeagueTeam @relation(fields: [leagueTeamId], references: [id], onDelete: Cascade)
+
+  @@index([leagueTeamId, season])
+  @@index([leagueId, season])
+  @@map("dead_money")
 }

@@ -8,6 +8,7 @@ const rules = getSeasonCapRules(2025);
 describe("computeCapSheet", () => {
   it("sums committed salary and reports cap space for a team under the cap", () => {
     const sheet = computeCapSheet({
+      deadMoneyCents: 0n,
       season: 2025,
       contracts: Array.from({ length: 13 }, (_, i) => ({
         playerId: `p${i}`,
@@ -22,6 +23,7 @@ describe("computeCapSheet", () => {
 
   it("charges an empty-roster cap hold for each spot below the 12-man minimum", () => {
     const sheet = computeCapSheet({
+      deadMoneyCents: 0n,
       season: 2025,
       contracts: Array.from({ length: 9 }, (_, i) => ({
         playerId: `p${i}`,
@@ -50,6 +52,7 @@ describe("computeCapSheet", () => {
 
   it("flags a team above the second apron", () => {
     const sheet = computeCapSheet({
+      deadMoneyCents: 0n,
       season: 2025,
       contracts: Array.from({ length: 15 }, (_, i) => ({
         playerId: `p${i}`,
@@ -63,7 +66,7 @@ describe("computeCapSheet", () => {
   });
 
   it("falls back to the closest known season for an unconfigured season", () => {
-    const sheet = computeCapSheet({ season: 2099, contracts: [] });
+    const sheet = computeCapSheet({ deadMoneyCents: 0n, season: 2099, contracts: [] });
     expect(sheet.apronLevel).toBe(ApronLevel.UNDER_CAP);
   });
 });

@@ -42,6 +42,7 @@ import {
   loadBestPlayer,
   loadLeagueFranchiseValues,
 } from "@/lib/finances/financesPageData";
+import { loadDeadMoneyCents } from "@/lib/cap/deadMoney";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -161,7 +162,9 @@ export default async function FinancesOverviewPage({ params }: PageProps) {
 
   // Mid-season projection - a forward look at this season's P&L from the
   // current roster and settings, so finances are legible before advancing.
+  const deadMoneyCents = await loadDeadMoneyCents(myLeagueTeam.id, league.currentSeason);
   const projCapSheet = computeCapSheet({
+    deadMoneyCents: deadMoneyCents,
     season: league.currentSeason,
     contracts: currentContractYears.map((cy) => ({
       playerId: cy.contract.leaguePlayerId,
