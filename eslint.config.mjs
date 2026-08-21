@@ -15,11 +15,9 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "src/generated/**",
-    // Local editor/tooling config. Gitignored, so it never reaches CI, but
-    // it is present on a dev machine and is not this project's code to lint.
-    ".claude/**",
-    ".github/agents/**",
-    ".github/skills/**",
+    // Dot-directories hold local tooling and CI config, never application
+    // code, and some of them ship their own scripts.
+    ".*/**",
   ]),
 ]);
 

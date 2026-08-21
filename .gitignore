@@ -49,13 +49,6 @@ next-env.d.ts
 
 /src/generated/prisma
 
-# Local tooling config and personal notes - not for the public repo
-CLAUDE.md
-.claude/
-.impeccable/
-.github/agents/
-.github/hooks/
-.github/skills/
 /notes/
 prisma/data/.contracts-cache.json
 
